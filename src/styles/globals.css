@@ -629,11 +629,14 @@
   }
   .track-row.playing {
     background: var(--accent-dim-12);
+    box-shadow: inset 2px 0 0 var(--accent);
   }
   .track-art {
+    position: relative;
     width: 36px;
     height: 36px;
     border-radius: 8px;
+    flex-shrink: 0;
   }
   .track-meta {
     min-width: 0;

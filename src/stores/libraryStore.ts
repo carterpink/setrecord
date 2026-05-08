@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { search as fuzzySearch } from 'fast-fuzzy'
-import type { ImportProgress, LibraryStats, Track } from '@/types'
+import type { CuePoint, HotCue, ImportProgress, LibraryStats, Track } from '@/types'
 import { gradientForId } from '@/utils/format'
 
 /** Attach a deterministic gradient to every track that lacks real artwork. */
@@ -23,6 +23,7 @@ interface LibraryState {
   loadLibrary: () => Promise<void>
   setSearchQuery: (q: string) => void
   triggerImport: () => Promise<void>
+  patchTrackCues: (trackId: string, cuePoints: CuePoint[], hotCues: HotCue[]) => void
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
@@ -55,6 +56,12 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       keySelector: (t) => [t.title, t.artist, t.album ?? ''],
     })
     set({ searchQuery: q, searchResults: results as Track[] })
+  },
+
+  patchTrackCues: (trackId, cuePoints, hotCues) => {
+    const patch = (arr: Track[]) =>
+      arr.map((t) => (t.id === trackId ? { ...t, cuePoints, hotCues } : t))
+    set((s) => ({ tracks: patch(s.tracks), searchResults: patch(s.searchResults) }))
   },
 
   triggerImport: async () => {

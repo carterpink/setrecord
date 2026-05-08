@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3'
-import type { LibraryFilters, LibraryStats, Track, SetTrack, Set as DJSet } from '../../src/types'
+import type { LibraryFilters, LibraryStats, Track, SetTrack, Set as DJSet, CuePoint, HotCue } from '../../src/types'
 
 // ───────── Row → Track ─────────
 
@@ -324,4 +324,16 @@ export function saveSet(db: Database.Database, set: DJSet): void {
 
 export function deleteSet(db: Database.Database, id: string): void {
   db.prepare('DELETE FROM sets WHERE id = ?').run(id)
+}
+
+// ───────── Cue point updates ─────────
+
+export function updateTrackCues(
+  db: Database.Database,
+  trackId: string,
+  cuePoints: CuePoint[],
+  hotCues: HotCue[]
+): void {
+  db.prepare('UPDATE tracks SET cue_points = ?, hot_cues = ? WHERE id = ?')
+    .run(JSON.stringify(cuePoints), JSON.stringify(hotCues), trackId)
 }

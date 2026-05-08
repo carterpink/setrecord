@@ -1,10 +1,10 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, protocol, net } from 'electron'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { initDb, getDb } from './db/schema'
-import { getAllTracks, getTrackById, getLibraryStats, countTracks, getAllSets, getSetById, saveSet as dbSaveSet, deleteSet as dbDeleteSet } from './db/queries'
-import type { Set as DJSet, LibraryFilters, ArchitectParams } from '../src/types'
+import { getAllTracks, getTrackById, getLibraryStats, countTracks, getAllSets, getSetById, saveSet as dbSaveSet, deleteSet as dbDeleteSet, updateTrackCues } from './db/queries'
+import type { Set as DJSet, LibraryFilters, ArchitectParams, CuePoint, HotCue } from '../src/types'
 import { importFromXml } from './services/libraryImport'
 import { scoreTransition } from './algorithms/transitionScore'
 import { getSuggestions } from './algorithms/suggestions'
@@ -126,6 +126,12 @@ function registerIpcHandlers(): void {
     return buildSet(params, library)
   })
 
+  // ── Cue points (Phase 6) ─────────────────────────────────────────────────
+
+  ipcMain.handle('cues:update', (_e, trackId: string, cuePoints: CuePoint[], hotCues: HotCue[]) => {
+    updateTrackCues(getDb(), trackId, cuePoints, hotCues)
+  })
+
   // ── Stubs (Phase 7) ───────────────────────────────────────────────────────
 
   ipcMain.handle('algo:validate', () => null)
@@ -134,6 +140,11 @@ function registerIpcHandlers(): void {
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.setsense.app')
+
+  protocol.handle('media', (req) => {
+    const path = decodeURIComponent(req.url.replace('media://', ''))
+    return net.fetch(`file://${path}`)
+  })
 
   initDb()
   registerIpcHandlers()

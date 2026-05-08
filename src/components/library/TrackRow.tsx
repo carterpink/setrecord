@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import { useDraggable } from '@dnd-kit/core'
+import { Volume2 } from 'lucide-react'
 import type { Track } from '@/types'
 import { KeyChip } from '@/components/shared/KeyChip'
 import { formatBpm } from '@/utils/format'
@@ -35,7 +36,23 @@ export function TrackRow({ track, playing, inSet, onClick, onDoubleClick }: Trac
         className="track-art"
         style={track.artGradient ? { background: track.artGradient } : undefined}
         aria-hidden="true"
-      />
+      >
+        {playing && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(0,0,0,0.55)',
+              borderRadius: 'inherit',
+            }}
+          >
+            <Volume2 size={14} strokeWidth={1.5} color="var(--accent)" />
+          </div>
+        )}
+      </div>
       <div className="track-meta">
         <div className="t">{track.title}</div>
         <div className="a">{track.artist}</div>

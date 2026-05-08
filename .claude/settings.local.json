@@ -9,7 +9,10 @@
       "Bash(pkill -f \"electron-vite dev\")",
       "Bash(pkill -f \"Electron.app\")",
       "mcp__Claude_Preview__preview_start",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(node -e \"const WS = require\\('wavesurfer.js'\\); console.log\\(Object.keys\\(WS\\)\\)\")",
+      "Bash(git -C /Users/samcarter/Documents/SetSenseV2 checkout -b feat/phase-6-cue-points-preview)",
+      "Bash(rm /Users/samcarter/Documents/SetSenseV2/.git/index.lock && echo \"removed\")"
     ]
   }
 }

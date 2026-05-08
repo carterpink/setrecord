@@ -4,6 +4,7 @@ import type { LibraryTab } from '@/types'
 import { SearchInput } from '@/components/shared/SearchInput'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { useLibraryStore } from '@/stores/libraryStore'
+import { usePlaybackStore } from '@/stores/playbackStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
 import { camelotCompatible } from '@/utils/camelot'
@@ -16,9 +17,10 @@ export function LibraryPanel(): React.JSX.Element {
   const [tab, setTab] = useState<LibraryTab>('Library')
   const { tracks, searchQuery, searchResults, isLoading, hasLibrary, setSearchQuery } =
     useLibraryStore()
-  const { savedSets, currentSet, loadSets, loadCurrentSet, addTrack, selectedTrackId } =
+  const { savedSets, currentSet, loadSets, loadCurrentSet, selectedTrackId } =
     useSetStore()
   const { smartFilter, toggleSmartFilter } = useUiStore()
+  const { startPreview, previewTrack, isPlaying } = usePlaybackStore()
 
   const setTrackIds = new Set(currentSet?.tracks.map((st) => st.trackId) ?? [])
 
@@ -140,7 +142,8 @@ export function LibraryPanel(): React.JSX.Element {
                     key={track.id}
                     track={track}
                     inSet={setTrackIds.has(track.id)}
-                    onDoubleClick={() => addTrack(track)}
+                    playing={previewTrack?.id === track.id && isPlaying}
+                    onDoubleClick={() => startPreview(track)}
                   />
                 ))
               )}

@@ -12,6 +12,7 @@ export function BottomDock({ visible }: BottomDockProps): React.JSX.Element {
   const { selectedTrackId } = useSetStore()
 
   const canSmartFilter = selectedTrackId !== null
+  const canOpenCueEditor = selectedTrackId !== null
 
   return (
     <div className="dock-trigger">
@@ -39,12 +40,14 @@ export function BottomDock({ visible }: BottomDockProps): React.JSX.Element {
             />
           </span>
 
-          {/* Cue editor */}
+          {/* Cue editor — requires a selected timeline track */}
           <span className="dock-item" data-label="Cue editor">
             <IconButton
               icon={Headphones}
               aria-label="Cue editor"
-              onClick={() => showModal('cueEditor')}
+              disabled={!canOpenCueEditor}
+              onClick={canOpenCueEditor ? () => showModal('cueEditor') : undefined}
+              style={{ opacity: canOpenCueEditor ? 1 : 0.35, cursor: canOpenCueEditor ? 'pointer' : 'default' }}
             />
           </span>
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { usePreviewAudio } from '@/hooks/usePreviewAudio'
 import {
   DndContext,
   DragOverlay,
@@ -11,6 +12,7 @@ import {
 import type { Track, SetTrack } from '@/types'
 import { LibraryPanel } from '@/components/library/LibraryPanel'
 import { ComingSoonModal } from '@/components/modals/ComingSoonModal'
+import { CuePointEditor } from '@/components/modals/CuePointEditor'
 import { ImportModal } from '@/components/modals/ImportModal'
 import { SetArchitectModal } from '@/components/modals/SetArchitectModal'
 import { SuggestionsPanel } from '@/components/suggestions/SuggestionsPanel'
@@ -31,6 +33,8 @@ export function AppShell(): React.JSX.Element {
   const openModal = useUiStore((s) => s.openModal)
   const loadLibrary = useLibraryStore((s) => s.loadLibrary)
   const { loadSets, addTrack, reorderTracks } = useSetStore()
+
+  usePreviewAudio()
   const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null)
   const [dockVisible, setDockVisible] = useState(false)
   const dockHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -114,7 +118,7 @@ export function AppShell(): React.JSX.Element {
       </div>
       {openModal === 'import' && <ImportModal />}
       {openModal === 'architect' && <SetArchitectModal />}
-      {openModal === 'cueEditor' && <ComingSoonModal feature="Cue editor" phase={6} />}
+      {openModal === 'cueEditor' && <CuePointEditor />}
       {openModal === 'validate' && <ComingSoonModal feature="Set validation" phase={7} />}
       {openModal === 'export' && <ComingSoonModal feature="Export" phase={7} />}
     </>

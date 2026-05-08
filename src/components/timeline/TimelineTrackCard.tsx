@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react'
 import clsx from 'clsx'
-import { Play, X } from 'lucide-react'
+import { Pause, Play, X } from 'lucide-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { SetTrack } from '@/types'
+import { usePlaybackStore } from '@/stores/playbackStore'
 import { formatBpm, formatDuration, formatPosition } from '@/utils/format'
 import { TransitionDot } from '@/components/shared/TransitionDot'
 
@@ -22,6 +23,8 @@ export function TimelineTrackCard({
 }: TimelineTrackCardProps): React.JSX.Element {
   const { track, position, transitionScore } = setTrack
   const score = transitionScore
+  const { startPreview, togglePlay, previewTrack, isPlaying } = usePlaybackStore()
+  const isThisPlaying = previewTrack?.id === track.id && isPlaying
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: setTrack.id,
@@ -64,12 +67,23 @@ export function TimelineTrackCard({
     >
       <button
         type="button"
-        className="tl-handle"
-        aria-label={`Preview ${track.title}`}
-        onClick={(e) => e.stopPropagation()}
+        className={clsx('tl-handle', isThisPlaying && 'playing')}
+        aria-label={isThisPlaying ? `Pause ${track.title}` : `Preview ${track.title}`}
+        onClick={(e) => {
+          e.stopPropagation()
+          if (previewTrack?.id === track.id) {
+            togglePlay()
+          } else {
+            startPreview(track)
+          }
+        }}
         onPointerDown={(e) => e.stopPropagation()}
       >
-        <Play size={14} strokeWidth={1.5} aria-hidden="true" />
+        {isThisPlaying ? (
+          <Pause size={14} strokeWidth={1.5} aria-hidden="true" />
+        ) : (
+          <Play size={14} strokeWidth={1.5} aria-hidden="true" />
+        )}
       </button>
 
       <div className="tl-body">

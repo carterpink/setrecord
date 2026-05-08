@@ -3,6 +3,8 @@ import { electronAPI } from '@electron-toolkit/preload'
 import type {
   ArchitectParams,
   CDJModel,
+  CuePoint,
+  HotCue,
   ImportProgress,
   LibraryFilters,
   Set as DJSet
@@ -64,6 +66,10 @@ const setsense = {
 
   validateForExport: (setId: string, hardware: CDJModel) =>
     ipcRenderer.invoke('algo:validate', setId, hardware),
+
+  // ── Cue points (Phase 6) ─────────────────────────────────────────────────
+  updateTrackCues: (trackId: string, cuePoints: CuePoint[], hotCues: HotCue[]): Promise<void> =>
+    ipcRenderer.invoke('cues:update', trackId, cuePoints, hotCues),
 
   // ── Export (Phase 7) ──────────────────────────────────────────────────────
   exportSet: (setId: string, hardware: CDJModel) =>

@@ -2,6 +2,8 @@ import type { ElectronAPI } from '@electron-toolkit/preload'
 import type {
   ArchitectParams,
   CDJModel,
+  CuePoint,
+  HotCue,
   ImportProgress,
   ImportResult,
   LibraryFilters,
@@ -40,6 +42,8 @@ declare global {
       scoreTransition: (fromId: string, toId: string) => Promise<TransitionScore | null>
       buildSet: (params: ArchitectParams) => Promise<SetTrack[]>
       validateForExport: (setId: string, hardware: CDJModel) => Promise<ValidationResult | null>
+      // Cue points (Phase 6)
+      updateTrackCues: (trackId: string, cuePoints: CuePoint[], hotCues: HotCue[]) => Promise<void>
       // Export (Phase 7)
       exportSet: (setId: string, hardware: CDJModel) => Promise<ExportResult | null>
     }

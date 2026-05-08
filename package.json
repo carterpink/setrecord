@@ -31,6 +31,7 @@
     "fuse.js": "^7.3.0",
     "lucide-react": "^0.474.0",
     "recharts": "^3.8.1",
+    "wavesurfer.js": "^7.12.6",
     "xml2js": "^0.6.2",
     "zustand": "^5.0.13"
   },
