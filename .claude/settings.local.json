@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//private/tmp/**)",
+      "Bash(rm -rf setsense-scaffold)",
+      "Bash(npm create *)",
+      "Bash(cp /tmp/setsense-design/setsense-design-system/project/fonts/*.ttf /Users/samcarter/Documents/SetSenseV2/src/styles/fonts/ && ls -la /Users/samcarter/Documents/SetSenseV2/src/styles/fonts/)",
+      "Bash(npm install *)",
+      "Bash(pkill -f \"electron-vite dev\")",
+      "Bash(pkill -f \"Electron.app\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm run *)"
+    ]
+  }
+}
