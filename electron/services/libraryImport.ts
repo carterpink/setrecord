@@ -1,11 +1,15 @@
-import { existsSync } from 'fs'
-import { readFileSync } from 'fs'
 import { extname } from 'path'
+import { readFileSync } from 'fs'
 import { parseStringPromise } from 'xml2js'
 import type { AudioFormat, ImportProgress, ImportResult, Track } from '../../src/types'
 import { openNotationToCamelot } from '../utils/camelot'
 import { getDb } from '../db/schema'
-import { getLibraryStats } from '../db/queries'
+import { batchInsertTracks, getLibraryStats } from '../db/queries'
+
+// Yield back to the Node.js event loop so Chromium can flush queued IPC messages.
+// Without this, webContents.send() calls accumulate but are never delivered to the
+// renderer until the entire handler returns — making the progress bar stay at 0%.
+const yieldToEventLoop = (): Promise<void> => new Promise(resolve => setImmediate(resolve))
 
 // ───────── Field mapping helpers ─────────
 
@@ -48,13 +52,11 @@ function parseCuePoints(marks: unknown[]): { cuePoints: Track['cuePoints']; hotC
     const type = m.Type ?? '0'
 
     if (type === '0') {
-      // Memory cue
       cuePoints.push({ position, type: 'memory' })
     } else if (type === '1') {
-      // Default cue
       cuePoints.push({ position, type: 'cue' })
     } else {
-      // Hot cue (type "3" in Rekordbox XML, index from Num attr)
+      // Hot cue (type "3" in Rekordbox XML)
       const index = parseInt(m.Num ?? '0', 10)
       hotCues.push({
         index,
@@ -77,37 +79,47 @@ export async function importFromXml(
 ): Promise<ImportResult> {
   const db = getDb()
   let errors = 0
-  let missingFiles = 0
+
+  // Signal immediately that we've started so the modal transitions from idle.
+  // The yield lets Chromium flush this IPC message before we block on disk I/O.
+  onProgress({ processed: 0, total: 0, phase: 'parsing' })
+  await yieldToEventLoop()
 
   // 1. Read + parse XML
   const xml = readFileSync(xmlPath, 'utf-8')
   const parsed = await parseStringPromise(xml, { explicitArray: true })
 
-  const collection =
+  const collection: unknown[] =
     parsed?.DJ_PLAYLISTS?.COLLECTION?.[0]?.TRACK ?? []
 
   const total: number = collection.length
   onProgress({ processed: 0, total, phase: 'parsing' })
+  await yieldToEventLoop()
 
   if (total === 0) {
+    onProgress({ processed: 0, total: 0, phase: 'done' })
     const stats = getLibraryStats(db)
     return { total: 0, inserted: 0, errors: 0, missingFiles: 0, stats }
   }
 
-  // 2. Map Rekordbox fields → Track objects
+  // 2. Map Rekordbox fields → Track objects.
+  // We intentionally skip existsSync here — checking 10k files synchronously on
+  // an external drive blocks the event loop for seconds. The background health
+  // check (scheduleHealthCheck in main.ts) runs immediately after import and
+  // flags any missing files without blocking the UI.
   const tracks: Track[] = []
+  const PARSE_YIELD_EVERY = 500
 
   for (let i = 0; i < total; i++) {
     try {
-      const t = collection[i].$
+      const item = collection[i] as { $?: Record<string, string>; POSITION_MARK?: unknown[] }
+      const t = item.$
       if (!t?.Location) continue
 
       const filePath = parseLocation(t.Location)
-      const { cuePoints, hotCues } = parseCuePoints(collection[i].POSITION_MARK ?? [])
+      const { cuePoints, hotCues } = parseCuePoints(item.POSITION_MARK ?? [])
 
-      if (!existsSync(filePath)) missingFiles++
-
-      const track: Track = {
+      tracks.push({
         id: crypto.randomUUID(),
         rekordboxId: t.TrackID,
         title: t.Name ?? 'Unknown title',
@@ -117,7 +129,10 @@ export async function importFromXml(
         bpm: parseFloat(t.AverageBpm ?? '0'),
         key: openNotationToCamelot(t.Tonality ?? '') ?? '',
         keyOpenNotation: t.Tonality || undefined,
-        energy: parseInt(t.Energy ?? '5', 10) || 5,
+        // Rekordbox's Energy tag is discarded — the background analyser computes
+        // a real score from loudness + BPM. 5 is a neutral placeholder until then.
+        energy: 5,
+        energySource: 'pending',
         duration: parseFloat(t.TotalTime ?? '0'),
         filePath,
         fileSize: t.Size ? parseInt(t.Size, 10) : undefined,
@@ -132,71 +147,32 @@ export async function importFromXml(
         comment: t.Comments || undefined,
         label: t.Label || undefined,
         color: t.Colour || undefined,
-      }
-
-      tracks.push(track)
+        missingFile: false, // health check will update this right after import
+      })
     } catch {
       errors++
     }
+
+    // Yield periodically during the parse loop so the event loop stays responsive
+    if (i > 0 && i % PARSE_YIELD_EVERY === 0) {
+      onProgress({ processed: i, total, phase: 'parsing' })
+      await yieldToEventLoop()
+    }
   }
 
-  // 3. Batch write with progress events every 100 tracks
+  // 3. Batch write to SQLite with yield between batches.
+  // batchInsertTracks (from queries.ts) handles all columns including missing_file.
   const BATCH = 100
-  const insert = db.prepare(`
-    INSERT OR REPLACE INTO tracks (
-      id, rekordbox_id, title, artist, album, genre, bpm, key, key_open,
-      energy, duration, file_path, file_size, bitrate, format,
-      album_art_path, album_art_url, play_count, rating, date_added,
-      last_played, comment, label, color, cue_points, hot_cues, beatgrid_offset
-    ) VALUES (
-      @id, @rekordbox_id, @title, @artist, @album, @genre, @bpm, @key, @key_open,
-      @energy, @duration, @file_path, @file_size, @bitrate, @format,
-      @album_art_path, @album_art_url, @play_count, @rating, @date_added,
-      @last_played, @comment, @label, @color, @cue_points, @hot_cues, @beatgrid_offset
-    )
-  `)
-
-  const insertBatch = db.transaction((batch: Track[]) => {
-    for (const track of batch) {
-      insert.run({
-        id: track.id,
-        rekordbox_id: track.rekordboxId ?? null,
-        title: track.title,
-        artist: track.artist,
-        album: track.album ?? null,
-        genre: track.genre ?? null,
-        bpm: track.bpm,
-        key: track.key,
-        key_open: track.keyOpenNotation ?? null,
-        energy: track.energy,
-        duration: track.duration,
-        file_path: track.filePath,
-        file_size: track.fileSize ?? null,
-        bitrate: track.bitrate ?? null,
-        format: track.format,
-        album_art_path: null,
-        album_art_url: null,
-        play_count: track.playCount,
-        rating: track.rating,
-        date_added: track.dateAdded,
-        last_played: null,
-        comment: track.comment ?? null,
-        label: track.label ?? null,
-        color: track.color ?? null,
-        cue_points: JSON.stringify(track.cuePoints),
-        hot_cues: JSON.stringify(track.hotCues),
-        beatgrid_offset: track.beatgridOffset ?? 0,
-      })
-    }
-  })
 
   for (let i = 0; i < tracks.length; i += BATCH) {
-    insertBatch(tracks.slice(i, i + BATCH))
+    batchInsertTracks(db, tracks.slice(i, i + BATCH))
     onProgress({ processed: Math.min(i + BATCH, tracks.length), total, phase: 'writing' })
+    await yieldToEventLoop()
   }
 
   onProgress({ processed: total, total, phase: 'done' })
+  await yieldToEventLoop()
 
   const stats = getLibraryStats(db)
-  return { total, inserted: tracks.length, errors, missingFiles, stats }
+  return { total, inserted: tracks.length, errors, missingFiles: 0, stats }
 }

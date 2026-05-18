@@ -1,4 +1,4 @@
-import { HardDrive, Headphones, ShieldCheck, Sparkles, Zap } from 'lucide-react'
+import { Flag, HardDrive, ShieldCheck, Sparkles, Zap } from 'lucide-react'
 import { IconButton } from '@/components/shared/IconButton'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
@@ -43,7 +43,7 @@ export function BottomDock({ visible }: BottomDockProps): React.JSX.Element {
           {/* Cue editor — requires a selected timeline track */}
           <span className="dock-item" data-label="Cue editor">
             <IconButton
-              icon={Headphones}
+              icon={Flag}
               aria-label="Cue editor"
               disabled={!canOpenCueEditor}
               onClick={canOpenCueEditor ? () => showModal('cueEditor') : undefined}

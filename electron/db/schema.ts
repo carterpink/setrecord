@@ -31,7 +31,9 @@ function createSchema(db: Database.Database): void {
       bpm REAL NOT NULL DEFAULT 0,
       key TEXT,
       key_open TEXT,
-      energy INTEGER DEFAULT 5,
+      energy INTEGER,
+      energy_raw REAL,
+      energy_source TEXT DEFAULT 'pending',
       duration REAL NOT NULL DEFAULT 0,
       file_path TEXT NOT NULL UNIQUE,
       file_size INTEGER,
@@ -49,7 +51,10 @@ function createSchema(db: Database.Database): void {
       cue_points TEXT DEFAULT '[]',
       hot_cues TEXT DEFAULT '[]',
       beatgrid_offset REAL DEFAULT 0,
-      art_gradient TEXT
+      art_gradient TEXT,
+      missing_file INTEGER NOT NULL DEFAULT 0,
+      phantom INTEGER NOT NULL DEFAULT 0,
+      discover_meta TEXT
     );
 
     CREATE TABLE IF NOT EXISTS sets (
@@ -91,6 +96,20 @@ function createSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_tracks_artist ON tracks(artist);
     CREATE INDEX IF NOT EXISTS idx_tracks_energy ON tracks(energy);
     CREATE INDEX IF NOT EXISTS idx_set_tracks_set_id ON set_tracks(set_id);
+
+    CREATE TABLE IF NOT EXISTS usb_devices (
+      id TEXT PRIMARY KEY,
+      label TEXT NOT NULL,
+      custom_name TEXT,
+      is_favorite INTEGER NOT NULL DEFAULT 0,
+      is_export_target INTEGER NOT NULL DEFAULT 0,
+      last_seen TEXT NOT NULL,
+      export_count INTEGER NOT NULL DEFAULT 0,
+      last_export TEXT,
+      read_speed_mbps REAL,
+      write_speed_mbps REAL,
+      speed_tested_at TEXT
+    );
 
     CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY);
     INSERT OR IGNORE INTO schema_version VALUES (1);

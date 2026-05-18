@@ -5,16 +5,21 @@ interface EnergyBarProps {
   level: number
   /** Total segments. Defaults to 4 — matches the design system. */
   max?: number
+  /** Render segments left-to-right instead of bottom-up. */
+  horizontal?: boolean
   className?: string
+  style?: React.CSSProperties
+  title?: string
 }
 
-/**
- * 4-segment vertical bar (column-reverse so it fills bottom-up).
- * Lit segments use the chartreuse accent.
- */
-export function EnergyBar({ level, max = 4, className }: EnergyBarProps): React.JSX.Element {
+export function EnergyBar({ level, max = 4, horizontal, className, style, title }: EnergyBarProps): React.JSX.Element {
   return (
-    <span className={clsx('ebar', className)} aria-label={`Energy ${level} of ${max}`}>
+    <span
+      className={clsx('ebar', horizontal && 'h', className)}
+      style={style}
+      aria-label={`Energy ${level} of ${max}`}
+      title={title}
+    >
       {Array.from({ length: max }).map((_, i) => (
         <span key={i} className={i < level ? 'on' : undefined} />
       ))}

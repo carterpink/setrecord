@@ -19,6 +19,9 @@ export interface HotCue {
 
 export type AudioFormat = 'mp3' | 'aiff' | 'wav' | 'flac' | 'm4a' | 'unknown'
 
+/** Where the current `energy` value came from. */
+export type EnergySource = 'pending' | 'computed' | 'failed' | 'missing'
+
 // ───────── Track ─────────
 
 export interface Track {
@@ -33,6 +36,10 @@ export interface Track {
   key: string
   keyOpenNotation?: string // e.g. "Am", "C#maj"
   energy: number // 1-10
+  /** Continuous score from the auto analyser, kept for transparency / debugging. */
+  energyRaw?: number
+  /** Provenance: 'pending' until the background analyser writes 'computed' / 'failed' / 'missing'. */
+  energySource?: EnergySource
   duration: number // seconds
   filePath: string // absolute path on disk
   fileSize?: number // bytes
@@ -52,6 +59,18 @@ export interface Track {
   color?: string // Rekordbox colour tag
   /** Phase 1 placeholder; deterministic gradient until real artwork loads. */
   artGradient?: string
+  /** True when the file at filePath could not be found on disk at last check. */
+  missingFile?: boolean
+  /** True when this track was imported from Discover with no library match. */
+  phantom?: boolean
+  /** Populated for phantom tracks — links to buy/download and source set context. */
+  discoverMeta?: {
+    discoverSetId: string
+    discoverSetTitle: string
+    beatportUrl: string
+    soundcloudUrl: string
+    youtubeUrl: string
+  }
 }
 
 // ───────── Set ─────────
@@ -183,6 +202,7 @@ export interface ImportResult {
 export interface ValidationIssue {
   trackId: string
   trackTitle: string
+  type: 'missing_file' | 'unsupported_format' | 'bitrate' | 'no_bpm' | 'duration' | 'hot_cues'
   severity: 'blocking' | 'warning'
   message: string
 }
@@ -196,6 +216,7 @@ export interface ValidationResult {
 export interface ExportResult {
   success: boolean
   filePath?: string
+  trackCount?: number
   error?: string
 }
 
@@ -218,6 +239,127 @@ export interface ArchitectParams {
 
 // ───────── App-shell UI state ─────────
 
-export type AppMode = 'Prepare' | 'Play'
+export type AppMode = 'Prepare' | 'Discover'
 export type LibraryTab = 'Library' | 'Sets'
 export type TimelineCurveView = 'Energy' | 'BPM'
+
+// ───────── Discover ─────────
+
+export type DiscoverTab = 'following' | 'explore'
+export type DiscoverSortMode = 'recommended' | 'newest' | 'mostViewed'
+
+export interface DiscoverFilters {
+  genres: string[]
+  durationBuckets: Array<'<60' | '60-120' | '120-180' | '>180'>
+  minViews: number
+  uploadedSince: 'week' | 'month' | 'year' | 'all'
+}
+
+export type ClarityKind = 'following-dj' | 'plays-artist' | 'matches-genre' | 'trending'
+
+export interface ClarityReason {
+  kind: ClarityKind
+  label: string
+  tooltip: string
+  matchedValue?: string
+}
+
+export interface DiscoverTrack {
+  id: string
+  position: number
+  artist: string
+  title: string
+  rawText: string
+  startSeconds?: number
+  durationSeconds?: number
+  confidence: number
+}
+
+export interface DiscoverSet {
+  id: string
+  videoId: string
+  title: string
+  djName: string
+  eventName?: string
+  description: string
+  thumbnailUrl: string
+  durationSeconds: number
+  viewCount: number
+  likeCount?: number
+  uploadedAt: string
+  tags: string[]
+  tracklist: DiscoverTrack[]
+  tracklistConfidence: number
+  tracklistSource?: 'description' | 'comments' | 'mixed'
+  clarity: ClarityReason
+}
+
+export interface TasteProfile {
+  favouriteArtists: string[]
+  favouriteGenres: string[]
+  followedDJs: string[]
+}
+
+export interface DiscoverTrackMatch {
+  discoverTrack: DiscoverTrack
+  match: Track | null
+  score: number
+}
+
+export interface BulkImportPreview {
+  setName: string
+  matches: DiscoverTrackMatch[]
+  matchedCount: number
+  unmatchedCount: number
+  alreadyInSetCount: number
+}
+
+// ───────── USB Devices ─────────
+
+export type USBSpeedConfidence = 'high' | 'medium' | 'low' | 'untested'
+export type USBSpeedStatus = 'optimal' | 'acceptable' | 'slow'
+export type USBFilesystemCompatibility = 'optimal' | 'compatible' | 'limited' | 'warning'
+
+/** Live device info merged with persisted user prefs */
+export interface USBDevice {
+  id: string
+  mountPath: string
+  label: string
+  totalBytes: number
+  freeBytes: number
+  usedBytes: number
+  percentUsed: number
+  filesystem: string
+  protocol: string
+  speedConfidence: USBSpeedConfidence
+  // Persisted prefs (merged from DB)
+  customName?: string
+  isFavorite: boolean
+  isExportTarget: boolean
+  exportCount: number
+  lastExport?: string
+  lastSeen?: string
+  readSpeedMBps?: number
+  writeSpeedMBps?: number
+  speedTestedAt?: string
+}
+
+/** A past device no longer connected but remembered in DB */
+export interface RememberedUSBDevice {
+  id: string
+  label: string
+  customName?: string
+  isFavorite: boolean
+  isExportTarget: boolean
+  exportCount: number
+  lastExport?: string
+  lastSeen: string
+  readSpeedMBps?: number
+  writeSpeedMBps?: number
+}
+
+export interface USBCopyResult {
+  success: boolean
+  destPath?: string
+  error?: string
+}

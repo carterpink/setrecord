@@ -61,7 +61,10 @@ export function getSuggestions(
   const nextPosition = set.tracks.length  // 0-indexed position of the next slot
 
   const candidates = library.filter(
-    (t) => !inSetIds.has(t.id) && Math.abs(t.bpm - currentTrack.bpm) <= 16,
+    (t) =>
+      !inSetIds.has(t.id) &&
+      !t.missingFile &&
+      Math.abs(t.bpm - currentTrack.bpm) <= 16,
   )
 
   interface Scored {

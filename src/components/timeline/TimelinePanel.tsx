@@ -110,10 +110,11 @@ export function TimelinePanel(): React.JSX.Element {
         ) : (
           <>
             <SortableContext items={setTrackIds} strategy={verticalListSortingStrategy}>
-              {tracks.map((st) => (
+              {tracks.map((st, idx) => (
                 <TimelineTrackCard
                   key={st.id}
                   setTrack={st}
+                  previousTrack={idx > 0 ? tracks[idx - 1].track : undefined}
                   isSelected={selectedTrackId === st.id}
                   onSelect={() => setSelectedTrack(st.id)}
                   onRemove={() => removeTrack(st.id)}

@@ -12,7 +12,20 @@
       "Bash(npm run *)",
       "Bash(node -e \"const WS = require\\('wavesurfer.js'\\); console.log\\(Object.keys\\(WS\\)\\)\")",
       "Bash(git -C /Users/samcarter/Documents/SetSenseV2 checkout -b feat/phase-6-cue-points-preview)",
-      "Bash(rm /Users/samcarter/Documents/SetSenseV2/.git/index.lock && echo \"removed\")"
+      "Bash(rm /Users/samcarter/Documents/SetSenseV2/.git/index.lock && echo \"removed\")",
+      "Bash(awk '/^\\\\/Users/{file=$0} /error\\\\s/{print file\" :: \"$0}')",
+      "Bash(git stash *)",
+      "Bash(git checkout *)",
+      "Bash(awk '/^\\\\/Users/{file=$0} /error\\\\s+[A-Z]/{print file\":\"$0}' /tmp/lint-raw-before.txt)",
+      "Bash(awk '/^\\\\/Users/{file=$0} /error\\\\s+[A-Z]/{print file\":\"$0}' /tmp/lint-raw-after.txt)",
+      "Bash(awk 'BEGIN{file=\"\"} /^\\\\/Users/{file=$0; next} / error / {gsub\\(/^ +/,\"\"\\); print file\" | \"$0}' /tmp/lint-raw-before.txt)",
+      "Bash(awk 'BEGIN{file=\"\"} /^\\\\/Users/{file=$0; next} / error / {gsub\\(/^ +/,\"\"\\); print file\" | \"$0}' /tmp/lint-raw-after.txt)",
+      "Bash(awk '/^\\\\/Users.*\\(SettingsModal|TracklistRow|SetDetailsModal|discoverStore|settingsService|DiscoverFilters|DiscoverPanel|discoverGenres\\)/{file=$0; show=1; next} /^$/{show=0} show && /error /{print file\":\"$0}' /tmp/lint-raw-after.txt)",
+      "Bash(awk '/^\\\\/Users.*discoverStore/{file=$0; show=1; next} /^\\\\/Users/{show=0} /^$/{show=0} show {print}' /tmp/lint-raw-after.txt)",
+      "Bash(awk '/^\\\\/Users.*\\(DiscoverPanel|TracklistRow|DiscoverFilters|settingsService|discoverGenres\\)/{file=$0; show=1; next} /^\\\\/Users/{show=0} /^$/{show=0} show && /error /{print file \" :: \" $0}' /tmp/lint-raw-after.txt)",
+      "Bash(awk '/^\\\\/Users/{file=$0} / error /{e[file]++} END{for\\(f in e\\) print e[f], f}' /tmp/lint-raw-before.txt)",
+      "Bash(awk '/^\\\\/Users/{file=$0} / error /{e[file]++} END{for\\(f in e\\) print e[f], f}' /tmp/lint-raw-after.txt)",
+      "Bash(awk '/^\\\\/Users/{f=$0} /error/{print f\": \"$0}')"
     ]
   }
 }

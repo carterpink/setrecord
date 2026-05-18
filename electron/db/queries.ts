@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3'
-import type { LibraryFilters, LibraryStats, Track, SetTrack, Set as DJSet, CuePoint, HotCue } from '../../src/types'
+import type { LibraryFilters, LibraryStats, Track, SetTrack, Set as DJSet, CuePoint, HotCue, EnergySource } from '../../src/types'
 
 // ───────── Row → Track ─────────
 
@@ -14,7 +14,9 @@ function rowToTrack(row: Record<string, unknown>): Track {
     bpm: row.bpm as number,
     key: (row.key as string) ?? '',
     keyOpenNotation: (row.key_open as string) || undefined,
-    energy: (row.energy as number) ?? 5,
+    energy: (row.energy as number | null) ?? 5,
+    energyRaw: (row.energy_raw as number | null) ?? undefined,
+    energySource: ((row.energy_source as EnergySource | null) ?? 'pending') as EnergySource,
     duration: row.duration as number,
     filePath: row.file_path as string,
     fileSize: (row.file_size as number) || undefined,
@@ -33,6 +35,11 @@ function rowToTrack(row: Record<string, unknown>): Track {
     label: (row.label as string) || undefined,
     color: (row.color as string) || undefined,
     artGradient: row.art_gradient as string | undefined,
+    missingFile: Boolean(row.missing_file),
+    phantom: Boolean(row.phantom),
+    discoverMeta: row.discover_meta
+      ? (JSON.parse(row.discover_meta as string) as Track['discoverMeta'])
+      : undefined,
   }
 }
 
@@ -49,7 +56,9 @@ function trackToRow(track: Track): Record<string, unknown> {
     bpm: track.bpm,
     key: track.key,
     key_open: track.keyOpenNotation ?? null,
-    energy: track.energy,
+    energy: track.energy ?? null,
+    energy_raw: track.energyRaw ?? null,
+    energy_source: track.energySource ?? 'pending',
     duration: track.duration,
     file_path: track.filePath,
     file_size: track.fileSize ?? null,
@@ -68,6 +77,9 @@ function trackToRow(track: Track): Record<string, unknown> {
     hot_cues: JSON.stringify(track.hotCues),
     beatgrid_offset: track.beatgridOffset ?? 0,
     art_gradient: track.artGradient ?? null,
+    missing_file: track.missingFile ? 1 : 0,
+    phantom: track.phantom ? 1 : 0,
+    discover_meta: track.discoverMeta ? JSON.stringify(track.discoverMeta) : null,
   }
 }
 
@@ -76,14 +88,16 @@ function trackToRow(track: Track): Record<string, unknown> {
 const INSERT_TRACK = `
   INSERT OR REPLACE INTO tracks (
     id, rekordbox_id, title, artist, album, genre, bpm, key, key_open,
-    energy, duration, file_path, file_size, bitrate, format,
+    energy, energy_raw, energy_source, duration, file_path, file_size, bitrate, format,
     album_art_path, album_art_url, play_count, rating, date_added,
-    last_played, comment, label, color, cue_points, hot_cues, beatgrid_offset
+    last_played, comment, label, color, cue_points, hot_cues, beatgrid_offset,
+    missing_file, phantom, discover_meta
   ) VALUES (
     @id, @rekordbox_id, @title, @artist, @album, @genre, @bpm, @key, @key_open,
-    @energy, @duration, @file_path, @file_size, @bitrate, @format,
+    @energy, @energy_raw, @energy_source, @duration, @file_path, @file_size, @bitrate, @format,
     @album_art_path, @album_art_url, @play_count, @rating, @date_added,
-    @last_played, @comment, @label, @color, @cue_points, @hot_cues, @beatgrid_offset
+    @last_played, @comment, @label, @color, @cue_points, @hot_cues, @beatgrid_offset,
+    @missing_file, @phantom, @discover_meta
   )
 `
 
@@ -174,10 +188,11 @@ const SET_TRACKS_JOIN = `
     st.id as st_id, st.set_id, st.track_id, st.position,
     st.energy_override, st.notes, st.transition_score,
     t.id as t_id, t.title, t.artist, t.album, t.genre,
-    t.bpm, t.key, t.key_open, t.energy, t.duration, t.file_path,
+    t.bpm, t.key, t.key_open, t.energy, t.energy_raw, t.energy_source, t.duration, t.file_path,
     t.file_size, t.bitrate, t.format, t.album_art_path, t.album_art_url,
     t.play_count, t.rating, t.date_added, t.last_played, t.comment,
-    t.label, t.color, t.cue_points, t.hot_cues, t.beatgrid_offset, t.art_gradient
+    t.label, t.color, t.cue_points, t.hot_cues, t.beatgrid_offset, t.art_gradient,
+    t.missing_file, t.phantom, t.discover_meta
   FROM set_tracks st
   JOIN tracks t ON t.id = st.track_id
   WHERE st.set_id = @setId
@@ -195,7 +210,9 @@ function rowToSetTrack(row: Record<string, unknown>): SetTrack {
     bpm: row.bpm as number,
     key: (row.key as string) ?? '',
     keyOpenNotation: (row.key_open as string) || undefined,
-    energy: (row.energy as number) ?? 5,
+    energy: (row.energy as number | null) ?? 5,
+    energyRaw: (row.energy_raw as number | null) ?? undefined,
+    energySource: ((row.energy_source as EnergySource | null) ?? 'pending') as EnergySource,
     duration: row.duration as number,
     filePath: row.file_path as string,
     fileSize: (row.file_size as number) || undefined,
@@ -214,6 +231,11 @@ function rowToSetTrack(row: Record<string, unknown>): SetTrack {
     label: (row.label as string) || undefined,
     color: (row.color as string) || undefined,
     artGradient: row.art_gradient as string | undefined,
+    missingFile: Boolean(row.missing_file),
+    phantom: Boolean(row.phantom),
+    discoverMeta: row.discover_meta
+      ? (JSON.parse(row.discover_meta as string) as Track['discoverMeta'])
+      : undefined,
   }
   return {
     id: row.st_id as string,
@@ -243,6 +265,7 @@ function rowToSet(row: Record<string, unknown>, tracks: SetTrack[]): DJSet {
     slotTime: (row.slot_time as string) || undefined,
     energyCurveType: (row.energy_curve_type as DJSet['energyCurveType']) || undefined,
     targetHardware: (row.target_hardware as DJSet['targetHardware']) || 'CDJ-2000NXS2',
+    safetyScore: row.safety_score != null ? (row.safety_score as number) : undefined,
   }
 }
 
@@ -271,10 +294,10 @@ export function saveSet(db: Database.Database, set: DJSet): void {
     db.prepare(`
       INSERT INTO sets (id, name, created_at, updated_at, target_duration,
         target_bpm_min, target_bpm_max, vibe, venue, slot_time,
-        energy_curve_type, target_hardware)
+        energy_curve_type, target_hardware, safety_score)
       VALUES (@id, @name, @created_at, @updated_at, @target_duration,
         @target_bpm_min, @target_bpm_max, @vibe, @venue, @slot_time,
-        @energy_curve_type, @target_hardware)
+        @energy_curve_type, @target_hardware, @safety_score)
       ON CONFLICT(id) DO UPDATE SET
         name = excluded.name,
         updated_at = excluded.updated_at,
@@ -285,7 +308,8 @@ export function saveSet(db: Database.Database, set: DJSet): void {
         venue = excluded.venue,
         slot_time = excluded.slot_time,
         energy_curve_type = excluded.energy_curve_type,
-        target_hardware = excluded.target_hardware
+        target_hardware = excluded.target_hardware,
+        safety_score = excluded.safety_score
     `).run({
       id: set.id,
       name: set.name,
@@ -299,9 +323,20 @@ export function saveSet(db: Database.Database, set: DJSet): void {
       slot_time: set.slotTime ?? null,
       energy_curve_type: set.energyCurveType ?? null,
       target_hardware: set.targetHardware ?? 'CDJ-2000NXS2',
+      safety_score: set.safetyScore ?? null,
     })
 
     db.prepare('DELETE FROM set_tracks WHERE set_id = ?').run(set.id)
+
+    // Upsert phantom tracks so the set_tracks FK can resolve. Phantom tracks
+    // originate in the renderer (Discover feature) and may not yet exist in the
+    // tracks table on first save.
+    const upsertPhantom = db.prepare(INSERT_TRACK)
+    for (const st of set.tracks) {
+      if (st.track.phantom) {
+        upsertPhantom.run(trackToRow(st.track))
+      }
+    }
 
     const insertTrack = db.prepare(`
       INSERT INTO set_tracks (id, set_id, track_id, position, energy_override, notes, transition_score)
@@ -326,6 +361,49 @@ export function deleteSet(db: Database.Database, id: string): void {
   db.prepare('DELETE FROM sets WHERE id = ?').run(id)
 }
 
+// ───────── File health ─────────
+
+/** Update the missing_file flag for a single track. */
+export function setTrackMissingFile(
+  db: Database.Database,
+  trackId: string,
+  missing: boolean
+): void {
+  db.prepare('UPDATE tracks SET missing_file = ? WHERE id = ?').run(missing ? 1 : 0, trackId)
+}
+
+/**
+ * Walk every track in the DB, check existsSync, update missing_file where the
+ * status has changed. Returns an array of { id, missing } for every track whose
+ * status changed so the caller can push events to the renderer.
+ */
+export function runFileHealthCheck(
+  db: Database.Database
+): Array<{ id: string; missing: boolean }> {
+  const { existsSync } = require('fs') as typeof import('fs')
+  // Skip phantom tracks (file_path is a `discover://...` sentinel, not a real file)
+  const rows = db
+    .prepare('SELECT id, file_path, missing_file FROM tracks WHERE phantom = 0')
+    .all() as Array<{ id: string; file_path: string; missing_file: number }>
+
+  const changed: Array<{ id: string; missing: boolean }> = []
+  const update = db.prepare('UPDATE tracks SET missing_file = ? WHERE id = ?')
+
+  const tx = db.transaction(() => {
+    for (const row of rows) {
+      const nowMissing = !existsSync(row.file_path)
+      const wasMissing = row.missing_file === 1
+      if (nowMissing !== wasMissing) {
+        update.run(nowMissing ? 1 : 0, row.id)
+        changed.push({ id: row.id, missing: nowMissing })
+      }
+    }
+  })
+  tx()
+
+  return changed
+}
+
 // ───────── Cue point updates ─────────
 
 export function updateTrackCues(
@@ -336,4 +414,180 @@ export function updateTrackCues(
 ): void {
   db.prepare('UPDATE tracks SET cue_points = ?, hot_cues = ? WHERE id = ?')
     .run(JSON.stringify(cuePoints), JSON.stringify(hotCues), trackId)
+}
+
+// ───────── Energy analysis ─────────
+
+export function updateTrackEnergy(
+  db: Database.Database,
+  trackId: string,
+  energy: number,
+  energyRaw: number | null,
+  source: EnergySource
+): void {
+  db.prepare(
+    'UPDATE tracks SET energy = ?, energy_raw = ?, energy_source = ? WHERE id = ?'
+  ).run(energy, energyRaw, source, trackId)
+}
+
+export interface PendingEnergyRow {
+  id: string
+  filePath: string
+  bpm: number
+  missingFile: number
+}
+
+export function getPendingEnergyTracks(db: Database.Database): PendingEnergyRow[] {
+  const rows = db
+    .prepare(
+      `SELECT id, file_path, bpm, missing_file
+       FROM tracks
+       WHERE (energy_source = 'pending' OR energy_source IS NULL) AND phantom = 0
+       ORDER BY date_added DESC`
+    )
+    .all() as Array<{ id: string; file_path: string; bpm: number; missing_file: number }>
+  return rows.map((r) => ({
+    id: r.id,
+    filePath: r.file_path,
+    bpm: r.bpm,
+    missingFile: r.missing_file,
+  }))
+}
+
+export function countPendingEnergyTracks(db: Database.Database): number {
+  const row = db
+    .prepare(
+      "SELECT COUNT(*) as n FROM tracks WHERE (energy_source = 'pending' OR energy_source IS NULL) AND phantom = 0"
+    )
+    .get() as { n: number }
+  return row.n
+}
+
+// ───────── USB devices ─────────
+
+export interface USBDeviceRow {
+  id: string
+  label: string
+  customName?: string
+  isFavorite: boolean
+  isExportTarget: boolean
+  lastSeen: string
+  exportCount: number
+  lastExport?: string
+  readSpeedMBps?: number
+  writeSpeedMBps?: number
+  speedTestedAt?: string
+}
+
+function rowToUSBDevice(row: Record<string, unknown>): USBDeviceRow {
+  return {
+    id: row.id as string,
+    label: row.label as string,
+    customName: (row.custom_name as string) || undefined,
+    isFavorite: Boolean(row.is_favorite),
+    isExportTarget: Boolean(row.is_export_target),
+    lastSeen: row.last_seen as string,
+    exportCount: (row.export_count as number) ?? 0,
+    lastExport: (row.last_export as string) || undefined,
+    readSpeedMBps: (row.read_speed_mbps as number) || undefined,
+    writeSpeedMBps: (row.write_speed_mbps as number) || undefined,
+    speedTestedAt: (row.speed_tested_at as string) || undefined,
+  }
+}
+
+export function getUSBDevice(db: Database.Database, id: string): USBDeviceRow | undefined {
+  const row = db.prepare('SELECT * FROM usb_devices WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined
+  return row ? rowToUSBDevice(row) : undefined
+}
+
+export function getAllRememberedUSBDevices(db: Database.Database): USBDeviceRow[] {
+  const rows = db
+    .prepare('SELECT * FROM usb_devices ORDER BY last_seen DESC')
+    .all() as Record<string, unknown>[]
+  return rows.map(rowToUSBDevice)
+}
+
+export function upsertUSBDevice(db: Database.Database, device: Partial<USBDeviceRow> & { id: string; label: string }): void {
+  const now = new Date().toISOString()
+  db.prepare(`
+    INSERT INTO usb_devices
+      (id, label, custom_name, is_favorite, is_export_target, last_seen,
+       export_count, last_export, read_speed_mbps, write_speed_mbps, speed_tested_at)
+    VALUES
+      (@id, @label, @customName, @isFavorite, @isExportTarget, @lastSeen,
+       @exportCount, @lastExport, @readSpeedMBps, @writeSpeedMBps, @speedTestedAt)
+    ON CONFLICT(id) DO UPDATE SET
+      label            = excluded.label,
+      custom_name      = COALESCE(excluded.custom_name, custom_name),
+      is_favorite      = excluded.is_favorite,
+      is_export_target = excluded.is_export_target,
+      last_seen        = excluded.last_seen,
+      export_count     = excluded.export_count,
+      last_export      = COALESCE(excluded.last_export, last_export),
+      read_speed_mbps  = COALESCE(excluded.read_speed_mbps, read_speed_mbps),
+      write_speed_mbps = COALESCE(excluded.write_speed_mbps, write_speed_mbps),
+      speed_tested_at  = COALESCE(excluded.speed_tested_at, speed_tested_at)
+  `).run({
+    id: device.id,
+    label: device.label,
+    customName: device.customName ?? null,
+    isFavorite: device.isFavorite ? 1 : 0,
+    isExportTarget: device.isExportTarget ? 1 : 0,
+    lastSeen: device.lastSeen ?? now,
+    exportCount: device.exportCount ?? 0,
+    lastExport: device.lastExport ?? null,
+    readSpeedMBps: device.readSpeedMBps ?? null,
+    writeSpeedMBps: device.writeSpeedMBps ?? null,
+    speedTestedAt: device.speedTestedAt ?? null,
+  })
+}
+
+export function updateUSBPrefs(
+  db: Database.Database,
+  id: string,
+  prefs: { customName?: string | null; isFavorite?: boolean; isExportTarget?: boolean }
+): void {
+  const parts: string[] = []
+  const params: Record<string, unknown> = { id }
+
+  if ('customName' in prefs) {
+    parts.push('custom_name = @customName')
+    params.customName = prefs.customName ?? null
+  }
+  if (prefs.isFavorite !== undefined) {
+    parts.push('is_favorite = @isFavorite')
+    params.isFavorite = prefs.isFavorite ? 1 : 0
+  }
+  if (prefs.isExportTarget !== undefined) {
+    parts.push('is_export_target = @isExportTarget')
+    params.isExportTarget = prefs.isExportTarget ? 1 : 0
+  }
+
+  if (parts.length === 0) return
+  db.prepare(`UPDATE usb_devices SET ${parts.join(', ')} WHERE id = @id`).run(params)
+}
+
+export function updateUSBSpeedResult(
+  db: Database.Database,
+  id: string,
+  readMBps: number,
+  writeMBps: number
+): void {
+  const now = new Date().toISOString()
+  db.prepare(
+    'UPDATE usb_devices SET read_speed_mbps = ?, write_speed_mbps = ?, speed_tested_at = ? WHERE id = ?'
+  ).run(readMBps, writeMBps, now, id)
+}
+
+export function recordUSBExport(db: Database.Database, id: string): void {
+  const now = new Date().toISOString()
+  db.prepare(
+    'UPDATE usb_devices SET export_count = export_count + 1, last_export = ? WHERE id = ?'
+  ).run(now, id)
+}
+
+export function forgetUSBDevice(db: Database.Database, id: string): void {
+  db.prepare('DELETE FROM usb_devices WHERE id = ?').run(id)
 }

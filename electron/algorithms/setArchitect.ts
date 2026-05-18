@@ -75,7 +75,10 @@ function findBetterTrack(
 export function buildSet(params: ArchitectParams, library: Track[]): SetTrack[] {
   // Step 1: Filter library to BPM window (±5 tolerance around the requested range)
   const filtered = library.filter(
-    (t) => t.bpm >= params.bpmMin - 5 && t.bpm <= params.bpmMax + 5,
+    (t) =>
+      !t.missingFile &&
+      t.bpm >= params.bpmMin - 5 &&
+      t.bpm <= params.bpmMax + 5,
   )
   if (filtered.length === 0) return []
 

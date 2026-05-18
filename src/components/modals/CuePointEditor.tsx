@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight, Pause, Play, X } from 'lucide-react'
 import type { CuePoint, HotCue, Track } from '@/types'
 import { Waveform } from '@/components/shared/Waveform'
+import { motion, modalBackdrop, modalPanel } from '@/components/shared/Motion'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
@@ -100,9 +101,20 @@ export function CuePointEditor(): React.JSX.Element {
   }
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div
+    <motion.div
+      className="modal-overlay"
+      variants={modalBackdrop}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      onClick={handleClose}
+    >
+      <motion.div
         className="modal glass-3"
+        variants={modalPanel}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
         style={{ maxWidth: 640, width: '90vw' }}
         role="dialog"
         aria-modal="true"
@@ -147,7 +159,7 @@ export function CuePointEditor(): React.JSX.Element {
                 }}
               >
                 <Waveform
-                  src={'media://' + track.filePath}
+                  filePath={track.filePath}
                   cuePoints={cuePoints}
                   hotCues={hotCues}
                   playing={playing}
@@ -279,7 +291,8 @@ export function CuePointEditor(): React.JSX.Element {
                           flexDirection: 'column',
                           alignItems: 'center',
                           gap: 4,
-                          transition: 'all 150ms cubic-bezier(0.32,0.72,0,1)',
+                          transition:
+                            'background-color 150ms cubic-bezier(0.32,0.72,0.12,1), border-color 150ms cubic-bezier(0.32,0.72,0.12,1), transform 150ms cubic-bezier(0.32,0.72,0.12,1)',
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -325,7 +338,7 @@ export function CuePointEditor(): React.JSX.Element {
             </>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

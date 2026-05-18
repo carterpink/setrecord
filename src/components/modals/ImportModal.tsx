@@ -3,6 +3,7 @@ import { useLibraryStore } from '@/stores/libraryStore'
 import { useUiStore } from '@/stores/uiStore'
 import { Button } from '@/components/shared/Button'
 import { IconButton } from '@/components/shared/IconButton'
+import { motion, modalBackdrop, modalPanel } from '@/components/shared/Motion'
 import { formatTotalDuration } from '@/utils/format'
 
 /**
@@ -24,8 +25,23 @@ export function ImportModal(): React.JSX.Element {
   const isActive = importProgress && !isDone
 
   return (
-    <div className="modal-overlay">
-      <div className="modal glass-3" role="dialog" aria-modal="true" aria-label="Import library">
+    <motion.div
+      className="modal-overlay"
+      variants={modalBackdrop}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+    >
+      <motion.div
+        className="modal glass-3"
+        variants={modalPanel}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Import library"
+      >
         {/* Header */}
         <div className="modal-header">
           <span className="ss-h2">Import library</span>
@@ -111,7 +127,7 @@ export function ImportModal(): React.JSX.Element {
             </Button>
           </div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

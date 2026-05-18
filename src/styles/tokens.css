@@ -139,9 +139,7 @@
   --glass-3-bg: rgba(30, 34, 48, 0.7);
   --glass-3-blur: blur(40px) saturate(180%);
   --glass-3-border: 0.5px solid rgba(255, 255, 255, 0.14);
-  --glass-3-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --glass-3-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   /* -------- Motion -------- */
   --ease-expo: cubic-bezier(0.32, 0.72, 0, 1);
@@ -150,6 +148,57 @@
   --dur-state: 220ms;
   --dur-panel: 320ms;
   --dur-reveal: 500ms;
+  /* Snappy ease-out — primary easing for entries and snappy transitions */
+  --ease-snappy: cubic-bezier(0.32, 0.72, 0.12, 1);
+  /* Smoother ease-out — for graceful reveals */
+  --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  /* Symmetric in-out — for ping-pong or layout transitions */
+  --ease-inout: cubic-bezier(0.42, 0, 0.58, 1);
+  /* Quick feedback durations */
+  --dur-instant: 100ms;
+  --dur-press: 80ms;
+  /* Modal panel entry */
+  --dur-modal: 400ms;
+  /* Cinematic reveals */
+  --dur-cinematic: 600ms;
+}
+
+/* ============================================================
+   Light theme overrides
+   ============================================================ */
+
+[data-theme='light'] {
+  --aurora-teal: #e7f6fb;
+  --aurora-indigo: #f1eefc;
+  --aurora-magenta: #fff0f5;
+  --aurora-black: #fbfaf6;
+
+  --surface-0: transparent;
+  --surface-1: rgba(248, 248, 255, 0.7);
+  --surface-2: rgba(238, 240, 255, 0.75);
+  --surface-3: rgba(228, 232, 255, 0.85);
+
+  --border-subtle: rgba(0, 0, 20, 0.06);
+  --border-default: rgba(0, 0, 20, 0.1);
+  --border-emphasis: rgba(0, 0, 20, 0.18);
+
+  --text-primary: rgba(8, 8, 28, 0.92);
+  --text-secondary: rgba(8, 8, 28, 0.6);
+  --text-tertiary: rgba(8, 8, 28, 0.4);
+  --text-disabled: rgba(8, 8, 28, 0.25);
+
+  --glass-1-bg: rgba(248, 248, 255, 0.55);
+  --glass-1-blur: blur(20px) saturate(120%);
+  --glass-1-border: 0.5px solid rgba(0, 0, 20, 0.07);
+
+  --glass-2-bg: rgba(238, 240, 255, 0.68);
+  --glass-2-blur: blur(28px) saturate(130%);
+  --glass-2-border: 0.5px solid rgba(0, 0, 20, 0.1);
+
+  --glass-3-bg: rgba(228, 232, 255, 0.82);
+  --glass-3-blur: blur(40px) saturate(140%);
+  --glass-3-border: 0.5px solid rgba(0, 0, 20, 0.14);
+  --glass-3-shadow: 0 20px 60px rgba(0, 0, 40, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 /* ============================================================

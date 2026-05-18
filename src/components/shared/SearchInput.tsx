@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import { Search } from 'lucide-react'
+import { forwardRef } from 'react'
 import type { InputHTMLAttributes } from 'react'
 
 interface SearchInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'className'> {
@@ -8,21 +9,15 @@ interface SearchInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, '
   className?: string
 }
 
-/**
- * Glass-1 search field with a leading search icon and optional kbd hint.
- * Shortcut wiring (⌘K to focus) lands in Phase 8.
- */
-export function SearchInput({
-  kbd,
-  className,
-  placeholder = 'Search…',
-  ...rest
-}: SearchInputProps): React.JSX.Element {
+export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(function SearchInput(
+  { kbd, className, placeholder = 'Search…', ...rest },
+  ref,
+) {
   return (
     <label className={clsx('search-input', className)}>
       <Search className="search-icon" strokeWidth={1.5} aria-hidden="true" />
-      <input type="text" placeholder={placeholder} {...rest} />
+      <input ref={ref} type="text" placeholder={placeholder} {...rest} />
       {kbd ? <span className="kbd">{kbd}</span> : null}
     </label>
   )
-}
+})

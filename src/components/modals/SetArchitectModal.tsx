@@ -14,8 +14,12 @@ import { RangeSlider } from '@/components/shared/RangeSlider'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { Slider } from '@/components/shared/Slider'
 import { Toggle } from '@/components/shared/Toggle'
+import { motion, AnimatePresence, modalBackdrop, modalPanel } from '@/components/shared/Motion'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
+import { LearnPanel } from '@/components/learn/LearnPanel'
+import { explainEnergyArc } from '@/utils/learnMode/explanations'
+import { getTargetCurve } from '@/utils/energyCurve'
 
 const DEFAULT_PARAMS: ArchitectParams = {
   targetDuration: 60,
@@ -46,13 +50,15 @@ function formatMinutes(min: number): string {
 
 export function SetArchitectModal(): React.JSX.Element {
   const { closeModal } = useUiStore()
+  const learnModeEnabled = useUiStore((s) => s.learnModeEnabled)
   const { populateFromArchitect } = useSetStore()
 
-  const [step, setStep] = useState<1 | 2>(1)
+  const [step, setStep] = useState<1 | 2 | 3>(1)
   const [params, setParams] = useState<ArchitectParams>(DEFAULT_PARAMS)
   const [setName, setSetName] = useState('')
   const [isBuilding, setIsBuilding] = useState(false)
   const [buildError, setBuildError] = useState<string | null>(null)
+  const [resultTracks, setResultTracks] = useState<SetTrack[]>([])
 
   function patch<K extends keyof ArchitectParams>(key: K, value: ArchitectParams[K]) {
     setParams((p) => ({ ...p, [key]: value }))
@@ -72,20 +78,37 @@ export function SetArchitectModal(): React.JSX.Element {
         return
       }
       populateFromArchitect(setTracks, params, setName.trim() || undefined)
-      closeModal()
+      setIsBuilding(false)
+      if (learnModeEnabled) {
+        setResultTracks(setTracks)
+        setStep(3)
+      } else {
+        closeModal()
+      }
     } catch {
       setBuildError('Build failed. Try adjusting your BPM range or duration.')
       setIsBuilding(false)
     }
   }
 
-  const stepTitle = step === 1 ? 'Set the feel' : 'Set the shape'
-  const stepSubtitle = step === 1 ? 'Step 1 of 2' : 'Step 2 of 2'
+  const stepTitle = step === 1 ? 'Set the feel' : step === 2 ? 'Set the shape' : 'Set built'
+  const stepSubtitle = step === 1 ? 'Step 1 of 2' : step === 2 ? 'Step 2 of 2' : 'Result'
 
   return (
-    <div className="modal-overlay" onClick={closeModal}>
-      <div
+    <motion.div
+      className="modal-overlay"
+      variants={modalBackdrop}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      onClick={closeModal}
+    >
+      <motion.div
         className="modal glass-3"
+        variants={modalPanel}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
         style={{ maxWidth: 520 }}
         role="dialog"
         aria-modal="true"
@@ -104,6 +127,14 @@ export function SetArchitectModal(): React.JSX.Element {
         </div>
 
         <div className="modal-body">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.3, ease: [0.32, 0.72, 0.12, 1] }}
+            >
           {/* ── Step 1: Feel ── */}
           {step === 1 && (
             <>
@@ -158,6 +189,28 @@ export function SetArchitectModal(): React.JSX.Element {
                   style={{ width: '100%' }}
                 >
                   Next
+                </Button>
+              </div>
+            </>
+          )}
+
+          {/* ── Step 3: Result (Learn Mode) ── */}
+          {step === 3 && (
+            <>
+              <div className="arch-section-label">{stepTitle}</div>
+              <div className="ss-body-sm" style={{ marginBottom: 8, opacity: 0.75 }}>
+                Built a {resultTracks.length}-track set. Here&apos;s why this arrangement works.
+              </div>
+              <LearnPanel
+                explanation={explainEnergyArc(
+                  params.energyCurveType,
+                  getTargetCurve(params.energyCurveType, resultTracks.length),
+                  resultTracks,
+                )}
+              />
+              <div className="arch-actions" style={{ marginTop: 20 }}>
+                <Button variant="primary" onClick={closeModal} style={{ flex: 1 }}>
+                  View set
                 </Button>
               </div>
             </>
@@ -271,8 +324,10 @@ export function SetArchitectModal(): React.JSX.Element {
               </div>
             </>
           )}
+            </motion.div>
+          </AnimatePresence>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

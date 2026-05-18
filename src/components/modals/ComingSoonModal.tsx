@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import { Button } from '@/components/shared/Button'
 import { IconButton } from '@/components/shared/IconButton'
+import { motion, modalBackdrop, modalPanel } from '@/components/shared/Motion'
 import { useUiStore } from '@/stores/uiStore'
 
 interface Props {
@@ -12,9 +13,20 @@ export function ComingSoonModal({ feature, phase }: Props): React.JSX.Element {
   const { closeModal } = useUiStore()
 
   return (
-    <div className="modal-overlay" onClick={closeModal}>
-      <div
+    <motion.div
+      className="modal-overlay"
+      variants={modalBackdrop}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      onClick={closeModal}
+    >
+      <motion.div
         className="modal glass-3"
+        variants={modalPanel}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
         style={{ maxWidth: 400, textAlign: 'center' }}
         role="dialog"
         aria-modal="true"
@@ -34,7 +46,7 @@ export function ComingSoonModal({ feature, phase }: Props): React.JSX.Element {
             Got it
           </Button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

@@ -24,3 +24,37 @@ export function camelotCompatible(keyA: string, keyB: string): boolean {
 
   return numDist + letterDist <= 3
 }
+
+export type CamelotRelationship = 'perfect' | 'energy-shift' | 'mood-shift' | 'compatible' | 'neutral' | 'clash' | 'unknown'
+
+/**
+ * Describes the wheel relationship between two Camelot keys for Learn Mode.
+ * Mirrors `getKeyCompatibility` in electron/utils/camelot.ts but returns a
+ * richer label suitable for educational copy.
+ */
+export function camelotRelationship(keyA: string, keyB: string): CamelotRelationship {
+  const a = parseCamelot(keyA)
+  const b = parseCamelot(keyB)
+  if (!a || !b) return 'unknown'
+
+  const diff = Math.abs(a.num - b.num)
+  const numDist = Math.min(diff, 12 - diff)
+  const letterDist = a.letter === b.letter ? 0 : 1
+
+  if (numDist === 0 && letterDist === 0) return 'perfect'
+  if (numDist === 1 && letterDist === 0) return 'energy-shift'
+  if (numDist === 0 && letterDist === 1) return 'mood-shift'
+  if (numDist === 2 && letterDist === 0) return 'compatible'
+  if (numDist + letterDist > 3) return 'clash'
+  return 'neutral'
+}
+
+/** Suggests two adjacent-on-wheel Camelot keys that mix cleanly with `key`. */
+export function compatibleNeighbours(key: string): string[] {
+  const a = parseCamelot(key)
+  if (!a) return []
+  const otherLetter = a.letter === 'A' ? 'B' : 'A'
+  const prev = a.num === 1 ? 12 : a.num - 1
+  const next = a.num === 12 ? 1 : a.num + 1
+  return [`${prev}${a.letter}`, `${next}${a.letter}`, `${a.num}${otherLetter}`]
+}

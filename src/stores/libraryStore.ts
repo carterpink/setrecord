@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { search as fuzzySearch } from 'fast-fuzzy'
-import type { CuePoint, HotCue, ImportProgress, LibraryStats, Track } from '@/types'
+import type { CuePoint, EnergySource, HotCue, ImportProgress, LibraryStats, Track } from '@/types'
 import { gradientForId } from '@/utils/format'
 
 /** Attach a deterministic gradient to every track that lacks real artwork. */
@@ -24,6 +24,9 @@ interface LibraryState {
   setSearchQuery: (q: string) => void
   triggerImport: () => Promise<void>
   patchTrackCues: (trackId: string, cuePoints: CuePoint[], hotCues: HotCue[]) => void
+  patchTrackEnergy: (trackId: string, energy: number, source: EnergySource) => void
+  applyFileStatusChanges: (changes: Array<{ id: string; missing: boolean }>) => void
+  refreshFileHealth: () => Promise<void>
 }
 
 export const useLibraryStore = create<LibraryState>((set, get) => ({
@@ -62,6 +65,26 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     const patch = (arr: Track[]) =>
       arr.map((t) => (t.id === trackId ? { ...t, cuePoints, hotCues } : t))
     set((s) => ({ tracks: patch(s.tracks), searchResults: patch(s.searchResults) }))
+  },
+
+  patchTrackEnergy: (trackId, energy, source) => {
+    const patch = (arr: Track[]) =>
+      arr.map((t) => (t.id === trackId ? { ...t, energy, energySource: source } : t))
+    set((s) => ({ tracks: patch(s.tracks), searchResults: patch(s.searchResults) }))
+  },
+
+  applyFileStatusChanges: (changes) => {
+    if (changes.length === 0) return
+    const changeMap = new Map(changes.map((c) => [c.id, c.missing]))
+    const patch = (arr: Track[]) =>
+      arr.map((t) =>
+        changeMap.has(t.id) ? { ...t, missingFile: changeMap.get(t.id) } : t
+      )
+    set((s) => ({ tracks: patch(s.tracks), searchResults: patch(s.searchResults) }))
+  },
+
+  refreshFileHealth: async () => {
+    await window.setsense.triggerHealthCheck()
   },
 
   triggerImport: async () => {

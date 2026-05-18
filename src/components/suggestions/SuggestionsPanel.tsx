@@ -1,9 +1,13 @@
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Sparkles } from 'lucide-react'
 import { IconButton } from '@/components/shared/IconButton'
+import { EmptyState } from '@/components/shared/EmptyState'
+import { motion, AnimatePresence, stagger } from '@/components/shared/Motion'
 import { useSetStore } from '@/stores/setStore'
 import { useSuggestions } from '@/hooks/useSuggestions'
 import { formatPosition } from '@/utils/format'
 import { SuggestionCard } from './SuggestionCard'
+
+const listVariants = stagger(0.05)
 
 
 export function SuggestionsPanel(): React.JSX.Element {
@@ -47,20 +51,52 @@ export function SuggestionsPanel(): React.JSX.Element {
 
       <div className="sugg-list">
         {isLoading && suggestions.length === 0 ? (
-          <div
-            className="ss-caption"
-            style={{ color: 'var(--text-tertiary)', padding: '12px 0' }}
-          >
-            Finding matches…
+          // Skeleton cards while computing suggestions
+          <div className="library-skeleton" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="track-row"
+                style={{
+                  borderRadius: 10,
+                  padding: '12px 14px',
+                  background: 'rgba(255,255,255,0.04)',
+                  height: 72,
+                }}
+              />
+            ))}
           </div>
+        ) : !selectedSetTrack ? (
+          <EmptyState
+            icon={Sparkles}
+            title="No track selected"
+            body="Select a track in your set and suggestions will appear here."
+          />
+        ) : suggestions.length === 0 ? (
+          <EmptyState
+            icon={Sparkles}
+            title="No matches found"
+            body="Try adding more tracks to your library or adjusting BPM range."
+          />
         ) : (
-          suggestions.map((s) => (
-            <SuggestionCard
-              key={s.track.id}
-              suggestion={s}
-              onAdd={() => addTrack(s.track)}
-            />
-          ))
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={suggestions.map((s) => s.track.id).join('|')}
+              variants={listVariants}
+              initial="hidden"
+              animate="visible"
+              style={{ display: 'flex', flexDirection: 'column', gap: 'inherit' }}
+            >
+              {suggestions.map((s) => (
+                <SuggestionCard
+                  key={s.track.id}
+                  suggestion={s}
+                  fromTrack={selectedSetTrack?.track}
+                  onAdd={() => addTrack(s.track)}
+                />
+              ))}
+            </motion.div>
+          </AnimatePresence>
         )}
       </div>
     </div>
