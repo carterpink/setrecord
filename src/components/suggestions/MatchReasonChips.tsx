@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { History } from 'lucide-react'
 import type { MatchReason, Track } from '@/types'
 import { LearnTooltip } from '@/components/learn/LearnTooltip'
 import { explainMatchReason } from '@/utils/learnMode/explanations'
@@ -31,8 +32,16 @@ export function MatchReasonChips({
       {reasons.map((reason, i) => {
         const chip = (
           <span
-            className={clsx('reason-chip', reason.quality === 'positive' && 'accent')}
+            className={clsx(
+              'reason-chip',
+              reason.quality === 'positive' && 'accent',
+              reason.type === 'combo' && 'combo'
+            )}
+            title={reason.type === 'combo' ? 'You have played this transition before' : undefined}
           >
+            {reason.type === 'combo' && (
+              <History size={10} strokeWidth={1.7} style={{ marginRight: 3, verticalAlign: -1 }} />
+            )}
             {reason.label}
           </span>
         )

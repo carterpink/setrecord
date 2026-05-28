@@ -7,11 +7,18 @@ export interface Toast {
   kind: ToastKind
   message: string
   durationMs: number
+  /** When present, the toast renders an inline picker to move a just-added track to another set. */
+  setMove?: { trackId: string; fromSetId: string }
 }
 
 interface ToastState {
   toasts: Toast[]
-  push: (input: { kind?: ToastKind; message: string; durationMs?: number }) => void
+  push: (input: {
+    kind?: ToastKind
+    message: string
+    durationMs?: number
+    setMove?: { trackId: string; fromSetId: string }
+  }) => void
   dismiss: (id: string) => void
   success: (message: string, durationMs?: number) => void
   error: (message: string, durationMs?: number) => void
@@ -24,10 +31,10 @@ const DEFAULT_DURATION = 4000
 
 export const useToastStore = create<ToastState>((set) => ({
   toasts: [],
-  push: ({ kind = 'info', message, durationMs = DEFAULT_DURATION }) => {
+  push: ({ kind = 'info', message, durationMs = DEFAULT_DURATION, setMove }) => {
     const id = crypto.randomUUID()
     set((s) => {
-      const next = [...s.toasts, { id, kind, message, durationMs }]
+      const next = [...s.toasts, { id, kind, message, durationMs, setMove }]
       // Drop oldest if we exceed the cap
       return { toasts: next.length > MAX_TOASTS ? next.slice(next.length - MAX_TOASTS) : next }
     })
@@ -40,5 +47,5 @@ export const useToastStore = create<ToastState>((set) => ({
   info: (message, durationMs) =>
     useToastStore.getState().push({ kind: 'info', message, durationMs }),
   warning: (message, durationMs) =>
-    useToastStore.getState().push({ kind: 'warning', message, durationMs }),
+    useToastStore.getState().push({ kind: 'warning', message, durationMs })
 }))

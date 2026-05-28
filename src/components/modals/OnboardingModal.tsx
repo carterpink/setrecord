@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { ArrowRight, CheckCircle, FolderOpen, GraduationCap, Headphones } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import FocusLock from 'react-focus-lock'
+import { ArrowRight, CheckCircle, GraduationCap, Headphones, Sparkles } from 'lucide-react'
 import { Button } from '@/components/shared/Button'
 import { motion, AnimatePresence, modalBackdrop, modalPanel } from '@/components/shared/Motion'
 import { useLibraryStore } from '@/stores/libraryStore'
@@ -8,22 +9,30 @@ import { useUiStore } from '@/stores/uiStore'
 type Step = 'welcome' | 'proficiency' | 'import' | 'done'
 
 export function OnboardingModal(): React.JSX.Element {
-  const { hideOnboarding } = useUiStore()
+  const { hideOnboarding, showModal } = useUiStore()
   const setLearnModeEnabled = useUiStore((s) => s.setLearnModeEnabled)
-  const { triggerImport, tracks, isLoading } = useLibraryStore()
+  const { tracks } = useLibraryStore()
 
   const [step, setStep] = useState<Step>('welcome')
-  const [importing, setImporting] = useState(false)
 
-  async function handleImport(): Promise<void> {
-    setImporting(true)
-    try {
-      await triggerImport()
-      const count = useLibraryStore.getState().tracks.length
-      if (count > 0) setStep('done')
-    } finally {
-      setImporting(false)
-    }
+  // When the auto-detect import completes (and tracks are loaded), advance
+  // the onboarding to the celebration screen. Using a zustand subscribe
+  // listener instead of an effect body avoids synchronous-setState lint.
+  useEffect(() => {
+    let prevLen = useLibraryStore.getState().tracks.length
+    const unsubscribe = useLibraryStore.subscribe((state) => {
+      if (state.tracks.length > 0 && prevLen === 0) {
+        setStep((cur) => (cur === 'import' ? 'done' : cur))
+      }
+      prevLen = state.tracks.length
+    })
+    return unsubscribe
+  }, [])
+
+  function handleFindLibrary(): void {
+    // Open the ImportModal — it handles auto-detect + fallback inline. The
+    // useEffect above watches tracks.length and flips us to 'done' on success.
+    showModal('import')
   }
 
   function selectProficiency(isBeginner: boolean): void {
@@ -47,8 +56,9 @@ export function OnboardingModal(): React.JSX.Element {
       aria-modal="true"
       aria-label="Welcome to SetSense"
     >
+      <FocusLock returnFocus>
       <motion.div
-        className="modal-panel glass-3"
+        className="modal glass-3"
         variants={modalPanel}
         initial="hidden"
         animate="visible"
@@ -76,7 +86,8 @@ export function OnboardingModal(): React.JSX.Element {
               style={{
                 padding: 20,
                 borderRadius: 12,
-                background: 'rgba(255,255,255,0.05)',
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border-subtle)',
                 marginBottom: 24,
                 textAlign: 'left',
               }}
@@ -155,13 +166,14 @@ export function OnboardingModal(): React.JSX.Element {
         {step === 'import' && (
           <>
             <div style={{ padding: '8px 0 24px' }}>
-              <div className="ss-h2" style={{ marginBottom: 8 }}>Import your library</div>
+              <div className="ss-h2" style={{ marginBottom: 8 }}>Find your library</div>
               <div className="ss-body" style={{ opacity: 0.7 }}>
-                Select your Rekordbox XML export file to load your tracks.
+                We&apos;ll look for Rekordbox on this Mac and load your tracks automatically.
               </div>
             </div>
 
             <button
+              type="button"
               style={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -169,19 +181,21 @@ export function OnboardingModal(): React.JSX.Element {
                 gap: 12,
                 padding: 32,
                 borderRadius: 12,
-                border: '1.5px dashed rgba(255,255,255,0.2)',
+                border: '1.5px dashed var(--border-emphasis)',
                 background: 'transparent',
-                cursor: importing ? 'wait' : 'pointer',
+                cursor: 'pointer',
                 width: '100%',
                 marginBottom: 24,
                 transition: 'border-color 150ms',
               }}
-              onClick={handleImport}
-              disabled={importing}
+              onClick={handleFindLibrary}
             >
-              <FolderOpen size={32} strokeWidth={1.5} style={{ opacity: 0.6 }} />
-              <div className="ss-body-sm" style={{ opacity: 0.7 }}>
-                {importing ? (isLoading ? 'Importing…' : 'Opening file picker…') : 'Click to select XML file'}
+              <Sparkles size={32} strokeWidth={1.5} style={{ color: 'var(--accent)' }} />
+              <div className="ss-body-sm" style={{ opacity: 0.85, fontWeight: 500 }}>
+                Find my library
+              </div>
+              <div className="ss-caption" style={{ opacity: 0.6 }}>
+                Or load a Rekordbox XML export if you prefer.
               </div>
             </button>
 
@@ -199,7 +213,7 @@ export function OnboardingModal(): React.JSX.Element {
               <CheckCircle
                 size={48}
                 strokeWidth={1.5}
-                style={{ color: '#C8FF3D', marginBottom: 16 }}
+                style={{ color: 'var(--accent)', marginBottom: 16 }}
               />
               <div className="ss-h2" style={{ marginBottom: 8 }}>Library imported</div>
               <div className="ss-body" style={{ opacity: 0.7 }}>
@@ -215,6 +229,7 @@ export function OnboardingModal(): React.JSX.Element {
           </motion.div>
         </AnimatePresence>
       </motion.div>
+      </FocusLock>
     </motion.div>
   )
 }

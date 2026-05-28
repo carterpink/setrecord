@@ -25,7 +25,10 @@
       "Bash(awk '/^\\\\/Users.*\\(DiscoverPanel|TracklistRow|DiscoverFilters|settingsService|discoverGenres\\)/{file=$0; show=1; next} /^\\\\/Users/{show=0} /^$/{show=0} show && /error /{print file \" :: \" $0}' /tmp/lint-raw-after.txt)",
       "Bash(awk '/^\\\\/Users/{file=$0} / error /{e[file]++} END{for\\(f in e\\) print e[f], f}' /tmp/lint-raw-before.txt)",
       "Bash(awk '/^\\\\/Users/{file=$0} / error /{e[file]++} END{for\\(f in e\\) print e[f], f}' /tmp/lint-raw-after.txt)",
-      "Bash(awk '/^\\\\/Users/{f=$0} /error/{print f\": \"$0}')"
+      "Bash(awk '/^\\\\/Users/{f=$0} /error/{print f\": \"$0}')",
+      "Bash(npx tsc *)",
+      "Bash(npx vitest *)",
+      "Bash(xargs ls -la)"
     ]
   }
 }

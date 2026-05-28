@@ -1,0 +1,95 @@
+<!--
+  SetSense brand mark — Direction 03·Ss.
+  Canonical source for both the Electron app icon (rasterized to .icns + .png
+  via scripts/generate-icons.mjs) and the in-app TopBar mark (imported via
+  Vite ?raw and rendered inline). Edit once, regenerate icons after every
+  meaningful change.
+
+  Design notes:
+    - Squircle clip uses the brand's ratio=0.225 superellipse approximation.
+    - Background is a warm purple radial — sits behind the ribbon gradient
+      so "Ss" reads even at favicon sizes.
+    - Text uses Instrument Serif italic. Fonts must be available at rasterize
+      time; the icon generation script supplies them via resvg's font_dirs.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Squircle clip (ratio=0.225, c=0.55*r per brand spec) -->
+    <clipPath id="squircle">
+      <path d="M 0 230.4 C 0 126.72, 126.72 0, 230.4 0 L 793.6 0 C 897.28 0, 1024 126.72, 1024 230.4 L 1024 793.6 C 1024 897.28, 897.28 1024, 793.6 1024 L 230.4 1024 C 126.72 1024, 0 897.28, 0 793.6 Z" />
+    </clipPath>
+
+    <!-- Background: dark purple radial — concentrates near top-right per brand -->
+    <radialGradient id="bg" cx="0.78" cy="0.12" r="1.2">
+      <stop offset="0%" stop-color="#3B1A55" />
+      <stop offset="40%" stop-color="#1A0F2E" />
+      <stop offset="100%" stop-color="#06060E" />
+    </radialGradient>
+
+    <!-- Ribbon gradient: warm → cool, exact stops from brand spec -->
+    <linearGradient id="ribbon" x1="0.05" y1="0.1" x2="0.95" y2="0.9">
+      <stop offset="0%" stop-color="#E8FF6B" />
+      <stop offset="22%" stop-color="#CFFF04" />
+      <stop offset="48%" stop-color="#4FD7FF" />
+      <stop offset="74%" stop-color="#FF3D9A" />
+      <stop offset="100%" stop-color="#FF6B5C" />
+    </linearGradient>
+
+    <!-- Top gloss: bright at top-left, fades down — liquid glass cue -->
+    <radialGradient id="top-gloss" cx="0.32" cy="-0.05" r="0.85">
+      <stop offset="0%" stop-color="white" stop-opacity="0.55" />
+      <stop offset="40%" stop-color="white" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="white" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Bottom shade: subtle weight on the lower edge -->
+    <linearGradient id="bottom-shade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="60%" stop-color="black" stop-opacity="0" />
+      <stop offset="100%" stop-color="black" stop-opacity="0.32" />
+    </linearGradient>
+
+    <!-- Soft underglow: gaussian blur for the text bloom -->
+    <filter id="bloom" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur stdDeviation="22" />
+    </filter>
+  </defs>
+
+  <g clip-path="url(#squircle)">
+    <!-- Background fill -->
+    <rect width="1024" height="1024" fill="url(#bg)" />
+
+    <!-- Soft bloom layer: lower-opacity, blurred copy of the text behind itself -->
+    <text x="512" y="700"
+          text-anchor="middle"
+          font-family="Instrument Serif"
+          font-style="italic"
+          font-weight="400"
+          font-size="780"
+          letter-spacing="-31"
+          fill="url(#ribbon)"
+          opacity="0.45"
+          filter="url(#bloom)">Ss</text>
+
+    <!-- Crisp main text -->
+    <text x="512" y="700"
+          text-anchor="middle"
+          font-family="Instrument Serif"
+          font-style="italic"
+          font-weight="400"
+          font-size="780"
+          letter-spacing="-31"
+          fill="url(#ribbon)">Ss</text>
+
+    <!-- Glass overlays — gloss + shade clipped inside the squircle -->
+    <rect width="1024" height="1024" fill="url(#top-gloss)" />
+    <rect width="1024" height="1024" fill="url(#bottom-shade)" />
+  </g>
+
+  <!-- Rim light: thin highlight tracing the upper edge of the squircle.
+       Stroked path outside the clip so it sits flush against the silhouette. -->
+  <path d="M 0 230.4 C 0 126.72, 126.72 0, 230.4 0 L 793.6 0 C 897.28 0, 1024 126.72, 1024 230.4"
+        fill="none"
+        stroke="rgba(255,255,255,0.42)"
+        stroke-width="2.5"
+        stroke-linecap="round" />
+</svg>

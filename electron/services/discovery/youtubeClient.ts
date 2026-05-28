@@ -196,6 +196,47 @@ export async function getVideosMetadata(
 }
 
 /**
+ * Cheap test-ping. Costs 1 quota unit. Uses videos.list against a known stable
+ * ID (the "Me at the zoo" upload — youtube.com/watch?v=jNQXAC9IVRw — the first
+ * video ever uploaded; unlikely to disappear). Returns a structured result so
+ * the UI can distinguish "bad key" from "quota out" from "no network".
+ */
+export type ValidateApiKeyResult =
+  | { ok: true }
+  | { ok: false; code: 'invalid_key' | 'quota_exceeded' | 'network' | 'api_error'; message: string }
+
+export async function validateApiKey(apiKey: string): Promise<ValidateApiKeyResult> {
+  if (!apiKey.trim()) {
+    return { ok: false, code: 'invalid_key', message: 'No key provided' }
+  }
+  const url = `${BASE}/videos?part=id&id=jNQXAC9IVRw&key=${encodeURIComponent(apiKey.trim())}`
+  try {
+    const res = await fetch(url)
+    if (res.ok) return { ok: true }
+    if (res.status === 400) {
+      return { ok: false, code: 'invalid_key', message: 'YouTube rejected the key as malformed' }
+    }
+    if (res.status === 403) {
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: { errors?: Array<{ reason?: string }>; message?: string }
+      }
+      const reason = body?.error?.errors?.[0]?.reason ?? ''
+      if (reason === 'quotaExceeded' || reason === 'dailyLimitExceeded') {
+        return { ok: false, code: 'quota_exceeded', message: 'Daily quota already used on this key' }
+      }
+      return {
+        ok: false,
+        code: 'invalid_key',
+        message: body?.error?.message ?? 'YouTube rejected the key (403)',
+      }
+    }
+    return { ok: false, code: 'api_error', message: `YouTube returned ${res.status}` }
+  } catch {
+    return { ok: false, code: 'network', message: 'Could not reach YouTube — check your connection' }
+  }
+}
+
+/**
  * Fetch top comments for a video (relevance sort).
  * Costs 1 quota unit per call.
  */

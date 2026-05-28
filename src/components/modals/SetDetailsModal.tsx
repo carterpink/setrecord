@@ -1,4 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from 'react'
+import FocusLock from 'react-focus-lock'
 import { X, Play, AlertTriangle, Layers, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/shared/Button'
 import { IconButton } from '@/components/shared/IconButton'
@@ -79,6 +80,7 @@ export function SetDetailsModal(): React.JSX.Element | null {
       exit="exit"
       onClick={closeModal}
     >
+      <FocusLock returnFocus>
       <motion.div
         className="modal glass-3 set-details-modal"
         variants={modalPanel}
@@ -230,6 +232,7 @@ export function SetDetailsModal(): React.JSX.Element | null {
           </Button>
         </div>
       </motion.div>
+      </FocusLock>
     </motion.div>
   )
 }

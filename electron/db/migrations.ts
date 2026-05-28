@@ -111,4 +111,116 @@ export function runMigrations(db: Database.Database): void {
   `)
 
   db.prepare('INSERT OR REPLACE INTO schema_version VALUES (8)').run()
+
+  // v9: Rekordbox playlist import — playlists table existed since v1 but was orphaned.
+  // Add the is_folder column so the renderer can distinguish folder nodes from leaf playlists.
+  const playlistCols = (
+    db.prepare('PRAGMA table_info(playlists)').all() as Array<{ name: string }>
+  ).map((c) => c.name)
+
+  if (!playlistCols.includes('is_folder')) {
+    db.exec('ALTER TABLE playlists ADD COLUMN is_folder INTEGER NOT NULL DEFAULT 0')
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (9)').run()
+
+  // v10: per-set-track `locked` flag. When set, Set Architect treats the row as a
+  // fixed anchor — preserved in place during rebuilds and skipped in the repair pass.
+  const setTrackCols = (
+    db.prepare('PRAGMA table_info(set_tracks)').all() as Array<{ name: string }>
+  ).map((c) => c.name)
+
+  if (!setTrackCols.includes('locked')) {
+    db.exec('ALTER TABLE set_tracks ADD COLUMN locked INTEGER NOT NULL DEFAULT 0')
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (10)').run()
+
+  // v11: embedded album-artwork extraction — `album_art_source` tracks the
+  // extraction state ('pending' | 'embedded' | 'none' | 'failed') so the
+  // background extractor doesn't re-scan files already found to have no art.
+  // Existing rows default to 'pending' so they backfill on next launch.
+  const colsV11 = (
+    db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>
+  ).map((c) => c.name)
+
+  if (!colsV11.includes('album_art_source')) {
+    db.exec("ALTER TABLE tracks ADD COLUMN album_art_source TEXT DEFAULT 'pending'")
+    db.exec("UPDATE tracks SET album_art_source = 'pending' WHERE album_art_source IS NULL")
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (11)').run()
+
+  // v12: play history sessions layer (DJ memory / Recall feature).
+  // play_sessions records dated gig sessions (from Rekordbox, SetSense, or manual entry).
+  // session_tracks stores the ordered tracklist for each session.
+  // Two new nullable columns on tracks: lifecycle_state + lifecycle_source.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS play_sessions (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'manual',
+      performed_at TEXT,
+      venue TEXT,
+      duration REAL,
+      set_id TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS session_tracks (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL REFERENCES play_sessions(id) ON DELETE CASCADE,
+      track_id TEXT NOT NULL REFERENCES tracks(id),
+      play_order INTEGER NOT NULL,
+      played_at TEXT,
+      UNIQUE(session_id, play_order)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_session_tracks_session ON session_tracks(session_id);
+    CREATE INDEX IF NOT EXISTS idx_session_tracks_track ON session_tracks(track_id);
+    CREATE INDEX IF NOT EXISTS idx_play_sessions_performed ON play_sessions(performed_at);
+  `)
+
+  // Add lifecycle columns to tracks (column-existence checked, idempotent)
+  const colsV12 = (
+    db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>
+  ).map((c) => c.name)
+
+  if (!colsV12.includes('lifecycle_state')) {
+    db.exec('ALTER TABLE tracks ADD COLUMN lifecycle_state TEXT')
+  }
+  if (!colsV12.includes('lifecycle_source')) {
+    db.exec("ALTER TABLE tracks ADD COLUMN lifecycle_source TEXT DEFAULT 'computed'")
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (12)').run()
+
+  // v13: smart crates persistence.
+  // Stores user-defined and seed smart crate definitions (JSON rules) so they
+  // survive app restarts. The engine (electron/algorithms/memory/smartCrates.ts)
+  // evaluates them against the in-memory library — this table is purely storage.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS smart_crates (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      rules_json TEXT NOT NULL,
+      match_mode TEXT NOT NULL DEFAULT 'all',
+      created_at TEXT NOT NULL
+    );
+  `)
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (13)').run()
+
+  // v14: flagged-for-next-gig column. Set when the user flags an "untested" track
+  // for testing at their next gig; cleared after the post-gig prompt resolves it.
+  // Lifecycle state ('testing' / 'active' / 'archive') already lives in v12 columns.
+  const colsV14 = (
+    db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>
+  ).map((c) => c.name)
+
+  if (!colsV14.includes('flagged_for_gig_at')) {
+    db.exec('ALTER TABLE tracks ADD COLUMN flagged_for_gig_at TEXT')
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (14)').run()
 }

@@ -1,3 +1,4 @@
+import FocusLock from 'react-focus-lock'
 import { X } from 'lucide-react'
 import { Button } from '@/components/shared/Button'
 import { IconButton } from '@/components/shared/IconButton'
@@ -21,6 +22,7 @@ export function ComingSoonModal({ feature, phase }: Props): React.JSX.Element {
       exit="exit"
       onClick={closeModal}
     >
+      <FocusLock returnFocus>
       <motion.div
         className="modal glass-3"
         variants={modalPanel}
@@ -47,6 +49,7 @@ export function ComingSoonModal({ feature, phase }: Props): React.JSX.Element {
           </Button>
         </div>
       </motion.div>
+      </FocusLock>
     </motion.div>
   )
 }

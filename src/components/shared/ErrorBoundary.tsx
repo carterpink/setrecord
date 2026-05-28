@@ -36,7 +36,7 @@ export class ErrorBoundary extends Component<Props, State> {
             textAlign: 'center',
           }}
         >
-          <div className="ss-h3" style={{ color: 'var(--col-danger, #F87171)' }}>
+          <div className="ss-h3" style={{ color: 'var(--semantic-danger)' }}>
             Something went wrong
           </div>
           <div className="ss-body-sm" style={{ opacity: 0.6 }}>

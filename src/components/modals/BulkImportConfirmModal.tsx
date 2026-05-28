@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import FocusLock from 'react-focus-lock'
 import { X, ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/shared/Button'
 import { IconButton } from '@/components/shared/IconButton'
@@ -70,6 +71,7 @@ export function BulkImportConfirmModal(): React.JSX.Element | null {
       exit="exit"
       onClick={() => showModal('setDetails')}
     >
+      <FocusLock returnFocus>
       <motion.div
         className="modal glass-3 bulk-import-modal"
         variants={modalPanel}
@@ -159,6 +161,7 @@ export function BulkImportConfirmModal(): React.JSX.Element | null {
           </Button>
         </div>
       </motion.div>
+      </FocusLock>
     </motion.div>
   )
 }

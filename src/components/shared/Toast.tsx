@@ -2,16 +2,59 @@ import { useEffect } from 'react'
 import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from 'lucide-react'
 import { motion } from '@/components/shared/Motion'
 import { useToastStore, type Toast as ToastType } from '@/stores/toastStore'
+import { useSetStore } from '@/stores/setStore'
 
 const ICONS = {
   success: CheckCircle2,
   error: AlertCircle,
   info: Info,
-  warning: AlertTriangle,
+  warning: AlertTriangle
 } as const
 
 interface Props {
   toast: ToastType
+}
+
+/** Inline "change set" picker shown on add-to-set toasts. */
+function SetMovePicker({
+  trackId,
+  fromSetId,
+  onDone
+}: {
+  trackId: string
+  fromSetId: string
+  onDone: () => void
+}): React.JSX.Element | null {
+  const savedSets = useSetStore((s) => s.savedSets)
+  const currentSet = useSetStore((s) => s.currentSet)
+  const moveTrackToSet = useSetStore((s) => s.moveTrackToSet)
+
+  // De-dupe the current set into the saved list (it may be newer / not yet in savedSets).
+  const sets =
+    currentSet && !savedSets.some((s) => s.id === currentSet.id)
+      ? [currentSet, ...savedSets]
+      : savedSets
+  if (sets.length < 2) return null
+
+  return (
+    <select
+      className="toast-set-select"
+      value={fromSetId}
+      aria-label="Move to a different set"
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => {
+        const toId = e.target.value
+        if (toId !== fromSetId) moveTrackToSet(trackId, fromSetId, toId)
+        onDone()
+      }}
+    >
+      {sets.map((s) => (
+        <option key={s.id} value={s.id}>
+          {s.id === fromSetId ? s.name : `Move to ${s.name}`}
+        </option>
+      ))}
+    </select>
+  )
 }
 
 export function Toast({ toast }: Props): React.JSX.Element {
@@ -35,7 +78,16 @@ export function Toast({ toast }: Props): React.JSX.Element {
       aria-live="polite"
     >
       <Icon size={16} strokeWidth={1.7} className="toast-icon" aria-hidden="true" />
-      <span className="toast-message">{toast.message}</span>
+      <div className="toast-body">
+        <span className="toast-message">{toast.message}</span>
+        {toast.setMove && (
+          <SetMovePicker
+            trackId={toast.setMove.trackId}
+            fromSetId={toast.setMove.fromSetId}
+            onDone={() => dismiss(toast.id)}
+          />
+        )}
+      </div>
       <button
         type="button"
         className="toast-close"

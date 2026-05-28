@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import FocusLock from 'react-focus-lock'
 import { ChevronLeft, ChevronRight, Pause, Play, X } from 'lucide-react'
 import type { CuePoint, HotCue, Track } from '@/types'
 import { Waveform } from '@/components/shared/Waveform'
 import { motion, modalBackdrop, modalPanel } from '@/components/shared/Motion'
+import { toMediaUrl } from '@/utils/mediaUrl'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
+import { useToastStore } from '@/stores/toastStore'
 import { HOT_CUE_COLORS, HOT_CUE_LABELS } from '@/utils/constants'
 
 function formatMs(ms: number): string {
@@ -40,16 +43,27 @@ export function CuePointEditor(): React.JSX.Element {
     setPlaying(false)
   }, [track?.id])
 
-  // Persist cues to SQLite and patch libraryStore in-memory
+  // Persist cues to SQLite and patch libraryStore in-memory. If the write fails
+  // we roll back the local state — otherwise the editor would lie about what's
+  // saved to disk and the next reload would silently revert.
   const saveCues = useCallback(
     async (newCuePoints: CuePoint[], newHotCues: HotCue[]) => {
       if (!track) return
+      const prevCuePoints = cuePoints
+      const prevHotCues = hotCues
       setCuePoints(newCuePoints)
       setHotCues(newHotCues)
-      await window.setsense.updateTrackCues(track.id, newCuePoints, newHotCues)
-      patchTrackCues(track.id, newCuePoints, newHotCues)
+      try {
+        await window.setsense.updateTrackCues(track.id, newCuePoints, newHotCues)
+        patchTrackCues(track.id, newCuePoints, newHotCues)
+      } catch (err) {
+        console.error('[CuePointEditor] updateTrackCues failed', err)
+        setCuePoints(prevCuePoints)
+        setHotCues(prevHotCues)
+        useToastStore.getState().error('Could not save cue point — try again.')
+      }
     },
-    [track, patchTrackCues]
+    [track, cuePoints, hotCues, patchTrackCues]
   )
 
   // Default cue: set/replace the single {type:'cue'} entry
@@ -76,7 +90,18 @@ export function CuePointEditor(): React.JSX.Element {
     setCurrentTime((t) => Math.max(0, Math.min(duration, t + deltaMs)))
   }
 
-  // Keyboard: Space = play/pause, ← = nudge -100, → = nudge +100
+  // Keep a ref to the latest handleHotCue so key shortcuts always see fresh cue state
+  const handleHotCueRef = useRef(handleHotCue)
+  handleHotCueRef.current = handleHotCue
+  const handleCloseRef = useRef(handleClose)
+  handleCloseRef.current = handleClose
+
+  // Keyboard shortcuts:
+  //   Space        = play/pause
+  //   ← / →        = nudge ±100ms
+  //   A–H          = set/clear hot cues A–H at current position
+  //   Escape       = close modal
+  //   Delete/Backspace = clear nearest cue (hot cue within 500ms, or default cue)
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
@@ -89,11 +114,36 @@ export function CuePointEditor(): React.JSX.Element {
       } else if (e.code === 'ArrowRight') {
         e.preventDefault()
         nudge(100)
+      } else if (e.code === 'Escape') {
+        e.preventDefault()
+        handleCloseRef.current()
+      } else if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1) {
+        const upper = e.key.toUpperCase()
+        if (upper >= 'A' && upper <= 'H') {
+          e.preventDefault()
+          handleHotCueRef.current(upper.charCodeAt(0) - 65)
+        }
+      } else if (e.code === 'Delete' || e.code === 'Backspace') {
+        // Clear the nearest hot cue within 500ms, or the default cue if none
+        e.preventDefault()
+        const nearestHotCue = hotCues
+          .filter((hc) => Math.abs(hc.position - currentTime) <= 500)
+          .sort((a, b) => Math.abs(a.position - currentTime) - Math.abs(b.position - currentTime))[0]
+        if (nearestHotCue) {
+          saveCues(cuePoints, hotCues.filter((hc) => hc.index !== nearestHotCue.index))
+        } else {
+          const nearestDefault = cuePoints
+            .filter((cp) => cp.type === 'cue' && Math.abs(cp.position - currentTime) <= 500)[0]
+          if (nearestDefault) {
+            saveCues(cuePoints.filter((cp) => cp !== nearestDefault), hotCues)
+          }
+        }
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [duration]) // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [duration, hotCues, cuePoints, currentTime])
 
   function handleClose() {
     setPlaying(false)
@@ -109,6 +159,7 @@ export function CuePointEditor(): React.JSX.Element {
       exit="exit"
       onClick={handleClose}
     >
+      <FocusLock returnFocus>
       <motion.div
         className="modal glass-3"
         variants={modalPanel}
@@ -123,6 +174,32 @@ export function CuePointEditor(): React.JSX.Element {
       >
         {/* Header */}
         <div className="modal-header">
+          {track && (
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'relative',
+                width: 48,
+                height: 48,
+                flexShrink: 0,
+                marginRight: 12,
+                borderRadius: 'var(--radius-xs)',
+                overflow: 'hidden',
+                ...(track.artGradient ? { background: track.artGradient } : {}),
+              }}
+            >
+              {track.albumArtPath && (
+                <img
+                  src={toMediaUrl(track.albumArtPath)}
+                  alt=""
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none'
+                  }}
+                />
+              )}
+            </div>
+          )}
           <div style={{ flex: 1, minWidth: 0 }}>
             {track ? (
               <>
@@ -228,7 +305,7 @@ export function CuePointEditor(): React.JSX.Element {
                 </span>
               </div>
 
-              <div style={{ height: 1, background: 'rgba(255,255,255,0.08)' }} />
+              <div style={{ height: 1, background: 'var(--border-subtle)' }} />
 
               {/* Default cue */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -237,7 +314,7 @@ export function CuePointEditor(): React.JSX.Element {
                   {cuePoints.find((cp) => cp.type === 'cue') && (
                     <div
                       className="ss-caption"
-                      style={{ color: '#22C55E', marginTop: 2 }}
+                      style={{ color: 'var(--semantic-success)', marginTop: 2 }}
                     >
                       {formatMs(cuePoints.find((cp) => cp.type === 'cue')!.position)}
                     </div>
@@ -260,7 +337,7 @@ export function CuePointEditor(): React.JSX.Element {
                 </button>
               </div>
 
-              <div style={{ height: 1, background: 'rgba(255,255,255,0.08)' }} />
+              <div style={{ height: 1, background: 'var(--border-subtle)' }} />
 
               {/* Hot cues A–H */}
               <div>
@@ -325,7 +402,7 @@ export function CuePointEditor(): React.JSX.Element {
                         ) : (
                           <span
                             className="ss-caption"
-                            style={{ color: 'rgba(255,255,255,0.2)', fontSize: 10 }}
+                            style={{ color: 'var(--text-tertiary)', fontSize: 10 }}
                           >
                             empty
                           </span>
@@ -339,6 +416,7 @@ export function CuePointEditor(): React.JSX.Element {
           )}
         </div>
       </motion.div>
+      </FocusLock>
     </motion.div>
   )
 }

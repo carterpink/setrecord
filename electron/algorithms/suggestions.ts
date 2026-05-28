@@ -9,12 +9,37 @@ import { scoreTransition } from './transitionScore'
 import { getKeyCompatibility } from '../utils/camelot'
 import { getTargetAt } from './energyCurve'
 
+// ───────── Combo scoring constants ─────────
+
+/** Boost added to a candidate's raw score when the user has played it after the
+ *  current track ≥ 3 times — significant enough to promote even a slightly
+ *  weaker transition to the top of the list ("muscle memory wins"). */
+const COMBO_STRONG_BOOST = 25
+/** Smaller boost for 1–2 prior plays — nudge without dominating. */
+const COMBO_LIGHT_BOOST = 10
+/** Below this count the combo chip isn't shown (one-offs aren't a pattern). */
+const COMBO_CHIP_THRESHOLD = 3
+
 // ───────── Match reason generation ─────────
 
-function buildMatchReasons(currentTrack: Track, candidate: Track): MatchReason[] {
+function buildMatchReasons(
+  currentTrack: Track,
+  candidate: Track,
+  comboCount: number
+): MatchReason[] {
   const score = scoreTransition(currentTrack, candidate)
   const camelot = getKeyCompatibility(currentTrack.key, candidate.key)
   const reasons: MatchReason[] = []
+
+  // Combo reason takes pole position when present — it's the DJ's own data,
+  // outranking algorithmic key/BPM compatibility.
+  if (comboCount >= COMBO_CHIP_THRESHOLD) {
+    reasons.push({
+      label: `You've played this ${comboCount} times`,
+      type: 'combo',
+      quality: 'positive',
+    })
+  }
 
   // Key reason
   const keyQuality: MatchReasonQuality =
@@ -52,6 +77,12 @@ export function getSuggestions(
   set: DJSet,
   count: number,
   extraExcludeIds: string[] = [],
+  /**
+   * Map of candidate trackId → number of times the DJ has played that track
+   * after `currentTrack` in their performed sessions or saved sets. Tracks NOT
+   * in the map are assumed to have 0 (no prior pairing recorded).
+   */
+  comboLookup?: Map<string, number>,
 ): Suggestion[] {
   // Merge DB-persisted set IDs with any IDs the renderer passes directly.
   // This handles the race where a newly added track hasn't been saved to DB yet
@@ -71,6 +102,7 @@ export function getSuggestions(
     track: Track
     rawScore: number
     adjustedScore: number
+    comboCount: number
   }
 
   const scored: Scored[] = candidates.map((candidate) => {
@@ -90,7 +122,13 @@ export function getSuggestions(
       if (Math.abs(candidate.energy - target) <= 1) adjusted += 8
     }
 
-    return { track: candidate, rawScore: ts.score, adjustedScore: adjusted }
+    // Combo boost: the DJ has played this transition before. Strong boost
+    // beyond threshold (clearly a pattern), light boost for occasional pairs.
+    const comboCount = comboLookup?.get(candidate.id) ?? 0
+    if (comboCount >= COMBO_CHIP_THRESHOLD) adjusted += COMBO_STRONG_BOOST
+    else if (comboCount >= 1) adjusted += COMBO_LIGHT_BOOST
+
+    return { track: candidate, rawScore: ts.score, adjustedScore: adjusted, comboCount }
   })
 
   scored.sort((a, b) => b.adjustedScore - a.adjustedScore)
@@ -101,8 +139,9 @@ export function getSuggestions(
       track: s.track,
       transitionScore: ts,
       rank: i,
-      matchReasons: buildMatchReasons(currentTrack, s.track),
+      matchReasons: buildMatchReasons(currentTrack, s.track, s.comboCount),
       best: i === 0,
+      comboCount: s.comboCount > 0 ? s.comboCount : undefined,
     }
   })
 }

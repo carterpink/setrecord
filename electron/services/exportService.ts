@@ -1,4 +1,4 @@
-import { writeFileSync } from 'fs'
+import { writeFileSync, renameSync, unlinkSync, existsSync } from 'fs'
 import { Builder } from 'xml2js'
 import type { Set as DJSet, Track, ExportResult } from '../../src/types'
 
@@ -133,7 +133,19 @@ export async function exportSet(set: DJSet, filePath: string): Promise<ExportRes
       renderOpts: { pretty: true, indent: '  ', newline: '\n' },
     })
     const xml = builder.buildObject(djPlaylists)
-    writeFileSync(filePath, xml, 'utf-8')
+
+    const tmpPath = `${filePath}.setsense-tmp`
+    try {
+      writeFileSync(tmpPath, xml, 'utf-8')
+      renameSync(tmpPath, filePath)
+    } catch (writeErr) {
+      try {
+        if (existsSync(tmpPath)) unlinkSync(tmpPath)
+      } catch {
+        // best-effort cleanup — swallow unlink errors
+      }
+      throw writeErr
+    }
 
     return { success: true, filePath, trackCount: tracks.length }
   } catch (err) {

@@ -6,6 +6,7 @@ export function useSuggestions(
   setId: string | null,
   count = 6,
   excludeIds: string[] = [],
+  sourcePlaylistIds: string[] = [],
 ): { suggestions: Suggestion[]; isLoading: boolean; refresh: () => void } {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -14,9 +15,14 @@ export function useSuggestions(
   // Always hold the latest excludeIds without making it an effect dependency
   const excludeRef = useRef(excludeIds)
   excludeRef.current = excludeIds
+  const sourceRef = useRef(sourcePlaylistIds)
+  sourceRef.current = sourcePlaylistIds
+  // Stable key so changes in source selection retrigger fetching without
+  // depending on array identity.
+  const sourceKey = sourcePlaylistIds.join(',')
 
   const fetchSuggestions = useCallback(async () => {
-    if (!trackId || !setId) {
+    if (!trackId) {
       setSuggestions([])
       return
     }
@@ -24,9 +30,10 @@ export function useSuggestions(
     try {
       const results = await window.setsense.getSuggestions(
         trackId,
-        setId,
+        setId ?? '',
         count,
         excludeRef.current,
+        sourceRef.current,
       )
       // Client-side safety filter: exclude any track that is currently in the set.
       // This is the final guard against the DB-save race condition — the renderer
@@ -38,7 +45,7 @@ export function useSuggestions(
     } finally {
       setIsLoading(false)
     }
-  }, [trackId, setId, count])
+  }, [trackId, setId, count, sourceKey])
 
   const refresh = useCallback(() => {
     if (timerRef.current !== null) clearTimeout(timerRef.current)
@@ -48,7 +55,7 @@ export function useSuggestions(
   useEffect(() => {
     if (timerRef.current !== null) clearTimeout(timerRef.current)
 
-    if (!trackId || !setId) {
+    if (!trackId) {
       setSuggestions([])
       return
     }
@@ -61,7 +68,7 @@ export function useSuggestions(
     return () => {
       if (timerRef.current !== null) clearTimeout(timerRef.current)
     }
-  }, [fetchSuggestions, trackId, setId])
+  }, [fetchSuggestions, trackId])
 
   return { suggestions, isLoading, refresh }
 }

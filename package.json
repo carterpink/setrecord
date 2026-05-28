@@ -10,13 +10,16 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
-    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "rebuild": "electron-rebuild -f -w better-sqlite3,keytar,@journeyapps/sqlcipher",
     "build:unpack": "npm run build && electron-builder --dir",
-    "build:mac": "electron-vite build && electron-builder --mac"
+    "icons": "node scripts/generate-icons.mjs",
+    "build:mac": "npm run icons && electron-vite build && electron-builder --mac"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -25,6 +28,7 @@
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "@fontsource/jetbrains-mono": "^5.2.7",
+    "@journeyapps/sqlcipher": "^6.0.0",
     "@tanstack/react-virtual": "^3.13.24",
     "better-sqlite3": "^12.9.0",
     "clsx": "^2.1.1",
@@ -33,7 +37,10 @@
     "ffmpeg-static": "^5.3.0",
     "framer-motion": "^12.38.0",
     "fuse.js": "^7.3.0",
+    "keytar": "^7.9.0",
     "lucide-react": "^0.474.0",
+    "node-llama-cpp": "^3.18.1",
+    "react-focus-lock": "^2.13.7",
     "recharts": "^3.8.1",
     "wavesurfer.js": "^7.12.6",
     "xml2js": "^0.6.2",
@@ -43,6 +50,8 @@
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.1.0",
     "@electron-toolkit/tsconfig": "^2.0.0",
+    "@fontsource/instrument-serif": "^5.2.8",
+    "@resvg/resvg-js": "^2.6.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.19.1",
     "@types/react": "^19.2.7",
@@ -57,12 +66,14 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
+    "playwright-core": "^1.60.0",
     "postcss": "^8.4.49",
     "prettier": "^3.7.4",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.9.3",
-    "vite": "^7.2.6"
+    "vite": "^7.2.6",
+    "vitest": "^3.2.4"
   }
 }

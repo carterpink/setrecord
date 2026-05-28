@@ -133,6 +133,10 @@ export function explainMatchReason(
     case 'energy': return explainEnergyReason(from, to)
     case 'genre': return explainGenreReason(from, to)
     case 'texture': return explainTextureReason()
+    case 'combo': return {
+      summary: 'You\'ve played this transition before',
+      detail: `${reason.label}. Surfaced from your saved sets and performed sessions — muscle-memory transitions outrank algorithmic suggestions of equal score.`,
+    }
   }
 }
 

@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { ArrowRight, Loader, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import FocusLock from 'react-focus-lock'
+import { ArrowRight, Loader, Lock, Sparkles, X } from 'lucide-react'
 import type {
   ArchitectParams,
   EnergyCurveType,
@@ -9,17 +10,20 @@ import type {
 } from '@/types'
 import { Button } from '@/components/shared/Button'
 import { Chip } from '@/components/shared/Chip'
+import { PlaylistSourceDropdown } from '@/components/shared/PlaylistSourceDropdown'
 import { IconButton } from '@/components/shared/IconButton'
 import { RangeSlider } from '@/components/shared/RangeSlider'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { Slider } from '@/components/shared/Slider'
 import { Toggle } from '@/components/shared/Toggle'
 import { motion, AnimatePresence, modalBackdrop, modalPanel } from '@/components/shared/Motion'
+import { useLibraryStore } from '@/stores/libraryStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
 import { LearnPanel } from '@/components/learn/LearnPanel'
 import { explainEnergyArc } from '@/utils/learnMode/explanations'
 import { getTargetCurve } from '@/utils/energyCurve'
+import { parseArchitectQuery } from '@/utils/architectQuery'
 
 const DEFAULT_PARAMS: ArchitectParams = {
   targetDuration: 60,
@@ -52,6 +56,23 @@ export function SetArchitectModal(): React.JSX.Element {
   const { closeModal } = useUiStore()
   const learnModeEnabled = useUiStore((s) => s.learnModeEnabled)
   const { populateFromArchitect } = useSetStore()
+  // Subscribe to a stable reference (the tracks array) and derive the filtered list
+  // via useMemo — selecting `.filter(...)` directly would return a fresh array each
+  // render, tripping zustand's getSnapshot caching guard and causing an update loop.
+  const timelineTracks = useSetStore((s) => s.currentSet?.tracks)
+  const lockedFromTimeline = useMemo(
+    () => (timelineTracks ?? []).filter((t) => t.locked),
+    [timelineTracks],
+  )
+  const playlists = useLibraryStore((s) => s.playlists)
+  const playlistTrackIndex = useLibraryStore((s) => s.playlistTrackIndex)
+  const totalTracks = useLibraryStore((s) => s.tracks.length)
+
+  // Only leaf playlists are selectable as source chips; folders are organisational.
+  const leafPlaylists = useMemo(
+    () => playlists.filter((p) => !p.isFolder && p.trackIds.length > 0),
+    [playlists],
+  )
 
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [params, setParams] = useState<ArchitectParams>(DEFAULT_PARAMS)
@@ -59,17 +80,55 @@ export function SetArchitectModal(): React.JSX.Element {
   const [isBuilding, setIsBuilding] = useState(false)
   const [buildError, setBuildError] = useState<string | null>(null)
   const [resultTracks, setResultTracks] = useState<SetTrack[]>([])
+  /** Empty array = no constraint (use whole library). */
+  const [selectedSourcePlaylistIds, setSelectedSourcePlaylistIds] = useState<string[]>([])
 
-  function patch<K extends keyof ArchitectParams>(key: K, value: ArchitectParams[K]) {
+  // Live count of the source pool — gives the user confidence before they hit Build.
+  const sourcePoolSize = useMemo(() => {
+    if (selectedSourcePlaylistIds.length === 0) return totalTracks
+    const union = new Set<string>()
+    for (const id of selectedSourcePlaylistIds) {
+      const ids = playlistTrackIndex.get(id)
+      if (!ids) continue
+      for (const t of ids) union.add(t)
+    }
+    return union.size
+  }, [selectedSourcePlaylistIds, playlistTrackIndex, totalTracks])
+
+  function patch<K extends keyof ArchitectParams>(key: K, value: ArchitectParams[K]): void {
     setParams((p) => ({ ...p, [key]: value }))
   }
 
-  async function handleBuild() {
+  // Natural-language brief → params (same deterministic tech as Recall conversations).
+  const [nlText, setNlText] = useState('')
+  const [nlSummary, setNlSummary] = useState('')
+  function applyNl(): void {
+    const { params: parsed, summary } = parseArchitectQuery(nlText)
+    if (Object.keys(parsed).length === 0) {
+      setNlSummary('Couldn’t read that — try “2-hour peak club set, 126–130, build then sustain”.')
+      return
+    }
+    setParams((p) => ({ ...p, ...parsed }))
+    setNlSummary(`Applied: ${summary}`)
+  }
+
+  async function handleBuild(): Promise<void> {
     setIsBuilding(true)
     setBuildError(null)
     try {
+      const lockedTracks = lockedFromTimeline.map((t) => ({
+        position: t.position,
+        trackId: t.trackId,
+      }))
+      const paramsForBuild: ArchitectParams = {
+        ...params,
+        ...(selectedSourcePlaylistIds.length > 0
+          ? { sourcePlaylistIds: selectedSourcePlaylistIds }
+          : {}),
+        ...(lockedTracks.length > 0 ? { lockedTracks } : {}),
+      }
       const [setTracks] = await Promise.all([
-        window.setsense.buildSet(params) as Promise<SetTrack[]>,
+        window.setsense.buildSet(paramsForBuild) as Promise<SetTrack[]>,
         new Promise<void>((r) => setTimeout(r, 1000)),
       ])
       if (!setTracks || setTracks.length === 0) {
@@ -103,6 +162,7 @@ export function SetArchitectModal(): React.JSX.Element {
       exit="exit"
       onClick={closeModal}
     >
+      <FocusLock returnFocus>
       <motion.div
         className="modal glass-3"
         variants={modalPanel}
@@ -139,6 +199,36 @@ export function SetArchitectModal(): React.JSX.Element {
           {step === 1 && (
             <>
               <div className="arch-section-label">{stepTitle}</div>
+
+              <div className="arch-field arch-nl">
+                <label className="ss-label">
+                  <Sparkles size={13} strokeWidth={1.7} style={{ verticalAlign: '-2px', marginRight: 5 }} />
+                  Describe it in words
+                </label>
+                <div className="arch-nl-row">
+                  <input
+                    className="arch-input"
+                    placeholder="e.g. 2-hour peak club set, 126–130, build then sustain"
+                    value={nlText}
+                    onChange={(e) => setNlText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        applyNl()
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={applyNl}
+                    disabled={nlText.trim() === ''}
+                  >
+                    Apply
+                  </button>
+                </div>
+                {nlSummary && <span className="arch-nl-summary">{nlSummary}</span>}
+              </div>
 
               <div className="arch-field">
                 <label className="ss-label">Vibe</label>
@@ -180,6 +270,23 @@ export function SetArchitectModal(): React.JSX.Element {
                   ))}
                 </div>
               </div>
+
+              {leafPlaylists.length > 0 && (
+                <div className="arch-field">
+                  <div className="arch-field-header">
+                    <label className="ss-label">Draw tracks from</label>
+                    <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
+                      {sourcePoolSize.toLocaleString()} tracks
+                    </span>
+                  </div>
+                  <PlaylistSourceDropdown
+                    playlists={playlists}
+                    selectedIds={selectedSourcePlaylistIds}
+                    onChange={setSelectedSourcePlaylistIds}
+                    totalCount={totalTracks}
+                  />
+                </div>
+              )}
 
               <div style={{ marginTop: 24 }}>
                 <Button
@@ -295,6 +402,25 @@ export function SetArchitectModal(): React.JSX.Element {
                 </div>
               )}
 
+              {lockedFromTimeline.length > 0 && (
+                <div
+                  className="ss-caption"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginTop: 12,
+                    color: 'var(--accent)',
+                  }}
+                >
+                  <Lock size={11} strokeWidth={2} aria-hidden="true" />
+                  <span>
+                    {lockedFromTimeline.length} locked track
+                    {lockedFromTimeline.length === 1 ? '' : 's'} will stay in place
+                  </span>
+                </div>
+              )}
+
               {buildError && (
                 <div className="ss-caption" style={{ color: 'var(--semantic-danger)', marginTop: 8 }}>
                   {buildError}
@@ -328,6 +454,7 @@ export function SetArchitectModal(): React.JSX.Element {
           </AnimatePresence>
         </div>
       </motion.div>
+      </FocusLock>
     </motion.div>
   )
 }

@@ -1,4 +1,5 @@
-import { Download, Moon, Settings, Sun, Upload, Volume1, Volume2, VolumeX } from 'lucide-react'
+import { useEffect } from 'react'
+import { Download, MessageSquareHeart, Moon, Settings, Sun, Upload, Volume1, Volume2, VolumeX } from 'lucide-react'
 import type { AppMode, TransitionDotKind } from '@/types'
 import { Badge } from '@/components/shared/Badge'
 import { Button } from '@/components/shared/Button'
@@ -7,11 +8,12 @@ import { Logo } from '@/components/shared/Logo'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { USBDetectionPanel } from '@/components/shared/USBDetectionPanel'
 import { motion, AnimatePresence } from '@/components/shared/Motion'
+import { useLibraryStore } from '@/stores/libraryStore'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
 
-const MODES: readonly AppMode[] = ['Prepare', 'Discover'] as const
+const MODES: readonly AppMode[] = ['Prepare', 'Discover', 'Recall'] as const
 
 export function TopBar(): React.JSX.Element {
   const mode = useUiStore((s) => s.mode)
@@ -22,6 +24,19 @@ export function TopBar(): React.JSX.Element {
   const currentSet = useSetStore((s) => s.currentSet)
   const volume = usePlaybackStore((s) => s.volume)
   const setVolume = usePlaybackStore((s) => s.setVolume)
+  const libraryStale = useLibraryStore((s) => s.libraryStale)
+  const checkStale = useLibraryStore((s) => s.checkStale)
+
+  // Refresh stale flag on mount + every time the window regains focus —
+  // covers "the user just closed Rekordbox and came back to SetSense."
+  useEffect(() => {
+    void checkStale()
+    const handler = (): void => {
+      void checkStale()
+    }
+    window.addEventListener('focus', handler)
+    return () => window.removeEventListener('focus', handler)
+  }, [checkStale])
 
   const VolumeIcon = volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2
 
@@ -32,6 +47,12 @@ export function TopBar(): React.JSX.Element {
   const badgeValue = score != null && hw ? `${score}% · ${hw} ready` : 'Not validated'
   const energyAnalysis = useUiStore((s) => s.energyAnalysis)
 
+  const badgeTitle = currentSet
+    ? score != null
+      ? `Safety score: ${score}% — click to re-validate for export`
+      : 'Click to validate this set before export'
+    : 'Build a set to validate it'
+
   return (
     <div className="topbar glass-2">
       <div className="topbar-left">
@@ -40,7 +61,14 @@ export function TopBar(): React.JSX.Element {
       </div>
 
       <div className="topbar-center">
-        <Badge dot={dotKind} label="Set safety" value={badgeValue} glass={1} />
+        <Badge
+          dot={dotKind}
+          label="Set safety"
+          value={badgeValue}
+          glass={1}
+          onClick={currentSet ? () => showModal('validate') : undefined}
+          title={badgeTitle}
+        />
         <AnimatePresence>
           {energyAnalysis && energyAnalysis.total > 0 && (
             <motion.span
@@ -87,9 +115,28 @@ export function TopBar(): React.JSX.Element {
             onChange={(e) => setVolume(parseFloat(e.target.value))}
           />
         </div>
-        <Button variant="secondary" icon={Upload} onClick={() => showModal('import')}>
-          Import
-        </Button>
+        <div style={{ position: 'relative' }}>
+          <Button variant="secondary" icon={Upload} onClick={() => showModal('import')}>
+            Import
+          </Button>
+          {libraryStale && (
+            <span
+              aria-hidden="true"
+              title="Library out of date — click Import to re-sync"
+              style={{
+                position: 'absolute',
+                top: -2,
+                right: -2,
+                width: 8,
+                height: 8,
+                borderRadius: 999,
+                background: 'var(--accent)',
+                boxShadow: '0 0 0 2px var(--surface-1)',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
+        </div>
         <button
           type="button"
           className="theme-toggle"
@@ -105,6 +152,12 @@ export function TopBar(): React.JSX.Element {
             <Moon size={16} strokeWidth={1.7} />
           </span>
         </button>
+        <IconButton
+          icon={MessageSquareHeart}
+          aria-label="Send feedback"
+          title="Send feedback"
+          onClick={() => showModal('feedback')}
+        />
         <IconButton icon={Settings} aria-label="Settings" onClick={() => showModal('settings')} />
         <Button variant="primary" icon={Download} onClick={() => showModal('export')}>
           Export

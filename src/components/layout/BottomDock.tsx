@@ -41,11 +41,15 @@ export function BottomDock({ visible }: BottomDockProps): React.JSX.Element {
           </span>
 
           {/* Cue editor — requires a selected timeline track */}
-          <span className="dock-item" data-label="Cue editor">
+          <span
+            className="dock-item"
+            data-label={canOpenCueEditor ? 'Cue editor' : 'Select a timeline track first'}
+          >
             <IconButton
               icon={Flag}
               aria-label="Cue editor"
               disabled={!canOpenCueEditor}
+              title={!canOpenCueEditor ? 'Select a track in your timeline to edit its cue points' : undefined}
               onClick={canOpenCueEditor ? () => showModal('cueEditor') : undefined}
               style={{ opacity: canOpenCueEditor ? 1 : 0.35, cursor: canOpenCueEditor ? 'pointer' : 'default' }}
             />

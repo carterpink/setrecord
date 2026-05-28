@@ -90,9 +90,18 @@ export function validateForHardware(set: DJSet, hardware: CDJModel): ValidationR
   const warnings = issues.filter((i) => i.severity === 'warning').length
   const score = Math.max(0, 100 - blocking * 20 - warnings * 5)
 
+  const cueSummary = set.tracks
+    .filter((st) => !st.track.phantom)
+    .map((st) => ({
+      trackTitle: st.track.title,
+      hotCueCount: st.track.hotCues.length,
+      cuePointCount: st.track.cuePoints.length,
+    }))
+
   return {
     score,
     issues,
     isExportReady: blocking === 0,
+    cueSummary,
   }
 }

@@ -1,30 +1,37 @@
 import clsx from 'clsx'
 import { useDraggable } from '@dnd-kit/core'
-import { AlertCircle, ShoppingCart, Volume2 } from 'lucide-react'
+import { AlertCircle, History, ShoppingCart, Volume2 } from 'lucide-react'
 import type { Track } from '@/types'
-import { EnergyBar } from '@/components/shared/EnergyBar'
+import { EnergyChip } from '@/components/shared/EnergyChip'
 import { KeyChip } from '@/components/shared/KeyChip'
 import { Waveform } from '@/components/shared/Waveform'
+import { useClickOrDoubleClick } from '@/hooks/useClickOrDoubleClick'
+import { useLibraryStore } from '@/stores/libraryStore'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import { formatBpm } from '@/utils/format'
-
-function toBarLevel(energy: number): number {
-  return Math.max(1, Math.round(energy * 4 / 10))
-}
-
-function energyTitle(energy: number, source?: string): string {
-  return !source || source === 'pending' ? 'NRG: analysing…' : `NRG: ${energy} / 10`
-}
+import { toMediaUrl } from '@/utils/mediaUrl'
 
 interface TrackRowProps {
   track: Track
   playing?: boolean
   inSet?: boolean
+  compact?: boolean
   onClick?: () => void
   onDoubleClick?: () => void
+  onContextMenu?: (e: React.MouseEvent) => void
+  onShowCombos?: () => void
 }
 
-export function TrackRow({ track, playing, inSet, onClick, onDoubleClick }: TrackRowProps): React.JSX.Element {
+export function TrackRow({
+  track,
+  playing,
+  inSet,
+  compact,
+  onClick,
+  onDoubleClick,
+  onContextMenu,
+  onShowCombos,
+}: TrackRowProps): React.JSX.Element {
   const isPhantom = track.phantom === true
   const missing = track.missingFile === true && !isPhantom
   const unavailable = missing || isPhantom
@@ -34,11 +41,62 @@ export function TrackRow({ track, playing, inSet, onClick, onDoubleClick }: Trac
     disabled: unavailable,
   })
 
+  // When both single-click and double-click handlers are supplied, defer the
+  // single action by ~240ms so a double-click can cancel it before it fires.
+  const disambiguated = useClickOrDoubleClick(
+    onClick ?? (() => {}),
+    onDoubleClick ?? (() => {}),
+  )
+  const useDisambiguation = !!onClick && !!onDoubleClick
+  const handleClick = useDisambiguation ? disambiguated.onClick : onClick
+  const handleDoubleClick = useDisambiguation ? disambiguated.onDoubleClick : onDoubleClick
+
   // Only subscribe to currentTime when this row is the playing one — avoids
   // re-rendering every other row on every audio tick.
   const previewCurrentTime = usePlaybackStore((s) =>
     playing && !missing ? s.currentTime : 0
   )
+
+  if (compact) {
+    // Compact 40px single-line layout: no artwork, title · artist inline
+    return (
+      <div
+        ref={setNodeRef}
+        className={clsx('track-row', 'track-row--compact', playing && !missing && 'playing', inSet && 'in-set', unavailable && 'missing', isPhantom && 'phantom')}
+        style={{
+          cursor: unavailable ? 'default' : isDragging ? 'grabbing' : 'grab',
+          opacity: isDragging ? 0.5 : unavailable ? 0.55 : 1,
+        }}
+        onClick={unavailable ? undefined : handleClick}
+        onDoubleClick={unavailable ? undefined : handleDoubleClick}
+        onContextMenu={unavailable ? undefined : onContextMenu}
+        onKeyDown={(e) => { if (e.key === 'Enter' && !unavailable) onClick?.() }}
+        title={isPhantom ? 'Phantom track' : missing ? `File not found: ${track.filePath}` : undefined}
+        {...(unavailable ? {} : { ...listeners, ...attributes })}
+      >
+        <div className="compact-meta">
+          <span className="compact-title">{track.title}</span>
+          <span className="compact-sep" aria-hidden="true"> · </span>
+          <span className="compact-artist">{track.artist}</span>
+        </div>
+        <div className="compact-actions">
+          <span className="track-bpm">{formatBpm(track.bpm)}</span>
+          <KeyChip>{track.key}</KeyChip>
+          {onShowCombos && !unavailable && (
+            <button
+              className="row-history-btn"
+              onClick={(e) => { e.stopPropagation(); onShowCombos() }}
+              onPointerDown={(e) => e.stopPropagation()}
+              aria-label="What have I played after this?"
+              title="What have I played after this?"
+            >
+              <History size={12} strokeWidth={1.5} />
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -58,8 +116,9 @@ export function TrackRow({ track, playing, inSet, onClick, onDoubleClick }: Trac
           : '"art meta bpm key nrg"',
         rowGap: playing && !missing ? 6 : 0,
       }}
-      onClick={unavailable ? undefined : onClick}
-      onDoubleClick={unavailable ? undefined : onDoubleClick}
+      onClick={unavailable ? undefined : handleClick}
+      onDoubleClick={unavailable ? undefined : handleDoubleClick}
+      onContextMenu={unavailable ? undefined : onContextMenu}
       onKeyDown={(e) => {
         if (e.key === 'Enter' && !unavailable) onClick?.()
       }}
@@ -80,6 +139,25 @@ export function TrackRow({ track, playing, inSet, onClick, onDoubleClick }: Trac
         }}
         aria-hidden="true"
       >
+        {track.albumArtPath && (
+          <img
+            src={toMediaUrl(track.albumArtPath)}
+            alt=""
+            loading="lazy"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              borderRadius: 'inherit',
+            }}
+            onError={(e) => {
+              // Cache file deleted/corrupt — fall back to the gradient behind it.
+              e.currentTarget.style.display = 'none'
+            }}
+          />
+        )}
         {isPhantom ? (
           <div
             style={{
@@ -145,18 +223,29 @@ export function TrackRow({ track, playing, inSet, onClick, onDoubleClick }: Trac
         <KeyChip>{track.key}</KeyChip>
       </div>
       <div
-        style={{
-          gridArea: 'nrg',
-          display: 'flex',
-          alignItems: 'center',
-          opacity: !track.energySource || track.energySource === 'pending' ? 0.3 : 1,
-          transition: 'opacity 0.4s ease',
-        }}
+        style={{ gridArea: 'nrg', display: 'flex', alignItems: 'center', gap: 4, position: 'relative' }}
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
       >
-        <EnergyBar
-          level={!track.energySource || track.energySource === 'pending' ? 0 : toBarLevel(track.energy)}
-          title={energyTitle(track.energy, track.energySource)}
+        <EnergyChip
+          value={track.energy}
+          isPending={!track.energySource || track.energySource === 'pending'}
+          isOverride={track.energySource === 'user'}
+          editable={!unavailable}
+          onChange={(v) => void useLibraryStore.getState().setTrackEnergy(track.id, v)}
         />
+        {onShowCombos && !unavailable && (
+          <button
+            className="row-history-btn"
+            onClick={(e) => { e.stopPropagation(); onShowCombos() }}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label="What have I played after this?"
+            title="What have I played after this?"
+          >
+            <History size={12} strokeWidth={1.5} />
+          </button>
+        )}
       </div>
       {playing && !missing && (
         <div

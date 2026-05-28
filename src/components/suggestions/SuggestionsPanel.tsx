@@ -1,8 +1,12 @@
 import { RefreshCw, Sparkles } from 'lucide-react'
 import { IconButton } from '@/components/shared/IconButton'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { PlaylistSourceDropdown } from '@/components/shared/PlaylistSourceDropdown'
 import { motion, AnimatePresence, stagger } from '@/components/shared/Motion'
+import { useLibraryStore } from '@/stores/libraryStore'
+import { usePlaybackStore } from '@/stores/playbackStore'
 import { useSetStore } from '@/stores/setStore'
+import { useUiStore } from '@/stores/uiStore'
 import { useSuggestions } from '@/hooks/useSuggestions'
 import { formatPosition } from '@/utils/format'
 import { SuggestionCard } from './SuggestionCard'
@@ -11,18 +15,34 @@ const listVariants = stagger(0.05)
 
 
 export function SuggestionsPanel(): React.JSX.Element {
-  const { currentSet, selectedTrackId, addTrack } = useSetStore()
+  const { currentSet, selectedTrackId, addTrackAfterSelected } = useSetStore()
+  const playlists = useLibraryStore((s) => s.playlists)
+  const totalTracks = useLibraryStore((s) => s.tracks.length)
+  const libraryTracks = useLibraryStore((s) => s.tracks)
+  const suggestionsSourcePlaylistIds = useUiStore((s) => s.suggestionsSourcePlaylistIds)
+  const setSuggestionsSourcePlaylistIds = useUiStore((s) => s.setSuggestionsSourcePlaylistIds)
+  const selectedLibraryTrackId = useUiStore((s) => s.selectedLibraryTrackId)
+  const startPreview = usePlaybackStore((s) => s.startPreview)
 
   const selectedSetTrack = currentSet?.tracks.find((st) => st.id === selectedTrackId)
+
+  // Library mode: no timeline track selected but user clicked a library row
+  const isLibraryMode = !selectedSetTrack && !!selectedLibraryTrackId
+  const libraryTrack = isLibraryMode
+    ? (libraryTracks.find((t) => t.id === selectedLibraryTrackId) ?? null)
+    : null
+
+  const effectiveTrackId = selectedSetTrack?.trackId ?? selectedLibraryTrackId
 
   // Pass live track IDs so the engine excludes them even before the DB save debounce fires
   const currentTrackIds = currentSet?.tracks.map((st) => st.trackId) ?? []
 
   const { suggestions, isLoading, refresh } = useSuggestions(
-    selectedSetTrack?.trackId ?? null,
+    effectiveTrackId,
     currentSet?.id ?? null,
     6,
     currentTrackIds,
+    suggestionsSourcePlaylistIds,
   )
 
   return (
@@ -39,15 +59,31 @@ export function SuggestionsPanel(): React.JSX.Element {
       </div>
 
       {selectedSetTrack ? (
-        <div className="ss-body-sm" style={{ marginBottom: 12 }}>
+        <div className="ss-body-sm" style={{ marginBottom: 8 }}>
           Based on track {formatPosition(selectedSetTrack.position)} —{' '}
           {selectedSetTrack.track.title}
         </div>
+      ) : isLibraryMode && libraryTrack ? (
+        <div className="ss-body-sm" style={{ marginBottom: 8 }}>
+          What mixes after{' '}
+          <strong style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
+            {libraryTrack.title}
+          </strong>
+        </div>
       ) : (
-        <div className="ss-body-sm" style={{ marginBottom: 12, color: 'var(--text-tertiary)' }}>
-          Select a track in your set to see suggestions
+        <div className="ss-body-sm" style={{ marginBottom: 8, color: 'var(--text-tertiary)' }}>
+          Select a track in your set or click a library track to see suggestions
         </div>
       )}
+
+      <div style={{ marginBottom: 12 }}>
+        <PlaylistSourceDropdown
+          playlists={playlists}
+          selectedIds={suggestionsSourcePlaylistIds}
+          onChange={setSuggestionsSourcePlaylistIds}
+          totalCount={totalTracks}
+        />
+      </div>
 
       <div className="sugg-list">
         {isLoading && suggestions.length === 0 ? (
@@ -66,11 +102,11 @@ export function SuggestionsPanel(): React.JSX.Element {
               />
             ))}
           </div>
-        ) : !selectedSetTrack ? (
+        ) : !effectiveTrackId ? (
           <EmptyState
             icon={Sparkles}
             title="No track selected"
-            body="Select a track in your set and suggestions will appear here."
+            body="Select a track in your set or click a library track to see suggestions."
           />
         ) : suggestions.length === 0 ? (
           <EmptyState
@@ -91,8 +127,9 @@ export function SuggestionsPanel(): React.JSX.Element {
                 <SuggestionCard
                   key={s.track.id}
                   suggestion={s}
-                  fromTrack={selectedSetTrack?.track}
-                  onAdd={() => addTrack(s.track)}
+                  fromTrack={selectedSetTrack?.track ?? libraryTrack ?? undefined}
+                  onPreview={() => startPreview(s.track)}
+                  onAdd={() => addTrackAfterSelected(s.track)}
                 />
               ))}
             </motion.div>

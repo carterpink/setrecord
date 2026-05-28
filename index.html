@@ -3,9 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <title>SetSense</title>
+    <!--
+      Content Security Policy. Notes:
+      - 'unsafe-inline' + 'unsafe-eval' on script-src are required by Vite's dev
+        HMR runtime and framer-motion's style injection; tightening them needs a
+        nonce pipeline that does not exist yet (audit item, see roadmap).
+      - frame-src allows the YouTube no-cookie embed used by SetDetailsModal.
+      - img-src includes i.ytimg.com for Discover set thumbnails.
+      - media-src has to stay permissive because <audio> reads files via the
+        custom media:// scheme (registered in electron/main.ts with bypassCSP).
+    -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; media-src media: file: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:"
+      content="default-src 'self'; media-src media: file: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://i.ytimg.com; frame-src https://www.youtube-nocookie.com; connect-src 'self'"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
     />
   </head>
   <body>

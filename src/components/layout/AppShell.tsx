@@ -20,7 +20,10 @@ import { SettingsModal } from '@/components/modals/SettingsModal'
 import { OnboardingModal } from '@/components/modals/OnboardingModal'
 import { SetDetailsModal } from '@/components/modals/SetDetailsModal'
 import { BulkImportConfirmModal } from '@/components/modals/BulkImportConfirmModal'
+import { FeedbackModal } from '@/components/modals/FeedbackModal'
+import { PostGigPromptModal } from '@/components/modals/PostGigPromptModal'
 import { DiscoverPanel } from '@/components/discover/DiscoverPanel'
+import { RecallPanel } from '@/components/recall/RecallPanel'
 import { SuggestionsPanel } from '@/components/suggestions/SuggestionsPanel'
 import { TimelinePanel } from '@/components/timeline/TimelinePanel'
 import { DragPreviewCard } from '@/components/timeline/DragPreviewCard'
@@ -40,8 +43,8 @@ type ActiveDrag =
 
 export function AppShell(): React.JSX.Element {
   const { openModal, onboardingVisible, showOnboarding, lightMode, setEnergyAnalysis, mode, hydrateFromSettings } = useUiStore()
-  const { loadLibrary, applyFileStatusChanges, patchTrackEnergy } = useLibraryStore()
-  const { loadSets, addTrack, reorderTracks } = useSetStore()
+  const { loadLibrary, applyFileStatusChanges, patchTrackEnergy, patchTrackArtwork } = useLibraryStore()
+  const { loadSets, addTrack, addTrackAt, reorderTracks } = useSetStore()
   const themeHasMounted = useRef(false)
 
   usePreviewAudio()
@@ -84,11 +87,15 @@ export function AppShell(): React.JSX.Element {
     const unsubUpdate = window.setsense.onEnergyUpdate((u) => {
       patchTrackEnergy(u.trackId, u.energy, u.source)
     })
+    const unsubArtwork = window.setsense.onArtworkUpdate((u) => {
+      patchTrackArtwork(u.trackId, u.albumArtPath)
+    })
     return () => {
       unsubProgress()
       unsubUpdate()
+      unsubArtwork()
     }
-  }, [patchTrackEnergy, setEnergyAnalysis])
+  }, [patchTrackEnergy, patchTrackArtwork, setEnergyAnalysis])
   const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null)
   const [dockVisible, setDockVisible] = useState(false)
   const dockHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -127,6 +134,53 @@ export function AppShell(): React.JSX.Element {
     })
   )
 
+  /**
+   * Screen-reader announcements for the timeline drag flow. dnd-kit's defaults
+   * are generic ("draggable item picked up"); these tell the user which track
+   * is moving and where it lands.
+   */
+  const dndAnnouncements = {
+    onDragStart({ active }: { active: { id: string | number; data: { current?: unknown } } }) {
+      const data = active.data.current as ActiveDrag
+      if (data?.source === 'library' && data.track) {
+        return `Picked up ${data.track.title} by ${data.track.artist}. Drop it on the timeline to add it to the set.`
+      }
+      if (data?.source === 'timeline' && data.setTrack) {
+        return `Picked up ${data.setTrack.track.title} from position ${data.setTrack.position + 1}.`
+      }
+      return 'Picked up a track.'
+    },
+    onDragOver({ over }: {
+      over: { id: string | number; data: { current?: unknown } } | null
+    }) {
+      if (!over) return 'Track is over an empty area.'
+      const overData = over.data.current as { source?: string; setTrack?: SetTrack } | undefined
+      if (over.id === 'timeline-droppable') return 'Hovering the timeline drop zone.'
+      if (overData?.source === 'timeline' && overData.setTrack) {
+        return `Hovering position ${overData.setTrack.position + 1}.`
+      }
+      return ''
+    },
+    onDragEnd({ active, over }: {
+      active: { data: { current?: unknown } }
+      over: { id: string | number; data: { current?: unknown } } | null
+    }) {
+      if (!over) return 'Drag cancelled — no drop target.'
+      const activeData = active.data.current as ActiveDrag
+      const overData = over.data.current as { source?: string; setTrack?: SetTrack } | undefined
+      if (activeData?.source === 'library' && activeData.track) {
+        return `Added ${activeData.track.title} to the set.`
+      }
+      if (activeData?.source === 'timeline' && overData?.setTrack) {
+        return `Moved ${activeData.setTrack.track.title} to position ${overData.setTrack.position + 1}.`
+      }
+      return 'Drag complete.'
+    },
+    onDragCancel() {
+      return 'Drag cancelled.'
+    },
+  }
+
   function handleDragStart(event: DragStartEvent): void {
     const data = event.active.data.current as ActiveDrag
     setActiveDrag(data)
@@ -138,11 +192,25 @@ export function AppShell(): React.JSX.Element {
     if (!over) return
 
     const data = active.data.current as { source: string; track?: Track; setTrack?: SetTrack }
+    const overData = over.data.current as { source?: string; setTrack?: SetTrack } | undefined
 
     if (data?.source === 'library' && data.track) {
-      const overId = over.id as string
-      const overSource = (over.data.current as { source?: string })?.source
-      if (overId === 'timeline-droppable' || overSource === 'timeline') {
+      // Dropped on a specific timeline card → insert above/below based on cursor Y
+      // relative to the card's vertical midpoint. Matches Apple Music / Rekordbox UX.
+      if (overData?.source === 'timeline' && overData.setTrack) {
+        const overRect = over.rect
+        const activeRect = active.rect.current.translated
+        const activeCenterY = activeRect ? activeRect.top + activeRect.height / 2 : overRect.top
+        const overCenterY = overRect.top + overRect.height / 2
+        const insertIndex =
+          activeCenterY < overCenterY
+            ? overData.setTrack.position
+            : overData.setTrack.position + 1
+        addTrackAt(data.track, insertIndex)
+        return
+      }
+      // Dropped on the timeline panel background (empty area / end) → append.
+      if (over.id === 'timeline-droppable') {
         addTrack(data.track)
       }
     } else if (data?.source === 'timeline' && active.id !== over.id) {
@@ -156,7 +224,12 @@ export function AppShell(): React.JSX.Element {
       <div className="app" onMouseMove={handleMouseMove}>
         <TopBar />
         {mode === 'Prepare' ? (
-          <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          <DndContext
+            sensors={sensors}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            accessibility={{ announcements: dndAnnouncements }}
+          >
             <div className="app-grid">
               <ErrorBoundary label="library">
                 <LibraryPanel />
@@ -178,23 +251,73 @@ export function AppShell(): React.JSX.Element {
               ) : null}
             </DragOverlay>
           </DndContext>
-        ) : (
+        ) : mode === 'Discover' ? (
           <ErrorBoundary label="discover">
             <DiscoverPanel />
+          </ErrorBoundary>
+        ) : (
+          <ErrorBoundary label="recall">
+            <RecallPanel />
           </ErrorBoundary>
         )}
         <BottomDock visible={dockVisible} />
       </div>
       <AnimatePresence mode="wait">
-        {openModal === 'import' && <ImportModal key="import" />}
-        {openModal === 'architect' && <SetArchitectModal key="architect" />}
-        {openModal === 'cueEditor' && <CuePointEditor key="cueEditor" />}
-        {openModal === 'validate' && <ExportModal key="validate" validateOnly />}
-        {openModal === 'export' && <ExportModal key="export" />}
-        {openModal === 'settings' && <SettingsModal key="settings" />}
-        {openModal === 'setDetails' && <SetDetailsModal key="setDetails" />}
-        {openModal === 'bulkImportConfirm' && <BulkImportConfirmModal key="bulkImportConfirm" />}
-        {onboardingVisible && <OnboardingModal key="onboarding" />}
+        {openModal === 'import' && (
+          <ErrorBoundary key="import" label="Import">
+            <ImportModal />
+          </ErrorBoundary>
+        )}
+        {openModal === 'architect' && (
+          <ErrorBoundary key="architect" label="Set Architect">
+            <SetArchitectModal />
+          </ErrorBoundary>
+        )}
+        {openModal === 'cueEditor' && (
+          <ErrorBoundary key="cueEditor" label="Cue Point Editor">
+            <CuePointEditor />
+          </ErrorBoundary>
+        )}
+        {openModal === 'validate' && (
+          <ErrorBoundary key="validate" label="Validate">
+            <ExportModal validateOnly />
+          </ErrorBoundary>
+        )}
+        {openModal === 'export' && (
+          <ErrorBoundary key="export" label="Export">
+            <ExportModal />
+          </ErrorBoundary>
+        )}
+        {openModal === 'settings' && (
+          <ErrorBoundary key="settings" label="Settings">
+            <SettingsModal />
+          </ErrorBoundary>
+        )}
+        {openModal === 'setDetails' && (
+          <ErrorBoundary key="setDetails" label="Set Details">
+            <SetDetailsModal />
+          </ErrorBoundary>
+        )}
+        {openModal === 'bulkImportConfirm' && (
+          <ErrorBoundary key="bulkImportConfirm" label="Bulk Import">
+            <BulkImportConfirmModal />
+          </ErrorBoundary>
+        )}
+        {openModal === 'feedback' && (
+          <ErrorBoundary key="feedback" label="Feedback">
+            <FeedbackModal />
+          </ErrorBoundary>
+        )}
+        {openModal === 'postGigPrompt' && (
+          <ErrorBoundary key="postGigPrompt" label="Post-gig Prompt">
+            <PostGigPromptModal />
+          </ErrorBoundary>
+        )}
+        {onboardingVisible && (
+          <ErrorBoundary key="onboarding" label="Onboarding">
+            <OnboardingModal />
+          </ErrorBoundary>
+        )}
       </AnimatePresence>
       <ToastContainer />
     </>

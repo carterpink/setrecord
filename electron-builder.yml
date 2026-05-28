@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: setsense-scaffold
+appId: com.setsense.app
+productName: SetSense
 directories:
   buildResources: build
 files:
@@ -11,8 +11,13 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**
+  # node-llama-cpp loads native llama.cpp binaries at runtime — must live outside the asar.
+  - node_modules/node-llama-cpp/**
+  - node_modules/@node-llama-cpp/**
+  # @journeyapps/sqlcipher ships a native .node binary that must be loadable from disk.
+  - node_modules/@journeyapps/sqlcipher/**
 win:
-  executableName: setsense-scaffold
+  executableName: SetSense
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}

@@ -20,7 +20,26 @@ export interface HotCue {
 export type AudioFormat = 'mp3' | 'aiff' | 'wav' | 'flac' | 'm4a' | 'unknown'
 
 /** Where the current `energy` value came from. */
-export type EnergySource = 'pending' | 'computed' | 'failed' | 'missing'
+export type EnergySource = 'pending' | 'rekordbox' | 'computed' | 'failed' | 'missing' | 'user'
+
+/** State of embedded album-artwork extraction for a track. */
+export type ArtworkSource = 'pending' | 'embedded' | 'none' | 'failed'
+
+// ───────── Lifecycle state ─────────
+
+/**
+ * Lifecycle state for a track (Phase 12a).
+ * Thresholds documented in electron/algorithms/memory/lifecycle.ts
+ */
+export type LifecycleState =
+  | 'new' // added ≤30 days, never played
+  | 'untested' // added >30 days, never played
+  | 'testing' // 1–3 plays
+  | 'active' // 4–9 plays, played recently
+  | 'peak' // 10+ plays, played within 90 days
+  | 'occasional' // has plays, last played 90–365 days ago
+  | 'archive' // last played 1–3 years ago
+  | 'forgotten' // last played >3 years ago
 
 // ───────── Track ─────────
 
@@ -47,6 +66,8 @@ export interface Track {
   format: AudioFormat
   albumArtPath?: string
   albumArtUrl?: string
+  /** Provenance: 'pending' until the background extractor writes 'embedded' / 'none' / 'failed'. */
+  albumArtSource?: ArtworkSource
   cuePoints: CuePoint[]
   hotCues: HotCue[]
   beatgridOffset?: number // ms
@@ -63,6 +84,12 @@ export interface Track {
   missingFile?: boolean
   /** True when this track was imported from Discover with no library match. */
   phantom?: boolean
+  /** Computed or user-overridden lifecycle state (Phase 12a). */
+  lifecycleState?: LifecycleState
+  /** Where lifecycleState came from: 'computed' by the engine or 'user' override. */
+  lifecycleSource?: 'computed' | 'user'
+  /** ISO timestamp of when the user flagged this track to be tested at their next gig. */
+  flaggedForGigAt?: string
   /** Populated for phantom tracks — links to buy/download and source set context. */
   discoverMeta?: {
     discoverSetId: string
@@ -75,14 +102,7 @@ export interface Track {
 
 // ───────── Set ─────────
 
-export type SetVibe =
-  | 'peak'
-  | 'mixed'
-  | 'club'
-  | 'warmup'
-  | 'closing'
-  | 'festival'
-  | 'underground'
+export type SetVibe = 'peak' | 'mixed' | 'club' | 'warmup' | 'closing' | 'festival' | 'underground'
 export type VenueType = 'club' | 'festival' | 'bar' | 'private' | 'outdoor'
 export type EnergyCurveType = 'rise' | 'peak-sustain' | 'wave' | 'drop-in' | 'custom'
 export type CDJModel = 'CDJ-2000NXS2' | 'CDJ-3000' | 'XDJ-RX3' | 'XDJ-XZ' | 'CDJ-2000'
@@ -96,6 +116,8 @@ export interface SetTrack {
   energyOverride?: number
   notes?: string
   playing?: boolean // UI-only: currently cued in the preview deck
+  /** When true, Set Architect preserves this track at its position and cannot move or replace it. */
+  locked?: boolean
 }
 
 export interface Set {
@@ -147,7 +169,7 @@ export type TransitionDotKind = 'success' | 'warning' | 'danger' | 'info' | 'tra
 
 // ───────── Suggestions ─────────
 
-export type MatchReasonType = 'key' | 'bpm' | 'energy' | 'genre' | 'texture'
+export type MatchReasonType = 'key' | 'bpm' | 'energy' | 'genre' | 'texture' | 'combo'
 export type MatchReasonQuality = 'positive' | 'neutral' | 'warning'
 
 export interface MatchReason {
@@ -162,6 +184,8 @@ export interface Suggestion {
   rank: number
   matchReasons: MatchReason[]
   best?: boolean // UI-only: the single top result
+  /** Raw count of times this track has been played after the current track in history. */
+  comboCount?: number
 }
 
 // ───────── Library stats + filters ─────────
@@ -199,6 +223,49 @@ export interface ImportResult {
   stats: LibraryStats
 }
 
+export type ImportSource = 'rekordbox-db' | 'rekordbox-xml'
+
+/**
+ * Snapshot of what we found in the user's Rekordbox install. All fields are
+ * optional except `installed` because Rekordbox may be partially configured
+ * (app installed but never opened, or master.db deleted manually, etc.).
+ */
+export interface RekordboxDetection {
+  /** True when ~/Library/Pioneer/rekordbox exists. */
+  installed: boolean
+  /** Absolute path to master.db when present and readable. */
+  dbPath: string | null
+  /** Epoch ms of master.db at the time of detection. */
+  dbMtime: number | null
+  /** Size of master.db in bytes (0 = empty library). */
+  dbSize: number | null
+  /** True when SetSense could not open master.db because Rekordbox is running. */
+  dbLocked: boolean
+  /** Absolute path to options.json when present (plaintext JSON). */
+  optionsJsonPath: string | null
+  /** User's configured XML export path if it was parsed out of options.json. */
+  xmlExportPath: string | null
+  /** True when a recent XML export exists at xmlExportPath. */
+  xmlExportExists: boolean
+  /** Rekordbox CFBundleShortVersionString when /Applications/rekordbox*.app is found. */
+  appVersion: string | null
+  /** Track count read from master.db when readable. null = not attempted or read failed. */
+  trackCount: number | null
+  /** Playlist count read from master.db when readable. */
+  playlistCount: number | null
+  /** Why the master.db couldn't be opened (only set when we tried and failed). */
+  dbReadError: 'locked' | 'key-mismatch' | 'unknown' | null
+}
+
+export interface RekordboxStaleStatus {
+  /** True when the on-disk master.db is newer than our last import (lastImportMtime). */
+  stale: boolean
+  /** Current master.db mtime (epoch ms) or null when the file is missing. */
+  currentMtime: number | null
+  /** Mtime of the source file the last time we imported. */
+  lastImportMtime: number | null
+}
+
 export interface ValidationIssue {
   trackId: string
   trackTitle: string
@@ -207,10 +274,18 @@ export interface ValidationIssue {
   message: string
 }
 
+export interface CueSummaryEntry {
+  trackTitle: string
+  hotCueCount: number
+  cuePointCount: number
+}
+
 export interface ValidationResult {
   score: number // 0-100
   issues: ValidationIssue[]
   isExportReady: boolean
+  /** Per-track cue counts included in the export (P2 verification). */
+  cueSummary?: CueSummaryEntry[]
 }
 
 export interface ExportResult {
@@ -235,12 +310,30 @@ export interface ArchitectParams {
   energyCurveType: EnergyCurveType
   excludedTracks?: string[]
   seedTrack?: string
+  /** Restrict the source pool to tracks in these Rekordbox playlists. Empty/undefined = whole library. */
+  sourcePlaylistIds?: string[]
+  /** Tracks pinned at fixed positions. Algorithm preserves these and bridges between them. */
+  lockedTracks?: Array<{ position: number; trackId: string }>
+}
+
+// ───────── Playlists (imported from Rekordbox) ─────────
+
+export interface Playlist {
+  id: string
+  rekordboxId?: string
+  name: string
+  /** null = root-level. Folders nest playlists; leaves carry track ids. */
+  parentId: string | null
+  /** Internal track UUIDs. Empty array for folders. */
+  trackIds: string[]
+  /** True for Rekordbox NODE Type="0" (folder containing other playlists). */
+  isFolder: boolean
 }
 
 // ───────── App-shell UI state ─────────
 
-export type AppMode = 'Prepare' | 'Discover'
-export type LibraryTab = 'Library' | 'Sets'
+export type AppMode = 'Prepare' | 'Discover' | 'Recall'
+export type LibraryTab = 'Library' | 'Crates' | 'Sets'
 export type TimelineCurveView = 'Energy' | 'BPM'
 
 // ───────── Discover ─────────
@@ -362,4 +455,262 @@ export interface USBCopyResult {
   success: boolean
   destPath?: string
   error?: string
+}
+
+// ───────── Memory engine result types (Phase 12a) ─────────
+
+/** A track surfaced by the "forgotten gems" engine. */
+export interface GemResult {
+  track: Track
+  score: number
+  reason: string
+  monthsDormant: number
+}
+
+/**
+ * JSON-serialisable condition for a SmartCrate rule.
+ * All fields are optional; omitted fields are not tested.
+ */
+export interface CrateRule {
+  bpmMin?: number
+  bpmMax?: number
+  energyMin?: number
+  energyMax?: number
+  /** Exact Camelot key match, e.g. "8A". */
+  keyExact?: string
+  /** Track key must be compatible-with (not clash) this Camelot key. */
+  keyCompatibleWith?: string
+  /** Track genre must include this string (case-insensitive). */
+  genreIncludes?: string
+  playCountOp?: 'gt' | 'lt' | 'gte' | 'lte' | 'eq'
+  playCountValue?: number
+  /** Track's lastPlayed must be older than N months. */
+  lastPlayedOlderThanMonths?: number
+  ratingMin?: number
+  /** true = only tracks with playCount===0 and no lastPlayed */
+  neverPlayed?: boolean
+  /** true = key is empty or bpm===0; false = both are present */
+  missingMetadata?: boolean
+  format?: AudioFormat
+  /** true = no hot cues set AND no cue points set (proxy for "never auditioned"). */
+  noCuePoints?: boolean
+  /** Track duration in seconds, lower bound (inclusive). */
+  durationMinSec?: number
+  /** Track duration in seconds, upper bound (inclusive). */
+  durationMaxSec?: number
+  /** Track BPM must sit in the top N percentile of the supplied library's BPM distribution. */
+  bpmTopPercentOfLibrary?: number
+}
+
+/** A complete smart crate definition. */
+export interface SmartCrate {
+  id: string
+  name: string
+  rules: CrateRule[]
+  match: 'all' | 'any'
+  /** One-line human description of the rules — shown as a subtitle on crate cards. */
+  description?: string
+}
+
+/** A track with an aggregated count (used in transition graph, closers, bridges). */
+export interface RankedTrack {
+  trackId: string
+  count: number
+}
+
+/**
+ * Directed adjacency graph of track→next-track transition counts.
+ * adjacency: Map<fromTrackId, Map<toTrackId, count>>
+ */
+export interface TransitionGraph {
+  adjacency: Map<string, Map<string, number>>
+}
+
+/** "Wrapped for DJs" — aggregate identity snapshot for a library. */
+export interface IdentitySnapshot {
+  genreDistribution: Array<{ label: string; count: number }>
+  bpmHistogram: Array<{ range: string; count: number }>
+  keyDistribution: Array<{ label: string; count: number }>
+  energyDistribution: Array<{ level: number; count: number }>
+  topArtists: Array<{ label: string; count: number }>
+  topLabels: Array<{ label: string; count: number }>
+  tasteTimeline: Array<{ period: string; count: number; performedCount: number }>
+}
+
+/** Library health analysis result. */
+export interface HealthReport {
+  totalTracks: number
+  missingFiles: number
+  missingFileIds: string[]
+  missingKey: number
+  missingKeyIds: string[]
+  missingBpm: number
+  missingBpmIds: string[]
+  unsupportedFormats: number
+  unsupportedFormatIds: string[]
+  duplicateGroups: Array<{ ids: string[]; normalisedKey: string }>
+  /** 0–100 composite health score. */
+  healthScore: number
+}
+
+/** A smart crate plus its live-evaluated track count (for the Recall crates grid). */
+export interface CrateWithCount extends SmartCrate {
+  trackCount: number
+  /** true for built-in presets (not user-deletable). */
+  isSeed: boolean
+}
+
+/** A track that follows another, with how many times it has (transition combos). */
+export interface ComboResult {
+  track: Track
+  count: number
+}
+
+/** Count of tracks in each lifecycle state. */
+export interface LifecycleCounts {
+  new: number
+  untested: number
+  testing: number
+  active: number
+  peak: number
+  occasional: number
+  archive: number
+  forgotten: number
+}
+
+/** State of the optional bundled local LLM that powers natural-language Recall search. */
+export interface RecallAiStatus {
+  /** User has opted in to the local AI (settings toggle). */
+  enabled: boolean
+  /** absent = not loaded yet; downloading/loading = in progress; ready = usable. */
+  state: 'absent' | 'downloading' | 'loading' | 'ready' | 'error'
+  /** Whether the model file exists on disk (loaded lazily on first ask). */
+  downloaded: boolean
+  /** 0–1 download progress when state==='downloading'. */
+  progress?: number
+  error?: string
+}
+
+/** Result of a natural-language Recall query, routed to a deterministic engine intent. */
+export interface RecallAskResult {
+  /** The engine intent the question was routed to. */
+  intent: string
+  /** One-sentence human summary of what was found. */
+  narration: string
+  kind: 'tracks' | 'combos' | 'sequences' | 'stats'
+  tracks?: Track[]
+  combos?: ComboResult[]
+  sequences?: { trackIds: string[]; tracks: Track[]; count?: number }[]
+  stats?: Array<{ label: string; value: string }>
+}
+
+/** Active section within the Recall tab. */
+export type RecallSection =
+  | 'conversations'
+  | 'rediscover'
+  | 'crates'
+  | 'identity'
+  | 'combos'
+  | 'health'
+
+// ───────── Recall conversations (SetSense Intelligence) ─────────
+
+/**
+ * Deterministic library-search parameters. The conversation engine builds these
+ * from plain-English turns and refines them across a chat; the engine returns
+ * matching tracks instantly with no model.
+ */
+export interface LibrarySearchParams {
+  /** Free-text title/artist/album contains. */
+  text?: string
+  /** Genre token (expanded to synonyms by the engine). */
+  genre?: string
+  bpmMin?: number
+  bpmMax?: number
+  energyMin?: number
+  energyMax?: number
+  keyExact?: string
+  minRating?: number
+  neverPlayed?: boolean
+  dormantMonths?: number
+  /** Track duration in seconds, lower bound (inclusive). */
+  durationMinSec?: number
+  /** Track duration in seconds, upper bound (inclusive). */
+  durationMaxSec?: number
+  /** ISO timestamp; only tracks added on or after this date pass. */
+  addedAfter?: string
+  /** ISO timestamp; only tracks added on or before this date pass. */
+  addedBefore?: string
+  /** Substring (case-insensitive) that must appear in any hot-cue or cue-point label. */
+  cueLabel?: string
+  sort?:
+    | 'mostPlayed'
+    | 'leastPlayed'
+    | 'recent'
+    | 'oldest'
+    | 'rating'
+    | 'bpmAsc'
+    | 'bpmDesc'
+    | 'energyAsc'
+    | 'energyDesc'
+    | 'random'
+  limit?: number
+}
+
+export type RecallResultKind = 'tracks' | 'combos' | 'sequences' | 'stats'
+
+/** One message in a Recall conversation. Track-heavy payloads are stored as ids and rehydrated. */
+export interface RecallMessage {
+  id: string
+  role: 'user' | 'assistant'
+  /** User input, or the assistant's one-line narration. */
+  text: string
+  kind?: RecallResultKind
+  /** Ordered result track ids (kind==='tracks'). */
+  trackIds?: string[]
+  combos?: { trackId: string; count: number }[]
+  sequences?: { trackIds: string[]; count: number }[]
+  stats?: { label: string; value: string }[]
+}
+
+/** A saved chat thread with SetSense Intelligence. */
+export interface RecallConversation {
+  id: string
+  title: string
+  createdAt: string
+  updatedAt: string
+  messages: RecallMessage[]
+  /** Running search filter, refined turn-by-turn. */
+  params: LibrarySearchParams
+}
+
+// ───────── Play history (Phase 11) ─────────
+
+/** A gig/performance session grouping an ordered tracklist. */
+export interface PlaySession {
+  id: string
+  name: string
+  /** Where this session record came from. */
+  source: 'rekordbox' | 'setsense' | 'manual'
+  /** ISO date the gig happened (may be null for manually-created sessions without a known date). */
+  performedAt?: string
+  venue?: string
+  /** Duration in seconds (optional; populated when known). */
+  duration?: number
+  /** Links back to a SetSense set when source='setsense'. */
+  setId?: string
+  createdAt: string
+  /** Derived from the session_tracks count — not stored in the sessions row itself. */
+  trackCount: number
+}
+
+/** A single track position within a PlaySession. */
+export interface SessionTrack {
+  id: string
+  sessionId: string
+  trackId: string
+  playOrder: number
+  playedAt?: string
+  /** Full track object, joined from the tracks table. */
+  track: Track
 }

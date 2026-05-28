@@ -16,16 +16,19 @@ export function GhostTrackCard({ suggestion, onAdd }: GhostTrackCardProps): Reac
       {/* col 1: 32px handle placeholder — keeps grid aligned */}
       <div style={{ width: 32, height: 32, flexShrink: 0 }} aria-hidden="true" />
 
-      {/* col 2: body */}
+      {/* col 2: body — mirrors real card structure so spacing is identical */}
       <div className="tl-body">
         <div className="tl-row1">
-          <span className="ss-caption" style={{ color: 'var(--text-tertiary)', marginRight: 4 }}>
-            suggested
-          </span>
+          <span className="tl-num ss-mono" aria-hidden="true" />
           <span className="ss-h3">{track.title}</span>
         </div>
         <div className="ss-body-sm">
           {track.artist} · {formatBpm(track.bpm)} · {track.key}
+        </div>
+        <div className="tl-q">
+          <span className="ss-caption" style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+            Best suggestion
+          </span>
         </div>
       </div>
 
