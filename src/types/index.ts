@@ -332,7 +332,7 @@ export interface Playlist {
 
 // ───────── App-shell UI state ─────────
 
-export type AppMode = 'Prepare' | 'Discover' | 'Recall'
+export type AppMode = 'Prepare' | 'YouTubeDiscover' | 'Discover'
 export type LibraryTab = 'Library' | 'Crates' | 'Sets'
 export type TimelineCurveView = 'Energy' | 'BPM'
 
@@ -535,6 +535,14 @@ export interface IdentitySnapshot {
   topArtists: Array<{ label: string; count: number }>
   topLabels: Array<{ label: string; count: number }>
   tasteTimeline: Array<{ period: string; count: number; performedCount: number }>
+  /**
+   * Key composition per 10-BPM zone. One entry per BPM bucket that has tracks,
+   * with a `keys` map showing the count of every Camelot key in that bucket.
+   * Lets the UI render "Sarah's typical 128 BPM key palette" charts.
+   */
+  keyByBpmZone: Array<{ range: string; total: number; keys: Record<string, number> }>
+  /** Total tracks counted for the snapshot — used by the share card. */
+  totalTracks: number
 }
 
 /** Library health analysis result. */
@@ -548,12 +556,40 @@ export interface HealthReport {
   missingBpmIds: string[]
   unsupportedFormats: number
   unsupportedFormatIds: string[]
+  /** Tracks where the auto-energy analyser hasn't yet written a result. */
+  notAnalysed: number
+  notAnalysedIds: string[]
   duplicateGroups: Array<{ ids: string[]; normalisedKey: string }>
   /** 0–100 composite health score. */
   healthScore: number
+  /** Per-issue contribution to the score, for the explainer tooltip. */
+  scoreBreakdown: HealthScoreBreakdown
 }
 
-/** A smart crate plus its live-evaluated track count (for the Recall crates grid). */
+/** Per-issue contribution to the health score. Positive values are penalties. */
+export interface HealthScoreBreakdown {
+  /** Points each issue type subtracted from 100. */
+  missingFiles: number
+  missingKey: number
+  missingBpm: number
+  unsupportedFormats: number
+  duplicates: number
+  /** Per-unit penalty + cap, surfaced for the tooltip copy. */
+  weights: {
+    missingFilesPerTrack: number
+    missingFilesCap: number
+    missingKeyPerTrack: number
+    missingKeyCap: number
+    missingBpmPerTrack: number
+    missingBpmCap: number
+    unsupportedFormatsPerTrack: number
+    unsupportedFormatsCap: number
+    duplicatesPerGroup: number
+    duplicatesCap: number
+  }
+}
+
+/** A smart crate plus its live-evaluated track count (for the Discover crates grid). */
 export interface CrateWithCount extends SmartCrate {
   trackCount: number
   /** true for built-in presets (not user-deletable). */
@@ -578,7 +614,7 @@ export interface LifecycleCounts {
   forgotten: number
 }
 
-/** State of the optional bundled local LLM that powers natural-language Recall search. */
+/** State of the optional bundled local LLM that powers natural-language Discover search. */
 export interface RecallAiStatus {
   /** User has opted in to the local AI (settings toggle). */
   enabled: boolean
@@ -591,7 +627,7 @@ export interface RecallAiStatus {
   error?: string
 }
 
-/** Result of a natural-language Recall query, routed to a deterministic engine intent. */
+/** Result of a natural-language Discover query, routed to a deterministic engine intent. */
 export interface RecallAskResult {
   /** The engine intent the question was routed to. */
   intent: string
@@ -604,7 +640,7 @@ export interface RecallAskResult {
   stats?: Array<{ label: string; value: string }>
 }
 
-/** Active section within the Recall tab. */
+/** Active section within the Discover tab. */
 export type RecallSection =
   | 'conversations'
   | 'rediscover'
@@ -613,7 +649,7 @@ export type RecallSection =
   | 'combos'
   | 'health'
 
-// ───────── Recall conversations (SetSense Intelligence) ─────────
+// ───────── Discover conversations (SetSense Intelligence) ─────────
 
 /**
  * Deterministic library-search parameters. The conversation engine builds these
@@ -659,7 +695,7 @@ export interface LibrarySearchParams {
 
 export type RecallResultKind = 'tracks' | 'combos' | 'sequences' | 'stats'
 
-/** One message in a Recall conversation. Track-heavy payloads are stored as ids and rehydrated. */
+/** One message in a Discover conversation. Track-heavy payloads are stored as ids and rehydrated. */
 export interface RecallMessage {
   id: string
   role: 'user' | 'assistant'
@@ -683,6 +719,43 @@ export interface RecallConversation {
   /** Running search filter, refined turn-by-turn. */
   params: LibrarySearchParams
 }
+
+// ───────── Licensing / SetSense Pro (Section 16) ─────────
+
+export type LicenseTier = 'free' | 'pro'
+export type LicensePlan = 'lifetime' | 'subscription'
+/** active = entitled now · expired = subscription lapsed · invalid = bad/forged key · none = no key. */
+export type LicenseStatus = 'active' | 'expired' | 'invalid' | 'none'
+
+/**
+ * The renderer-facing entitlement snapshot. Derived in the main process by
+ * re-verifying the stored signed key on every read, so expiry is always current.
+ * The full key never crosses to the renderer — only a masked form for display.
+ */
+export interface LicenseState {
+  tier: LicenseTier
+  plan: LicensePlan | null
+  status: LicenseStatus
+  /** Masked key for display, e.g. "SES1·••••·A1B2". null when no key is stored. */
+  keyMasked: string | null
+  /** Buyer email embedded in the signed key, for the "manage" UI. */
+  buyerEmail: string | null
+  /** ISO timestamp the key was activated on this machine. */
+  activatedAt: string | null
+  /** ISO expiry for subscription plans. null = perpetual (lifetime). */
+  expiresAt: string | null
+}
+
+export type LicenseActivationError = 'malformed' | 'bad-signature' | 'expired' | 'unknown'
+
+export interface LicenseActivationResult {
+  ok: boolean
+  state: LicenseState
+  error?: LicenseActivationError
+}
+
+/** What the user is buying — drives the external checkout URL. */
+export type CheckoutPlan = 'subscription' | 'lifetime' | 'tip'
 
 // ───────── Play history (Phase 11) ─────────
 

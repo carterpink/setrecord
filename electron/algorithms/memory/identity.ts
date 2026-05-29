@@ -86,7 +86,9 @@ export function buildIdentity(
       energyDistribution: [],
       topArtists: [],
       topLabels: [],
-      tasteTimeline: []
+      tasteTimeline: [],
+      keyByBpmZone: [],
+      totalTracks: 0
     }
   }
 
@@ -132,6 +134,24 @@ export function buildIdentity(
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([period, count]) => ({ period, count, performedCount: performedBuckets[period] ?? 0 }))
 
+  // ── Key composition per 10-BPM zone
+  //    Sarah + Marcus asked for this independently: a DJ's harmonic approach
+  //    changes by tempo zone. We only count tracks that have a BPM and a key —
+  //    a missing-either track has nothing to say about either axis.
+  const keyByZone: Record<string, Record<string, number>> = {}
+  const keyByZoneTotals: Record<string, number> = {}
+  for (const t of tracks) {
+    if (!t.key || t.bpm === 0) continue
+    const bucket = bpmBucket(t.bpm)
+    if (bucket === 'unknown') continue
+    if (!keyByZone[bucket]) keyByZone[bucket] = {}
+    keyByZone[bucket][t.key] = (keyByZone[bucket][t.key] ?? 0) + 1
+    keyByZoneTotals[bucket] = (keyByZoneTotals[bucket] ?? 0) + 1
+  }
+  const keyByBpmZone = Object.entries(keyByZone)
+    .sort((a, b) => bucketLow(a[0]) - bucketLow(b[0]))
+    .map(([range, keys]) => ({ range, total: keyByZoneTotals[range], keys }))
+
   return {
     genreDistribution: topN(genreMap, 20),
     bpmHistogram: Object.entries(bpmMap)
@@ -146,6 +166,8 @@ export function buildIdentity(
       .map(([level, count]) => ({ level: Number(level), count })),
     topArtists: topN(artistMap, 20),
     topLabels: topN(labelMap, 20),
-    tasteTimeline
+    tasteTimeline,
+    keyByBpmZone,
+    totalTracks: tracks.length
   }
 }

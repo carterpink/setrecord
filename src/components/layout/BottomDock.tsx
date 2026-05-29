@@ -1,15 +1,18 @@
 import { Flag, HardDrive, ShieldCheck, Sparkles, Zap } from 'lucide-react'
 import { IconButton } from '@/components/shared/IconButton'
+import { ProBadge } from '@/components/shared/ProGate'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
+import { useLicenseStore } from '@/stores/licenseStore'
 
 interface BottomDockProps {
   visible: boolean
 }
 
 export function BottomDock({ visible }: BottomDockProps): React.JSX.Element {
-  const { showModal, smartFilter, toggleSmartFilter } = useUiStore()
+  const { showModal, showUpgrade, smartFilter, toggleSmartFilter } = useUiStore()
   const { selectedTrackId } = useSetStore()
+  const isPro = useLicenseStore((s) => s.license.tier === 'pro')
 
   const canSmartFilter = selectedTrackId !== null
   const canOpenCueEditor = selectedTrackId !== null
@@ -19,60 +22,83 @@ export function BottomDock({ visible }: BottomDockProps): React.JSX.Element {
       <div className={`dock-wrap${visible ? ' dock-visible' : ''}`}>
         <div className="dock glass-3">
 
-          {/* Generate */}
-          <span className="dock-item" data-label="Set Architect">
+          {/* Set Architect — Pro */}
+          <span className="dock-item" data-label={isPro ? 'Set Architect' : 'Set Architect — Pro'}>
             <IconButton
               icon={Sparkles}
               aria-label="Set Architect"
-              onClick={() => showModal('architect')}
+              onClick={() => (isPro ? showModal('architect') : showUpgrade('setArchitect'))}
             />
+            {!isPro && <ProBadge className="dock-pro-badge" />}
           </span>
 
-          {/* Smart filter — dimmed when no track selected */}
-          <span className="dock-item" data-label="Smart filter">
+          {/* Smart filter — Pro; dimmed when no track selected */}
+          <span className="dock-item" data-label={isPro ? 'Smart filter' : 'Smart filter — Pro'}>
             <IconButton
               icon={Zap}
               aria-label="Smart filter"
               active={smartFilter}
-              disabled={!canSmartFilter}
-              onClick={canSmartFilter ? toggleSmartFilter : undefined}
-              style={{ opacity: canSmartFilter ? 1 : 0.35, cursor: canSmartFilter ? 'pointer' : 'default' }}
+              disabled={isPro && !canSmartFilter}
+              onClick={
+                !isPro
+                  ? () => showUpgrade('suggestions')
+                  : canSmartFilter
+                    ? toggleSmartFilter
+                    : undefined
+              }
+              style={{
+                opacity: !isPro || canSmartFilter ? 1 : 0.35,
+                cursor: !isPro || canSmartFilter ? 'pointer' : 'default',
+              }}
             />
+            {!isPro && <ProBadge className="dock-pro-badge" />}
           </span>
 
-          {/* Cue editor — requires a selected timeline track */}
+          {/* Cue editor — Pro; requires a selected timeline track */}
           <span
             className="dock-item"
-            data-label={canOpenCueEditor ? 'Cue editor' : 'Select a timeline track first'}
+            data-label={!isPro ? 'Cue editor — Pro' : canOpenCueEditor ? 'Cue editor' : 'Select a timeline track first'}
           >
             <IconButton
               icon={Flag}
               aria-label="Cue editor"
-              disabled={!canOpenCueEditor}
-              title={!canOpenCueEditor ? 'Select a track in your timeline to edit its cue points' : undefined}
-              onClick={canOpenCueEditor ? () => showModal('cueEditor') : undefined}
-              style={{ opacity: canOpenCueEditor ? 1 : 0.35, cursor: canOpenCueEditor ? 'pointer' : 'default' }}
+              disabled={isPro && !canOpenCueEditor}
+              title={isPro && !canOpenCueEditor ? 'Select a track in your timeline to edit its cue points' : undefined}
+              onClick={
+                !isPro
+                  ? () => showUpgrade('cueEditor')
+                  : canOpenCueEditor
+                    ? () => showModal('cueEditor')
+                    : undefined
+              }
+              style={{
+                opacity: !isPro || canOpenCueEditor ? 1 : 0.35,
+                cursor: !isPro || canOpenCueEditor ? 'pointer' : 'default',
+              }}
             />
+            {!isPro && <ProBadge className="dock-pro-badge" />}
           </span>
 
           <span className="dock-divider" aria-hidden="true" />
 
-          {/* Validate */}
-          <span className="dock-item" data-label="Validate set">
+          {/* Validate — Pro */}
+          <span className="dock-item" data-label={isPro ? 'Validate set' : 'Validate set — Pro'}>
             <IconButton
               icon={ShieldCheck}
               aria-label="Validate set"
-              onClick={() => showModal('validate')}
+              onClick={() => (isPro ? showModal('validate') : showUpgrade('export'))}
             />
+            {!isPro && <ProBadge className="dock-pro-badge" />}
           </span>
 
-          {/* Export */}
-          <span className="dock-item" data-label="Export">
+          {/* Export — Pro */}
+          <span className="dock-item" data-label={isPro ? 'Export' : 'Export — Pro'}>
             <IconButton
               icon={HardDrive}
               aria-label="Export"
-              onClick={() => showModal('export')}
+              onClick={() => (isPro ? showModal('export') : showUpgrade('export'))}
             />
+            {!isPro && <ProBadge className="dock-pro-badge" />}
           </span>
 
         </div>

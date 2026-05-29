@@ -2,24 +2,43 @@
  * libraryHealth.ts — Pure engine: analyse the library for actionable health
  * issues and detect duplicates via fuzzy artist+title matching.
  *
- * Uses normalised-string equality for duplicate detection: lowercase, strip
- * punctuation, collapse whitespace. This is simpler and more predictable than
- * a weighted fuzzy distance for the duplicate use-case where we want near-exact
- * matches rather than broad similarity.
+ * Scoring (change-matrix S12 P0 recalibration):
+ *   Missing files dominate the score because at gig time a missing file is a
+ *   0/100 outcome — the deck just won't play it. Flat per-track penalties with
+ *   per-issue caps so a single category can't push the score to zero on its
+ *   own. Numbers come from the matrix verbatim.
+ *
+ * Duplicate detection uses normalised-string equality on artist+title:
+ * lowercase, strip punctuation, collapse whitespace. Predictable and tight
+ * enough for the "same record imported twice" case without false positives.
  */
 
 import type { Track } from '../../../src/types'
-import type { HealthReport } from '../../../src/types'
+import type { HealthReport, HealthScoreBreakdown } from '../../../src/types'
 
 export type { HealthReport }
 
 const SUPPORTED_FORMATS = new Set(['mp3', 'aiff', 'wav', 'flac', 'm4a'])
 
+/** Per-issue penalty weights — exported so the UI tooltip stays in sync. */
+export const HEALTH_WEIGHTS = {
+  missingFilesPerTrack: 2,
+  missingFilesCap: 40,
+  missingKeyPerTrack: 0.5,
+  missingKeyCap: 20,
+  missingBpmPerTrack: 0.5,
+  missingBpmCap: 20,
+  unsupportedFormatsPerTrack: 2,
+  unsupportedFormatsCap: 10,
+  duplicatesPerGroup: 1,
+  duplicatesCap: 10
+} as const
+
 function normalise(s: string): string {
   return s
     .toLowerCase()
-    .replace(/[^\w\s]/g, '') // strip punctuation
-    .replace(/\s+/g, ' ') // collapse whitespace
+    .replace(/[^\w\s]/g, '')
+    .replace(/\s+/g, ' ')
     .trim()
 }
 
@@ -27,20 +46,28 @@ function normalisedKey(track: Track): string {
   return `${normalise(track.artist)}|${normalise(track.title)}`
 }
 
-export function analyzeHealth(tracks: Track[]): HealthReport {
+export function analyzeHealth(
+  tracks: Track[],
+  opts: { dismissedGroupKeys?: ReadonlySet<string> } = {}
+): HealthReport {
+  const dismissed = opts.dismissedGroupKeys ?? new Set<string>()
+
   const missingFileIds: string[] = []
   const missingKeyIds: string[] = []
   const missingBpmIds: string[] = []
   const unsupportedFormatIds: string[] = []
+  const notAnalysedIds: string[] = []
 
   for (const t of tracks) {
     if (t.missingFile) missingFileIds.push(t.id)
     if (!t.key || t.key.trim() === '') missingKeyIds.push(t.id)
     if (!t.bpm || t.bpm === 0) missingBpmIds.push(t.id)
     if (!SUPPORTED_FORMATS.has(t.format)) unsupportedFormatIds.push(t.id)
+    // "Not yet analysed" = energy analyser hasn't written a real value.
+    // Treat undefined as analysed (legacy rows from before the column existed).
+    if (t.energySource === 'pending') notAnalysedIds.push(t.id)
   }
 
-  // ── Duplicate detection: group by normalised artist+title
   const groups = new Map<string, Track[]>()
   for (const t of tracks) {
     const key = normalisedKey(t)
@@ -50,10 +77,20 @@ export function analyzeHealth(tracks: Track[]): HealthReport {
 
   const duplicateGroups: Array<{ ids: string[]; normalisedKey: string }> = []
   for (const [key, group] of groups.entries()) {
-    if (group.length > 1) {
+    if (group.length > 1 && !dismissed.has(key)) {
       duplicateGroups.push({ ids: group.map((t) => t.id), normalisedKey: key })
     }
   }
+
+  const dupTrackCount = duplicateGroups.reduce((sum, g) => sum + g.ids.length - 1, 0)
+  const { healthScore, scoreBreakdown } = scoreHealth({
+    missingFiles: missingFileIds.length,
+    missingKey: missingKeyIds.length,
+    missingBpm: missingBpmIds.length,
+    unsupportedFormats: unsupportedFormatIds.length,
+    duplicateGroups: duplicateGroups.length,
+    dupTrackCount
+  })
 
   return {
     totalTracks: tracks.length,
@@ -65,36 +102,62 @@ export function analyzeHealth(tracks: Track[]): HealthReport {
     missingBpmIds,
     unsupportedFormats: unsupportedFormatIds.length,
     unsupportedFormatIds,
+    notAnalysed: notAnalysedIds.length,
+    notAnalysedIds,
     duplicateGroups,
-    healthScore: computeHealthScore(tracks.length, {
-      missingFiles: missingFileIds.length,
-      missingKey: missingKeyIds.length,
-      missingBpm: missingBpmIds.length,
-      unsupportedFormats: unsupportedFormatIds.length,
-      duplicates: duplicateGroups.reduce((s, g) => s + g.ids.length - 1, 0)
-    })
+    healthScore,
+    scoreBreakdown
   }
 }
 
-function computeHealthScore(
-  total: number,
-  issues: {
-    missingFiles: number
-    missingKey: number
-    missingBpm: number
-    unsupportedFormats: number
-    duplicates: number
+function capped(perUnit: number, units: number, cap: number): number {
+  return Math.min(cap, perUnit * units)
+}
+
+function scoreHealth(counts: {
+  missingFiles: number
+  missingKey: number
+  missingBpm: number
+  unsupportedFormats: number
+  duplicateGroups: number
+  dupTrackCount: number
+}): { healthScore: number; scoreBreakdown: HealthScoreBreakdown } {
+  const w = HEALTH_WEIGHTS
+
+  const missingFilesPenalty = capped(
+    w.missingFilesPerTrack,
+    counts.missingFiles,
+    w.missingFilesCap
+  )
+  const missingKeyPenalty = capped(w.missingKeyPerTrack, counts.missingKey, w.missingKeyCap)
+  const missingBpmPenalty = capped(w.missingBpmPerTrack, counts.missingBpm, w.missingBpmCap)
+  const unsupportedFormatsPenalty = capped(
+    w.unsupportedFormatsPerTrack,
+    counts.unsupportedFormats,
+    w.unsupportedFormatsCap
+  )
+  const duplicatesPenalty = capped(
+    w.duplicatesPerGroup,
+    counts.duplicateGroups,
+    w.duplicatesCap
+  )
+
+  const total =
+    missingFilesPenalty +
+    missingKeyPenalty +
+    missingBpmPenalty +
+    unsupportedFormatsPenalty +
+    duplicatesPenalty
+
+  return {
+    healthScore: Math.round(Math.max(0, 100 - total)),
+    scoreBreakdown: {
+      missingFiles: Math.round(missingFilesPenalty * 10) / 10,
+      missingKey: Math.round(missingKeyPenalty * 10) / 10,
+      missingBpm: Math.round(missingBpmPenalty * 10) / 10,
+      unsupportedFormats: Math.round(unsupportedFormatsPenalty * 10) / 10,
+      duplicates: Math.round(duplicatesPenalty * 10) / 10,
+      weights: { ...w }
+    }
   }
-): number {
-  if (total === 0) return 100
-  // Each term is (fraction of library affected) × (max points that issue can
-  // cost). The weights sum to 100, so penalty is already on a 0–100 scale —
-  // subtract it directly. (The old code multiplied by 100 again, forcing ~0.)
-  const penalty =
-    (issues.missingFiles / total) * 30 +
-    (issues.missingKey / total) * 25 +
-    (issues.missingBpm / total) * 20 +
-    (issues.unsupportedFormats / total) * 15 +
-    (issues.duplicates / total) * 10
-  return Math.round(Math.max(0, 100 - penalty))
 }

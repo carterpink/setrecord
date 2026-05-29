@@ -8,6 +8,8 @@ import {
 } from 'lucide-react'
 import type { RecallSection } from '@/types'
 import { useRecallStore } from '@/stores/recallStore'
+import { useCanUse } from '@/stores/licenseStore'
+import { ProLock } from '@/components/shared/ProGate'
 import { RediscoverSection } from './RediscoverSection'
 import { CratesSection } from './CratesSection'
 import { IdentitySection } from './IdentitySection'
@@ -28,7 +30,11 @@ const NAV: { id: RecallSection; label: string; icon: typeof Sparkles }[] = [
 export function RecallPanel(): React.JSX.Element {
   const section = useRecallStore((s) => s.section)
   const setSection = useRecallStore((s) => s.setSection)
+  const isPro = useCanUse('recall')
 
+  // Free tier keeps the Library Health headline (see PRD §16); everything else
+  // in the Recall tab — NL search, Rediscover, Crates, Identity, Combos,
+  // drill-down — is Pro. HealthSection self-gates its drill-down.
   return (
     <div className="recall">
       <aside className="recall-nav glass-1">
@@ -46,8 +52,12 @@ export function RecallPanel(): React.JSX.Element {
       </aside>
 
       <div className="recall-body">
-        <RecallAsk />
-        {section === 'conversations' ? (
+        {isPro && <RecallAsk />}
+        {!isPro && section !== 'health' ? (
+          <div className="recall-scroll">
+            <ProLock feature="recall" />
+          </div>
+        ) : section === 'conversations' ? (
           <ConversationsSection />
         ) : (
           <div className="recall-scroll">

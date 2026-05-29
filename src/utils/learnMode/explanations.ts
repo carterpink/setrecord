@@ -192,6 +192,34 @@ export function explainTransition(
   }
 }
 
+// ───────── Camelot key chip ─────────
+
+export function explainCamelotKey(key: string): LearnExplanation {
+  const isA = key.endsWith('A')
+  const number = parseInt(key, 10)
+  const isMajor = !isA
+  return {
+    summary: `Camelot key: ${key}`,
+    detail: `The Camelot system maps musical keys to a clock-face wheel (1–12, A/B). ${
+      isMajor ? 'B = major keys.' : 'A = minor keys.'
+    } Adjacent numbers (±1) and the same number in A/B share notes — those transitions sound smooth. ${
+      Number.isFinite(number) ? `Tracks in ${(number % 12) + 1}${isA ? 'A' : 'B'} or ${number}${isA ? 'B' : 'A'} blend naturally with this one.` : ''
+    } Far-apart keys clash.`,
+    diagram: { kind: 'harmonic-wheel', fromKey: key, toKey: key },
+  }
+}
+
+// ───────── Energy curve (timeline view) ─────────
+
+export function explainEnergyCurveView(): LearnExplanation {
+  return {
+    summary: 'Energy curve',
+    detail:
+      'Each point represents one track\'s energy level (1–10). A climbing curve builds crowd energy; a dip gives the room a breath before the next peak. The dashed line (when shown) is your Set Architect target arc.',
+    diagram: { kind: 'energy-curve', target: [3, 4, 5, 6, 7, 8, 9, 9], actual: [2, 4, 5, 7, 7, 9, 8, 10] },
+  }
+}
+
 // ───────── Energy curve (Set Architect) ─────────
 
 const CURVE_COPY: Record<EnergyCurveType, { name: string; story: string }> = {

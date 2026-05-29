@@ -22,6 +22,7 @@ import { SetDetailsModal } from '@/components/modals/SetDetailsModal'
 import { BulkImportConfirmModal } from '@/components/modals/BulkImportConfirmModal'
 import { FeedbackModal } from '@/components/modals/FeedbackModal'
 import { PostGigPromptModal } from '@/components/modals/PostGigPromptModal'
+import { UpgradeModal } from '@/components/modals/UpgradeModal'
 import { DiscoverPanel } from '@/components/discover/DiscoverPanel'
 import { RecallPanel } from '@/components/recall/RecallPanel'
 import { SuggestionsPanel } from '@/components/suggestions/SuggestionsPanel'
@@ -30,6 +31,7 @@ import { DragPreviewCard } from '@/components/timeline/DragPreviewCard'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
+import { useLicenseStore } from '@/stores/licenseStore'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { ToastContainer } from '@/components/shared/ToastContainer'
 import { AnimatePresence } from 'framer-motion'
@@ -45,6 +47,7 @@ export function AppShell(): React.JSX.Element {
   const { openModal, onboardingVisible, showOnboarding, lightMode, setEnergyAnalysis, mode, hydrateFromSettings } = useUiStore()
   const { loadLibrary, applyFileStatusChanges, patchTrackEnergy, patchTrackArtwork } = useLibraryStore()
   const { loadSets, addTrack, addTrackAt, reorderTracks } = useSetStore()
+  const hydrateLicense = useLicenseStore((s) => s.hydrate)
   const themeHasMounted = useRef(false)
 
   usePreviewAudio()
@@ -70,13 +73,18 @@ export function AppShell(): React.JSX.Element {
     return unsub
   }, [applyFileStatusChanges])
 
-  // Hydrate Learn Mode + Pro flag from persisted AppSettings on boot
+  // Hydrate Learn Mode from persisted AppSettings on boot
   useEffect(() => {
     if (typeof window.setsense === 'undefined') return
     void window.setsense.getSettings().then((s) =>
-      hydrateFromSettings({ learnModeEnabled: s.learnModeEnabled, isPro: s.isPro }),
+      hydrateFromSettings({ learnModeEnabled: s.learnModeEnabled }),
     )
   }, [hydrateFromSettings])
+
+  // Hydrate license entitlement from the main process (source of truth) on boot
+  useEffect(() => {
+    void hydrateLicense()
+  }, [hydrateLicense])
 
   // Subscribe to background energy-analysis events from main process
   useEffect(() => {
@@ -251,12 +259,12 @@ export function AppShell(): React.JSX.Element {
               ) : null}
             </DragOverlay>
           </DndContext>
-        ) : mode === 'Discover' ? (
+        ) : mode === 'YouTubeDiscover' ? (
           <ErrorBoundary label="discover">
             <DiscoverPanel />
           </ErrorBoundary>
         ) : (
-          <ErrorBoundary label="recall">
+          <ErrorBoundary label="discover">
             <RecallPanel />
           </ErrorBoundary>
         )}
@@ -311,6 +319,11 @@ export function AppShell(): React.JSX.Element {
         {openModal === 'postGigPrompt' && (
           <ErrorBoundary key="postGigPrompt" label="Post-gig Prompt">
             <PostGigPromptModal />
+          </ErrorBoundary>
+        )}
+        {openModal === 'upgrade' && (
+          <ErrorBoundary key="upgrade" label="Upgrade">
+            <UpgradeModal />
           </ErrorBoundary>
         )}
         {onboardingVisible && (

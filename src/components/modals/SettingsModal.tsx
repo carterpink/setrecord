@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef, type KeyboardEvent } from 'react'
 import FocusLock from 'react-focus-lock'
-import { Eye, EyeOff, GraduationCap, RefreshCw, Sparkles, X } from 'lucide-react'
+import { GraduationCap, RefreshCw, Sparkles, X, Crown } from 'lucide-react'
 import type { CDJModel, ImportSource } from '@/types'
 import { Button } from '@/components/shared/Button'
 import { Chip } from '@/components/shared/Chip'
@@ -11,6 +11,7 @@ import { Toggle } from '@/components/shared/Toggle'
 import { motion, modalBackdrop, modalPanel } from '@/components/shared/Motion'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { useUiStore } from '@/stores/uiStore'
+import { useLicenseStore } from '@/stores/licenseStore'
 import { useDiscoverStore } from '@/stores/discoverStore'
 import { useToastStore } from '@/stores/toastStore'
 import { LearnTooltip } from '@/components/learn/LearnTooltip'
@@ -31,6 +32,88 @@ function splitPaste(raw: string): string[] {
     .filter((s) => s.length > 0)
 }
 
+function formatDate(iso: string | null): string | null {
+  if (!iso) return null
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+/** Current-plan summary + activate / deactivate / restore controls. */
+function LicenseSection(): React.JSX.Element {
+  const license = useLicenseStore((s) => s.license)
+  const deactivate = useLicenseStore((s) => s.deactivate)
+  const showUpgrade = useUiStore((s) => s.showUpgrade)
+  const closeModal = useUiStore((s) => s.closeModal)
+  const toast = useToastStore()
+  const [working, setWorking] = useState(false)
+
+  const isPro = license.tier === 'pro'
+
+  const handleDeactivate = async (): Promise<void> => {
+    setWorking(true)
+    try {
+      await deactivate()
+      toast.info('License removed from this device.')
+    } catch {
+      toast.error('Could not deactivate the license.')
+    } finally {
+      setWorking(false)
+    }
+  }
+
+  return (
+    <div className="field-group settings-license">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <Crown size={18} strokeWidth={1.6} style={{ marginTop: 2, color: isPro ? 'var(--accent)' : undefined, opacity: isPro ? 1 : 0.8 }} aria-hidden="true" />
+          <div>
+            <div className="ss-label">{isPro ? 'SetSense Pro' : 'Free plan'}</div>
+            <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.45 }}>
+              {isPro ? (
+                <>
+                  {license.plan === 'lifetime' ? 'Lifetime licence' : 'Monthly subscription'}
+                  {license.keyMasked && (
+                    <>
+                      {' · '}
+                      <span className="ss-mono">{license.keyMasked}</span>
+                    </>
+                  )}
+                  {license.buyerEmail && <div style={{ opacity: 0.8, marginTop: 2 }}>{license.buyerEmail}</div>}
+                  {license.plan === 'subscription' && license.expiresAt && (
+                    <div style={{ marginTop: 2 }}>Renews / expires {formatDate(license.expiresAt)}</div>
+                  )}
+                  {license.activatedAt && (
+                    <div style={{ opacity: 0.6, marginTop: 2 }}>Activated {formatDate(license.activatedAt)}</div>
+                  )}
+                </>
+              ) : (
+                'Import, browse and build sets manually. Unlock suggestions, Set Architect, Recall and export with Pro.'
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {isPro ? (
+          <Button variant="secondary" onClick={() => void handleDeactivate()} disabled={working}>
+            {working ? 'Removing…' : 'Deactivate on this device'}
+          </Button>
+        ) : (
+          <Button
+            variant="primary"
+            icon={Sparkles}
+            onClick={() => {
+              closeModal()
+              showUpgrade()
+            }}
+          >
+            Upgrade to Pro
+          </Button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export function SettingsModal(): React.JSX.Element {
   const { closeModal, showModal } = useUiStore()
   const setLearnModeEnabled = useUiStore((s) => s.setLearnModeEnabled)
@@ -49,7 +132,6 @@ export function SettingsModal(): React.JSX.Element {
   const [learnMode, setLearnMode] = useState(false)
   const [memoryAi, setMemoryAi] = useState(false)
   const [youtubeApiKey, setYoutubeApiKey] = useState('')
-  const [apiKeyVisible, setApiKeyVisible] = useState(false)
   const [favouriteArtists, setFavouriteArtists] = useState<string[]>([])
   const [favouriteGenres, setFavouriteGenres] = useState<string[]>([])
   const [followedDJs, setFollowedDJs] = useState<string[]>([])
@@ -209,6 +291,15 @@ export function SettingsModal(): React.JSX.Element {
               <div
                 style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '0 0 8px' }}
               >
+                {/* SetSense Pro — plan + activation */}
+                <div
+                  className="settings-section-header ss-caption"
+                  style={{ opacity: 0.6, textTransform: 'uppercase', letterSpacing: 0.5 }}
+                >
+                  Plan
+                </div>
+                <LicenseSection />
+
                 {/* Learn Mode */}
                 <div className="field-group">
                   <div
@@ -238,7 +329,7 @@ export function SettingsModal(): React.JSX.Element {
                   </div>
                 </div>
 
-                {/* SetSense Intelligence — extended free-form understanding (Recall) */}
+                {/* SetSense Intelligence — extended free-form understanding (Discover) */}
                 <div className="field-group">
                   <div
                     style={{
@@ -258,7 +349,7 @@ export function SettingsModal(): React.JSX.Element {
                       <div>
                         <div className="ss-label">Extended understanding</div>
                         <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2 }}>
-                          Recall conversations already work offline. Turn this on to also understand
+                          Discover conversations already work offline. Turn this on to also understand
                           unusual, free-form phrasing — runs fully on your Mac, private and offline.
                           ~2 GB one-time download on first enable.
                         </div>
@@ -352,43 +443,7 @@ export function SettingsModal(): React.JSX.Element {
                   </div>
                 </div>
 
-                {/* YouTube API key */}
-                <div className="field-group">
-                  <label className="ss-label" htmlFor="yt-api-key">
-                    YouTube API key
-                  </label>
-                  <div
-                    className="ss-caption"
-                    style={{ opacity: 0.6, marginTop: 2, marginBottom: 8 }}
-                  >
-                    Required for live DJ set discovery. Get a key at Google Cloud Console (YouTube
-                    Data API v3).
-                  </div>
-                  <div className="settings-api-key-row">
-                    <input
-                      id="yt-api-key"
-                      type={apiKeyVisible ? 'text' : 'password'}
-                      className="settings-api-key-input"
-                      value={youtubeApiKey}
-                      onChange={(e) => setYoutubeApiKey(e.target.value)}
-                      placeholder="AIza…"
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
-                    <button
-                      type="button"
-                      className="settings-api-key-toggle"
-                      aria-label={apiKeyVisible ? 'Hide key' : 'Show key'}
-                      onClick={() => setApiKeyVisible((v) => !v)}
-                    >
-                      {apiKeyVisible ? (
-                        <EyeOff size={15} strokeWidth={1.7} />
-                      ) : (
-                        <Eye size={15} strokeWidth={1.7} />
-                      )}
-                    </button>
-                  </div>
-                </div>
+                {/* YouTube API key — hidden from UI (YouTube Discover tab not in navigation) */}
 
                 {/* Harmonic mixing default */}
                 <div className="field-group">

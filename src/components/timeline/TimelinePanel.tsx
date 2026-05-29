@@ -12,6 +12,8 @@ import { useUiStore } from '@/stores/uiStore'
 import { useSuggestions } from '@/hooks/useSuggestions'
 import { formatDuration } from '@/utils/format'
 import { EnergyCurveGraph } from './EnergyCurveGraph'
+import { LearnTooltip } from '@/components/learn/LearnTooltip'
+import { explainEnergyCurveView } from '@/utils/learnMode/explanations'
 import { GhostTrackCard } from './GhostTrackCard'
 import { TimelineTrackCard } from './TimelineTrackCard'
 
@@ -178,7 +180,9 @@ export function TimelinePanel(): React.JSX.Element {
             {marking ? 'Logging…' : 'Mark as performed'}
           </Button>
         )}
-        <SegmentedControl options={VIEWS} value={view} onChange={setView} />
+        <LearnTooltip explanation={explainEnergyCurveView()} iconLabel="What does this graph show?">
+          <SegmentedControl options={VIEWS} value={view} onChange={setView} />
+        </LearnTooltip>
       </div>
 
       <EnergyCurveGraph

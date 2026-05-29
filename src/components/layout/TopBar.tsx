@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Download, MessageSquareHeart, Moon, Settings, Sun, Upload, Volume1, Volume2, VolumeX } from 'lucide-react'
+import { Download, MessageSquareHeart, Moon, Settings, Sparkles, Sun, Upload, Volume1, Volume2, VolumeX } from 'lucide-react'
 import type { AppMode, TransitionDotKind } from '@/types'
 import { Badge } from '@/components/shared/Badge'
 import { Button } from '@/components/shared/Button'
@@ -12,13 +12,16 @@ import { useLibraryStore } from '@/stores/libraryStore'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
+import { useLicenseStore } from '@/stores/licenseStore'
 
-const MODES: readonly AppMode[] = ['Prepare', 'Discover', 'Recall'] as const
+const MODES: readonly AppMode[] = ['Prepare', 'Discover'] as const
 
 export function TopBar(): React.JSX.Element {
   const mode = useUiStore((s) => s.mode)
   const setMode = useUiStore((s) => s.setMode)
   const showModal = useUiStore((s) => s.showModal)
+  const showUpgrade = useUiStore((s) => s.showUpgrade)
+  const isPro = useLicenseStore((s) => s.license.tier === 'pro')
   const lightMode = useUiStore((s) => s.lightMode)
   const toggleLightMode = useUiStore((s) => s.toggleLightMode)
   const currentSet = useSetStore((s) => s.currentSet)
@@ -66,8 +69,14 @@ export function TopBar(): React.JSX.Element {
           label="Set safety"
           value={badgeValue}
           glass={1}
-          onClick={currentSet ? () => showModal('validate') : undefined}
-          title={badgeTitle}
+          onClick={
+            !isPro
+              ? () => showUpgrade('export')
+              : currentSet
+                ? () => showModal('validate')
+                : undefined
+          }
+          title={isPro ? badgeTitle : 'Set validation is a Pro feature — click to upgrade'}
         />
         <AnimatePresence>
           {energyAnalysis && energyAnalysis.total > 0 && (
@@ -159,9 +168,15 @@ export function TopBar(): React.JSX.Element {
           onClick={() => showModal('feedback')}
         />
         <IconButton icon={Settings} aria-label="Settings" onClick={() => showModal('settings')} />
-        <Button variant="primary" icon={Download} onClick={() => showModal('export')}>
-          Export
-        </Button>
+        {isPro ? (
+          <Button variant="primary" icon={Download} onClick={() => showModal('export')}>
+            Export
+          </Button>
+        ) : (
+          <Button variant="primary" icon={Sparkles} onClick={() => showUpgrade()}>
+            Go Pro
+          </Button>
+        )}
       </div>
     </div>
   )

@@ -15,6 +15,9 @@ import type {
   ImportResult,
   LifecycleCounts,
   ImportProgress,
+  CheckoutPlan,
+  LicenseActivationResult,
+  LicenseState,
   LibraryFilters,
   LibrarySearchParams,
   PlaySession,
@@ -148,6 +151,11 @@ const setsense = {
   // ── File health (Phase 6) ─────────────────────────────────────────────────
   triggerHealthCheck: (): Promise<void> => ipcRenderer.invoke('library:health-check'),
 
+  analyseEnergy: (): Promise<{ running: boolean }> =>
+    ipcRenderer.invoke('library:analyse-energy'),
+
+  energyPendingCount: (): Promise<number> => ipcRenderer.invoke('library:energy-pending-count'),
+
   onFileStatusUpdate: (
     cb: (changes: Array<{ id: string; missing: boolean }>) => void
   ): (() => void) => {
@@ -188,6 +196,17 @@ const setsense = {
 
   validateYoutubeApiKey: (key: string) =>
     ipcRenderer.invoke('settings:validate-youtube-key', key) as Promise<ValidateApiKeyResult>,
+
+  // ── Licensing / SetSense Pro (Section 16) ──────────────────────────────────
+  licenseGet: (): Promise<LicenseState> => ipcRenderer.invoke('license:get'),
+
+  licenseActivate: (key: string): Promise<LicenseActivationResult> =>
+    ipcRenderer.invoke('license:activate', key),
+
+  licenseDeactivate: (): Promise<LicenseState> => ipcRenderer.invoke('license:deactivate'),
+
+  licenseCheckout: (plan: CheckoutPlan, tipAmount?: number): Promise<boolean> =>
+    ipcRenderer.invoke('license:checkout', plan, tipAmount),
 
   // ── Shell (Discover) ──────────────────────────────────────────────────────
   openExternal: (url: string): Promise<boolean> => ipcRenderer.invoke('shell:open-external', url),
@@ -327,6 +346,12 @@ const setsense = {
   recallIdentity: (): Promise<IdentitySnapshot> => ipcRenderer.invoke('recall:identity'),
 
   recallHealth: (): Promise<HealthReport> => ipcRenderer.invoke('recall:health'),
+
+  recallDismissDuplicate: (normalisedKey: string): Promise<void> =>
+    ipcRenderer.invoke('recall:dismiss-duplicate', normalisedKey),
+
+  recallResolveDuplicateGroup: (normalisedKey: string, archiveIds: string[]): Promise<void> =>
+    ipcRenderer.invoke('recall:resolve-duplicate-group', normalisedKey, archiveIds),
 
   recallSearch: (params: LibrarySearchParams): Promise<Track[]> =>
     ipcRenderer.invoke('recall:search', params),

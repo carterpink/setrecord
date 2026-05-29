@@ -1,11 +1,11 @@
-import { useUiStore } from '@/stores/uiStore'
+import { useLicenseStore } from '@/stores/licenseStore'
 
 /**
- * Returns true when the current user is on a paid tier and should see Pro
- * features (Learn Mode content, etc.). No billing system exists yet; this is
- * a stub that always returns true and is the single gating point so a real
- * entitlement check can replace it later.
+ * Non-reactive Pro check for imperative code paths (event handlers, guards).
+ * Entitlement is owned by the main process and mirrored into licenseStore on
+ * boot. React components should prefer the reactive `useIsPro` / `useCanUse`
+ * selectors so they re-render when a license activates.
  */
 export function isProUser(): boolean {
-  return useUiStore.getState().isPro
+  return useLicenseStore.getState().license.tier === 'pro'
 }

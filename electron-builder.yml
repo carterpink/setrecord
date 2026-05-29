@@ -5,9 +5,13 @@ directories:
 files:
   - '!**/.vscode/*'
   - '!src/*'
+  # Internal tooling — never ship. Holds the license-minting script (issuer-only).
+  - '!scripts/**'
+  - '!*.md'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!*.pem'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**

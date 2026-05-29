@@ -4,3 +4,16 @@ out
 .DS_Store
 .eslintcache
 *.log*
+
+# Environment / secrets
+.env
+.env.*
+
+# License signing — ISSUER ONLY, never commit. The private key is the money key.
+scripts/mint-license.mjs
+*.pem
+*-key.pem
+license-*.pem
+LICENSE_PRIVATE_KEY*
+license-keys/
+*.license

@@ -223,4 +223,18 @@ export function runMigrations(db: Database.Database): void {
   }
 
   db.prepare('INSERT OR REPLACE INTO schema_version VALUES (14)').run()
+
+  // v15: dismissed duplicate groups.
+  // When the user clicks "Keep all" on a duplicate group in the Health panel
+  // we record its normalised key here so it disappears from future health
+  // reports without touching the underlying tracks. Re-importing from Rekordbox
+  // keeps these dismissals intact (the key is content-based, not id-based).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS dismissed_duplicate_groups (
+      normalised_key TEXT PRIMARY KEY,
+      dismissed_at TEXT NOT NULL
+    );
+  `)
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (15)').run()
 }

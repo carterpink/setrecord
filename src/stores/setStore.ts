@@ -5,6 +5,21 @@ import { useToastStore } from '@/stores/toastStore'
 
 let _saveTimer: ReturnType<typeof setTimeout> | null = null
 
+const UNDO_LIMIT = 20
+const _undoStack: DJSet[] = []
+
+function pushUndo(set: DJSet): void {
+  _undoStack.push(set)
+  if (_undoStack.length > UNDO_LIMIT) _undoStack.shift()
+}
+
+/** Strip safetyScore so the badge shows "Not validated" until the user re-validates. */
+function invalidateSafetyScore(s: DJSet): DJSet {
+  if (s.safetyScore === undefined) return s
+  const { safetyScore: _, ...rest } = s
+  return rest as DJSet
+}
+
 export type SaveStatus = 'idle' | 'saving' | 'unsaved' | 'error'
 
 interface SetActions {
@@ -32,6 +47,7 @@ interface SetActions {
   computeAllTransitions: () => Promise<void>
   populateFromArchitect: (tracks: SetTrack[], params: ArchitectParams, name?: string) => void
   retrySave: () => void
+  undo: () => void
 }
 
 interface SetState {
@@ -122,17 +138,18 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
       currentSet = get().currentSet!
     }
     if (currentSet.tracks.some((st) => st.trackId === track.id)) return
+    pushUndo(currentSet)
     const newSetTrack: SetTrack = {
       id: crypto.randomUUID(),
       trackId: track.id,
       track,
       position: currentSet.tracks.length
     }
-    const updated: DJSet = {
+    const updated: DJSet = invalidateSafetyScore({
       ...currentSet,
       tracks: [...currentSet.tracks, newSetTrack],
       updatedAt: new Date().toISOString()
-    }
+    })
     set((s) => ({
       currentSet: updated,
       savedSets: syncSavedSets(s.savedSets, updated),
@@ -202,6 +219,7 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
       currentSet = get().currentSet!
     }
     if (currentSet.tracks.some((st) => st.trackId === track.id)) return
+    pushUndo(currentSet)
     const newSetTrack: SetTrack = {
       id: crypto.randomUUID(),
       trackId: track.id,
@@ -214,11 +232,11 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
       newSetTrack,
       ...currentSet.tracks.slice(clamped)
     ]
-    const updated: DJSet = {
+    const updated: DJSet = invalidateSafetyScore({
       ...currentSet,
       tracks: reindex(next),
       updatedAt: new Date().toISOString()
-    }
+    })
     set((s) => ({
       currentSet: updated,
       savedSets: syncSavedSets(s.savedSets, updated),
@@ -245,12 +263,13 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
   removeTrack: (setTrackId: string) => {
     const { currentSet } = get()
     if (!currentSet) return
+    pushUndo(currentSet)
     const filtered = currentSet.tracks.filter((st) => st.id !== setTrackId)
-    const updated: DJSet = {
+    const updated: DJSet = invalidateSafetyScore({
       ...currentSet,
       tracks: reindex(filtered),
       updatedAt: new Date().toISOString()
-    }
+    })
     set((s) => ({
       currentSet: updated,
       savedSets: syncSavedSets(s.savedSets, updated),
@@ -267,12 +286,13 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
     if (oldIndex === -1 || newIndex === -1) return
     // Locked tracks anchor in place — refuse any move that involves one.
     if (currentSet.tracks[oldIndex].locked || currentSet.tracks[newIndex].locked) return
+    pushUndo(currentSet)
     const reordered = reindex(arrayMove(currentSet.tracks, oldIndex, newIndex))
-    const updated: DJSet = {
+    const updated: DJSet = invalidateSafetyScore({
       ...currentSet,
       tracks: reordered,
       updatedAt: new Date().toISOString()
-    }
+    })
     set((s) => ({ currentSet: updated, savedSets: syncSavedSets(s.savedSets, updated) }))
     _scheduleSave(get, set)
     void get().computeAllTransitions()
@@ -320,6 +340,7 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
         .push({ kind: 'info', message: 'All of those are already in the set' })
       return
     }
+    pushUndo(currentSet)
     const base = currentSet.tracks.length
     const appended = fresh.map((track, i) => ({
       id: crypto.randomUUID(),
@@ -327,11 +348,11 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
       track,
       position: base + i
     }))
-    const updated: DJSet = {
+    const updated: DJSet = invalidateSafetyScore({
       ...currentSet,
       tracks: [...currentSet.tracks, ...appended],
       updatedAt: new Date().toISOString()
-    }
+    })
     set((s) => ({ currentSet: updated, savedSets: syncSavedSets(s.savedSets, updated) }))
     _scheduleSave(get, set)
     void get().computeAllTransitions()
@@ -471,6 +492,22 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
 
   retrySave: () => {
     _flushSave(get, set)
+  },
+
+  undo: () => {
+    const previous = _undoStack.pop()
+    if (!previous) {
+      useToastStore.getState().push({ kind: 'info', message: 'Nothing to undo' })
+      return
+    }
+    set((s) => ({
+      currentSet: previous,
+      savedSets: syncSavedSets(s.savedSets, previous),
+      selectedTrackId: null
+    }))
+    _scheduleSave(get, set)
+    void get().computeAllTransitions()
+    useToastStore.getState().push({ kind: 'success', message: 'Undone' })
   }
 }))
 

@@ -14,7 +14,11 @@ import {
   createCrate,
   getCrates,
   updateCrate,
-  deleteCrate
+  deleteCrate,
+  getDismissedDuplicateGroupKeys,
+  dismissDuplicateGroup,
+  undismissDuplicateGroup,
+  setTrackLifecycle
 } from '../db/queries'
 import type { SmartCrateRow } from '../db/queries'
 import { findForgottenGems } from '../algorithms/memory/forgottenGems'
@@ -292,8 +296,40 @@ export async function getIdentity(): Promise<IdentitySnapshot> {
 }
 
 export async function getHealth(): Promise<HealthReport> {
-  const tracks = getAllTracks(getDb())
-  return analyzeHealth(tracks)
+  const db = getDb()
+  const tracks = getAllTracks(db)
+  const dismissedGroupKeys = getDismissedDuplicateGroupKeys(db)
+  return analyzeHealth(tracks, { dismissedGroupKeys })
+}
+
+/**
+ * "Keep all" on a duplicate group: record the normalised key so this group
+ * stops appearing in future health reports without touching the underlying
+ * tracks.
+ */
+export async function dismissDuplicate(normalisedKey: string): Promise<void> {
+  dismissDuplicateGroup(getDb(), normalisedKey)
+}
+
+/** Reverse the above, for testing or admin use. */
+export async function undismissDuplicate(normalisedKey: string): Promise<void> {
+  undismissDuplicateGroup(getDb(), normalisedKey)
+}
+
+/**
+ * "Keep this one, archive the others" — mark every track in `archiveIds` as
+ * lifecycle 'archive' (user override) and dismiss the group's normalised key
+ * so it doesn't re-surface.
+ */
+export async function resolveDuplicateGroup(
+  normalisedKey: string,
+  archiveIds: string[]
+): Promise<void> {
+  const db = getDb()
+  for (const id of archiveIds) {
+    setTrackLifecycle(db, id, 'archive', 'user')
+  }
+  dismissDuplicateGroup(db, normalisedKey)
 }
 
 /** Deterministic, model-free library search powering Intelligence conversations. */

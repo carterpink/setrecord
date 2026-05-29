@@ -1293,3 +1293,24 @@ export function updateCrate(
 export function deleteCrate(db: Database.Database, id: string): void {
   db.prepare('DELETE FROM smart_crates WHERE id = ?').run(id)
 }
+
+// ───────── Dismissed duplicate groups (S12 P1) ─────────
+
+/** Normalised keys the user has marked "not actually duplicates" — hidden from Health. */
+export function getDismissedDuplicateGroupKeys(db: Database.Database): Set<string> {
+  const rows = db
+    .prepare('SELECT normalised_key FROM dismissed_duplicate_groups')
+    .all() as Array<{ normalised_key: string }>
+  return new Set(rows.map((r) => r.normalised_key))
+}
+
+export function dismissDuplicateGroup(db: Database.Database, normalisedKey: string): void {
+  db.prepare(
+    `INSERT OR REPLACE INTO dismissed_duplicate_groups (normalised_key, dismissed_at)
+     VALUES (?, ?)`
+  ).run(normalisedKey, new Date().toISOString())
+}
+
+export function undismissDuplicateGroup(db: Database.Database, normalisedKey: string): void {
+  db.prepare('DELETE FROM dismissed_duplicate_groups WHERE normalised_key = ?').run(normalisedKey)
+}

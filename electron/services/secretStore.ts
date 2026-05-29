@@ -14,6 +14,7 @@ import ElectronStore from 'electron-store'
 
 const SERVICE = 'SetSense'
 const YT_ACCOUNT = 'youtubeApiKey'
+const LICENSE_ACCOUNT = 'licenseKey'
 
 interface LegacyStore {
   youtubeApiKey?: string
@@ -22,6 +23,7 @@ interface LegacyStore {
 const legacyStore = new ElectronStore<LegacyStore>({ name: 'preferences' })
 
 let _youtubeApiKey = ''
+let _licenseKey = ''
 
 export async function loadSecretsFromKeychain(): Promise<void> {
   try {
@@ -31,6 +33,15 @@ export async function loadSecretsFromKeychain(): Promise<void> {
     }
   } catch (err) {
     console.error('[secretStore] keychain read failed', err)
+  }
+
+  try {
+    const license = await keytar.getPassword(SERVICE, LICENSE_ACCOUNT)
+    if (license) {
+      _licenseKey = license
+    }
+  } catch (err) {
+    console.error('[secretStore] license keychain read failed', err)
   }
 
   // One-shot migration from electron-store. The legacy value lived at
@@ -75,4 +86,31 @@ export async function clearYoutubeApiKey(): Promise<void> {
     console.error('[secretStore] keychain delete failed', err)
   }
   _youtubeApiKey = ''
+}
+
+// ── License key ──────────────────────────────────────────────────────────────
+// The signed license key is a credential, so it lives in the keychain alongside
+// the YouTube key rather than in plaintext preferences.
+
+export function getLicenseKey(): string {
+  return _licenseKey
+}
+
+export async function setLicenseKey(key: string): Promise<void> {
+  const trimmed = key.trim()
+  if (trimmed === '') {
+    await clearLicenseKey()
+    return
+  }
+  await keytar.setPassword(SERVICE, LICENSE_ACCOUNT, trimmed)
+  _licenseKey = trimmed
+}
+
+export async function clearLicenseKey(): Promise<void> {
+  try {
+    await keytar.deletePassword(SERVICE, LICENSE_ACCOUNT)
+  } catch (err) {
+    console.error('[secretStore] license keychain delete failed', err)
+  }
+  _licenseKey = ''
 }

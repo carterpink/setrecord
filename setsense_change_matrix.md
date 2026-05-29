@@ -17,7 +17,7 @@ Features marked **NOT IN PRD** are new scope that emerged from the research. Eve
 
 ---
 
-## SECTION 1 — Onboarding & Import
+## SECTION 1 — Onboarding & Import - COMPLETE
 
 ### P0
 
@@ -59,7 +59,7 @@ Features marked **NOT IN PRD** are new scope that emerged from the research. Eve
 
 ---
 
-## SECTION 2 — Library Panel
+## SECTION 2 — Library Panel - COMPLETE
 
 ### P0
 
@@ -82,7 +82,7 @@ Features marked **NOT IN PRD** are new scope that emerged from the research. Eve
 **Surface the cue point search capability** [D]
 - Dave noticed "Search library, sets, cue points…" in the search placeholder and was genuinely excited. This is a compelling differentiator from Rekordbox.
 - The feature is currently communicated only via placeholder text — extremely easy to miss.
-- Add a small feature chip or callout near the search bar: "Also searches your cue point labels."
+- Add a small feature chip or   callout near the search bar: "Also searches your cue point labels."
 
 **Sort controls** [I]
 - Currently sorted by artist by default. Add sort options: BPM, energy, key, date added, play count, duration, rating.
@@ -129,11 +129,6 @@ Features marked **NOT IN PRD** are new scope that emerged from the research. Eve
 - Small inline icon on TimelineTrackCard → opens a popover showing historical Combos data for this track.
 - Bridges the gap between the Recall and Prepare tabs without requiring navigation.
 
-**Empty timeline state with clear CTAs** [I, PRD Phase 8]
-- When the timeline is empty, show: "Your set is empty. Add tracks from your library or let Set Architect build your set."
-- Two CTA buttons: "Browse library" and "Build with Set Architect."
-- No blank white/dark space — every empty state is an invitation to act.
-
 **Transition indicator UX clarity** [J, D, I]
 - A small legend or tooltip explaining the quality dots: green = clean mix, amber = messy, red = trainwreck.
 - Jake saw "Messy" and "Clean" labels and called them "not nothing" — but first-time users won't know what the dots mean without a legend.
@@ -167,17 +162,8 @@ Features marked **NOT IN PRD** are new scope that emerged from the research. Eve
 - Add a tooltip or expandable info icon: "Ranked by BPM compatibility (35%), harmonic key (35%), energy match (20%), file quality (10%)."
 - This is the kind of transparency that turns sceptics into advocates.
 
-**Preview audio directly from suggestion card** [J, I]
-- Jake's explicit ask: "I want to be able to preview/listen to a suggestion before I commit to adding it."
-- Add a small play button on each suggestion card that triggers the same preview system as library double-click.
-- Preview should start at the track's default cue point.
 
 ### P2
-
-**Filterable suggestion pool by playlist or crate** [M]
-- Marcus: "If Suggested Next only suggests from all 3,000 tracks, that's limited. I want to say suggest from my Dark Room crate."
-- Add a small "Suggest from: [Library ▾]" dropdown above the suggestions panel.
-- Allows DJs to constrain suggestions to a vibe-specific subset of their library.
 
 **Full score breakdown on hover / expand** [S, M]
 - Expandable section on each suggestion card: BPM delta, key compatibility level, energy delta, format match, with their point values.
@@ -402,26 +388,13 @@ Universally praised by all personas as genuinely novel. No other tool does this.
 
 ## SECTION 11 — Identity / Analytics *(NOT IN CURRENT PRD — new scope)*
 
-### P1
-
-**Core analytics: BPM spread, energy profile, key spread, top genres/artists/labels** [all 4]
-- These are the foundational charts that appeared in the research screenshots.
-- BPM spread histogram across library.
-- Energy profile (frequency distribution across 1–10 scale).
-- Key spread: which Camelot keys appear most in the library.
-- Top genres, artists, labels by track count.
-
-**Library growth over time** [M, D]
-- "When did you go through different phases of buying?"
-- Dave: "This is a mirror. After 14 years I think I know my library. This would tell me I'm wrong."
-
 ### P2
 
 **Share as image — "DJ Wrapped"** ★ [J, S, M]
 - Jake would post to Instagram Stories immediately. Free word-of-mouth from every DJ who uses it.
 - "Copy as image" or "Export card" button on the Identity screen.
 - Generates a shareable graphic: top BPM zone, key signature, top artists, energy profile, library size.
-- This is the viral loop. Build it as soon as Identity is live.
+- This is the viral loop. Must be able to choose between desktop and mobile view share.
 
 **Key profile by BPM zone chart** [S, M]
 - Both Sarah and Marcus independently asked for this.
@@ -511,13 +484,6 @@ Options (choose one):
 
 ## SECTION 14 — General / Cross-Cutting
 
-### P0
-
-**No mixed demo data with real data after import** ★ [S, D, I]
-- Once a user's library is imported, zero demo tracks should appear in any context.
-- After import: timeline is empty (not pre-populated with demo set), suggestions panel shows "Select a track in your set to see suggestions," ghost track shows nothing.
-- The confusion caused by demo data appearing post-import is a direct credibility failure.
-
 ### P1
 
 **Learn Mode — visible, functional, and discoverable** [J, D]
@@ -540,7 +506,7 @@ Options (choose one):
 - At 10k rows, a non-virtualised list will visibly lag on scroll.
 - Use react-window or @tanstack/virtual.
 - Test with a realistic large dataset (not just the import from the user's own library).
-
+ 
 **Keyboard shortcuts** [PRD Phase 8]
 - ⌘K: focus search
 - Space: play/pause preview

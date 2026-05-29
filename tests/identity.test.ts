@@ -119,4 +119,41 @@ describe('buildIdentity', () => {
     const periods = snap.tasteTimeline.map((t) => t.period)
     expect(periods.indexOf('2022 Q1')).toBeLessThan(periods.indexOf('2023 Q2'))
   })
+
+  it('builds keyByBpmZone — keys grouped per 10-BPM bucket', () => {
+    const tracks = [
+      makeTrack({ id: 'a', bpm: 124, key: '8A' }),
+      makeTrack({ id: 'b', bpm: 126, key: '8A' }),
+      makeTrack({ id: 'c', bpm: 125, key: '9B' }),
+      makeTrack({ id: 'd', bpm: 138, key: '11A' }),
+    ]
+    const snap = buildIdentity(tracks)
+    const z120 = snap.keyByBpmZone.find((z) => z.range === '120–129')
+    const z130 = snap.keyByBpmZone.find((z) => z.range === '130–139')
+    expect(z120?.total).toBe(3)
+    expect(z120?.keys['8A']).toBe(2)
+    expect(z120?.keys['9B']).toBe(1)
+    expect(z130?.total).toBe(1)
+    expect(z130?.keys['11A']).toBe(1)
+  })
+
+  it('skips tracks with no key or zero BPM from keyByBpmZone', () => {
+    const tracks = [
+      makeTrack({ id: 'a', bpm: 124, key: '' }),
+      makeTrack({ id: 'b', bpm: 0, key: '8A' }),
+      makeTrack({ id: 'c', bpm: 124, key: '8A' }),
+    ]
+    const snap = buildIdentity(tracks)
+    const z120 = snap.keyByBpmZone.find((z) => z.range === '120–129')
+    expect(z120?.total).toBe(1)
+  })
+
+  it('records totalTracks for share-card use', () => {
+    const tracks = [
+      makeTrack({ id: 'a' }),
+      makeTrack({ id: 'b' }),
+      makeTrack({ id: 'c' }),
+    ]
+    expect(buildIdentity(tracks).totalTracks).toBe(3)
+  })
 })

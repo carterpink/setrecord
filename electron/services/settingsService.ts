@@ -12,7 +12,6 @@ export interface AppSettings {
   favouriteGenres: string[]
   followedDJs: string[]
   learnModeEnabled: boolean
-  isPro: boolean
   hasSeenProficiencyAsk: boolean
   /** Opt-in to the bundled local LLM that powers natural-language Recall search. */
   memoryAiEnabled: boolean
@@ -44,7 +43,6 @@ const DEFAULTS: PersistedSettings = {
   favouriteGenres: [],
   followedDJs: [],
   learnModeEnabled: false,
-  isPro: true,
   hasSeenProficiencyAsk: false,
   memoryAiEnabled: false,
   lastImportSource: null,
@@ -71,7 +69,6 @@ export function getSettings(): AppSettings {
     favouriteGenres: store.get('favouriteGenres') ?? [],
     followedDJs: store.get('followedDJs') ?? [],
     learnModeEnabled: store.get('learnModeEnabled') ?? false,
-    isPro: store.get('isPro') ?? true,
     hasSeenProficiencyAsk: store.get('hasSeenProficiencyAsk') ?? false,
     memoryAiEnabled: store.get('memoryAiEnabled') ?? false,
     lastImportSource: store.get('lastImportSource') ?? null,
@@ -92,7 +89,6 @@ export async function setSettings(partial: Partial<AppSettings>): Promise<AppSet
   if (partial.favouriteGenres !== undefined) store.set('favouriteGenres', partial.favouriteGenres)
   if (partial.followedDJs !== undefined) store.set('followedDJs', partial.followedDJs)
   if (partial.learnModeEnabled !== undefined) store.set('learnModeEnabled', partial.learnModeEnabled)
-  if (partial.isPro !== undefined) store.set('isPro', partial.isPro)
   if (partial.hasSeenProficiencyAsk !== undefined) store.set('hasSeenProficiencyAsk', partial.hasSeenProficiencyAsk)
   if (partial.memoryAiEnabled !== undefined) store.set('memoryAiEnabled', partial.memoryAiEnabled)
   if (partial.lastImportSource !== undefined) store.set('lastImportSource', partial.lastImportSource)

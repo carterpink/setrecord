@@ -14,6 +14,9 @@ import type {
   LifecycleCounts,
   ImportProgress,
   ImportResult,
+  CheckoutPlan,
+  LicenseActivationResult,
+  LicenseState,
   LibraryFilters,
   LibrarySearchParams,
   LibraryStats,
@@ -101,6 +104,8 @@ declare global {
       validateForExport: (setId: string, hardware: CDJModel) => Promise<ValidationResult | null>
       // File health (Phase 6)
       triggerHealthCheck: () => Promise<void>
+      analyseEnergy: () => Promise<{ running: boolean }>
+      energyPendingCount: () => Promise<number>
       onFileStatusUpdate: (cb: (changes: Array<{ id: string; missing: boolean }>) => void) => () => void
       // Cue points (Phase 6)
       updateTrackCues: (trackId: string, cuePoints: CuePoint[], hotCues: HotCue[]) => Promise<void>
@@ -115,6 +120,11 @@ declare global {
       getSettings: () => Promise<AppSettings>
       setSettings: (partial: Partial<AppSettings>) => Promise<AppSettings>
       validateYoutubeApiKey: (key: string) => Promise<ValidateApiKeyResult>
+      // Licensing / SetSense Pro (Section 16)
+      licenseGet: () => Promise<LicenseState>
+      licenseActivate: (key: string) => Promise<LicenseActivationResult>
+      licenseDeactivate: () => Promise<LicenseState>
+      licenseCheckout: (plan: CheckoutPlan, tipAmount?: number) => Promise<boolean>
       // Shell — Discover (open Beatport/SoundCloud/YouTube links)
       openExternal: (url: string) => Promise<boolean>
       // Customer feedback (opens a pre-filled mail draft)
@@ -178,6 +188,11 @@ declare global {
       recallDeadEnds: () => Promise<ComboResult[]>
       recallIdentity: () => Promise<IdentitySnapshot>
       recallHealth: () => Promise<HealthReport>
+      recallDismissDuplicate: (normalisedKey: string) => Promise<void>
+      recallResolveDuplicateGroup: (
+        normalisedKey: string,
+        archiveIds: string[]
+      ) => Promise<void>
       recallSearch: (params: LibrarySearchParams) => Promise<Track[]>
       // Recall local-AI layer (Phase 13)
       recallAiStatus: () => Promise<RecallAiStatus>

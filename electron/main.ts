@@ -54,7 +54,11 @@ import {
   RekordboxKeyMismatchError
 } from './services/rekordbox'
 import { statSync } from 'fs'
-import { runAnalysisQueue, isAnalysisRunning } from './services/energyAnalyser'
+import {
+  runAnalysisQueue,
+  isAnalysisRunning,
+  pendingCount as pendingEnergyCount
+} from './services/energyAnalyser'
 import { runArtworkQueue, isArtworkRunning } from './services/artworkExtractor'
 import { scoreTransition } from './algorithms/transitionScore'
 import { getSuggestions } from './algorithms/suggestions'
@@ -67,6 +71,13 @@ import { exportSet } from './services/exportService'
 import { getSettings, setSettings } from './services/settingsService'
 import type { AppSettings } from './services/settingsService'
 import { loadSecretsFromKeychain } from './services/secretStore'
+import {
+  getLicenseState,
+  activateLicense,
+  deactivateLicense,
+  isProEntitled,
+} from './services/licenseService'
+import { COMMERCE_HOST, checkoutUrl } from './services/licensing/signingKey'
 import { validateApiKey } from './services/discovery/youtubeClient'
 import {
   browseDiscoverySets,
@@ -534,6 +545,10 @@ function registerIpcHandlers(): void {
       excludeIds: string[] = [],
       sourcePlaylistIds: string[] = []
     ) => {
+      // Pro gate (Section 16): the suggestion engine is a paid feature. The UI
+      // also hides it for free users — this is defence-in-depth so a tampered
+      // renderer can't pull suggestions without entitlement.
+      if (!isProEntitled()) return []
       const db = getDb()
       const track = getTrackById(db, trackId)
       if (!track) return []
@@ -564,6 +579,7 @@ function registerIpcHandlers(): void {
   // ── Set Architect (Phase 5) ───────────────────────────────────────────────
 
   ipcMain.handle('algo:build-set', (_e, params: ArchitectParams) => {
+    if (!isProEntitled()) return [] // Pro gate — Set Architect is a paid feature.
     const db = getDb()
     const fullLibrary = getAllTracks(db)
     let library = fullLibrary
@@ -592,6 +608,18 @@ function registerIpcHandlers(): void {
   // Renderer can trigger a manual re-check (e.g. after mounting a USB drive)
   ipcMain.handle('library:health-check', () => {
     scheduleHealthCheck()
+  })
+
+  // Manually start the energy analysis queue (Recall Health "Analyse all" button).
+  // No-op if a queue is already running.
+  ipcMain.handle('library:analyse-energy', () => {
+    scheduleEnergyAnalysis()
+    return { running: isAnalysisRunning() }
+  })
+
+  // Pending count for the "Not yet analysed" stat tile and the analyse-all button.
+  ipcMain.handle('library:energy-pending-count', () => {
+    return pendingEnergyCount()
   })
 
   // Edit a track's BPM / key from the Recall Health resolve workflow.
@@ -657,6 +685,30 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('settings:validate-youtube-key', (_e, key: string) => validateApiKey(key))
 
+  // ── Licensing / SetSense Pro (Section 16) ─────────────────────────────────
+  ipcMain.handle('license:get', () => getLicenseState())
+
+  ipcMain.handle('license:activate', (_e, key: string) => activateLicense(key))
+
+  ipcMain.handle('license:deactivate', () => deactivateLicense())
+
+  // Open the external checkout / support page in the user's browser. Restricted
+  // to the commerce host so a renderer compromise can't launch arbitrary URLs.
+  ipcMain.handle(
+    'license:checkout',
+    async (_e, plan: 'subscription' | 'lifetime' | 'tip', tipAmount?: number): Promise<boolean> => {
+      try {
+        const url = checkoutUrl(plan, tipAmount)
+        if (new URL(url).host.toLowerCase() !== COMMERCE_HOST) return false
+        await shell.openExternal(url)
+        return true
+      } catch (err) {
+        console.error('[license:checkout] failed', err)
+        return false
+      }
+    }
+  )
+
   // ── Shell (Discover external links) ──────────────────────────────────────
   // Open URLs in the user's default browser, but only those matching our allowlist
   // (Beatport / SoundCloud / YouTube). Anything else is refused — protects against
@@ -715,6 +767,7 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('export:set', async (_e, setId: string, _hardware: CDJModel) => {
+    if (!isProEntitled()) return { success: false, error: 'pro_required' } // Pro gate — export is paid.
     const set = getSetById(getDb(), setId)
     if (!set) return { success: false, error: 'Set not found' }
     const safeName = set.name.replace(/[/\\?%*:|"<>]/g, '-')
@@ -886,6 +939,14 @@ function registerIpcHandlers(): void {
   ipcMain.handle('recall:dead-ends', () => memoryService.getDeadEnds())
   ipcMain.handle('recall:identity', () => memoryService.getIdentity())
   ipcMain.handle('recall:health', () => memoryService.getHealth())
+  ipcMain.handle('recall:dismiss-duplicate', (_e, normalisedKey: string) =>
+    memoryService.dismissDuplicate(normalisedKey)
+  )
+  ipcMain.handle(
+    'recall:resolve-duplicate-group',
+    (_e, normalisedKey: string, archiveIds: string[]) =>
+      memoryService.resolveDuplicateGroup(normalisedKey, archiveIds)
+  )
   ipcMain.handle('recall:search', (_e, params: LibrarySearchParams) => memoryService.search(params))
 
   // ── Recall local-AI layer (Phase 13) ──────────────────────────────────────

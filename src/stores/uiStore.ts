@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { AppMode, Track } from '@/types'
+import type { ProFeature } from '@/utils/entitlements'
 import { usePlaybackStore } from '@/stores/playbackStore'
 
 type ModalName =
@@ -13,6 +14,7 @@ type ModalName =
   | 'bulkImportConfirm'
   | 'feedback'
   | 'postGigPrompt'
+  | 'upgrade'
 
 interface PostGigPromptData {
   sessionId: string
@@ -26,6 +28,9 @@ interface UIState {
   closeModal: () => void
   postGigPromptData: PostGigPromptData | null
   showPostGigPrompt: (data: PostGigPromptData) => void
+  /** The Pro feature that triggered the paywall, for contextual upgrade copy. */
+  upgradeContext: ProFeature | null
+  showUpgrade: (feature?: ProFeature) => void
   smartFilter: boolean
   toggleSmartFilter: () => void
   /** Rekordbox playlist filter for the library list. null = "All Tracks". */
@@ -54,7 +59,7 @@ interface UIState {
   // analyser is draining the pending queue.
   energyAnalysis: { processed: number; total: number } | null
   setEnergyAnalysis: (status: { processed: number; total: number } | null) => void
-  // Top-level app mode (Prepare = 3-panel set builder, Discover = YouTube set discovery)
+  // Top-level app mode (Prepare = 3-panel set builder, Discover = library intelligence)
   mode: AppMode
   setMode: (mode: AppMode) => void
   // Which discover set is currently open in SetDetailsModal
@@ -62,9 +67,8 @@ interface UIState {
   openSetDetails: (setId: string) => void
   // Learn Mode — premium educational overlay (mirrors AppSettings, hydrated on boot)
   learnModeEnabled: boolean
-  isPro: boolean
   setLearnModeEnabled: (v: boolean) => void
-  hydrateFromSettings: (s: { learnModeEnabled: boolean; isPro: boolean }) => void
+  hydrateFromSettings: (s: { learnModeEnabled: boolean }) => void
   /** Suggestions panel source pool — independent of the library sidebar filter. */
   suggestionsSourcePlaylistIds: string[]
   setSuggestionsSourcePlaylistIds: (ids: string[]) => void
@@ -83,7 +87,10 @@ function getInitialSidebarCollapsed(): boolean {
 function getInitialMode(): AppMode {
   if (typeof window === 'undefined') return 'Prepare'
   const saved = window.localStorage.getItem('setsense-mode')
-  return saved === 'Discover' || saved === 'Recall' ? saved : 'Prepare'
+  // 'Recall' was the old name for the Discover tab; migrate it transparently.
+  // Legacy 'Discover' (YouTube discovery) is no longer navigable — fall through to Prepare.
+  if (saved === 'Discover' || saved === 'Recall') return 'Discover'
+  return 'Prepare'
 }
 
 function getInitialLibraryDensity(): 'standard' | 'compact' {
@@ -121,6 +128,8 @@ export const useUiStore = create<UIState>((set) => ({
     })),
   postGigPromptData: null,
   showPostGigPrompt: (data) => set({ postGigPromptData: data, openModal: 'postGigPrompt' }),
+  upgradeContext: null,
+  showUpgrade: (feature) => set({ upgradeContext: feature ?? null, openModal: 'upgrade' }),
   smartFilter: false,
   toggleSmartFilter: () => set((s) => ({ smartFilter: !s.smartFilter })),
   selectedPlaylistId: null,
@@ -180,14 +189,13 @@ export const useUiStore = create<UIState>((set) => ({
   activeDiscoverSetId: null,
   openSetDetails: (setId) => set({ activeDiscoverSetId: setId, openModal: 'setDetails' }),
   learnModeEnabled: false,
-  isPro: true,
   setLearnModeEnabled: (v) => {
     set({ learnModeEnabled: v })
     if (typeof window !== 'undefined' && window.setsense) {
       void window.setsense.setSettings({ learnModeEnabled: v })
     }
   },
-  hydrateFromSettings: ({ learnModeEnabled, isPro }) => set({ learnModeEnabled, isPro }),
+  hydrateFromSettings: ({ learnModeEnabled }) => set({ learnModeEnabled }),
   suggestionsSourcePlaylistIds: getInitialSuggestionsSource(),
   setSuggestionsSourcePlaylistIds: (ids) => {
     if (typeof window !== 'undefined') {

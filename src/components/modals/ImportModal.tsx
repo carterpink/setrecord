@@ -291,6 +291,9 @@ function DetectedState({ detection, libraryStale, onImport, onUseXml, onRetry }:
       <div className="ss-caption" style={{ opacity: 0.55, marginTop: 12 }}>
         SetSense reads your Rekordbox library read-only. Your Rekordbox file is never modified.
       </div>
+      <div className="ss-caption" style={{ opacity: 0.45, marginTop: 6 }}>
+        Re-importing updates existing tracks and adds new ones. Energy analysis and cue points you&apos;ve set in SetSense are preserved.
+      </div>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16, flexWrap: 'wrap' }}>
         <Button variant="secondary" onClick={onUseXml}>
           Use XML file instead

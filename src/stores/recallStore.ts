@@ -109,6 +109,8 @@ interface RecallState {
   lifecycle: LifecycleCounts | null
   healthLoading: boolean
   loadHealth: () => Promise<void>
+  dismissDuplicateGroup: (normalisedKey: string) => Promise<void>
+  resolveDuplicateGroup: (normalisedKey: string, archiveIds: string[]) => Promise<void>
 
   comboTrack: Track | null
   combos: ComboResult[]
@@ -245,6 +247,18 @@ export const useRecallStore = create<RecallState>((set, get) => ({
     } finally {
       set({ healthLoading: false })
     }
+  },
+  dismissDuplicateGroup: async (normalisedKey) => {
+    const s = api()
+    if (!s) return
+    await s.recallDismissDuplicate(normalisedKey)
+    await get().loadHealth()
+  },
+  resolveDuplicateGroup: async (normalisedKey, archiveIds) => {
+    const s = api()
+    if (!s) return
+    await s.recallResolveDuplicateGroup(normalisedKey, archiveIds)
+    await get().loadHealth()
   },
 
   comboTrack: null,

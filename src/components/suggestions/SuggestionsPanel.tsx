@@ -9,6 +9,8 @@ import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useSuggestions } from '@/hooks/useSuggestions'
 import { formatPosition } from '@/utils/format'
+import { useCanUse } from '@/stores/licenseStore'
+import { ProLock } from '@/components/shared/ProGate'
 import { SuggestionCard } from './SuggestionCard'
 
 const listVariants = stagger(0.05)
@@ -23,6 +25,7 @@ export function SuggestionsPanel(): React.JSX.Element {
   const setSuggestionsSourcePlaylistIds = useUiStore((s) => s.setSuggestionsSourcePlaylistIds)
   const selectedLibraryTrackId = useUiStore((s) => s.selectedLibraryTrackId)
   const startPreview = usePlaybackStore((s) => s.startPreview)
+  const canSuggest = useCanUse('suggestions')
 
   const selectedSetTrack = currentSet?.tracks.find((st) => st.id === selectedTrackId)
 
@@ -44,6 +47,17 @@ export function SuggestionsPanel(): React.JSX.Element {
     currentTrackIds,
     suggestionsSourcePlaylistIds,
   )
+
+  if (!canSuggest) {
+    return (
+      <div className="panel glass-1">
+        <div className="sugg-header">
+          <div className="ss-h2">Suggested next</div>
+        </div>
+        <ProLock feature="suggestions" />
+      </div>
+    )
+  }
 
   return (
     <div className="panel glass-1">
