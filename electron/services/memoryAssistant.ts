@@ -169,10 +169,18 @@ function friendlyLoadError(err: unknown): string {
   if (/enospc|no space left/.test(m)) {
     return 'Not enough free disk space to download the language model (~2 GB needed). Free up space and try again. Recall search still works without it.'
   }
-  if (/enotfound|getaddrinfo|econnrefused|etimedout|network|fetch failed|socket hang|enetdown|eai_again/.test(m)) {
+  if (
+    /enotfound|getaddrinfo|econnrefused|etimedout|network|fetch failed|socket hang|enetdown|eai_again/.test(
+      m
+    )
+  ) {
     return 'Couldn’t download the language model — check your internet connection and try again. Recall search still works without it.'
   }
-  if (/cannot find module|dlopen|different node\.?js version|could not locate the bindings|\.node|was compiled against|invalid elf|symbol not found|llama|metal|no available backend|gpu/.test(m)) {
+  if (
+    /cannot find module|dlopen|different node\.?js version|could not locate the bindings|\.node|was compiled against|invalid elf|symbol not found|llama|metal|no available backend|gpu/.test(
+      m
+    )
+  ) {
     return 'The local AI engine couldn’t start on this Mac. Recall’s built-in search still answers most questions — Extended understanding is unavailable.'
   }
   if (/enoent|no such file/.test(m)) {

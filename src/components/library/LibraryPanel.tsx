@@ -260,6 +260,7 @@ export function LibraryPanel(): React.JSX.Element {
 
   const playingTrackId = previewTrack && isPlaying ? previewTrack.id : null
   const rowHeight = libraryDensity === 'compact' ? 40 : 56
+  // eslint-disable-next-line react-hooks/incompatible-library -- false positive: useVirtualizer is a valid hook, not a memo-incompatible utility
   const rowVirtualizer = useVirtualizer({
     count: displayTracks.length,
     getScrollElement: () => scrollContainerRef.current,

@@ -18,9 +18,9 @@ describe('parseActivationUrl', () => {
   })
 
   it('trims surrounding whitespace from the key', () => {
-    expect(parseActivationUrl(`${ACTIVATION_SCHEME}://activate?key=${encodeURIComponent(' SES1.x ')}`)).toBe(
-      'SES1.x'
-    )
+    expect(
+      parseActivationUrl(`${ACTIVATION_SCHEME}://activate?key=${encodeURIComponent(' SES1.x ')}`)
+    ).toBe('SES1.x')
   })
 
   it('rejects a foreign scheme', () => {

@@ -53,7 +53,9 @@ export function ProLock({
         <ProBadge />
       </h3>
       <p className="pro-lock-desc">
-        {trialExpired ? `Your Pro trial has ended. ${description ?? meta.blurb}` : description ?? meta.blurb}
+        {trialExpired
+          ? `Your Pro trial has ended. ${description ?? meta.blurb}`
+          : (description ?? meta.blurb)}
       </p>
       {children}
       <button type="button" className="pro-lock-cta" onClick={() => showUpgrade(feature)}>

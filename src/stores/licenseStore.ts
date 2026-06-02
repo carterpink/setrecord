@@ -39,8 +39,7 @@ const PREVIEW_PRO_STATE: LicenseState = {
 // preview build is explicitly opted in via VITE_PREVIEW_PRO=true. A packaged
 // production renderer never unlocks Pro without the main-process bridge — if the
 // IPC bridge is missing there, we fail closed (see isProductionWithoutBridge).
-const PREVIEW_PRO_ALLOWED =
-  import.meta.env.DEV || import.meta.env.VITE_PREVIEW_PRO === 'true'
+const PREVIEW_PRO_ALLOWED = import.meta.env.DEV || import.meta.env.VITE_PREVIEW_PRO === 'true'
 
 function bridgeMissing(): boolean {
   return typeof window === 'undefined' || typeof window.setsense === 'undefined'

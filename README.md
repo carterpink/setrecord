@@ -181,6 +181,10 @@ require any of these credentials.
 > manually. To add hosted updates later, configure a `publish` provider in
 > `electron-builder.yml` and integrate `electron-updater` in the app.
 
+## Support & contact
+
+Questions, bug reports, or license issues: **carterpinkmusic@gmail.com**
+
 ## Support & recovery
 
 - **Corrupted library database.** On startup SetSense validates the library DB.

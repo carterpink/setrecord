@@ -136,7 +136,9 @@ export function UpgradeModal(): React.JSX.Element {
                   <div className="upgrade-context">
                     <strong>
                       You’re on a Pro trial —{' '}
-                      {trialDaysRemaining === 1 ? '1 day left' : `${trialDaysRemaining ?? 0} days left`}
+                      {trialDaysRemaining === 1
+                        ? '1 day left'
+                        : `${trialDaysRemaining ?? 0} days left`}
                       .
                     </strong>{' '}
                     Upgrade any time to keep Suggestions, Set Architect, Recall and Export when the

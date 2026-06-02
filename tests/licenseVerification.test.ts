@@ -1,9 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import {
-  generateKeyPairSync,
-  sign as cryptoSign,
-  type KeyObject
-} from 'crypto'
+import { generateKeyPairSync, sign as cryptoSign, type KeyObject } from 'crypto'
 
 // licenseService eagerly imports keytar / electron-store / electron at module
 // load. None are reachable in the node test env, and the logic under test

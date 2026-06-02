@@ -79,7 +79,10 @@ interface VerifyFail {
  * revocation are evaluated separately (see evaluateLicense). The public key is
  * injectable so tests can sign with an ephemeral keypair.
  */
-export function verifyKey(rawKey: string, publicKey: KeyObject = embeddedPublicKey): VerifyOk | VerifyFail {
+export function verifyKey(
+  rawKey: string,
+  publicKey: KeyObject = embeddedPublicKey
+): VerifyOk | VerifyFail {
   const key = rawKey.trim()
   const parts = key.split('.')
   if (parts.length !== 3 || parts[0] !== LICENSE_KEY_PREFIX) {
@@ -125,7 +128,9 @@ function maskKey(key: string): string {
 
 /** Is this payload bound to a specific device (and not flagged portable)? */
 function isDeviceBound(payload: LicensePayload): boolean {
-  return typeof payload.deviceId === 'string' && payload.deviceId.length > 0 && payload.portable !== true
+  return (
+    typeof payload.deviceId === 'string' && payload.deviceId.length > 0 && payload.portable !== true
+  )
 }
 
 export interface EvaluateContext {

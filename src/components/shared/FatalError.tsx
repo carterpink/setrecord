@@ -19,9 +19,8 @@ export function FatalError(): React.JSX.Element {
         SetSense failed to start
       </div>
       <div className="ss-body-sm" style={{ opacity: 0.6, maxWidth: 420 }}>
-        The application core didn&rsquo;t load. This usually means the install is
-        damaged. Please quit and reinstall SetSense, or reach out to support if
-        the problem persists.
+        The application core didn&rsquo;t load. This usually means the install is damaged. Please
+        quit and reinstall SetSense, or reach out to support if the problem persists.
       </div>
     </div>
   )

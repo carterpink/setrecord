@@ -199,7 +199,6 @@ export function SettingsModal(): React.JSX.Element {
     })
   }, [])
 
-
   async function handleSave(): Promise<void> {
     setSaving(true)
     try {
@@ -325,8 +324,8 @@ export function SettingsModal(): React.JSX.Element {
                         <div className="ss-label">Extended understanding</div>
                         <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2 }}>
                           Understands unusual, free-form phrasing on top of the built-in search.
-                          Runs fully on your Mac — private, offline, and built in (no download). Turn
-                          off to skip loading it into memory.
+                          Runs fully on your Mac — private, offline, and built in (no download).
+                          Turn off to skip loading it into memory.
                         </div>
                       </div>
                     </div>
@@ -586,9 +585,9 @@ export function SettingsModal(): React.JSX.Element {
                           className="ss-caption"
                           style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.5 }}
                         >
-                          Opt in to send anonymous crash reports when the app unexpectedly
-                          quits. Reports include only the error type, a redacted stack trace
-                          (filenames, no paths), your OS version, and the app version.
+                          Opt in to send anonymous crash reports when the app unexpectedly quits.
+                          Reports include only the error type, a redacted stack trace (filenames, no
+                          paths), your OS version, and the app version.
                         </div>
                         <div
                           className="ss-caption"
@@ -606,7 +605,6 @@ export function SettingsModal(): React.JSX.Element {
                     />
                   </div>
                 </div>
-
               </div>
             )}
           </div>

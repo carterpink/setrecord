@@ -21,7 +21,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -32,14 +32,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Lint
+        run: npm run lint
+
       - name: Test
         run: npm test
 
       - name: Build (renderer + main, no installer)
         run: npm run build
-
-      - name: Lint (informational)
-        # Pre-existing lint errors are tracked separately — see audit Critical #1.
-        # Keep CI green on the historic backlog while still surfacing the report.
-        run: npm run lint
-        continue-on-error: true
