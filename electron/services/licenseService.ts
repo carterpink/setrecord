@@ -295,8 +295,12 @@ export function isProEntitled(): boolean {
  * given when offline. A key bound to another device, or one the server has
  * revoked, is rejected and NOT stored.
  */
-export async function activateLicense(rawKey: string): Promise<LicenseActivationResult> {
-  const signature = verifyKey(rawKey)
+export async function activateLicense(
+  rawKey: string,
+  /** Inject an alternative public key — used only in tests with an ephemeral keypair. */
+  publicKeyOverride?: KeyObject
+): Promise<LicenseActivationResult> {
+  const signature = verifyKey(rawKey, publicKeyOverride)
   if (!signature.ok) {
     return { ok: false, state: getLicenseState(), error: signature.error }
   }
@@ -308,14 +312,14 @@ export async function activateLicense(rawKey: string): Promise<LicenseActivation
       keyOrOrderToken: keyToStore,
       deviceId: getDeviceId()
     })
-    if (res.reachable && res.key && verifyKey(res.key).ok) {
+    if (res.reachable && res.key && verifyKey(res.key, publicKeyOverride).ok) {
       keyToStore = res.key.trim()
     }
   } catch {
     // Offline / gateway error — keep the pasted key. Activation must not depend on network.
   }
 
-  const ctx = liveContext()
+  const ctx = { ...liveContext(), publicKey: publicKeyOverride }
   const { state } = evaluateLicense(keyToStore, ctx)
 
   // Refuse to store a key that isn't this user's to use on this machine.
