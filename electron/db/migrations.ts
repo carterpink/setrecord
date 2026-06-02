@@ -1,0 +1,252 @@
+import type Database from 'better-sqlite3'
+
+/**
+ * Run pending schema migrations in order.
+ * Each migration is idempotent — safe to re-run on any startup.
+ * NOTE: We check column existence directly rather than relying solely on the version
+ * number because an earlier bad deploy briefly wrote schema_version = 2 to existing
+ * databases before the ALTER TABLE ran, leaving the column missing at v2.
+ */
+export function runMigrations(db: Database.Database): void {
+  // v2: art_gradient column — check existence unconditionally so corrupt version state can't skip it
+  const cols = (db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
+
+  if (!cols.includes('art_gradient')) {
+    db.exec('ALTER TABLE tracks ADD COLUMN art_gradient TEXT')
+  }
+
+  // v3: per-track missing_file flag (checked on import and background health scan)
+  if (!cols.includes('missing_file')) {
+    db.exec('ALTER TABLE tracks ADD COLUMN missing_file INTEGER NOT NULL DEFAULT 0')
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (3)').run()
+
+  // v4: safety_score column on sets for persisting validation results
+  const setCols = (db.prepare('PRAGMA table_info(sets)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
+
+  if (!setCols.includes('safety_score')) {
+    db.exec('ALTER TABLE sets ADD COLUMN safety_score INTEGER')
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (4)').run()
+
+  // v5: auto energy analysis — energy_raw (float) + energy_source provenance.
+  // Existing rows are flagged 'pending' so the background analyser backfills them on next launch.
+  const colsV5 = (db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
+
+  if (!colsV5.includes('energy_raw')) {
+    db.exec('ALTER TABLE tracks ADD COLUMN energy_raw REAL')
+  }
+  if (!colsV5.includes('energy_source')) {
+    db.exec("ALTER TABLE tracks ADD COLUMN energy_source TEXT DEFAULT 'pending'")
+    // Backfill existing rows: every previously-imported track gets re-analysed,
+    // since user chose "always recompute" over preserving Rekordbox values.
+    db.exec("UPDATE tracks SET energy_source = 'pending' WHERE energy_source IS NULL")
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (5)').run()
+
+  // v6: phantom track support — tracks imported from Discover with no library match.
+  // `phantom` = 1 means file_path is a sentinel `discover://...` URL, not a real file.
+  // `discover_meta` is JSON: { discoverSetId, discoverSetTitle, beatportUrl, soundcloudUrl, youtubeUrl }.
+  const colsV6 = (db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
+
+  if (!colsV6.includes('phantom')) {
+    db.exec('ALTER TABLE tracks ADD COLUMN phantom INTEGER NOT NULL DEFAULT 0')
+  }
+  if (!colsV6.includes('discover_meta')) {
+    db.exec('ALTER TABLE tracks ADD COLUMN discover_meta TEXT')
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (6)').run()
+
+  // v7: YouTube discovery cache tables.
+  // `discovery_sets` stores the full DiscoverSet JSON payload.
+  // `discovery_queries` stores search result video-ID lists by query key.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS discovery_sets (
+      id TEXT PRIMARY KEY,
+      payload TEXT NOT NULL,
+      fetched_at TEXT NOT NULL,
+      tracklist_confidence REAL,
+      source TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS discovery_queries (
+      query_key TEXT PRIMARY KEY,
+      video_ids TEXT NOT NULL,
+      fetched_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_discovery_sets_fetched ON discovery_sets(fetched_at);
+  `)
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (7)').run()
+
+  // v8: USB device persistence — stores per-device prefs (custom name, favorite, export target,
+  // speed test results) so they survive reconnects.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS usb_devices (
+      id TEXT PRIMARY KEY,
+      label TEXT NOT NULL,
+      custom_name TEXT,
+      is_favorite INTEGER NOT NULL DEFAULT 0,
+      is_export_target INTEGER NOT NULL DEFAULT 0,
+      last_seen TEXT NOT NULL,
+      export_count INTEGER NOT NULL DEFAULT 0,
+      last_export TEXT,
+      read_speed_mbps REAL,
+      write_speed_mbps REAL,
+      speed_tested_at TEXT
+    );
+  `)
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (8)').run()
+
+  // v9: Rekordbox playlist import — playlists table existed since v1 but was orphaned.
+  // Add the is_folder column so the renderer can distinguish folder nodes from leaf playlists.
+  const playlistCols = (
+    db.prepare('PRAGMA table_info(playlists)').all() as Array<{ name: string }>
+  ).map((c) => c.name)
+
+  if (!playlistCols.includes('is_folder')) {
+    db.exec('ALTER TABLE playlists ADD COLUMN is_folder INTEGER NOT NULL DEFAULT 0')
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (9)').run()
+
+  // v10: per-set-track `locked` flag. When set, Set Architect treats the row as a
+  // fixed anchor — preserved in place during rebuilds and skipped in the repair pass.
+  const setTrackCols = (
+    db.prepare('PRAGMA table_info(set_tracks)').all() as Array<{ name: string }>
+  ).map((c) => c.name)
+
+  if (!setTrackCols.includes('locked')) {
+    db.exec('ALTER TABLE set_tracks ADD COLUMN locked INTEGER NOT NULL DEFAULT 0')
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (10)').run()
+
+  // v11: embedded album-artwork extraction — `album_art_source` tracks the
+  // extraction state ('pending' | 'embedded' | 'none' | 'failed') so the
+  // background extractor doesn't re-scan files already found to have no art.
+  // Existing rows default to 'pending' so they backfill on next launch.
+  const colsV11 = (db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
+
+  if (!colsV11.includes('album_art_source')) {
+    db.exec("ALTER TABLE tracks ADD COLUMN album_art_source TEXT DEFAULT 'pending'")
+    db.exec("UPDATE tracks SET album_art_source = 'pending' WHERE album_art_source IS NULL")
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (11)').run()
+
+  // v12: play history sessions layer (DJ memory / Recall feature).
+  // play_sessions records dated gig sessions (from Rekordbox, SetSense, or manual entry).
+  // session_tracks stores the ordered tracklist for each session.
+  // Two new nullable columns on tracks: lifecycle_state + lifecycle_source.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS play_sessions (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'manual',
+      performed_at TEXT,
+      venue TEXT,
+      duration REAL,
+      set_id TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS session_tracks (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL REFERENCES play_sessions(id) ON DELETE CASCADE,
+      track_id TEXT NOT NULL REFERENCES tracks(id),
+      play_order INTEGER NOT NULL,
+      played_at TEXT,
+      UNIQUE(session_id, play_order)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_session_tracks_session ON session_tracks(session_id);
+    CREATE INDEX IF NOT EXISTS idx_session_tracks_track ON session_tracks(track_id);
+    CREATE INDEX IF NOT EXISTS idx_play_sessions_performed ON play_sessions(performed_at);
+  `)
+
+  // Add lifecycle columns to tracks (column-existence checked, idempotent)
+  const colsV12 = (db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
+
+  if (!colsV12.includes('lifecycle_state')) {
+    db.exec('ALTER TABLE tracks ADD COLUMN lifecycle_state TEXT')
+  }
+  if (!colsV12.includes('lifecycle_source')) {
+    db.exec("ALTER TABLE tracks ADD COLUMN lifecycle_source TEXT DEFAULT 'computed'")
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (12)').run()
+
+  // v13: smart crates persistence.
+  // Stores user-defined and seed smart crate definitions (JSON rules) so they
+  // survive app restarts. The engine (electron/algorithms/memory/smartCrates.ts)
+  // evaluates them against the in-memory library — this table is purely storage.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS smart_crates (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      rules_json TEXT NOT NULL,
+      match_mode TEXT NOT NULL DEFAULT 'all',
+      created_at TEXT NOT NULL
+    );
+  `)
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (13)').run()
+
+  // v14: flagged-for-next-gig column. Set when the user flags an "untested" track
+  // for testing at their next gig; cleared after the post-gig prompt resolves it.
+  // Lifecycle state ('testing' / 'active' / 'archive') already lives in v12 columns.
+  const colsV14 = (db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
+
+  if (!colsV14.includes('flagged_for_gig_at')) {
+    db.exec('ALTER TABLE tracks ADD COLUMN flagged_for_gig_at TEXT')
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (14)').run()
+
+  // v15: dismissed duplicate groups.
+  // When the user clicks "Keep all" on a duplicate group in the Health panel
+  // we record its normalised key here so it disappears from future health
+  // reports without touching the underlying tracks. Re-importing from Rekordbox
+  // keeps these dismissals intact (the key is content-based, not id-based).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS dismissed_duplicate_groups (
+      normalised_key TEXT PRIMARY KEY,
+      dismissed_at TEXT NOT NULL
+    );
+  `)
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (15)').run()
+
+  // v16: saved loops per track (Rekordbox-style). JSON array of { startMs, endMs, beats? }.
+  // Beatgrid itself reuses existing columns: bpm + beatgrid_offset (first-downbeat anchor).
+  const colsV16 = (db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
+
+  if (!colsV16.includes('loops')) {
+    db.exec("ALTER TABLE tracks ADD COLUMN loops TEXT DEFAULT '[]'")
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (16)').run()
+}

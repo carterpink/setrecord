@@ -1,0 +1,88 @@
+appId: com.setsense.app
+productName: SetSense
+directories:
+  buildResources: build
+files:
+  - '!**/.vscode/*'
+  - '!**/.DS_Store'
+  # Source trees — only the built output in out/ ships.
+  - '!src/**'
+  - '!electron/**'
+  - '!tests/**'
+  - '!.github/**'
+  # Internal tooling — never ship. Holds the license-minting script (issuer-only).
+  - '!scripts/**'
+  # Docs, audits, PRDs, research notes — all *.md at any depth.
+  - '!*.md'
+  - '!**/*.tsbuildinfo'
+  - '!.editorconfig'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{vite.config.ts,vitest.config.ts,postcss.config.mjs,tailwind.config.ts}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  # Secrets & lockfiles — never package. *.pem is the license signing key.
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml,package-lock.json}'
+  - '!*.pem'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+# The Recall language model (~1.9 GB) ships in the app bundle so "Extended
+# understanding" works offline from first launch. `scripts/fetch-model.mjs`
+# populates resources/models before packaging (wired into build:mac /
+# build:unpack). At runtime it resolves to process.resourcesPath/models — see
+# electron/services/memoryAssistant.ts. Kept out of the asar (extraResources)
+# so the native loader can mmap it directly from disk.
+extraResources:
+  - from: resources/models
+    to: models
+    filter:
+      - '**/*'
+asarUnpack:
+  - resources/**
+  # node-llama-cpp loads native llama.cpp binaries at runtime — must live outside the asar.
+  - node_modules/node-llama-cpp/**
+  - node_modules/@node-llama-cpp/**
+  # @journeyapps/sqlcipher ships a native .node binary that must be loadable from disk.
+  - node_modules/@journeyapps/sqlcipher/**
+win:
+  executableName: SetSense
+nsis:
+  artifactName: ${name}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+mac:
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  extendInfo:
+    - NSCameraUsageDescription: Application requests access to the device's camera.
+    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
+    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
+    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+    # License activation deep-links: setsense://activate?key=… After checkout the
+    # backend redirects here so the app self-activates. Rename note: the scheme
+    # also lives in electron/services/licensing/signingKey.ts (ACTIVATION_SCHEME).
+    - CFBundleURLTypes:
+        - CFBundleURLName: com.setsense.app.activation
+          CFBundleURLSchemes:
+            - setsense
+  # Notarization runs via Apple's notarytool. Credentials are read from the
+  # environment at build time — never hardcode them here. Required env vars:
+  #   APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID
+  # Code signing uses a "Developer ID Application" cert (keychain, or
+  # CSC_LINK + CSC_KEY_PASSWORD). See README "Building & releasing".
+  notarize: true
+dmg:
+  artifactName: ${name}-${version}.${ext}
+linux:
+  target:
+    - AppImage
+    - snap
+    - deb
+  maintainer: electronjs.org
+  category: Utility
+appImage:
+  artifactName: ${name}-${version}.${ext}
+npmRebuild: false
+# No auto-update infrastructure is wired up (no electron-updater dependency or
+# code). Releases are distributed manually. If/when hosted updates are added,
+# configure a `publish` provider here and add electron-updater to the app.

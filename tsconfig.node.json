@@ -1,0 +1,9 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+  "include": ["electron.vite.config.*", "electron/**/*", "tests/**/*", "vitest.config.ts"],
+  "compilerOptions": {
+    "composite": true,
+    "types": ["electron-vite/node"],
+    "noImplicitAny": true
+  }
+}
