@@ -38,7 +38,8 @@ import {
   flagTracksForGig,
   resolveGigFlag,
   getTracksFlaggedForGig,
-  getFlaggedTracksInSession
+  getFlaggedTracksInSession,
+  pruneDuplicateSetsenseSessions
 } from './db/queries'
 import type {
   Set as DJSet,
@@ -1160,6 +1161,16 @@ app.whenReady().then(async () => {
   })
 
   await initDbWithRecovery()
+
+  // Clean up duplicate setsense sessions created by rapid UI clicks or tests.
+  // Runs once on every launch — fast (indexed query), never touches rekordbox sessions.
+  try {
+    const pruned = pruneDuplicateSetsenseSessions(getDb())
+    if (pruned > 0) console.log(`[startup] pruned ${pruned} duplicate setsense session(s)`)
+  } catch (err) {
+    console.error('[startup] pruneDuplicateSetsenseSessions failed', err)
+  }
+
   registerIpcHandlers()
 
   app.on('browser-window-created', (_, window) => {

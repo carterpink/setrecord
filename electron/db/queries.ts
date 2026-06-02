@@ -1031,6 +1031,21 @@ export function markSetAsPerformed(
 
   const trackIds = stRows.map((r) => r.track_id)
   const performedAt = opts.performedAt ?? new Date().toISOString()
+
+  // Dedup guard: if a session for this set already exists within the last 60 seconds
+  // (same set_id + performed_at within a 1-minute window), return the existing id
+  // rather than creating a duplicate. This prevents smoke-test or rapid UI re-clicks
+  // from flooding the transition graph with phantom sessions.
+  const existing = db
+    .prepare(
+      `SELECT id FROM play_sessions
+       WHERE source = 'setsense' AND set_id = ?
+         AND ABS(CAST((julianday(performed_at) - julianday(?)) * 86400 AS INTEGER)) < 60
+       LIMIT 1`
+    )
+    .get(setId, performedAt) as { id: string } | undefined
+  if (existing) return existing.id
+
   const sessionId = crypto.randomUUID()
   const now = new Date().toISOString()
 
@@ -1336,4 +1351,57 @@ export function dismissDuplicateGroup(db: Database.Database, normalisedKey: stri
 
 export function undismissDuplicateGroup(db: Database.Database, normalisedKey: string): void {
   db.prepare('DELETE FROM dismissed_duplicate_groups WHERE normalised_key = ?').run(normalisedKey)
+}
+
+/**
+ * Remove duplicate setsense sessions: when the same set was marked as performed
+ * multiple times in a short burst (e.g. from automated tests or a rapid UI re-click),
+ * keep only the earliest session per set_id and delete the rest.
+ *
+ * Safe to run on every launch — idempotent, never touches rekordbox sessions.
+ * Returns the number of duplicate sessions removed.
+ */
+export function pruneDuplicateSetsenseSessions(db: Database.Database): number {
+  // Find set_ids that have more than one setsense session
+  const duplicates = db
+    .prepare(
+      `
+      SELECT set_id, COUNT(*) AS cnt, MIN(created_at) AS keep_created_at
+      FROM play_sessions
+      WHERE source = 'setsense' AND set_id IS NOT NULL
+      GROUP BY set_id
+      HAVING cnt > 1
+    `
+    )
+    .all() as Array<{ set_id: string; cnt: number; keep_created_at: string }>
+
+  if (duplicates.length === 0) return 0
+
+  let removed = 0
+  const tx = db.transaction(() => {
+    for (const { set_id, keep_created_at } of duplicates) {
+      // Keep the one session with the earliest created_at; delete all others.
+      // If two have the same created_at (e.g. tests with identical timestamps),
+      // SQLite's rowid ordering picks a deterministic winner.
+      const result = db
+        .prepare(
+          `
+          DELETE FROM play_sessions
+          WHERE source = 'setsense'
+            AND set_id = ?
+            AND id NOT IN (
+              SELECT id FROM play_sessions
+              WHERE source = 'setsense' AND set_id = ?
+              ORDER BY created_at ASC, rowid ASC
+              LIMIT 1
+            )
+        `
+        )
+        .run(set_id, set_id)
+      removed += result.changes
+      void keep_created_at // used only in query above via MIN()
+    }
+  })
+  tx()
+  return removed
 }

@@ -228,7 +228,7 @@ export async function readMasterDb(
       SELECT HistoryID, ContentID, TrackNo
       FROM djmdSongHistory
       WHERE rb_local_deleted IS NULL OR rb_local_deleted = 0
-      ORDER BY TrackNo
+      ORDER BY HistoryID, TrackNo
     `
       )
       .catch(() => [] as RawSongHistoryRow[])
