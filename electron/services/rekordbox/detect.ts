@@ -3,10 +3,23 @@ import { join } from 'path'
 import { existsSync, readFileSync, statSync, readdirSync } from 'fs'
 import type { RekordboxDetection } from '../../../src/types'
 
+// Rekordbox 6 stores its database in ~/Library/Pioneer/rekordbox/
+// Rekordbox 7 (and some RB6 installs) also use the same path.
 const PIONEER_DIR = join(homedir(), 'Library', 'Pioneer')
 const REKORDBOX_DIR = join(PIONEER_DIR, 'rekordbox')
 const MASTER_DB = join(REKORDBOX_DIR, 'master.db')
 const OPTIONS_JSON = join(REKORDBOX_DIR, 'options.json')
+
+// Alternate location used by some Rekordbox 6 installs on macOS
+const APP_SUPPORT_RB6_DIR = join(
+  homedir(),
+  'Library',
+  'Application Support',
+  'Pioneer',
+  'rekordbox6'
+)
+const APP_SUPPORT_MASTER_DB = join(APP_SUPPORT_RB6_DIR, 'master.db')
+
 const APPLICATIONS_DIR = '/Applications'
 
 /**
@@ -42,17 +55,21 @@ export async function detectRekordbox(): Promise<RekordboxDetection> {
     // ignore
   }
 
-  // 2. master.db present?
-  try {
-    if (existsSync(MASTER_DB)) {
-      const st = statSync(MASTER_DB)
-      result.dbPath = MASTER_DB
-      result.dbMtime = st.mtimeMs
-      result.dbSize = st.size
-      result.installed = true
+  // 2. master.db present? Check primary location first, then alternate.
+  const candidateDbs = [MASTER_DB, APP_SUPPORT_MASTER_DB]
+  for (const candidate of candidateDbs) {
+    try {
+      if (existsSync(candidate)) {
+        const st = statSync(candidate)
+        result.dbPath = candidate
+        result.dbMtime = st.mtimeMs
+        result.dbSize = st.size
+        result.installed = true
+        break // use first one found
+      }
+    } catch {
+      // ignore — try next candidate
     }
-  } catch {
-    // ignore — fields stay null
   }
 
   // 3. options.json present? If so, parse for the user's XML export path.
@@ -133,9 +150,25 @@ function pick(obj: Record<string, unknown>, path: string[]): string | undefined 
 function findRekordboxApp(): string | null {
   try {
     const entries = readdirSync(APPLICATIONS_DIR)
-    // Match "rekordbox.app", "rekordbox 6.app", "rekordbox 7.app", etc.
-    const match = entries.find((name) => /^rekordbox.*\.app$/i.test(name))
-    return match ? join(APPLICATIONS_DIR, match) : null
+
+    // Case 1: flat install — "/Applications/rekordbox.app", "/Applications/rekordbox 6.app"
+    const flat = entries.find((name) => /^rekordbox.*\.app$/i.test(name))
+    if (flat) return join(APPLICATIONS_DIR, flat)
+
+    // Case 2: Rekordbox 7 ships in a subfolder — "/Applications/rekordbox 7/rekordbox.app"
+    for (const entry of entries) {
+      if (!/^rekordbox/i.test(entry)) continue
+      const subDir = join(APPLICATIONS_DIR, entry)
+      try {
+        const subEntries = readdirSync(subDir)
+        const app = subEntries.find((name) => /^rekordbox.*\.app$/i.test(name))
+        if (app) return join(subDir, app)
+      } catch {
+        // not a directory or unreadable — skip
+      }
+    }
+
+    return null
   } catch {
     return null
   }
@@ -159,6 +192,7 @@ function readAppVersion(appPath: string): string | null {
 export const _internals = {
   REKORDBOX_DIR,
   MASTER_DB,
+  APP_SUPPORT_MASTER_DB,
   OPTIONS_JSON,
   parseXmlExportPath
 }

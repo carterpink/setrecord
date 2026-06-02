@@ -3,20 +3,18 @@ import sqlcipher from '@journeyapps/sqlcipher'
 /**
  * SQLCipher key for Rekordbox 6/7 master.db.
  *
- * This is the page-level encryption key Rekordbox uses for its main library
- * database. It's a constant embedded in the Rekordbox application bundle and
- * has been documented publicly by the open-source DJ tools community for
- * years (pyrekordbox, liamcottle/pioneer-rekordbox-database-encryption,
- * Lexicon DJ, DJ.Studio).
+ * This is the key Rekordbox uses for its main library database. It's a
+ * constant embedded in the Rekordbox application bundle and has been
+ * documented publicly by the open-source DJ tools community for years
+ * (pyrekordbox, liamcottle/pioneer-rekordbox-database-encryption, Lexicon DJ,
+ * DJ.Studio).
  *
- * Source of record for verification:
- *   https://github.com/dylanljones/pyrekordbox (db6/database.py)
- *
- * If Rekordbox changes the key in a future major version, this constant goes
- * stale — the cipher will fail to open the database with a SQLITE_NOTADB
- * error, which `dbReader.ts` catches and surfaces as RekordboxKeyMismatchError
- * so the renderer can fall back to the XML import guide. The app does not
- * break, just degrades.
+ * Key format differs between major versions (confirmed by empirical testing on
+ * macOS with Rekordbox 7.2.7):
+ *  - Rekordbox 6.x: raw-bytes form — PRAGMA key = "x'<hex>'"
+ *  - Rekordbox 7.x: passphrase form — PRAGMA key = "<hex>"
+ * openMasterDb() tries both forms automatically so both versions work without
+ * user intervention.
  *
  * Legal note: reading the user's own master.db on the user's own machine sits
  * in a grey area of the Rekordbox EULA §g (no reverse-engineering). Pioneer
@@ -66,12 +64,36 @@ export interface MasterDb {
  * Returns a thin promisified wrapper. The connection is held open for the
  * duration of the import — callers must call `.close()` when finished.
  *
+ * Automatically tries both key formats so both Rekordbox 6 and 7 work:
+ *  - RB6: raw-bytes form  PRAGMA key = "x'<hex>'"
+ *  - RB7: passphrase form PRAGMA key = "<hex>"
+ *
  * Errors map as follows:
  *  - SQLITE_BUSY                  → RekordboxLockedError (Rekordbox is running)
- *  - SQLITE_NOTADB / file is encrypted → RekordboxKeyMismatchError (RB updated their key)
+ *  - SQLITE_NOTADB / file is encrypted → RekordboxKeyMismatchError (both formats failed)
  *  - all other errors             → re-thrown with context
  */
 export async function openMasterDb(path: string): Promise<MasterDb> {
+  // Try Rekordbox 6 raw-bytes format first; fall back to RB7 passphrase format.
+  try {
+    return await openMasterDbWithKeyFormat(path, 'raw')
+  } catch (err) {
+    if (err instanceof RekordboxKeyMismatchError) {
+      return openMasterDbWithKeyFormat(path, 'passphrase')
+    }
+    throw err
+  }
+}
+
+/**
+ * Internal: open master.db with one specific key format.
+ *  'raw'        → PRAGMA key = "x'<hex>'"  (Rekordbox 6.x)
+ *  'passphrase' → PRAGMA key = "<hex>"     (Rekordbox 7.x)
+ */
+async function openMasterDbWithKeyFormat(
+  path: string,
+  format: 'raw' | 'passphrase'
+): Promise<MasterDb> {
   const sqlite3Module = (
     sqlcipher as {
       verbose: () => {
@@ -89,11 +111,14 @@ export async function openMasterDb(path: string): Promise<MasterDb> {
     })
   })
 
-  // Apply cipher pragmas. Compatibility 4 matches Rekordbox 6/7's SQLCipher version.
-  await runSerialized(db, [
-    `PRAGMA cipher_compatibility = 4`,
-    `PRAGMA key = "x'${REKORDBOX_MASTER_DB_KEY}'"`
-  ])
+  const keyPragma =
+    format === 'raw'
+      ? `PRAGMA key = "x'${REKORDBOX_MASTER_DB_KEY}'"`
+      : `PRAGMA key = "${REKORDBOX_MASTER_DB_KEY}"`
+
+  // cipher_compatibility = 4 sets SQLCipher 4.x defaults (AES-256-CBC,
+  // PBKDF2-HMAC-SHA512, page size 4096) for both RB6 and RB7.
+  await runSerialized(db, [`PRAGMA cipher_compatibility = 4`, keyPragma])
 
   // Sanity-check by reading sqlite_master. If the key is wrong, this throws
   // "file is encrypted or is not a database" (SQLITE_NOTADB).

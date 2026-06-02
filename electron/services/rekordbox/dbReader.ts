@@ -23,7 +23,8 @@ export interface RawContentRow {
   GenreName: string | null
   KeyName: string | null
   LabelName: string | null
-  ColorName: string | null
+  /** Rekordbox 6: foreign key to djmdColor.Name. Rekordbox 7: foreign key resolved via colorMap. */
+  ColorID: string | null
   BPM: number | null
   Length: number | null
   FolderPath: string | null
@@ -103,6 +104,12 @@ export async function readMasterDb(
       return { tracks: [], playlists: [], sessions: [] }
     }
 
+    // ── Colours ───────────────────────────────────────────────────────────
+    // Rekordbox 6 stores colour names in djmdColor.Name; Rekordbox 7 renamed
+    // the column to Commnt. Fetch them separately so the main query stays
+    // schema-agnostic and never throws on a missing column.
+    const colorMap = await fetchColorMap(db)
+
     // ── Tracks ────────────────────────────────────────────────────────────
     // One big LEFT JOIN — Rekordbox keeps track metadata normalised, but on a
     // 10k-track library this is still a single sub-second query.
@@ -115,7 +122,7 @@ export async function readMasterDb(
         g.Name                AS GenreName,
         k.ScaleName           AS KeyName,
         l.Name                AS LabelName,
-        col.Name              AS ColorName,
+        c.ColorID             AS ColorID,
         c.BPM                 AS BPM,
         c.Length              AS Length,
         c.FolderPath          AS FolderPath,
@@ -133,7 +140,6 @@ export async function readMasterDb(
       LEFT JOIN djmdGenre  g  ON g.ID  = c.GenreID
       LEFT JOIN djmdKey    k  ON k.ID  = c.KeyID
       LEFT JOIN djmdLabel  l  ON l.ID  = c.LabelID
-      LEFT JOIN djmdColor  col ON col.ID = c.ColorID
       WHERE c.rb_local_deleted IS NULL OR c.rb_local_deleted = 0
     `)
 
@@ -162,7 +168,7 @@ export async function readMasterDb(
     const idMap = new Map<string, string>()
     let processed = 0
     for (const row of contentRows) {
-      const mapped = mapContentRow(row, cuesByContent.get(row.ID) ?? [], existingIdsByPath)
+      const mapped = mapContentRow(row, cuesByContent.get(row.ID) ?? [], existingIdsByPath, colorMap)
       if (mapped) {
         tracks.push(mapped)
         idMap.set(row.ID, mapped.id)
@@ -234,13 +240,50 @@ export async function readMasterDb(
   }
 }
 
+// ───────── Internal helpers ────────────────────────────────────────
+
+/**
+ * Build a Map<colorId, colorName> from djmdColor.
+ *
+ * Schema changed between Rekordbox 6 and 7:
+ *  - RB6: colour label in the `Name` column
+ *  - RB7: `Name` removed; label moved to `Commnt`
+ *
+ * We try `Name` first; if that column doesn't exist, fall back to `Commnt`.
+ * Either failure leaves the map empty — callers treat missing colour as null.
+ */
+async function fetchColorMap(db: MasterDb): Promise<Map<string, string>> {
+  const map = new Map<string, string>()
+  // RB6 form
+  try {
+    const rows = await db.all<{ ID: string; Name: string | null }>(
+      `SELECT ID, Name FROM djmdColor`
+    )
+    for (const r of rows) if (r.ID && r.Name) map.set(r.ID, r.Name)
+    if (map.size > 0) return map
+  } catch {
+    /* Name column absent (RB7) — try Commnt */
+  }
+  // RB7 form
+  try {
+    const rows = await db.all<{ ID: string; Commnt: string | null }>(
+      `SELECT ID, Commnt FROM djmdColor`
+    )
+    for (const r of rows) if (r.ID && r.Commnt) map.set(r.ID, r.Commnt)
+  } catch {
+    /* djmdColor absent or unreadable — proceed without colour data */
+  }
+  return map
+}
+
 // ───────── Pure mapping functions (exported for testing) ─────────
 
 /** Map a raw djmdContent row + its cues into our Track shape. */
 export function mapContentRow(
   row: RawContentRow,
   cues: RawCueRow[],
-  existingIdsByPath: Map<string, string> = new Map()
+  existingIdsByPath: Map<string, string> = new Map(),
+  colorMap: Map<string, string> = new Map()
 ): Track | null {
   const filePath = combinePath(row.FolderPath, row.FileNameL)
   if (!filePath) return null // No path = unusable
@@ -278,7 +321,7 @@ export function mapContentRow(
     dateAdded: parseRbDate(row.StockDate ?? row.created_at),
     comment: row.Commnt ?? undefined,
     label: row.LabelName ?? undefined,
-    color: row.ColorName ?? undefined,
+    color: (row.ColorID ? (colorMap.get(row.ColorID) ?? undefined) : undefined),
     missingFile: false
   }
 }
