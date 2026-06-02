@@ -6,7 +6,12 @@ import type { AudioFormat, ImportProgress, Playlist, Track } from '../../../src/
 export interface RekordboxImportPayload {
   tracks: Track[]
   playlists: Playlist[]
-  sessions: Array<{ name: string; performedAt: string | null; venue: string | null; trackIds: string[] }>
+  sessions: Array<{
+    name: string
+    performedAt: string | null
+    venue: string | null
+    trackIds: string[]
+  }>
 }
 
 /** Test seam — split out for unit tests that don't open a real cipher. */
@@ -172,39 +177,55 @@ export async function readMasterDb(
     onProgress({ processed: total, total, phase: 'parsing' })
 
     // ── Playlists ─────────────────────────────────────────────────────────
-    const playlistRows = await db.all<RawPlaylistRow>(`
+    const playlistRows = await db
+      .all<RawPlaylistRow>(
+        `
       SELECT ID, Name, Attribute, ParentID
       FROM djmdPlaylist
       WHERE rb_local_deleted IS NULL OR rb_local_deleted = 0
       ORDER BY Seq
-    `).catch((err) => {
-      console.warn('[rekordbox] djmdPlaylist read failed', err)
-      return [] as RawPlaylistRow[]
-    })
-    const songPlaylistRows = await db.all<RawSongPlaylistRow>(`
+    `
+      )
+      .catch((err) => {
+        console.warn('[rekordbox] djmdPlaylist read failed', err)
+        return [] as RawPlaylistRow[]
+      })
+    const songPlaylistRows = await db
+      .all<RawSongPlaylistRow>(
+        `
       SELECT PlaylistID, ContentID, TrackNo
       FROM djmdSongPlaylist
       WHERE rb_local_deleted IS NULL OR rb_local_deleted = 0
       ORDER BY TrackNo
-    `).catch((err) => {
-      console.warn('[rekordbox] djmdSongPlaylist read failed', err)
-      return [] as RawSongPlaylistRow[]
-    })
+    `
+      )
+      .catch((err) => {
+        console.warn('[rekordbox] djmdSongPlaylist read failed', err)
+        return [] as RawSongPlaylistRow[]
+      })
     const playlists = mapPlaylists(playlistRows, songPlaylistRows, idMap)
 
     // ── History sessions ──────────────────────────────────────────────────
-    const historyRows = await db.all<RawHistoryRow>(`
+    const historyRows = await db
+      .all<RawHistoryRow>(
+        `
       SELECT ID, Name, DateCreated
       FROM djmdHistory
       WHERE rb_local_deleted IS NULL OR rb_local_deleted = 0
       ORDER BY DateCreated
-    `).catch(() => [] as RawHistoryRow[])
-    const songHistoryRows = await db.all<RawSongHistoryRow>(`
+    `
+      )
+      .catch(() => [] as RawHistoryRow[])
+    const songHistoryRows = await db
+      .all<RawSongHistoryRow>(
+        `
       SELECT HistoryID, ContentID, TrackNo
       FROM djmdSongHistory
       WHERE rb_local_deleted IS NULL OR rb_local_deleted = 0
       ORDER BY TrackNo
-    `).catch(() => [] as RawSongHistoryRow[])
+    `
+      )
+      .catch(() => [] as RawSongHistoryRow[])
     const sessions = mapSessions(historyRows, songHistoryRows, idMap)
 
     return { tracks, playlists, sessions }
@@ -228,7 +249,7 @@ export function mapContentRow(
   const bpm = row.BPM != null ? row.BPM / 100 : 0
   const duration = row.Length != null ? row.Length / 1000 : 0
   const keyOpen = row.KeyName ?? ''
-  const camelot = keyOpen ? openNotationToCamelot(keyOpen) ?? '' : ''
+  const camelot = keyOpen ? (openNotationToCamelot(keyOpen) ?? '') : ''
 
   return {
     id: existingIdsByPath.get(filePath) ?? crypto.randomUUID(),
@@ -258,7 +279,7 @@ export function mapContentRow(
     comment: row.Commnt ?? undefined,
     label: row.LabelName ?? undefined,
     color: row.ColorName ?? undefined,
-    missingFile: false,
+    missingFile: false
   }
 }
 
@@ -272,7 +293,10 @@ export function bucketCuesByContent(rows: RawCueRow[]): Map<string, RawCueRow[]>
   return out
 }
 
-function splitCues(cues: RawCueRow[]): { cuePoints: Track['cuePoints']; hotCues: Track['hotCues'] } {
+function splitCues(cues: RawCueRow[]): {
+  cuePoints: Track['cuePoints']
+  hotCues: Track['hotCues']
+} {
   const cuePoints: Track['cuePoints'] = []
   const hotCues: Track['hotCues'] = []
   for (const c of cues) {
@@ -286,7 +310,7 @@ function splitCues(cues: RawCueRow[]): { cuePoints: Track['cuePoints']; hotCues:
       hotCues.push({
         index,
         position: c.InMsec,
-        color: c.Color != null ? packedRgbToCss(c.Color) : undefined,
+        color: c.Color != null ? packedRgbToCss(c.Color) : undefined
       })
     }
   }
@@ -325,7 +349,7 @@ function parseFormat(filePath: string): AudioFormat {
     '.aif': 'aiff',
     '.wav': 'wav',
     '.flac': 'flac',
-    '.m4a': 'm4a',
+    '.m4a': 'm4a'
   }
   return map[ext] ?? 'unknown'
 }
@@ -365,8 +389,8 @@ export function mapPlaylists(
     // Attribute: 0 = playlist, 1 = folder (Rekordbox 6 convention)
     isFolder: r.Attribute === 1,
     name: r.Name ?? 'Untitled',
-    parentId: r.ParentID && r.ParentID !== 'root' ? idMap.get(r.ParentID) ?? null : null,
-    trackIds: byPlaylist.get(r.ID) ?? [],
+    parentId: r.ParentID && r.ParentID !== 'root' ? (idMap.get(r.ParentID) ?? null) : null,
+    trackIds: byPlaylist.get(r.ID) ?? []
   }))
 }
 
@@ -388,7 +412,7 @@ export function mapSessions(
       name: r.Name ?? 'Untitled session',
       performedAt: parseSessionDate(r.DateCreated),
       venue: null,
-      trackIds: byHistory.get(r.ID) ?? [],
+      trackIds: byHistory.get(r.ID) ?? []
     }))
     .filter((s) => s.trackIds.length > 0)
 }

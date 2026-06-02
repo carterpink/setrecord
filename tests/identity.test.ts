@@ -16,7 +16,7 @@ describe('buildIdentity', () => {
     const tracks = [
       makeTrack({ id: 'a', genre: 'Techno' }),
       makeTrack({ id: 'b', genre: 'Techno' }),
-      makeTrack({ id: 'c', genre: 'House' }),
+      makeTrack({ id: 'c', genre: 'House' })
     ]
     const snap = buildIdentity(tracks)
     const techno = snap.genreDistribution.find((g) => g.label === 'Techno')
@@ -31,7 +31,7 @@ describe('buildIdentity', () => {
     const tracks = [
       makeTrack({ id: 'a', bpm: 124 }),
       makeTrack({ id: 'b', bpm: 126 }),
-      makeTrack({ id: 'c', bpm: 132 }),
+      makeTrack({ id: 'c', bpm: 132 })
     ]
     const snap = buildIdentity(tracks)
     const bucket120 = snap.bpmHistogram.find((b) => b.range === '120–129')
@@ -44,7 +44,7 @@ describe('buildIdentity', () => {
     const tracks = [
       makeTrack({ id: 'a', key: '8A' }),
       makeTrack({ id: 'b', key: '8A' }),
-      makeTrack({ id: 'c', key: '9B' }),
+      makeTrack({ id: 'c', key: '9B' })
     ]
     const snap = buildIdentity(tracks)
     expect(snap.keyDistribution[0]).toEqual({ label: '8A', count: 2 })
@@ -54,7 +54,7 @@ describe('buildIdentity', () => {
     const tracks = [
       makeTrack({ id: 'a', energy: 7 }),
       makeTrack({ id: 'b', energy: 7 }),
-      makeTrack({ id: 'c', energy: 9 }),
+      makeTrack({ id: 'c', energy: 9 })
     ]
     const snap = buildIdentity(tracks)
     const e7 = snap.energyDistribution.find((e) => e.level === 7)
@@ -67,7 +67,7 @@ describe('buildIdentity', () => {
     const tracks = [
       makeTrack({ id: 'a', artist: 'Richie Hawtin' }),
       makeTrack({ id: 'b', artist: 'Richie Hawtin' }),
-      makeTrack({ id: 'c', artist: 'Jeff Mills' }),
+      makeTrack({ id: 'c', artist: 'Jeff Mills' })
     ]
     const snap = buildIdentity(tracks)
     expect(snap.topArtists[0]).toEqual({ label: 'Richie Hawtin', count: 2 })
@@ -77,7 +77,7 @@ describe('buildIdentity', () => {
     const tracks = [
       makeTrack({ id: 'a', label: 'M_nus' }),
       makeTrack({ id: 'b', label: 'M_nus' }),
-      makeTrack({ id: 'c' }), // no label
+      makeTrack({ id: 'c' }) // no label
     ]
     const snap = buildIdentity(tracks)
     expect(snap.topLabels).toHaveLength(1)
@@ -88,7 +88,7 @@ describe('buildIdentity', () => {
     const tracks = [
       makeTrack({ id: 'a', dateAdded: '2024-01-15T00:00:00Z' }),
       makeTrack({ id: 'b', dateAdded: '2024-02-10T00:00:00Z' }),
-      makeTrack({ id: 'c', dateAdded: '2024-07-01T00:00:00Z' }),
+      makeTrack({ id: 'c', dateAdded: '2024-07-01T00:00:00Z' })
     ]
     const snap = buildIdentity(tracks)
     const q1 = snap.tasteTimeline.find((t) => t.period === '2024 Q1')
@@ -100,11 +100,9 @@ describe('buildIdentity', () => {
   it('incorporates session performedAt into tasteTimeline performedCount', () => {
     const tracks = [
       makeTrack({ id: 'a', dateAdded: '2024-01-01T00:00:00Z' }),
-      makeTrack({ id: 'b', dateAdded: '2024-01-01T00:00:00Z' }),
+      makeTrack({ id: 'b', dateAdded: '2024-01-01T00:00:00Z' })
     ]
-    const sessions = [
-      { performedAt: '2024-02-01T00:00:00Z', trackIds: ['a', 'b'] },
-    ]
+    const sessions = [{ performedAt: '2024-02-01T00:00:00Z', trackIds: ['a', 'b'] }]
     const snap = buildIdentity(tracks, sessions)
     const q1 = snap.tasteTimeline.find((t) => t.period === '2024 Q1')
     expect(q1?.performedCount).toBe(2)
@@ -113,7 +111,7 @@ describe('buildIdentity', () => {
   it('tasteTimeline is sorted chronologically', () => {
     const tracks = [
       makeTrack({ id: 'a', dateAdded: '2023-06-01T00:00:00Z' }),
-      makeTrack({ id: 'b', dateAdded: '2022-01-01T00:00:00Z' }),
+      makeTrack({ id: 'b', dateAdded: '2022-01-01T00:00:00Z' })
     ]
     const snap = buildIdentity(tracks)
     const periods = snap.tasteTimeline.map((t) => t.period)
@@ -125,7 +123,7 @@ describe('buildIdentity', () => {
       makeTrack({ id: 'a', bpm: 124, key: '8A' }),
       makeTrack({ id: 'b', bpm: 126, key: '8A' }),
       makeTrack({ id: 'c', bpm: 125, key: '9B' }),
-      makeTrack({ id: 'd', bpm: 138, key: '11A' }),
+      makeTrack({ id: 'd', bpm: 138, key: '11A' })
     ]
     const snap = buildIdentity(tracks)
     const z120 = snap.keyByBpmZone.find((z) => z.range === '120–129')
@@ -141,7 +139,7 @@ describe('buildIdentity', () => {
     const tracks = [
       makeTrack({ id: 'a', bpm: 124, key: '' }),
       makeTrack({ id: 'b', bpm: 0, key: '8A' }),
-      makeTrack({ id: 'c', bpm: 124, key: '8A' }),
+      makeTrack({ id: 'c', bpm: 124, key: '8A' })
     ]
     const snap = buildIdentity(tracks)
     const z120 = snap.keyByBpmZone.find((z) => z.range === '120–129')
@@ -149,11 +147,7 @@ describe('buildIdentity', () => {
   })
 
   it('records totalTracks for share-card use', () => {
-    const tracks = [
-      makeTrack({ id: 'a' }),
-      makeTrack({ id: 'b' }),
-      makeTrack({ id: 'c' }),
-    ]
+    const tracks = [makeTrack({ id: 'a' }), makeTrack({ id: 'b' }), makeTrack({ id: 'c' })]
     expect(buildIdentity(tracks).totalTracks).toBe(3)
   })
 })

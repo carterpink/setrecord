@@ -17,15 +17,13 @@ describe('findForgottenGems', () => {
   })
 
   it('excludes never-played tracks (playCount 0 / no lastPlayed)', () => {
-    const tracks = [
-      makeTrack({ id: 't1', playCount: 0, rating: 5, dateAdded: monthsBack(24) }),
-    ]
+    const tracks = [makeTrack({ id: 't1', playCount: 0, rating: 5, dateAdded: monthsBack(24) })]
     expect(findForgottenGems(tracks, { now: NOW })).toHaveLength(0)
   })
 
   it('excludes recently-played tracks even if high playCount', () => {
     const tracks = [
-      makeTrack({ id: 't1', playCount: 20, lastPlayed: monthsBack(2), dateAdded: monthsBack(36) }),
+      makeTrack({ id: 't1', playCount: 20, lastPlayed: monthsBack(2), dateAdded: monthsBack(36) })
     ]
     expect(findForgottenGems(tracks, { now: NOW })).toHaveLength(0)
   })
@@ -33,8 +31,19 @@ describe('findForgottenGems', () => {
   it('excludes tracks with below-average playCount and no rating', () => {
     // Inject a high-play track to push avg up so the low-count track is below avg
     const tracks2 = [
-      makeTrack({ id: 'popular', playCount: 100, lastPlayed: monthsBack(1), dateAdded: monthsBack(24) }),
-      makeTrack({ id: 'low', playCount: 1, lastPlayed: monthsBack(12), dateAdded: monthsBack(24), rating: 0 }),
+      makeTrack({
+        id: 'popular',
+        playCount: 100,
+        lastPlayed: monthsBack(1),
+        dateAdded: monthsBack(24)
+      }),
+      makeTrack({
+        id: 'low',
+        playCount: 1,
+        lastPlayed: monthsBack(12),
+        dateAdded: monthsBack(24),
+        rating: 0
+      })
     ]
     const gems = findForgottenGems(tracks2, { now: NOW })
     // popular is recent, low has below-avg count + no rating
@@ -43,7 +52,13 @@ describe('findForgottenGems', () => {
 
   it('surfaces a highly-played dormant track', () => {
     const tracks = [
-      makeTrack({ id: 'gem', playCount: 20, lastPlayed: monthsBack(10), dateAdded: monthsBack(36), rating: 0 }),
+      makeTrack({
+        id: 'gem',
+        playCount: 20,
+        lastPlayed: monthsBack(10),
+        dateAdded: monthsBack(36),
+        rating: 0
+      })
     ]
     const gems = findForgottenGems(tracks, { now: NOW })
     expect(gems).toHaveLength(1)
@@ -55,8 +70,19 @@ describe('findForgottenGems', () => {
   it('surfaces a high-rated dormant track even with below-avg play count', () => {
     const tracks = [
       // high avg from other tracks
-      makeTrack({ id: 'banger', playCount: 50, lastPlayed: monthsBack(1), dateAdded: monthsBack(24) }),
-      makeTrack({ id: 'rated', playCount: 2, lastPlayed: monthsBack(9), dateAdded: monthsBack(24), rating: 5 }),
+      makeTrack({
+        id: 'banger',
+        playCount: 50,
+        lastPlayed: monthsBack(1),
+        dateAdded: monthsBack(24)
+      }),
+      makeTrack({
+        id: 'rated',
+        playCount: 2,
+        lastPlayed: monthsBack(9),
+        dateAdded: monthsBack(24),
+        rating: 5
+      })
     ]
     const gems = findForgottenGems(tracks, { now: NOW })
     expect(gems.map((g) => g.track.id)).toContain('rated')
@@ -65,7 +91,7 @@ describe('findForgottenGems', () => {
   it('respects minMonthsDormant option', () => {
     const tracks = [
       makeTrack({ id: 'a', playCount: 10, lastPlayed: monthsBack(3), dateAdded: monthsBack(24) }),
-      makeTrack({ id: 'b', playCount: 10, lastPlayed: monthsBack(8), dateAdded: monthsBack(24) }),
+      makeTrack({ id: 'b', playCount: 10, lastPlayed: monthsBack(8), dateAdded: monthsBack(24) })
     ]
     const gems3 = findForgottenGems(tracks, { now: NOW, minMonthsDormant: 2 })
     const gems6 = findForgottenGems(tracks, { now: NOW, minMonthsDormant: 6 })
@@ -78,7 +104,12 @@ describe('findForgottenGems', () => {
 
   it('respects limit option', () => {
     const tracks = Array.from({ length: 10 }, (_, i) =>
-      makeTrack({ id: `t${i}`, playCount: 10 + i, lastPlayed: monthsBack(8 + i), dateAdded: monthsBack(36) }),
+      makeTrack({
+        id: `t${i}`,
+        playCount: 10 + i,
+        lastPlayed: monthsBack(8 + i),
+        dateAdded: monthsBack(36)
+      })
     )
     const gems = findForgottenGems(tracks, { now: NOW, limit: 3 })
     expect(gems).toHaveLength(3)
@@ -88,7 +119,12 @@ describe('findForgottenGems', () => {
     const tracks = [
       // More dormant + higher count should score higher
       makeTrack({ id: 'low', playCount: 5, lastPlayed: monthsBack(7), dateAdded: monthsBack(36) }),
-      makeTrack({ id: 'high', playCount: 50, lastPlayed: monthsBack(24), dateAdded: monthsBack(36) }),
+      makeTrack({
+        id: 'high',
+        playCount: 50,
+        lastPlayed: monthsBack(24),
+        dateAdded: monthsBack(36)
+      })
     ]
     const gems = findForgottenGems(tracks, { now: NOW })
     expect(gems[0].track.id).toBe('high')
@@ -96,7 +132,13 @@ describe('findForgottenGems', () => {
 
   it('includes rating info in reason when track is high-rated', () => {
     const tracks = [
-      makeTrack({ id: 'r', playCount: 3, lastPlayed: monthsBack(8), dateAdded: monthsBack(24), rating: 4 }),
+      makeTrack({
+        id: 'r',
+        playCount: 3,
+        lastPlayed: monthsBack(8),
+        dateAdded: monthsBack(24),
+        rating: 4
+      })
     ]
     const gems = findForgottenGems(tracks, { now: NOW })
     expect(gems[0].reason).toContain('4★')
@@ -104,7 +146,7 @@ describe('findForgottenGems', () => {
 
   it('handles single track library', () => {
     const tracks = [
-      makeTrack({ id: 'only', playCount: 1, lastPlayed: monthsBack(8), dateAdded: monthsBack(24) }),
+      makeTrack({ id: 'only', playCount: 1, lastPlayed: monthsBack(8), dateAdded: monthsBack(24) })
     ]
     const gems = findForgottenGems(tracks, { now: NOW })
     expect(gems).toHaveLength(1)

@@ -19,7 +19,7 @@ import {
   countPendingEnergyTracks,
   getPendingEnergyTracks,
   updateTrackEnergy,
-  type PendingEnergyRow,
+  type PendingEnergyRow
 } from '../db/queries'
 import type { EnergySource } from '../../src/types'
 
@@ -51,7 +51,11 @@ function bpmTerm(bpm: number): number {
   return clamp01((bpm - MIN_BPM) / (MAX_BPM - MIN_BPM))
 }
 
-function compositeScore(lufs: number | null, lra: number | null, bpm: number): {
+function compositeScore(
+  lufs: number | null,
+  lra: number | null,
+  bpm: number
+): {
   raw: number
   score: number
 } {
@@ -91,7 +95,7 @@ function runEbuR128(filePath: string, timeoutMs: number): Promise<EbuR128Result>
       'ebur128=peak=true',
       '-f',
       'null',
-      '-',
+      '-'
     ]
 
     let stderr = ''
@@ -141,7 +145,7 @@ function parseEbuR128Stderr(stderr: string): EbuR128Result {
   const lra = lraMatch ? parseFloat(lraMatch[1]) : null
   return {
     lufs: lufs != null && Number.isFinite(lufs) ? lufs : null,
-    lra: lra != null && Number.isFinite(lra) ? lra : null,
+    lra: lra != null && Number.isFinite(lra) ? lra : null
   }
 }
 
@@ -185,7 +189,7 @@ export async function analyseTrack(
       energyRaw: bpmTerm(bpm),
       source: 'failed',
       lufs,
-      lra,
+      lra
     }
   }
 
@@ -271,7 +275,7 @@ export async function runAnalysisQueue(cbs: EnergyQueueCallbacks = {}): Promise<
               energyRaw: fallbackRaw,
               source: 'failed',
               lufs: null,
-              lra: null,
+              lra: null
             },
             processed,
             total

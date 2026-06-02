@@ -112,8 +112,7 @@ describe('interpretTurn — date-added ranges', () => {
     const t = interpretTurn('tracks added in last 30 days', {})
     if (t.kind !== 'search') throw new Error('expected search')
     expect(t.params.addedAfter).toBeDefined()
-    const ageDays =
-      (Date.now() - new Date(t.params.addedAfter!).getTime()) / (24 * 3600 * 1000)
+    const ageDays = (Date.now() - new Date(t.params.addedAfter!).getTime()) / (24 * 3600 * 1000)
     expect(ageDays).toBeGreaterThan(29.9)
     expect(ageDays).toBeLessThan(30.1)
   })

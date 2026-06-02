@@ -20,7 +20,15 @@ interface BadgeProps {
  * Pill-shaped status badge. Used for "Set safety", health summaries, etc.
  * Pass `onClick` to render it as an interactive button.
  */
-export function Badge({ dot, label, value, glass = 1, className, onClick, title }: BadgeProps): React.JSX.Element {
+export function Badge({
+  dot,
+  label,
+  value,
+  glass = 1,
+  className,
+  onClick,
+  title
+}: BadgeProps): React.JSX.Element {
   const cls = clsx('badge', `glass-${glass}`, onClick && 'badge--clickable', className)
   const inner = (
     <>

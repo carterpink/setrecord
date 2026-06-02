@@ -15,6 +15,10 @@ import type {
   RecallMessage
 } from '@/types'
 import { interpretTurn } from '@/utils/recallQuery'
+import { useUiStore } from '@/stores/uiStore'
+
+const IDENTITY_SHARE_SEEN_KEY = 'setsense-identity-share-seen'
+const IDENTITY_SHARE_TRACK_THRESHOLD = 20
 
 const SECTION_KEY = 'setsense-recall-section'
 const CONVO_KEY = 'setsense-recall-convos'
@@ -228,7 +232,18 @@ export const useRecallStore = create<RecallState>((set, get) => ({
     if (!s) return
     set({ identityLoading: true })
     try {
-      set({ identity: await s.recallIdentity() })
+      const identity = await s.recallIdentity()
+      set({ identity })
+      if (
+        identity &&
+        identity.totalTracks >= IDENTITY_SHARE_TRACK_THRESHOLD &&
+        typeof window !== 'undefined' &&
+        !window.localStorage.getItem(IDENTITY_SHARE_SEEN_KEY)
+      ) {
+        window.localStorage.setItem(IDENTITY_SHARE_SEEN_KEY, '1')
+        // Small delay so the Identity section renders before the modal appears
+        setTimeout(() => useUiStore.getState().showModal('identityReady'), 900)
+      }
     } finally {
       set({ identityLoading: false })
     }

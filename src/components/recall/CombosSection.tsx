@@ -100,7 +100,11 @@ export function CombosSection(): React.JSX.Element {
           <div className="recall-sequence glass-2" key={i}>
             <span className="recall-sequence-tracks">
               {seq.tracks.map((t, j) => (
-                <span key={t.id} className="recall-sequence-item" title={`${t.title} — ${t.artist}`}>
+                <span
+                  key={t.id}
+                  className="recall-sequence-item"
+                  title={`${t.title} — ${t.artist}`}
+                >
                   {t.title}
                   {j < seq.tracks.length - 1 && <ArrowRight size={12} strokeWidth={1.5} />}
                 </span>

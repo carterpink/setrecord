@@ -124,11 +124,7 @@ function scoreHealth(counts: {
 }): { healthScore: number; scoreBreakdown: HealthScoreBreakdown } {
   const w = HEALTH_WEIGHTS
 
-  const missingFilesPenalty = capped(
-    w.missingFilesPerTrack,
-    counts.missingFiles,
-    w.missingFilesCap
-  )
+  const missingFilesPenalty = capped(w.missingFilesPerTrack, counts.missingFiles, w.missingFilesCap)
   const missingKeyPenalty = capped(w.missingKeyPerTrack, counts.missingKey, w.missingKeyCap)
   const missingBpmPenalty = capped(w.missingBpmPerTrack, counts.missingBpm, w.missingBpmCap)
   const unsupportedFormatsPenalty = capped(
@@ -136,11 +132,7 @@ function scoreHealth(counts: {
     counts.unsupportedFormats,
     w.unsupportedFormatsCap
   )
-  const duplicatesPenalty = capped(
-    w.duplicatesPerGroup,
-    counts.duplicateGroups,
-    w.duplicatesCap
-  )
+  const duplicatesPenalty = capped(w.duplicatesPerGroup, counts.duplicateGroups, w.duplicatesCap)
 
   const total =
     missingFilesPenalty +

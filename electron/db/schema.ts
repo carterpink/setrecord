@@ -37,23 +37,37 @@ export function initDb(): void {
  */
 export function resetDb(): void {
   if (_db) {
-    try { _db.close() } catch { /* already broken — nothing to close */ }
+    try {
+      _db.close()
+    } catch {
+      /* already broken — nothing to close */
+    }
     _db = null
   }
   const dbPath = getDbPath()
   const ts = new Date().toISOString().replace(/[:.]/g, '-')
   const quarantine = `${dbPath}.corrupt-${ts}`
   if (existsSync(dbPath)) {
-    try { renameSync(dbPath, quarantine) } catch (err) {
+    try {
+      renameSync(dbPath, quarantine)
+    } catch (err) {
       console.error('[resetDb] rename failed', err)
       // Best-effort: if rename fails, fall back to delete so init can proceed
-      try { unlinkSync(dbPath) } catch { /* nothing more we can do */ }
+      try {
+        unlinkSync(dbPath)
+      } catch {
+        /* nothing more we can do */
+      }
     }
   }
   for (const suffix of ['-wal', '-shm']) {
     const sidecar = dbPath + suffix
     if (existsSync(sidecar)) {
-      try { unlinkSync(sidecar) } catch { /* best effort */ }
+      try {
+        unlinkSync(sidecar)
+      } catch {
+        /* best effort */
+      }
     }
   }
 }
@@ -90,6 +104,7 @@ function createSchema(db: Database.Database): void {
       color TEXT,
       cue_points TEXT DEFAULT '[]',
       hot_cues TEXT DEFAULT '[]',
+      loops TEXT DEFAULT '[]',
       beatgrid_offset REAL DEFAULT 0,
       art_gradient TEXT,
       missing_file INTEGER NOT NULL DEFAULT 0,

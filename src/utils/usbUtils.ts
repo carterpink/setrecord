@@ -15,7 +15,7 @@ export function analyseFilesystem(filesystem: string): FilesystemAnalysis {
       compatibility: 'optimal',
       label: 'exFAT — Optimal',
       details: ['Universal (Mac, Windows, Linux)', 'Supports files >4 GB', 'Best for DJ export'],
-      recommendation: 'Ideal',
+      recommendation: 'Ideal'
     }
   }
   if (fs === 'fat32') {
@@ -23,7 +23,7 @@ export function analyseFilesystem(filesystem: string): FilesystemAnalysis {
       compatibility: 'limited',
       label: 'FAT32 — Limited',
       details: ['Max file size: 4 GB', 'Slower on large exports', 'Maximum device compatibility'],
-      recommendation: 'Only for small sets',
+      recommendation: 'Only for small sets'
     }
   }
   if (fs === 'ntfs') {
@@ -31,7 +31,7 @@ export function analyseFilesystem(filesystem: string): FilesystemAnalysis {
       compatibility: 'compatible',
       label: 'NTFS — Compatible',
       details: ['Windows native', 'Mac read-only without Bootcamp', 'Good for Windows exports'],
-      recommendation: 'exFAT is more portable',
+      recommendation: 'exFAT is more portable'
     }
   }
   if (fs === 'apfs' || fs === 'hfs+') {
@@ -39,14 +39,14 @@ export function analyseFilesystem(filesystem: string): FilesystemAnalysis {
       compatibility: 'warning',
       label: `${filesystem} — Not recommended`,
       details: ['Mac-only filesystem', 'Not compatible with CDJ players'],
-      recommendation: 'Reformat to exFAT',
+      recommendation: 'Reformat to exFAT'
     }
   }
   return {
     compatibility: 'compatible',
     label: filesystem,
     details: ['Compatibility unknown'],
-    recommendation: 'Verify with your CDJ',
+    recommendation: 'Verify with your CDJ'
   }
 }
 

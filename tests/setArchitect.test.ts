@@ -4,8 +4,30 @@ import type { ArchitectParams, Track } from '../src/types'
 import { makeTrack } from './fixtures'
 
 const CAMELOT_RING = [
-  '1A', '2A', '3A', '4A', '5A', '6A', '7A', '8A', '9A', '10A', '11A', '12A',
-  '1B', '2B', '3B', '4B', '5B', '6B', '7B', '8B', '9B', '10B', '11B', '12B',
+  '1A',
+  '2A',
+  '3A',
+  '4A',
+  '5A',
+  '6A',
+  '7A',
+  '8A',
+  '9A',
+  '10A',
+  '11A',
+  '12A',
+  '1B',
+  '2B',
+  '3B',
+  '4B',
+  '5B',
+  '6B',
+  '7B',
+  '8B',
+  '9B',
+  '10B',
+  '11B',
+  '12B'
 ]
 
 function buildLibrary(): Track[] {
@@ -21,8 +43,8 @@ function buildLibrary(): Track[] {
         bpm: 122 + (i % 9),
         key: CAMELOT_RING[i % CAMELOT_RING.length],
         energy: 3 + (i % 7),
-        duration: 320 + (i % 5) * 30,
-      }),
+        duration: 320 + (i % 5) * 30
+      })
     )
   }
   return tracks
@@ -38,7 +60,7 @@ const PARAMS: ArchitectParams = {
   bpmMax: 130,
   harmonicMixing: true,
   followEnergyCurve: true,
-  energyCurveType: 'rise',
+  energyCurveType: 'rise'
 }
 
 describe('buildSet', () => {
@@ -68,8 +90,8 @@ describe('buildSet', () => {
       ...PARAMS,
       lockedTracks: [
         { position: 0, trackId: 't-3' },
-        { position: 2, trackId: 't-17' },
-      ],
+        { position: 2, trackId: 't-17' }
+      ]
     }
     const out = buildSet(lockedParams, lib)
     expect(out.length).toBeGreaterThan(3)
@@ -86,10 +108,12 @@ describe('buildSet', () => {
   it('bypasses BPM filtering for locked tracks (an out-of-range lock still survives)', () => {
     const lib = buildLibrary()
     // Inject an off-BPM lock target; algorithm must accept it anyway.
-    lib.push(makeTrack({ id: 't-slow', title: 'Slow', bpm: 90, key: '8A', energy: 5, duration: 360 }))
+    lib.push(
+      makeTrack({ id: 't-slow', title: 'Slow', bpm: 90, key: '8A', energy: 5, duration: 360 })
+    )
     const lockedParams: ArchitectParams = {
       ...PARAMS,
-      lockedTracks: [{ position: 0, trackId: 't-slow' }],
+      lockedTracks: [{ position: 0, trackId: 't-slow' }]
     }
     const out = buildSet(lockedParams, lib)
     expect(out[0]?.trackId).toBe('t-slow')
@@ -100,8 +124,8 @@ describe('buildSet', () => {
     const lib = buildLibrary()
     const shortParams: ArchitectParams = {
       ...PARAMS,
-      targetDuration: 30,  // ~5 tracks
-      lockedTracks: [{ position: 9, trackId: 't-5' }],
+      targetDuration: 30, // ~5 tracks
+      lockedTracks: [{ position: 9, trackId: 't-5' }]
     }
     const out = buildSet(shortParams, lib)
     expect(out.length).toBeGreaterThanOrEqual(10)

@@ -29,7 +29,12 @@ interface USBStore {
     prefs: { customName?: string | null; isFavorite?: boolean; isExportTarget?: boolean }
   ) => Promise<void>
   forgetDevice: (id: string) => Promise<void>
-  copyToUSB: (srcPath: string, mountPath: string, filename: string, deviceId: string) => Promise<{ success: boolean; destPath?: string; error?: string }>
+  copyToUSB: (
+    srcPath: string,
+    mountPath: string,
+    filename: string,
+    deviceId: string
+  ) => Promise<{ success: boolean; destPath?: string; error?: string }>
 }
 
 export const useUSBStore = create<USBStore>((set) => ({
@@ -49,7 +54,7 @@ export const useUSBStore = create<USBStore>((set) => ({
     if (typeof window.setsense === 'undefined') return
     const [devices, remembered] = await Promise.all([
       window.setsense.usbList(),
-      window.setsense.usbGetRemembered(),
+      window.setsense.usbGetRemembered()
     ])
     set({ connectedDevices: devices, rememberedDevices: remembered })
   },
@@ -69,7 +74,7 @@ export const useUSBStore = create<USBStore>((set) => ({
         await window.setsense.usbUpdatePrefs(id, {
           readSpeedMBps: result.readMBps,
           writeSpeedMBps: result.writeMBps,
-          speedTestedAt: new Date().toISOString(),
+          speedTestedAt: new Date().toISOString()
         })
         // Patch local connected device
         set((s) => ({
@@ -80,10 +85,10 @@ export const useUSBStore = create<USBStore>((set) => ({
                   readSpeedMBps: result.readMBps,
                   writeSpeedMBps: result.writeMBps,
                   speedTestedAt: new Date().toISOString(),
-                  speedConfidence: 'high' as const,
+                  speedConfidence: 'high' as const
                 }
               : d
-          ),
+          )
         }))
       }
     } finally {
@@ -101,15 +106,11 @@ export const useUSBStore = create<USBStore>((set) => ({
     // Convert null customName to undefined for the USBDevice type
     const patch = {
       ...prefs,
-      customName: prefs.customName === null ? undefined : prefs.customName,
+      customName: prefs.customName === null ? undefined : prefs.customName
     }
     set((s) => ({
-      connectedDevices: s.connectedDevices.map((d) =>
-        d.id === id ? { ...d, ...patch } : d
-      ),
-      rememberedDevices: s.rememberedDevices.map((d) =>
-        d.id === id ? { ...d, ...patch } : d
-      ),
+      connectedDevices: s.connectedDevices.map((d) => (d.id === id ? { ...d, ...patch } : d)),
+      rememberedDevices: s.rememberedDevices.map((d) => (d.id === id ? { ...d, ...patch } : d))
     }))
   },
 
@@ -117,7 +118,7 @@ export const useUSBStore = create<USBStore>((set) => ({
     if (typeof window.setsense === 'undefined') return
     await window.setsense.usbForget(id)
     set((s) => ({
-      rememberedDevices: s.rememberedDevices.filter((d) => d.id !== id),
+      rememberedDevices: s.rememberedDevices.filter((d) => d.id !== id)
     }))
   },
 
@@ -133,12 +134,12 @@ export const useUSBStore = create<USBStore>((set) => ({
             ? {
                 ...d,
                 exportCount: d.exportCount + 1,
-                lastExport: new Date().toISOString(),
+                lastExport: new Date().toISOString()
               }
             : d
-        ),
+        )
       }))
     }
     return result
-  },
+  }
 }))

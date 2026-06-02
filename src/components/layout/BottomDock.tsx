@@ -21,7 +21,6 @@ export function BottomDock({ visible }: BottomDockProps): React.JSX.Element {
     <div className="dock-trigger">
       <div className={`dock-wrap${visible ? ' dock-visible' : ''}`}>
         <div className="dock glass-3">
-
           {/* Set Architect — Pro */}
           <span className="dock-item" data-label={isPro ? 'Set Architect' : 'Set Architect — Pro'}>
             <IconButton
@@ -48,7 +47,7 @@ export function BottomDock({ visible }: BottomDockProps): React.JSX.Element {
               }
               style={{
                 opacity: !isPro || canSmartFilter ? 1 : 0.35,
-                cursor: !isPro || canSmartFilter ? 'pointer' : 'default',
+                cursor: !isPro || canSmartFilter ? 'pointer' : 'default'
               }}
             />
             {!isPro && <ProBadge className="dock-pro-badge" />}
@@ -57,13 +56,23 @@ export function BottomDock({ visible }: BottomDockProps): React.JSX.Element {
           {/* Cue editor — Pro; requires a selected timeline track */}
           <span
             className="dock-item"
-            data-label={!isPro ? 'Cue editor — Pro' : canOpenCueEditor ? 'Cue editor' : 'Select a timeline track first'}
+            data-label={
+              !isPro
+                ? 'Cue editor — Pro'
+                : canOpenCueEditor
+                  ? 'Cue editor'
+                  : 'Select a timeline track first'
+            }
           >
             <IconButton
               icon={Flag}
               aria-label="Cue editor"
               disabled={isPro && !canOpenCueEditor}
-              title={isPro && !canOpenCueEditor ? 'Select a track in your timeline to edit its cue points' : undefined}
+              title={
+                isPro && !canOpenCueEditor
+                  ? 'Select a track in your timeline to edit its cue points'
+                  : undefined
+              }
               onClick={
                 !isPro
                   ? () => showUpgrade('cueEditor')
@@ -73,7 +82,7 @@ export function BottomDock({ visible }: BottomDockProps): React.JSX.Element {
               }
               style={{
                 opacity: !isPro || canOpenCueEditor ? 1 : 0.35,
-                cursor: !isPro || canOpenCueEditor ? 'pointer' : 'default',
+                cursor: !isPro || canOpenCueEditor ? 'pointer' : 'default'
               }}
             />
             {!isPro && <ProBadge className="dock-pro-badge" />}
@@ -100,7 +109,6 @@ export function BottomDock({ visible }: BottomDockProps): React.JSX.Element {
             />
             {!isPro && <ProBadge className="dock-pro-badge" />}
           </span>
-
         </div>
       </div>
     </div>

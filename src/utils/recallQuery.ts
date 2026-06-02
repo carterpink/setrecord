@@ -93,31 +93,90 @@ const SPECIAL = [
  */
 const OPEN_TO_CAMELOT: Record<string, string> = {
   // Minor keys (A side)
-  am: '8A', 'a min': '8A', 'a minor': '8A',
-  'a#m': '3A', 'bbm': '3A', 'a# min': '3A', 'bb min': '3A', 'bb minor': '3A',
-  bm: '10A', 'b min': '10A', 'b minor': '10A',
-  cm: '5A', 'c min': '5A', 'c minor': '5A',
-  'c#m': '12A', dbm: '12A', 'c# min': '12A', 'db min': '12A',
-  dm: '7A', 'd min': '7A', 'd minor': '7A',
-  'd#m': '2A', ebm: '2A', 'd# min': '2A', 'eb min': '2A',
-  em: '9A', 'e min': '9A', 'e minor': '9A',
-  fm: '4A', 'f min': '4A', 'f minor': '4A',
-  'f#m': '11A', gbm: '11A', 'f# min': '11A', 'gb min': '11A',
-  gm: '6A', 'g min': '6A', 'g minor': '6A',
-  'g#m': '1A', abm: '1A', 'g# min': '1A', 'ab min': '1A',
+  am: '8A',
+  'a min': '8A',
+  'a minor': '8A',
+  'a#m': '3A',
+  bbm: '3A',
+  'a# min': '3A',
+  'bb min': '3A',
+  'bb minor': '3A',
+  bm: '10A',
+  'b min': '10A',
+  'b minor': '10A',
+  cm: '5A',
+  'c min': '5A',
+  'c minor': '5A',
+  'c#m': '12A',
+  dbm: '12A',
+  'c# min': '12A',
+  'db min': '12A',
+  dm: '7A',
+  'd min': '7A',
+  'd minor': '7A',
+  'd#m': '2A',
+  ebm: '2A',
+  'd# min': '2A',
+  'eb min': '2A',
+  em: '9A',
+  'e min': '9A',
+  'e minor': '9A',
+  fm: '4A',
+  'f min': '4A',
+  'f minor': '4A',
+  'f#m': '11A',
+  gbm: '11A',
+  'f# min': '11A',
+  'gb min': '11A',
+  gm: '6A',
+  'g min': '6A',
+  'g minor': '6A',
+  'g#m': '1A',
+  abm: '1A',
+  'g# min': '1A',
+  'ab min': '1A',
   // Major keys (B side)
-  c: '8B', 'c maj': '8B', 'c major': '8B',
-  'c#': '3B', db: '3B', 'c# maj': '3B', 'db maj': '3B',
-  d: '10B', 'd maj': '10B', 'd major': '10B',
-  'd#': '5B', eb: '5B', 'd# maj': '5B', 'eb maj': '5B',
-  e: '12B', 'e maj': '12B', 'e major': '12B',
-  f: '7B', 'f maj': '7B', 'f major': '7B',
-  'f#': '2B', gb: '2B', 'f# maj': '2B', 'gb maj': '2B',
-  g: '9B', 'g maj': '9B', 'g major': '9B',
-  'g#': '4B', ab: '4B', 'g# maj': '4B', 'ab maj': '4B',
-  a: '11B', 'a maj': '11B', 'a major': '11B',
-  'a#': '6B', bb: '6B', 'a# maj': '6B', 'bb maj': '6B',
-  b: '1B', 'b maj': '1B', 'b major': '1B'
+  c: '8B',
+  'c maj': '8B',
+  'c major': '8B',
+  'c#': '3B',
+  db: '3B',
+  'c# maj': '3B',
+  'db maj': '3B',
+  d: '10B',
+  'd maj': '10B',
+  'd major': '10B',
+  'd#': '5B',
+  eb: '5B',
+  'd# maj': '5B',
+  'eb maj': '5B',
+  e: '12B',
+  'e maj': '12B',
+  'e major': '12B',
+  f: '7B',
+  'f maj': '7B',
+  'f major': '7B',
+  'f#': '2B',
+  gb: '2B',
+  'f# maj': '2B',
+  'gb maj': '2B',
+  g: '9B',
+  'g maj': '9B',
+  'g major': '9B',
+  'g#': '4B',
+  ab: '4B',
+  'g# maj': '4B',
+  'ab maj': '4B',
+  a: '11B',
+  'a maj': '11B',
+  'a major': '11B',
+  'a#': '6B',
+  bb: '6B',
+  'a# maj': '6B',
+  'bb maj': '6B',
+  b: '1B',
+  'b maj': '1B',
+  'b major': '1B'
 }
 
 function isSpecial(q: string): boolean {
@@ -144,7 +203,8 @@ export function interpretTurn(raw: string, prev: LibrarySearchParams): ConvTurn 
   if (!q) return { kind: 'search', params: { ...prev }, narration: 'Here you go.' }
   // Cue-label queries look like a free-text intent but should resolve through SEARCH
   // (they need to filter on cue label, not be routed to the LLM ASK fallback).
-  const isCueLabelQuery = /\bcue(?:[\s-]?points?)?\s+(?:labelled|labeled|called|named|tagged)\b/.test(q)
+  const isCueLabelQuery =
+    /\bcue(?:[\s-]?points?)?\s+(?:labelled|labeled|called|named|tagged)\b/.test(q)
   if (isSpecial(q) && !isCueLabelQuery) return { kind: 'ask' }
 
   const tweak =
@@ -174,12 +234,16 @@ export function interpretTurn(raw: string, prev: LibrarySearchParams): ConvTurn 
     durationMaxSec = Math.max(+durRange[1], +durRange[2]) * 60
     work = work.replace(durRange[0], ' ')
   } else {
-    const durUnder = work.match(/\b(?:under|less than|shorter than|below)\s+(\d{1,2})\s*min(?:ute)?s?\b/)
+    const durUnder = work.match(
+      /\b(?:under|less than|shorter than|below)\s+(\d{1,2})\s*min(?:ute)?s?\b/
+    )
     if (durUnder) {
       durationMaxSec = +durUnder[1] * 60
       work = work.replace(durUnder[0], ' ')
     }
-    const durOver = work.match(/\b(?:over|more than|longer than|above)\s+(\d{1,2})\s*min(?:ute)?s?\b/)
+    const durOver = work.match(
+      /\b(?:over|more than|longer than|above)\s+(\d{1,2})\s*min(?:ute)?s?\b/
+    )
     if (durOver) {
       durationMinSec = +durOver[1] * 60
       work = work.replace(durOver[0], ' ')
@@ -195,8 +259,13 @@ export function interpretTurn(raw: string, prev: LibrarySearchParams): ConvTurn 
   if (dateLast) {
     const n = +dateLast[1]
     const unit = dateLast[2]
-    const mult =
-      unit.startsWith('day') ? 86400 : unit.startsWith('week') ? 7 * 86400 : unit.startsWith('month') ? 30.44 * 86400 : 365.25 * 86400
+    const mult = unit.startsWith('day')
+      ? 86400
+      : unit.startsWith('week')
+        ? 7 * 86400
+        : unit.startsWith('month')
+          ? 30.44 * 86400
+          : 365.25 * 86400
     addedAfter = new Date(Date.now() - n * mult * 1000).toISOString()
     work = work.replace(dateLast[0], ' ')
   }
@@ -244,9 +313,7 @@ export function interpretTurn(raw: string, prev: LibrarySearchParams): ConvTurn 
     }
   }
   if (!keyExact) {
-    const openKey = work.match(
-      /\bin\s+(?:key\s+)?([a-g][#b]?\s*(?:m|min|minor|maj|major)?)\b/
-    )
+    const openKey = work.match(/\bin\s+(?:key\s+)?([a-g][#b]?\s*(?:m|min|minor|maj|major)?)\b/)
     if (openKey) {
       // Normalise "major" → "maj" / "minor" → "min" so the lookup table doesn't
       // need to enumerate every word form.

@@ -9,7 +9,14 @@ interface SliderProps {
   className?: string
 }
 
-export function Slider({ value, min = 0, max = 1, step = 1, onChange, className }: SliderProps): React.JSX.Element {
+export function Slider({
+  value,
+  min = 0,
+  max = 1,
+  step = 1,
+  onChange,
+  className
+}: SliderProps): React.JSX.Element {
   const normalized = max === min ? 0 : (value - min) / (max - min)
   const pct = `${Math.round(Math.max(0, Math.min(1, normalized)) * 100)}%`
 
@@ -32,7 +39,7 @@ export function Slider({ value, min = 0, max = 1, step = 1, onChange, className 
             height: '100%',
             opacity: 0,
             cursor: 'pointer',
-            margin: 0,
+            margin: 0
           }}
         />
       )}

@@ -59,11 +59,7 @@ function StatList({
  * with ~12 zones makes that unwieldy. A hand-rolled SVG bar keeps the JSX tight
  * and lets each Camelot segment use its wheel-position colour from camelotColors.
  */
-function KeyByBpmChart({
-  data
-}: {
-  data: IdentitySnapshot['keyByBpmZone']
-}): React.JSX.Element {
+function KeyByBpmChart({ data }: { data: IdentitySnapshot['keyByBpmZone'] }): React.JSX.Element {
   if (data.length === 0) {
     return (
       <div className="recall-stat-empty" style={{ padding: 24 }}>
@@ -184,10 +180,7 @@ export function IdentitySection(): React.JSX.Element {
     void loadIdentity()
   }, [loadIdentity])
 
-  const hasShareData = useMemo(
-    () => (identity ? identity.totalTracks > 0 : false),
-    [identity]
-  )
+  const hasShareData = useMemo(() => (identity ? identity.totalTracks > 0 : false), [identity])
 
   if (loading && !identity) {
     return (

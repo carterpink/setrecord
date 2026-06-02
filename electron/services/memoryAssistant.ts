@@ -7,8 +7,12 @@
  * a templated sentence narrates the real result. The whole Recall tab works with
  * the model absent — this just adds free-text "ask your library" search.
  *
- * The model is downloaded on first use into userData/models (≈2 GB) so it does
- * not bloat the repo; electron-builder can also ship it in the installer.
+ * The model (≈1.9 GB) ships INSIDE the app bundle (electron-builder
+ * `extraResources` → Contents/Resources/models), so the feature works offline
+ * from the first launch with no download step. If the bundled copy is ever
+ * missing — a dev run, or an install where it was stripped — we self-heal by
+ * downloading it once into userData/models; thereafter it loads exactly like
+ * the bundled copy. Either way the model is a NARRATION + ROUTING layer only.
  */
 
 import { app } from 'electron'
@@ -46,11 +50,31 @@ let _grammar: { parse: (s: string) => unknown } | null = null
 let _loadPromise: Promise<void> | null = null
 let _askLock: Promise<unknown> = Promise.resolve()
 
-function modelsDir(): string {
+/** Where a self-healed download lands (writable per-user dir). */
+function downloadDir(): string {
   return join(app.getPath('userData'), 'models')
 }
-function modelPath(): string {
-  return join(modelsDir(), MODEL_FILENAME)
+function downloadedModelPath(): string {
+  return join(downloadDir(), MODEL_FILENAME)
+}
+/** Where the model ships inside the packaged app (read-only app bundle). */
+function bundledModelPath(): string {
+  return join(process.resourcesPath, 'models', MODEL_FILENAME)
+}
+/**
+ * The model file we'll actually load: prefer the copy bundled in the app, then
+ * a previously self-healed download. Returns null when neither exists (we'd then
+ * download on demand). The bundled path doesn't resolve in `electron-vite dev`
+ * (no real resourcesPath), so dev naturally exercises the download fallback.
+ */
+function resolveModelPath(): string | null {
+  try {
+    if (process.resourcesPath && existsSync(bundledModelPath())) return bundledModelPath()
+  } catch {
+    /* process.resourcesPath unavailable (e.g. tests) — fall through */
+  }
+  if (existsSync(downloadedModelPath())) return downloadedModelPath()
+  return null
 }
 
 export function setEnabled(enabled: boolean): void {
@@ -65,7 +89,7 @@ export function getStatus(): RecallAiStatus {
   return {
     enabled: _enabled,
     state: _state,
-    downloaded: existsSync(modelPath()),
+    downloaded: resolveModelPath() !== null,
     progress: _progress,
     error: _error
   }
@@ -82,14 +106,18 @@ export async function ensureModel(onProgress?: (p: number) => void): Promise<voi
   _loadPromise = (async () => {
     try {
       _error = undefined
-      const { getLlama, createModelDownloader } = await import('node-llama-cpp')
+      const { getLlama } = await import('node-llama-cpp')
 
-      if (!existsSync(modelPath())) {
+      // Prefer the model bundled in the app; only download if it's genuinely
+      // absent (dev run, or an install where the resource was stripped).
+      let path = resolveModelPath()
+      if (!path) {
         _state = 'downloading'
         _progress = 0
+        const { createModelDownloader } = await import('node-llama-cpp')
         const downloader = await createModelDownloader({
           modelUri: MODEL_URI,
-          dirPath: modelsDir(),
+          dirPath: downloadDir(),
           fileName: MODEL_FILENAME,
           onProgress: ({ totalSize, downloadedSize }) => {
             _progress = totalSize > 0 ? downloadedSize / totalSize : 0
@@ -97,11 +125,12 @@ export async function ensureModel(onProgress?: (p: number) => void): Promise<voi
           }
         })
         await downloader.download()
+        path = downloadedModelPath()
       }
 
       _state = 'loading'
       _llama = await getLlama()
-      _model = await _llama.loadModel({ modelPath: modelPath() })
+      _model = await _llama.loadModel({ modelPath: path })
       _context = await _model.createContext({ contextSize: 2048 })
       const { LlamaChatSession } = await import('node-llama-cpp')
       _session = new LlamaChatSession({
@@ -114,7 +143,7 @@ export async function ensureModel(onProgress?: (p: number) => void): Promise<voi
       _state = 'ready'
     } catch (err) {
       _state = 'error'
-      _error = err instanceof Error ? err.message : String(err)
+      _error = friendlyLoadError(err)
       _session = null
       _grammar = null
       throw err
@@ -124,6 +153,32 @@ export async function ensureModel(onProgress?: (p: number) => void): Promise<voi
   })()
 
   return _loadPromise
+}
+
+/**
+ * Map the raw error from a download/native-load failure into something a DJ can
+ * act on. The underlying library surfaces low-level messages (ENOENT, dlopen,
+ * getaddrinfo) that mean nothing to a user — and these are what the Settings
+ * panel shows via `getStatus().error`. The deterministic Recall search keeps
+ * working regardless, so every message says so.
+ */
+function friendlyLoadError(err: unknown): string {
+  const raw = (err instanceof Error ? err.message : String(err)) || ''
+  const m = raw.toLowerCase()
+
+  if (/enospc|no space left/.test(m)) {
+    return 'Not enough free disk space to download the language model (~2 GB needed). Free up space and try again. Recall search still works without it.'
+  }
+  if (/enotfound|getaddrinfo|econnrefused|etimedout|network|fetch failed|socket hang|enetdown|eai_again/.test(m)) {
+    return 'Couldn’t download the language model — check your internet connection and try again. Recall search still works without it.'
+  }
+  if (/cannot find module|dlopen|different node\.?js version|could not locate the bindings|\.node|was compiled against|invalid elf|symbol not found|llama|metal|no available backend|gpu/.test(m)) {
+    return 'The local AI engine couldn’t start on this Mac. Recall’s built-in search still answers most questions — Extended understanding is unavailable.'
+  }
+  if (/enoent|no such file/.test(m)) {
+    return 'The language model file is missing or incomplete. Turn Extended understanding off and on again to re-download it. Recall search still works without it.'
+  }
+  return `Extended understanding couldn’t start (${raw.slice(0, 120)}). Recall’s built-in search still works.`
 }
 
 // ─── Intent routing schema ───────────────────────────────────────────────────
@@ -209,7 +264,21 @@ export async function ask(question: string): Promise<RecallAskResult> {
     }
   }
 
-  await ensureModel()
+  try {
+    await ensureModel()
+  } catch {
+    // Download/native-load failed. _error already holds a friendly explanation
+    // for the Settings panel; here we return a graceful answer instead of
+    // throwing into the renderer's generic "something went wrong" catch.
+    return {
+      intent: 'unknown',
+      kind: 'tracks',
+      tracks: [],
+      narration:
+        _error ??
+        'Extended understanding isn’t available right now. Try a phrasing like "128 bpm tech house", "forgotten gems", or "my best closers".'
+    }
+  }
   const run = _askLock.then(() => routeAndRun(question))
   _askLock = run.catch(() => undefined)
   return run

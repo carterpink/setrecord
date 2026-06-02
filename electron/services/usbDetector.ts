@@ -9,15 +9,15 @@ const execFileAsync = promisify(execFile)
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface USBDevice {
-  id: string            // stable hash of mountPath
-  mountPath: string     // /Volumes/PIONEER
-  label: string         // volume label from OS
+  id: string // stable hash of mountPath
+  mountPath: string // /Volumes/PIONEER
+  label: string // volume label from OS
   totalBytes: number
   freeBytes: number
   usedBytes: number
   percentUsed: number
-  filesystem: string    // exFAT, FAT32, NTFS, APFS, etc.
-  protocol: string      // USB, USB 3.0, USB-C, etc.
+  filesystem: string // exFAT, FAT32, NTFS, APFS, etc.
+  protocol: string // USB, USB 3.0, USB-C, etc.
   readSpeedMBps?: number
   writeSpeedMBps?: number
   speedTestedAt?: string
@@ -42,7 +42,7 @@ function stableId(mountPath: string): string {
   let hash = 0
   for (let i = 0; i < mountPath.length; i++) {
     const char = mountPath.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
+    hash = (hash << 5) - hash + char
     hash = hash & hash
   }
   return `usb_${Math.abs(hash).toString(36)}`
@@ -130,7 +130,7 @@ export async function listUSBDevices(): Promise<USBDevice[]> {
             : 0,
         filesystem: normaliseFilesystem(info.filesystem),
         protocol: info.protocol,
-        speedConfidence: 'untested',
+        speedConfidence: 'untested'
       })
     } catch {
       // Skip volumes we can't introspect
@@ -147,7 +147,8 @@ function normaliseFilesystem(raw: string): string {
   if (lower.includes('ntfs')) return 'NTFS'
   if (lower.includes('apfs')) return 'APFS'
   if (lower.includes('hfs')) return 'HFS+'
-  if (lower.includes('ext4') || lower.includes('ext3') || lower.includes('ext2')) return raw.toUpperCase()
+  if (lower.includes('ext4') || lower.includes('ext3') || lower.includes('ext2'))
+    return raw.toUpperCase()
   return raw
 }
 
@@ -183,7 +184,7 @@ export function watchUSBDevices(onChange: (devices: USBDevice[]) => void): () =>
 const SPEED_TEST_SIZE = 10 * 1024 * 1024 // 10 MB
 
 export async function testUSBSpeed(
-  mountPath: string,
+  mountPath: string
 ): Promise<{ readMBps: number; writeMBps: number } | null> {
   const testPath = join(mountPath, '.setsense_speedtest_tmp')
   // Pre-allocate buffer (zeros are fine; we're measuring IO not CPU)
@@ -203,7 +204,7 @@ export async function testUSBSpeed(
     const sizeMB = SPEED_TEST_SIZE / (1024 * 1024)
     return {
       writeMBps: Math.round((sizeMB / (writeMs / 1000)) * 10) / 10,
-      readMBps: Math.round((sizeMB / (readMs / 1000)) * 10) / 10,
+      readMBps: Math.round((sizeMB / (readMs / 1000)) * 10) / 10
     }
   } catch (err) {
     console.error('[usb] speed test failed', mountPath, err)
@@ -237,7 +238,7 @@ export function analyseFilesystem(filesystem: string): FilesystemAnalysis {
       compatibility: 'optimal',
       label: 'exFAT — Optimal',
       details: ['Universal (Mac, Windows, Linux)', 'Supports files >4GB', 'Best for DJ export'],
-      recommendation: 'Ideal',
+      recommendation: 'Ideal'
     }
   }
   if (fs === 'fat32') {
@@ -245,7 +246,7 @@ export function analyseFilesystem(filesystem: string): FilesystemAnalysis {
       compatibility: 'limited',
       label: 'FAT32 — Limited',
       details: ['Max file size: 4 GB', 'Slower on large exports', 'Maximum device compat'],
-      recommendation: 'Only for small sets',
+      recommendation: 'Only for small sets'
     }
   }
   if (fs === 'ntfs') {
@@ -253,7 +254,7 @@ export function analyseFilesystem(filesystem: string): FilesystemAnalysis {
       compatibility: 'compatible',
       label: 'NTFS — Compatible',
       details: ['Windows native', 'Mac read-only without Bootcamp', 'Good for Windows exports'],
-      recommendation: 'exFAT is more portable',
+      recommendation: 'exFAT is more portable'
     }
   }
   if (fs === 'apfs' || fs === 'hfs+') {
@@ -261,14 +262,14 @@ export function analyseFilesystem(filesystem: string): FilesystemAnalysis {
       compatibility: 'warning',
       label: `${filesystem} — Not recommended`,
       details: ['Mac-only filesystem', 'Not compatible with CDJ players'],
-      recommendation: 'Reformat to exFAT',
+      recommendation: 'Reformat to exFAT'
     }
   }
   return {
     compatibility: 'compatible',
     label: filesystem,
     details: ['Compatibility unknown'],
-    recommendation: 'Verify with your CDJ',
+    recommendation: 'Verify with your CDJ'
   }
 }
 
@@ -277,7 +278,7 @@ export function analyseFilesystem(filesystem: string): FilesystemAnalysis {
 export async function copyFileToUSB(
   srcPath: string,
   mountPath: string,
-  filename: string,
+  filename: string
 ): Promise<{ success: boolean; destPath?: string; error?: string }> {
   const { copyFile, mkdir } = await import('fs/promises')
   const destPath = join(mountPath, filename)
@@ -295,7 +296,7 @@ export async function copyFileToUSB(
     } catch {
       return {
         success: false,
-        error: err instanceof Error ? err.message : 'Copy failed',
+        error: err instanceof Error ? err.message : 'Copy failed'
       }
     }
   }

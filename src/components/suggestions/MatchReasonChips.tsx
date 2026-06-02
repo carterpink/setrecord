@@ -22,7 +22,7 @@ interface MatchReasonChipsProps {
 export function MatchReasonChips({
   reasons,
   fromTrack,
-  toTrack,
+  toTrack
 }: MatchReasonChipsProps): React.JSX.Element {
   const learnModeEnabled = useUiStore((s) => s.learnModeEnabled)
   const canExplain = learnModeEnabled && fromTrack && toTrack

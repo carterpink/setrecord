@@ -23,18 +23,18 @@ const SIZES = [16, 32, 64, 128, 256, 512, 1024]
 // Mapping: rendered px -> output filenames inside the iconset
 // Each render feeds one @1x entry and (for sizes >16) also the @2x of the entry below it
 const ICONSET_MAP = {
-  16:   ['icon_16x16.png'],
-  32:   ['icon_16x16@2x.png', 'icon_32x32.png'],
-  64:   ['icon_32x32@2x.png', 'icon_64x64.png'],
-  128:  ['icon_64x64@2x.png', 'icon_128x128.png'],
-  256:  ['icon_128x128@2x.png', 'icon_256x256.png'],
-  512:  ['icon_256x256@2x.png', 'icon_512x512.png'],
-  1024: ['icon_512x512@2x.png'],
+  16: ['icon_16x16.png'],
+  32: ['icon_16x16@2x.png', 'icon_32x32.png'],
+  64: ['icon_32x32@2x.png', 'icon_64x64.png'],
+  128: ['icon_64x64@2x.png', 'icon_128x128.png'],
+  256: ['icon_128x128@2x.png', 'icon_256x256.png'],
+  512: ['icon_256x256@2x.png', 'icon_512x512.png'],
+  1024: ['icon_512x512@2x.png']
 }
 
 // Prepare output directories
 const iconsetDir = path.join(root, 'build/icon.iconset')
-const buildDir   = path.join(root, 'build')
+const buildDir = path.join(root, 'build')
 fs.mkdirSync(iconsetDir, { recursive: true })
 
 // Render each size and write iconset PNGs
@@ -45,9 +45,9 @@ for (const size of SIZES) {
     font: {
       fontDirs: [fontFilesDir],
       loadSystemFonts: false,
-      defaultFontFamily: 'Instrument Serif',
+      defaultFontFamily: 'Instrument Serif'
     },
-    logLevel: 'off',
+    logLevel: 'off'
   })
   const rendered = resvg.render()
   pngBuffers[size] = rendered.asPng()

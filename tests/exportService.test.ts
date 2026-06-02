@@ -7,11 +7,21 @@ import type { Set as DJSet, SetTrack } from '../src/types'
 import { makeTrack } from './fixtures'
 
 function tmp(): string {
-  return join(tmpdir(), `setsense-export-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.xml`)
+  return join(
+    tmpdir(),
+    `setsense-export-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.xml`
+  )
 }
 
 function buildSetWithTracks(): DJSet {
-  const trackA = makeTrack({ id: 'a', rekordboxId: '101', title: 'Opener', artist: 'DJ One', bpm: 124, key: '8A' })
+  const trackA = makeTrack({
+    id: 'a',
+    rekordboxId: '101',
+    title: 'Opener',
+    artist: 'DJ One',
+    bpm: 124,
+    key: '8A'
+  })
   const trackB = makeTrack({
     id: 'b',
     rekordboxId: '102',
@@ -19,18 +29,18 @@ function buildSetWithTracks(): DJSet {
     artist: 'DJ Two',
     bpm: 125,
     key: '9A',
-    hotCues: [{ index: 0, position: 32000, color: '#3B82F6' }],
+    hotCues: [{ index: 0, position: 32000, color: '#3B82F6' }]
   })
   const tracks: SetTrack[] = [
     { id: 'st-0', trackId: 'a', track: trackA, position: 0 },
-    { id: 'st-1', trackId: 'b', track: trackB, position: 1 },
+    { id: 'st-1', trackId: 'b', track: trackB, position: 1 }
   ]
   return {
     id: 'set-1',
     name: 'Smoke test set',
     createdAt: new Date('2026-05-19T00:00:00Z').toISOString(),
     updatedAt: new Date('2026-05-19T00:00:00Z').toISOString(),
-    tracks,
+    tracks
   }
 }
 
@@ -40,7 +50,11 @@ describe('exportSet', () => {
   afterEach(() => {
     for (const p of created) {
       if (existsSync(p)) {
-        try { unlinkSync(p) } catch { /* best effort cleanup */ }
+        try {
+          unlinkSync(p)
+        } catch {
+          /* best effort cleanup */
+        }
       }
     }
     created.length = 0

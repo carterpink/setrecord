@@ -266,11 +266,7 @@ async function ensureFontsReady(): Promise<void> {
   }
 }
 
-export function IdentityShareCard({
-  identity
-}: {
-  identity: IdentitySnapshot
-}): React.JSX.Element {
+export function IdentityShareCard({ identity }: { identity: IdentitySnapshot }): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [copied, setCopied] = useState(false)
   const toast = useToastStore()

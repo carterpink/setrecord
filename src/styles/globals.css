@@ -3107,6 +3107,74 @@
     max-height: calc(100vh - 80px);
     overflow-y: auto;
   }
+  /* First-sight coachmarks — auto-appearing one-time annotations. */
+  .coach-anchor {
+    position: relative;
+    border-radius: 4px;
+    box-shadow: 0 0 0 2px var(--accent-dim-12, rgba(120, 160, 255, 0.18));
+    animation: coach-pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes coach-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 2px var(--accent-dim-12, rgba(120, 160, 255, 0.18));
+    }
+    50% {
+      box-shadow: 0 0 0 3px var(--accent-dim-24, rgba(120, 160, 255, 0.32));
+    }
+  }
+  .learn-coach {
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    text-align: left;
+    pointer-events: auto;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  }
+  .coach-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .coach-title {
+    font: 600 12px/1.2 var(--font-sans);
+  }
+  .coach-body {
+    font: 12px/1.5 var(--font-sans);
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+  }
+  .coach-dismiss {
+    font: 600 11px/1 var(--font-sans);
+    color: var(--accent);
+    background: var(--accent-dim-12, rgba(120, 160, 255, 0.16));
+    border: 0.5px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: background 120ms ease;
+  }
+  .coach-dismiss:hover,
+  .coach-dismiss:focus-visible {
+    background: var(--accent-dim-24, rgba(120, 160, 255, 0.28));
+    outline: none;
+  }
+
+  .settings-link-btn {
+    font: 500 12px/1 var(--font-sans);
+    color: var(--accent);
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .settings-link-btn:hover {
+    opacity: 0.8;
+  }
+
   .learn-card {
     margin-top: 12px;
     padding: 14px 16px;
@@ -4780,6 +4848,52 @@
     border-color: var(--accent);
   }
 
+  /* ── Identity Ready celebratory modal ── */
+  .identity-ready-modal {
+    max-width: 480px;
+  }
+
+  .identity-ready-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .identity-ready-icon {
+    color: var(--accent);
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+
+  .identity-ready-sub {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .identity-ready-body {
+    overflow-y: auto;
+    max-height: calc(100vh - 260px);
+  }
+
+  .identity-ready-card-wrap {
+    padding: 4px 0 8px;
+  }
+
+  .identity-ready-card-wrap .identity-share-preview {
+    max-width: 300px;
+    margin: 0 auto;
+  }
+
+  .identity-ready-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-subtle);
+    margin-top: 8px;
+  }
+
   .recall-keybpm-chart {
     width: 100%;
     overflow-x: auto;
@@ -6401,5 +6515,92 @@
   }
   .pro-lock-cta:hover {
     filter: brightness(1.08);
+  }
+
+  /* ── Cue / beatgrid editor controls ──────────────────────────────────────── */
+  .pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 28px;
+    padding: 0 11px;
+    border-radius: var(--radius-sm);
+    border: 0.5px solid var(--border-default);
+    background: var(--glass-2-bg);
+    color: var(--text-secondary);
+    font: 500 12px/1 var(--font-sans);
+    letter-spacing: -0.005em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+      background-color var(--dur-state) var(--ease-snappy),
+      border-color var(--dur-state) var(--ease-snappy),
+      color var(--dur-state) var(--ease-snappy),
+      transform var(--dur-instant) var(--ease-snappy);
+  }
+  .pill-btn:hover:not(:disabled) {
+    color: var(--text-primary);
+    border-color: var(--border-emphasis);
+  }
+  .pill-btn:active:not(:disabled) {
+    transform: scale(0.96);
+  }
+  .pill-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+  .pill-btn[data-active='true'] {
+    background: var(--accent-dim-12);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .cue-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .cue-row-label {
+    font: 500 12px/1 var(--font-sans);
+    color: var(--text-tertiary);
+    min-width: 64px;
+  }
+
+  .loop-chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--radius-sm);
+    border: 0.5px solid var(--border-default);
+    background: var(--surface-2);
+    overflow: hidden;
+  }
+  .loop-chip[data-active='true'] {
+    border-color: var(--accent);
+    background: var(--accent-dim-12);
+  }
+  .loop-chip > button:first-child {
+    padding: 4px 9px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font: 500 11px/1 var(--font-mono);
+    cursor: pointer;
+  }
+  .loop-chip[data-active='true'] > button:first-child {
+    color: var(--accent);
+  }
+  .loop-chip-x {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 6px;
+    background: transparent;
+    border: none;
+    border-left: 0.5px solid var(--border-subtle);
+    color: var(--text-tertiary);
+    cursor: pointer;
+  }
+  .loop-chip-x:hover {
+    color: var(--semantic-danger);
   }
 }

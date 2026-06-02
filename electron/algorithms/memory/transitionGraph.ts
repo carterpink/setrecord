@@ -107,10 +107,7 @@ function minEdge(graph: TransitionGraph, chain: string[]): number {
  * filtered to those with at least `minOccurrences` (default 2 — a one-off set
  * ending on a track isn't a pattern).
  */
-export function terminalTracks(
-  sequences: string[][],
-  minOccurrences = 2
-): RankedTrack[] {
+export function terminalTracks(sequences: string[][], minOccurrences = 2): RankedTrack[] {
   const counts = new Map<string, number>()
   for (const seq of sequences) {
     if (seq.length === 0) continue

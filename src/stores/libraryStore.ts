@@ -4,6 +4,7 @@ import type {
   CuePoint,
   EnergySource,
   HotCue,
+  Loop,
   ImportProgress,
   LibraryStats,
   Playlist,
@@ -11,6 +12,7 @@ import type {
   Track
 } from '@/types'
 import { gradientForId } from '@/utils/format'
+import { useLicenseStore } from '@/stores/licenseStore'
 
 /**
  * State machine for the Import flow.
@@ -27,13 +29,7 @@ import { gradientForId } from '@/utils/format'
  *   - importing:    actively reading + writing (progress events come in)
  *   - done:         finished, stats screen
  */
-export type ImportState =
-  | 'idle'
-  | 'detecting'
-  | 'detected'
-  | 'not-detected'
-  | 'importing'
-  | 'done'
+export type ImportState = 'idle' | 'detecting' | 'detected' | 'not-detected' | 'importing' | 'done'
 
 /** Attach a deterministic gradient to every track that lacks real artwork. */
 function withGradient(tracks: Track[]): Track[] {
@@ -71,11 +67,15 @@ interface LibraryState {
   confirmAutoDetectImport: () => Promise<void>
   /** Fall back to the XML file picker + import. */
   triggerXmlImport: () => Promise<void>
+  /** Jump straight to the not-detected XML guide (e.g. from a "How to export" link). */
+  showXmlGuide: () => void
   /** Reset import state (close modal). */
   resetImportFlow: () => void
   /** Refresh stale flag from main (call on launch + window focus). */
   checkStale: () => Promise<void>
   patchTrackCues: (trackId: string, cuePoints: CuePoint[], hotCues: HotCue[]) => void
+  patchTrackBeatgrid: (trackId: string, bpm: number, beatgridOffset: number) => void
+  patchTrackLoops: (trackId: string, loops: Loop[]) => void
   patchTrackEnergy: (trackId: string, energy: number, source: EnergySource) => void
   patchTrackArtwork: (trackId: string, albumArtPath: string) => void
   setTrackEnergy: (trackId: string, energy: number) => Promise<void>
@@ -148,6 +148,18 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     set((s) => ({ tracks: patch(s.tracks), searchResults: patch(s.searchResults) }))
   },
 
+  patchTrackBeatgrid: (trackId, bpm, beatgridOffset) => {
+    const patch = (arr: Track[]): Track[] =>
+      arr.map((t) => (t.id === trackId ? { ...t, bpm, beatgridOffset } : t))
+    set((s) => ({ tracks: patch(s.tracks), searchResults: patch(s.searchResults) }))
+  },
+
+  patchTrackLoops: (trackId, loops) => {
+    const patch = (arr: Track[]): Track[] =>
+      arr.map((t) => (t.id === trackId ? { ...t, loops } : t))
+    set((s) => ({ tracks: patch(s.tracks), searchResults: patch(s.searchResults) }))
+  },
+
   patchTrackEnergy: (trackId, energy, source) => {
     const patch = (arr: Track[]): Track[] =>
       arr.map((t) => (t.id === trackId ? { ...t, energy, energySource: source } : t))
@@ -215,7 +227,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       importState: 'detecting',
       detection: null,
       importProgress: null,
-      importError: null,
+      importError: null
     })
     try {
       const detection = await window.setsense.detectRekordbox()
@@ -225,7 +237,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       const found = detection.installed && !!detection.dbPath && (detection.dbSize ?? 0) > 0
       set({
         detection,
-        importState: found ? 'detected' : 'not-detected',
+        importState: found ? 'detected' : 'not-detected'
       })
     } catch (err) {
       console.error('[libraryStore] detect failed', err)
@@ -244,6 +256,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     try {
       const result = await window.setsense.importFromRekordboxDb(detection.dbPath)
       set({ stats: result.stats, importState: 'done', libraryStale: false })
+      // A successful import may have armed the free Pro trial — re-read entitlement.
+      void useLicenseStore.getState().hydrate()
       await get().loadLibrary()
     } catch (err) {
       const code =
@@ -270,6 +284,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     try {
       const result = await window.setsense.importLibrary(xmlPath)
       set({ stats: result.stats, importState: 'done', libraryStale: false })
+      // A successful import may have armed the free Pro trial — re-read entitlement.
+      void useLicenseStore.getState().hydrate()
       await get().loadLibrary()
     } catch (err) {
       console.error('[libraryStore] importLibrary (XML) failed', err)
@@ -279,12 +295,23 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     }
   },
 
+  showXmlGuide: () => {
+    // Land on the friendly "couldn't find Rekordbox" guide without running
+    // auto-detect. importError stays null so it reads as a how-to, not a failure.
+    set({
+      importState: 'not-detected',
+      detection: null,
+      importProgress: null,
+      importError: null
+    })
+  },
+
   resetImportFlow: () => {
     set({
       importState: 'idle',
       detection: null,
       importProgress: null,
-      importError: null,
+      importError: null
     })
   },
 
@@ -295,5 +322,5 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     } catch (err) {
       console.error('[libraryStore] checkStale failed', err)
     }
-  },
+  }
 }))

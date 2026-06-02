@@ -63,7 +63,10 @@ describe('classifyLifecycle', () => {
 
   it('uses current date when ctx.now is omitted', () => {
     // Should not throw
-    const t = makeTrack({ playCount: 0, dateAdded: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() })
+    const t = makeTrack({
+      playCount: 0,
+      dateAdded: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+    })
     expect(() => classifyLifecycle(t)).not.toThrow()
   })
 })
@@ -72,7 +75,7 @@ describe('classifyAll', () => {
   it('returns a Map with an entry per track', () => {
     const tracks = [
       makeTrack({ id: 't1', playCount: 0, dateAdded: daysBack(5) }),
-      makeTrack({ id: 't2', playCount: 5, lastPlayed: daysBack(30), dateAdded: daysBack(200) }),
+      makeTrack({ id: 't2', playCount: 5, lastPlayed: daysBack(30), dateAdded: daysBack(200) })
     ]
     const map = classifyAll(tracks, { now: NOW })
     expect(map.size).toBe(2)

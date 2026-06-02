@@ -18,12 +18,10 @@ import { ImportModal } from '@/components/modals/ImportModal'
 import { SetArchitectModal } from '@/components/modals/SetArchitectModal'
 import { SettingsModal } from '@/components/modals/SettingsModal'
 import { OnboardingModal } from '@/components/modals/OnboardingModal'
-import { SetDetailsModal } from '@/components/modals/SetDetailsModal'
-import { BulkImportConfirmModal } from '@/components/modals/BulkImportConfirmModal'
 import { FeedbackModal } from '@/components/modals/FeedbackModal'
+import { IdentityReadyModal } from '@/components/modals/IdentityReadyModal'
 import { PostGigPromptModal } from '@/components/modals/PostGigPromptModal'
 import { UpgradeModal } from '@/components/modals/UpgradeModal'
-import { DiscoverPanel } from '@/components/discover/DiscoverPanel'
 import { RecallPanel } from '@/components/recall/RecallPanel'
 import { SuggestionsPanel } from '@/components/suggestions/SuggestionsPanel'
 import { TimelinePanel } from '@/components/timeline/TimelinePanel'
@@ -44,8 +42,17 @@ type ActiveDrag =
   | null
 
 export function AppShell(): React.JSX.Element {
-  const { openModal, onboardingVisible, showOnboarding, lightMode, setEnergyAnalysis, mode, hydrateFromSettings } = useUiStore()
-  const { loadLibrary, applyFileStatusChanges, patchTrackEnergy, patchTrackArtwork } = useLibraryStore()
+  const {
+    openModal,
+    onboardingVisible,
+    showOnboarding,
+    lightMode,
+    setEnergyAnalysis,
+    mode,
+    hydrateFromSettings
+  } = useUiStore()
+  const { loadLibrary, applyFileStatusChanges, patchTrackEnergy, patchTrackArtwork } =
+    useLibraryStore()
   const { loadSets, addTrack, addTrackAt, reorderTracks } = useSetStore()
   const hydrateLicense = useLicenseStore((s) => s.hydrate)
   const themeHasMounted = useRef(false)
@@ -76,15 +83,31 @@ export function AppShell(): React.JSX.Element {
   // Hydrate Learn Mode from persisted AppSettings on boot
   useEffect(() => {
     if (typeof window.setsense === 'undefined') return
-    void window.setsense.getSettings().then((s) =>
-      hydrateFromSettings({ learnModeEnabled: s.learnModeEnabled }),
-    )
+    void window.setsense
+      .getSettings()
+      .then((s) => hydrateFromSettings({ learnModeEnabled: s.learnModeEnabled }))
   }, [hydrateFromSettings])
 
   // Hydrate license entitlement from the main process (source of truth) on boot
   useEffect(() => {
     void hydrateLicense()
   }, [hydrateLicense])
+
+  // License activation deep-links (setsense://activate?key=…). On mount we drain
+  // any key buffered during cold start and signal the main process we're ready;
+  // we also subscribe to live links that arrive while the app is open. Either
+  // path opens the Upgrade modal pre-filled and auto-activates.
+  useEffect(() => {
+    if (typeof window.setsense === 'undefined') return
+    const { showUpgradeWithKey } = useUiStore.getState()
+    void window.setsense.licenseConsumePendingActivation().then((key) => {
+      if (key) showUpgradeWithKey(key)
+    })
+    const unsub = window.setsense.onLicenseActivateDeepLink((key) => {
+      if (key) showUpgradeWithKey(key)
+    })
+    return unsub
+  }, [])
 
   // Subscribe to background energy-analysis events from main process
   useEffect(() => {
@@ -105,28 +128,6 @@ export function AppShell(): React.JSX.Element {
     }
   }, [patchTrackEnergy, patchTrackArtwork, setEnergyAnalysis])
   const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null)
-  const [dockVisible, setDockVisible] = useState(false)
-  const dockHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>): void {
-    const fromBottom = window.innerHeight - e.clientY
-    // Show dock when cursor is within 140px of the bottom of the Electron window
-    if (fromBottom < 140) {
-      if (dockHideTimer.current !== null) {
-        clearTimeout(dockHideTimer.current)
-        dockHideTimer.current = null
-      }
-      setDockVisible(true)
-    } else if (dockVisible) {
-      // Hysteresis: only start the hide timer if we're more than 160px away
-      if (fromBottom > 160 && dockHideTimer.current === null) {
-        dockHideTimer.current = setTimeout(() => {
-          setDockVisible(false)
-          dockHideTimer.current = null
-        }, 500)
-      }
-    }
-  }
 
   useEffect(() => {
     loadLibrary().then(() => {
@@ -158,9 +159,7 @@ export function AppShell(): React.JSX.Element {
       }
       return 'Picked up a track.'
     },
-    onDragOver({ over }: {
-      over: { id: string | number; data: { current?: unknown } } | null
-    }) {
+    onDragOver({ over }: { over: { id: string | number; data: { current?: unknown } } | null }) {
       if (!over) return 'Track is over an empty area.'
       const overData = over.data.current as { source?: string; setTrack?: SetTrack } | undefined
       if (over.id === 'timeline-droppable') return 'Hovering the timeline drop zone.'
@@ -169,7 +168,10 @@ export function AppShell(): React.JSX.Element {
       }
       return ''
     },
-    onDragEnd({ active, over }: {
+    onDragEnd({
+      active,
+      over
+    }: {
       active: { data: { current?: unknown } }
       over: { id: string | number; data: { current?: unknown } } | null
     }) {
@@ -186,7 +188,7 @@ export function AppShell(): React.JSX.Element {
     },
     onDragCancel() {
       return 'Drag cancelled.'
-    },
+    }
   }
 
   function handleDragStart(event: DragStartEvent): void {
@@ -211,9 +213,7 @@ export function AppShell(): React.JSX.Element {
         const activeCenterY = activeRect ? activeRect.top + activeRect.height / 2 : overRect.top
         const overCenterY = overRect.top + overRect.height / 2
         const insertIndex =
-          activeCenterY < overCenterY
-            ? overData.setTrack.position
-            : overData.setTrack.position + 1
+          activeCenterY < overCenterY ? overData.setTrack.position : overData.setTrack.position + 1
         addTrackAt(data.track, insertIndex)
         return
       }
@@ -229,7 +229,7 @@ export function AppShell(): React.JSX.Element {
   return (
     <>
       <div className="aurora" aria-hidden="true" />
-      <div className="app" onMouseMove={handleMouseMove}>
+      <div className="app">
         <TopBar />
         {mode === 'Prepare' ? (
           <DndContext
@@ -259,16 +259,12 @@ export function AppShell(): React.JSX.Element {
               ) : null}
             </DragOverlay>
           </DndContext>
-        ) : mode === 'YouTubeDiscover' ? (
-          <ErrorBoundary label="discover">
-            <DiscoverPanel />
-          </ErrorBoundary>
         ) : (
-          <ErrorBoundary label="discover">
+          <ErrorBoundary label="Recall">
             <RecallPanel />
           </ErrorBoundary>
         )}
-        <BottomDock visible={dockVisible} />
+        <BottomDock visible />
       </div>
       <AnimatePresence mode="wait">
         {openModal === 'import' && (
@@ -301,16 +297,6 @@ export function AppShell(): React.JSX.Element {
             <SettingsModal />
           </ErrorBoundary>
         )}
-        {openModal === 'setDetails' && (
-          <ErrorBoundary key="setDetails" label="Set Details">
-            <SetDetailsModal />
-          </ErrorBoundary>
-        )}
-        {openModal === 'bulkImportConfirm' && (
-          <ErrorBoundary key="bulkImportConfirm" label="Bulk Import">
-            <BulkImportConfirmModal />
-          </ErrorBoundary>
-        )}
         {openModal === 'feedback' && (
           <ErrorBoundary key="feedback" label="Feedback">
             <FeedbackModal />
@@ -324,6 +310,11 @@ export function AppShell(): React.JSX.Element {
         {openModal === 'upgrade' && (
           <ErrorBoundary key="upgrade" label="Upgrade">
             <UpgradeModal />
+          </ErrorBoundary>
+        )}
+        {openModal === 'identityReady' && (
+          <ErrorBoundary key="identityReady" label="Identity Ready">
+            <IdentityReadyModal />
           </ErrorBoundary>
         )}
         {onboardingVisible && (

@@ -4,7 +4,7 @@ import { AlertCircle, History, ShoppingCart, Volume2 } from 'lucide-react'
 import type { Track } from '@/types'
 import { EnergyChip } from '@/components/shared/EnergyChip'
 import { KeyChip } from '@/components/shared/KeyChip'
-import { Waveform } from '@/components/shared/Waveform'
+import { InlineWaveform } from '@/components/shared/InlineWaveform'
 import { useClickOrDoubleClick } from '@/hooks/useClickOrDoubleClick'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { usePlaybackStore } from '@/stores/playbackStore'
@@ -30,7 +30,7 @@ export function TrackRow({
   onClick,
   onDoubleClick,
   onContextMenu,
-  onShowCombos,
+  onShowCombos
 }: TrackRowProps): React.JSX.Element {
   const isPhantom = track.phantom === true
   const missing = track.missingFile === true && !isPhantom
@@ -38,45 +38,54 @@ export function TrackRow({
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `lib-${track.id}`,
     data: { source: 'library', track },
-    disabled: unavailable,
+    disabled: unavailable
   })
 
   // When both single-click and double-click handlers are supplied, defer the
   // single action by ~240ms so a double-click can cancel it before it fires.
-  const disambiguated = useClickOrDoubleClick(
-    onClick ?? (() => {}),
-    onDoubleClick ?? (() => {}),
-  )
+  const disambiguated = useClickOrDoubleClick(onClick ?? (() => {}), onDoubleClick ?? (() => {}))
   const useDisambiguation = !!onClick && !!onDoubleClick
   const handleClick = useDisambiguation ? disambiguated.onClick : onClick
   const handleDoubleClick = useDisambiguation ? disambiguated.onDoubleClick : onDoubleClick
 
   // Only subscribe to currentTime when this row is the playing one — avoids
   // re-rendering every other row on every audio tick.
-  const previewCurrentTime = usePlaybackStore((s) =>
-    playing && !missing ? s.currentTime : 0
-  )
+  const previewCurrentTime = usePlaybackStore((s) => (playing && !missing ? s.currentTime : 0))
 
   if (compact) {
     // Compact 40px single-line layout: no artwork, title · artist inline
     return (
       <div
         ref={setNodeRef}
-        className={clsx('track-row', 'track-row--compact', playing && !missing && 'playing', inSet && 'in-set', unavailable && 'missing', isPhantom && 'phantom')}
+        className={clsx(
+          'track-row',
+          'track-row--compact',
+          playing && !missing && 'playing',
+          inSet && 'in-set',
+          unavailable && 'missing',
+          isPhantom && 'phantom'
+        )}
         style={{
           cursor: unavailable ? 'default' : isDragging ? 'grabbing' : 'grab',
-          opacity: isDragging ? 0.5 : unavailable ? 0.55 : 1,
+          opacity: isDragging ? 0.5 : unavailable ? 0.55 : 1
         }}
         onClick={unavailable ? undefined : handleClick}
         onDoubleClick={unavailable ? undefined : handleDoubleClick}
         onContextMenu={unavailable ? undefined : onContextMenu}
-        onKeyDown={(e) => { if (e.key === 'Enter' && !unavailable) onClick?.() }}
-        title={isPhantom ? 'Phantom track' : missing ? `File not found: ${track.filePath}` : undefined}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !unavailable) onClick?.()
+        }}
+        title={
+          isPhantom ? 'Phantom track' : missing ? `File not found: ${track.filePath}` : undefined
+        }
         {...(unavailable ? {} : { ...listeners, ...attributes })}
       >
         <div className="compact-meta">
           <span className="compact-title">{track.title}</span>
-          <span className="compact-sep" aria-hidden="true"> · </span>
+          <span className="compact-sep" aria-hidden="true">
+            {' '}
+            ·{' '}
+          </span>
           <span className="compact-artist">{track.artist}</span>
         </div>
         <div className="compact-actions">
@@ -85,7 +94,10 @@ export function TrackRow({
           {onShowCombos && !unavailable && (
             <button
               className="row-history-btn"
-              onClick={(e) => { e.stopPropagation(); onShowCombos() }}
+              onClick={(e) => {
+                e.stopPropagation()
+                onShowCombos()
+              }}
               onPointerDown={(e) => e.stopPropagation()}
               aria-label="What have I played after this?"
               title="What have I played after this?"
@@ -105,16 +117,18 @@ export function TrackRow({
         'track-row',
         playing && !missing && 'playing',
         inSet && 'in-set',
-        unavailable && 'missing', isPhantom && 'phantom',
+        unavailable && 'missing',
+        isPhantom && 'phantom'
       )}
       style={{
         cursor: unavailable ? 'default' : isDragging ? 'grabbing' : 'grab',
         opacity: isDragging ? 0.5 : unavailable ? 0.55 : 1,
         gridTemplateColumns: '36px 1fr auto auto auto',
-        gridTemplateAreas: playing && !missing
-          ? '"art meta bpm key nrg" "wave wave wave wave wave"'
-          : '"art meta bpm key nrg"',
-        rowGap: playing && !missing ? 6 : 0,
+        gridTemplateAreas:
+          playing && !missing
+            ? '"art meta bpm key nrg" "wave wave wave wave wave"'
+            : '"art meta bpm key nrg"',
+        rowGap: playing && !missing ? 6 : 0
       }}
       onClick={unavailable ? undefined : handleClick}
       onDoubleClick={unavailable ? undefined : handleDoubleClick}
@@ -135,7 +149,7 @@ export function TrackRow({
         className="track-art"
         style={{
           gridArea: 'art',
-          ...(track.artGradient ? { background: track.artGradient } : {}),
+          ...(track.artGradient ? { background: track.artGradient } : {})
         }}
         aria-hidden="true"
       >
@@ -150,7 +164,7 @@ export function TrackRow({
               width: '100%',
               height: '100%',
               objectFit: 'cover',
-              borderRadius: 'inherit',
+              borderRadius: 'inherit'
             }}
             onError={(e) => {
               // Cache file deleted/corrupt — fall back to the gradient behind it.
@@ -167,7 +181,7 @@ export function TrackRow({
               alignItems: 'center',
               justifyContent: 'center',
               background: 'rgba(0,0,0,0.45)',
-              borderRadius: 'inherit',
+              borderRadius: 'inherit'
             }}
           >
             <ShoppingCart size={14} strokeWidth={1.5} color="var(--text-primary)" />
@@ -181,7 +195,7 @@ export function TrackRow({
               alignItems: 'center',
               justifyContent: 'center',
               background: 'rgba(0,0,0,0.45)',
-              borderRadius: 'inherit',
+              borderRadius: 'inherit'
             }}
           >
             <AlertCircle size={14} strokeWidth={1.5} color="var(--semantic-warning)" />
@@ -195,7 +209,7 @@ export function TrackRow({
               alignItems: 'center',
               justifyContent: 'center',
               background: 'rgba(0,0,0,0.55)',
-              borderRadius: 'inherit',
+              borderRadius: 'inherit'
             }}
           >
             <Volume2 size={14} strokeWidth={1.5} color="var(--accent)" />
@@ -218,12 +232,20 @@ export function TrackRow({
           )}
         </div>
       </div>
-      <div className="track-bpm" style={{ gridArea: 'bpm' }}>{formatBpm(track.bpm)}</div>
+      <div className="track-bpm" style={{ gridArea: 'bpm' }}>
+        {formatBpm(track.bpm)}
+      </div>
       <div style={{ gridArea: 'key' }}>
         <KeyChip>{track.key}</KeyChip>
       </div>
       <div
-        style={{ gridArea: 'nrg', display: 'flex', alignItems: 'center', gap: 4, position: 'relative' }}
+        style={{
+          gridArea: 'nrg',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          position: 'relative'
+        }}
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
         onDoubleClick={(e) => e.stopPropagation()}
@@ -238,7 +260,10 @@ export function TrackRow({
         {onShowCombos && !unavailable && (
           <button
             className="row-history-btn"
-            onClick={(e) => { e.stopPropagation(); onShowCombos() }}
+            onClick={(e) => {
+              e.stopPropagation()
+              onShowCombos()
+            }}
             onPointerDown={(e) => e.stopPropagation()}
             aria-label="What have I played after this?"
             title="What have I played after this?"
@@ -254,9 +279,8 @@ export function TrackRow({
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
-          <Waveform
+          <InlineWaveform
             filePath={track.filePath}
-            compact
             currentTime={previewCurrentTime}
             onSeek={(ms) => usePlaybackStore.getState().requestSeek(ms)}
           />

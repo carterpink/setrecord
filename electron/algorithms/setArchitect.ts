@@ -11,21 +11,17 @@ function makeSetTrack(track: Track, position: number, locked = false): SetTrack 
     trackId: track.id,
     track,
     position,
-    locked: locked || undefined,
+    locked: locked || undefined
   }
 }
 
-function selectOpener(
-  pool: Track[],
-  targetEnergy: number,
-  excluded: string[],
-): Track | null {
+function selectOpener(pool: Track[], targetEnergy: number, excluded: string[]): Track | null {
   const candidates = pool.filter((t) => !excluded.includes(t.id))
   if (candidates.length === 0) return null
 
   const scored = candidates.map((t) => {
     let score = -Math.abs(t.energy - targetEnergy) * 10
-    if (t.duration > 300) score += 5  // prefer long intros
+    if (t.duration > 300) score += 5 // prefer long intros
     const keyNum = parseInt(t.key, 10)
     if (!isNaN(keyNum) && keyNum >= 1 && keyNum <= 12) score += 3
     return { track: t, score }
@@ -39,7 +35,7 @@ function pickCandidate(
   suggestions: ReturnType<typeof getSuggestions>,
   targetEnergy: number,
   tolerance: number,
-  harmonicMixing: boolean,
+  harmonicMixing: boolean
 ): Track | null {
   for (const s of suggestions) {
     if (Math.abs(s.track.energy - targetEnergy) > tolerance) continue
@@ -53,7 +49,7 @@ function findBetterTrack(
   from: Track,
   current: Track,
   pool: Track[],
-  harmonicMixing: boolean,
+  harmonicMixing: boolean
 ): Track | null {
   const currentScore = scoreTransition(from, current).score
   let best: Track | null = null
@@ -92,7 +88,7 @@ export function buildSet(params: ArchitectParams, library: Track[]): SetTrack[] 
       !lockedTrackIds.has(t.id) &&
       !t.missingFile &&
       t.bpm >= params.bpmMin - 5 &&
-      t.bpm <= params.bpmMax + 5,
+      t.bpm <= params.bpmMax + 5
   )
 
   // Target track count — extended if any lock sits past the duration-derived count.
@@ -100,9 +96,8 @@ export function buildSet(params: ArchitectParams, library: Track[]): SetTrack[] 
   const minCount = Math.ceil(params.targetDuration / 10)
   const maxCount = Math.floor(params.targetDuration / 4)
   const durationCount = Math.max(minCount, Math.min(maxCount, Math.max(rawCount, 1)))
-  const lockExtent = resolvedLocks.length > 0
-    ? resolvedLocks[resolvedLocks.length - 1].position + 1
-    : 0
+  const lockExtent =
+    resolvedLocks.length > 0 ? resolvedLocks[resolvedLocks.length - 1].position + 1 : 0
   const targetCount = Math.max(durationCount, lockExtent, 1)
 
   if (filtered.length === 0 && targetCount > resolvedLocks.length) return []
@@ -123,7 +118,7 @@ export function buildSet(params: ArchitectParams, library: Track[]): SetTrack[] 
     venue: params.venueType,
     slotTime: params.slotTime,
     targetBpmMin: params.bpmMin,
-    targetBpmMax: params.bpmMax,
+    targetBpmMax: params.bpmMax
   }
 
   const setTracks: SetTrack[] = []
@@ -214,13 +209,16 @@ export function buildSet(params: ArchitectParams, library: Track[]): SetTrack[] 
           setTracks[i - 1].track,
           setTracks[i].track,
           repairPool,
-          params.harmonicMixing,
+          params.harmonicMixing
         )
         if (better) {
           const oldTrack = setTracks[i].track
           setTracks[i] = makeSetTrack(better, i)
           usedIds.add(better.id)
-          repairPool.splice(repairPool.findIndex((t) => t.id === better.id), 1)
+          repairPool.splice(
+            repairPool.findIndex((t) => t.id === better.id),
+            1
+          )
           repairPool.push(oldTrack)
           usedIds.delete(oldTrack.id)
           repaired = true
@@ -233,6 +231,6 @@ export function buildSet(params: ArchitectParams, library: Track[]): SetTrack[] 
   // Final scoring — preserve `locked` flag through the map.
   return setTracks.map((st, i) => ({
     ...st,
-    transitionScore: i > 0 ? scoreTransition(setTracks[i - 1].track, st.track) : undefined,
+    transitionScore: i > 0 ? scoreTransition(setTracks[i - 1].track, st.track) : undefined
   }))
 }

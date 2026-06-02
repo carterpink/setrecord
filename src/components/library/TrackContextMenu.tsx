@@ -31,18 +31,18 @@ export function TrackContextMenu({
   onFindSimilar,
   onAddToSet,
   onEditCues,
-  onShowCombos,
+  onShowCombos
 }: TrackContextMenuProps): React.ReactPortal {
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Close on click outside or Escape
   useEffect(() => {
-    function handleMouseDown(e: MouseEvent) {
+    function handleMouseDown(e: MouseEvent): void {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         onClose()
       }
     }
-    function handleKeyDown(e: KeyboardEvent) {
+    function handleKeyDown(e: KeyboardEvent): void {
       if (e.key === 'Escape') onClose()
     }
     document.addEventListener('mousedown', handleMouseDown)
@@ -66,30 +66,30 @@ export function TrackContextMenu({
       icon: Play,
       label: 'Preview',
       action: onPreview,
-      disabled: unavailable,
+      disabled: unavailable
     },
     {
       icon: Search,
       label: 'Find similar tracks',
       action: onFindSimilar,
-      disabled: unavailable,
+      disabled: unavailable
     },
     {
       icon: Plus,
       label: 'Add to set',
-      action: onAddToSet,
+      action: onAddToSet
     },
     {
       icon: Disc3,
       label: 'Edit cue points',
       action: onEditCues,
-      disabled: unavailable,
+      disabled: unavailable
     },
     {
       icon: History,
       label: 'What have I played after this?',
-      action: onShowCombos,
-    },
+      action: onShowCombos
+    }
   ]
 
   return createPortal(
@@ -100,22 +100,23 @@ export function TrackContextMenu({
       aria-label={`Actions for ${track.title}`}
       style={{ position: 'fixed', left: clampedX, top: clampedY, zIndex: 9999 }}
     >
-      <div className="ctx-menu-header ss-caption">
-        {track.title}
-      </div>
+      <div className="ctx-menu-header ss-caption">{track.title}</div>
       {items.map((item) => (
         <button
           key={item.label}
           role="menuitem"
           className="ctx-menu-item"
           disabled={item.disabled}
-          onClick={() => { item.action(); onClose() }}
+          onClick={() => {
+            item.action()
+            onClose()
+          }}
         >
           <item.icon size={13} strokeWidth={1.5} />
           <span>{item.label}</span>
         </button>
       ))}
     </div>,
-    document.body,
+    document.body
   )
 }

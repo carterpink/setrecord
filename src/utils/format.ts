@@ -14,6 +14,16 @@ export function formatBpm(bpm: number): string {
   return bpm.toFixed(1)
 }
 
+/** "1:23.4" — minutes:seconds.tenths from milliseconds. For precise cue/transport readouts. */
+export function formatMs(ms: number): string {
+  const safe = isFinite(ms) && ms > 0 ? ms : 0
+  const totalSecs = Math.floor(safe / 1000)
+  const m = Math.floor(totalSecs / 60)
+  const s = totalSecs % 60
+  const tenths = Math.floor((safe % 1000) / 100)
+  return `${m}:${s.toString().padStart(2, '0')}.${tenths}`
+}
+
 /** "01" / "02" — two-digit position label. */
 export function formatPosition(position: number): string {
   return String(position + 1).padStart(2, '0')
@@ -33,7 +43,7 @@ export function formatTotalDuration(seconds: number): string {
  */
 export function gradientForId(id: string): string {
   // Hash the first 8 chars of the ID into two hue values
-  const h1 = (parseInt(id.slice(0, 4).replace(/-/g, '0'), 16) % 360 + 360) % 360
+  const h1 = ((parseInt(id.slice(0, 4).replace(/-/g, '0'), 16) % 360) + 360) % 360
   const h2 = (h1 + 40 + (parseInt(id.slice(4, 8).replace(/-/g, '0'), 16) % 80)) % 360
   return `linear-gradient(135deg, hsl(${h1},40%,25%), hsl(${h2},50%,30%))`
 }

@@ -132,11 +132,7 @@ function HealthTrackRow({
  * Stacked breakdown of how the health score was calculated, so the user can
  * see why a score isn't 100. Mirrors HEALTH_WEIGHTS verbatim.
  */
-function ScoreExplainer({
-  breakdown
-}: {
-  breakdown: HealthScoreBreakdown
-}): React.JSX.Element {
+function ScoreExplainer({ breakdown }: { breakdown: HealthScoreBreakdown }): React.JSX.Element {
   const w = breakdown.weights
   const rows = [
     {
@@ -390,144 +386,144 @@ export function HealthSection(): React.JSX.Element {
           )}
 
           {canDrillDown && (
-          <>
-          <div className="recall-health-grid">
-            {CATS.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                className={`recall-health-stat glass-2 health-stat-btn${open === cat.id ? ' active' : ''}`}
-                disabled={cat.ids.length === 0}
-                onClick={() => setOpen(open === cat.id ? null : cat.id)}
-              >
-                <span className="recall-health-num">{cat.ids.length}</span>
-                <span className="recall-health-cat">{cat.label}</span>
-              </button>
-            ))}
-            <button
-              type="button"
-              className={`recall-health-stat glass-2 health-stat-btn${open === 'dupes' ? ' active' : ''}`}
-              disabled={health.duplicateGroups.length === 0}
-              onClick={() => setOpen(open === 'dupes' ? null : 'dupes')}
-            >
-              <span className="recall-health-num">{health.duplicateGroups.length}</span>
-              <span className="recall-health-cat">Duplicate groups</span>
-            </button>
-          </div>
-
-          {open && open !== 'dupes' && (
-            <div className="health-detail glass-2">
-              <div className="health-detail-head">
-                {open === 'notAnalysed' ? (
-                  <Sparkles size={14} strokeWidth={1.7} />
-                ) : (
-                  <Wrench size={14} strokeWidth={1.7} />
-                )}
-                <span>{CATS.find((c) => c.id === open)?.label}</span>
-                {open === 'notAnalysed' && (
-                  <span className="health-detail-hint">
-                    Background analyser writes energy from the audio file — no Rekordbox needed.
-                  </span>
-                )}
-                {(open === 'missingKey' || open === 'missingBpm') && (
-                  <span className="health-detail-hint">
-                    Key/BPM come from Rekordbox. Set them inline below or fix them upstream.
-                  </span>
-                )}
-                {open === 'unsupported' && (
-                  <span className="health-detail-hint">
-                    CDJs reject these formats — convert to AIFF/WAV/FLAC in Rekordbox.
-                  </span>
-                )}
-
-                {/* Auto-analyse / re-scan buttons in the table header. */}
-                {open === 'notAnalysed' && (
+            <>
+              <div className="recall-health-grid">
+                {CATS.map((cat) => (
                   <button
+                    key={cat.id}
                     type="button"
-                    className="health-header-btn"
-                    disabled={!!analysing}
-                    onClick={() => void triggerAnalyseAll()}
+                    className={`recall-health-stat glass-2 health-stat-btn${open === cat.id ? ' active' : ''}`}
+                    disabled={cat.ids.length === 0}
+                    onClick={() => setOpen(open === cat.id ? null : cat.id)}
                   >
-                    {analysing ? (
-                      <>
-                        <Loader2 size={13} strokeWidth={1.7} className="health-spin" />
-                        Analysing
-                        {analysing.total > 0
-                          ? ` ${analysing.processed}/${analysing.total}`
-                          : '…'}
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={13} strokeWidth={1.7} />
-                        Analyse all
-                      </>
-                    )}
+                    <span className="recall-health-num">{cat.ids.length}</span>
+                    <span className="recall-health-cat">{cat.label}</span>
                   </button>
-                )}
-                {open === 'missingFiles' && (
-                  <button
-                    type="button"
-                    className="health-header-btn"
-                    disabled={rescanning}
-                    onClick={() => void triggerRescanFiles()}
-                  >
-                    {rescanning ? (
-                      <>
-                        <Loader2 size={13} strokeWidth={1.7} className="health-spin" />
-                        Re-scanning
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw size={13} strokeWidth={1.7} />
-                        Re-scan all
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
-              {hydrate(CATS.find((c) => c.id === open)?.ids ?? [])
-                .slice(0, 200)
-                .map((t) => (
-                  <HealthTrackRow
-                    key={t.id}
-                    track={t}
-                    kind={CATS.find((c) => c.id === open)!.kind}
-                    onFixed={onFixed}
-                  />
                 ))}
-            </div>
-          )}
-
-          {open === 'dupes' && (
-            <div className="health-detail glass-2">
-              <div className="health-detail-head">
-                <AlertCircle size={14} strokeWidth={1.7} />
-                <span>Duplicate groups — same artist + title</span>
-                <span className="health-detail-hint">
-                  Pick one to keep — the rest move to your Archive lifecycle state.
-                </span>
+                <button
+                  type="button"
+                  className={`recall-health-stat glass-2 health-stat-btn${open === 'dupes' ? ' active' : ''}`}
+                  disabled={health.duplicateGroups.length === 0}
+                  onClick={() => setOpen(open === 'dupes' ? null : 'dupes')}
+                >
+                  <span className="recall-health-num">{health.duplicateGroups.length}</span>
+                  <span className="recall-health-cat">Duplicate groups</span>
+                </button>
               </div>
-              {health.duplicateGroups.slice(0, 100).map((g) => {
-                const groupTracks = hydrate(g.ids)
-                if (groupTracks.length < 2) return null
-                return (
-                  <DuplicateGroupCard
-                    key={g.normalisedKey}
-                    group={g}
-                    tracks={groupTracks}
-                    onKeepAll={() => void dismissDuplicateGroup(g.normalisedKey)}
-                    onArchiveOthers={(keepId) =>
-                      void resolveDuplicateGroup(
-                        g.normalisedKey,
-                        groupTracks.filter((t) => t.id !== keepId).map((t) => t.id)
-                      )
-                    }
-                  />
-                )
-              })}
-            </div>
-          )}
-          </>
+
+              {open && open !== 'dupes' && (
+                <div className="health-detail glass-2">
+                  <div className="health-detail-head">
+                    {open === 'notAnalysed' ? (
+                      <Sparkles size={14} strokeWidth={1.7} />
+                    ) : (
+                      <Wrench size={14} strokeWidth={1.7} />
+                    )}
+                    <span>{CATS.find((c) => c.id === open)?.label}</span>
+                    {open === 'notAnalysed' && (
+                      <span className="health-detail-hint">
+                        Background analyser writes energy from the audio file — no Rekordbox needed.
+                      </span>
+                    )}
+                    {(open === 'missingKey' || open === 'missingBpm') && (
+                      <span className="health-detail-hint">
+                        Key/BPM come from Rekordbox. Set them inline below or fix them upstream.
+                      </span>
+                    )}
+                    {open === 'unsupported' && (
+                      <span className="health-detail-hint">
+                        CDJs reject these formats — convert to AIFF/WAV/FLAC in Rekordbox.
+                      </span>
+                    )}
+
+                    {/* Auto-analyse / re-scan buttons in the table header. */}
+                    {open === 'notAnalysed' && (
+                      <button
+                        type="button"
+                        className="health-header-btn"
+                        disabled={!!analysing}
+                        onClick={() => void triggerAnalyseAll()}
+                      >
+                        {analysing ? (
+                          <>
+                            <Loader2 size={13} strokeWidth={1.7} className="health-spin" />
+                            Analysing
+                            {analysing.total > 0
+                              ? ` ${analysing.processed}/${analysing.total}`
+                              : '…'}
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles size={13} strokeWidth={1.7} />
+                            Analyse all
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {open === 'missingFiles' && (
+                      <button
+                        type="button"
+                        className="health-header-btn"
+                        disabled={rescanning}
+                        onClick={() => void triggerRescanFiles()}
+                      >
+                        {rescanning ? (
+                          <>
+                            <Loader2 size={13} strokeWidth={1.7} className="health-spin" />
+                            Re-scanning
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw size={13} strokeWidth={1.7} />
+                            Re-scan all
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  {hydrate(CATS.find((c) => c.id === open)?.ids ?? [])
+                    .slice(0, 200)
+                    .map((t) => (
+                      <HealthTrackRow
+                        key={t.id}
+                        track={t}
+                        kind={CATS.find((c) => c.id === open)!.kind}
+                        onFixed={onFixed}
+                      />
+                    ))}
+                </div>
+              )}
+
+              {open === 'dupes' && (
+                <div className="health-detail glass-2">
+                  <div className="health-detail-head">
+                    <AlertCircle size={14} strokeWidth={1.7} />
+                    <span>Duplicate groups — same artist + title</span>
+                    <span className="health-detail-hint">
+                      Pick one to keep — the rest move to your Archive lifecycle state.
+                    </span>
+                  </div>
+                  {health.duplicateGroups.slice(0, 100).map((g) => {
+                    const groupTracks = hydrate(g.ids)
+                    if (groupTracks.length < 2) return null
+                    return (
+                      <DuplicateGroupCard
+                        key={g.normalisedKey}
+                        group={g}
+                        tracks={groupTracks}
+                        onKeepAll={() => void dismissDuplicateGroup(g.normalisedKey)}
+                        onArchiveOthers={(keepId) =>
+                          void resolveDuplicateGroup(
+                            g.normalisedKey,
+                            groupTracks.filter((t) => t.id !== keepId).map((t) => t.id)
+                          )
+                        }
+                      />
+                    )
+                  })}
+                </div>
+              )}
+            </>
           )}
         </>
       )}

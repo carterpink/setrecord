@@ -21,18 +21,18 @@ export function PlaylistSourceDropdown({
   playlists,
   selectedIds,
   onChange,
-  totalCount,
+  totalCount
 }: PlaylistSourceDropdownProps): React.JSX.Element | null {
   const leafPlaylists = useMemo(
     () => playlists.filter((p) => !p.isFolder && p.trackIds.length > 0),
-    [playlists],
+    [playlists]
   )
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
-    const handler = (e: MouseEvent) => {
+    const handler = (e: MouseEvent): void => {
       if (!ref.current?.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('mousedown', handler)
@@ -45,7 +45,7 @@ export function PlaylistSourceDropdown({
     selectedIds.length === 0
       ? 'All library'
       : selectedIds.length === 1
-        ? leafPlaylists.find((p) => p.id === selectedIds[0])?.name ?? '1 playlist'
+        ? (leafPlaylists.find((p) => p.id === selectedIds[0])?.name ?? '1 playlist')
         : `${selectedIds.length} playlists`
 
   function toggle(id: string): void {
@@ -66,7 +66,7 @@ export function PlaylistSourceDropdown({
             textAlign: 'left',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
+            whiteSpace: 'nowrap'
           }}
         >
           {label}
@@ -94,7 +94,7 @@ export function PlaylistSourceDropdown({
               type="button"
               className={clsx(
                 'arch-playlist-option',
-                selectedIds.length === 0 && 'arch-playlist-option-active',
+                selectedIds.length === 0 && 'arch-playlist-option-active'
               )}
               onClick={() => {
                 onChange([])
@@ -118,7 +118,7 @@ export function PlaylistSourceDropdown({
                   type="button"
                   className={clsx(
                     'arch-playlist-option',
-                    selected && 'arch-playlist-option-active',
+                    selected && 'arch-playlist-option-active'
                   )}
                   onClick={() => toggle(p.id)}
                 >
@@ -130,7 +130,7 @@ export function PlaylistSourceDropdown({
                       flex: 1,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
+                      whiteSpace: 'nowrap'
                     }}
                   >
                     {p.name}

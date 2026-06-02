@@ -12,7 +12,14 @@ interface EnergyBarProps {
   title?: string
 }
 
-export function EnergyBar({ level, max = 4, horizontal, className, style, title }: EnergyBarProps): React.JSX.Element {
+export function EnergyBar({
+  level,
+  max = 4,
+  horizontal,
+  className,
+  style,
+  title
+}: EnergyBarProps): React.JSX.Element {
   return (
     <span
       className={clsx('ebar', horizontal && 'h', className)}

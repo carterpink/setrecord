@@ -86,10 +86,7 @@ describe('searchLibrary', () => {
   })
 
   it('filters by keyExact', () => {
-    const tracks = [
-      makeTrack({ id: 'match', key: '8A' }),
-      makeTrack({ id: 'no', key: '9A' })
-    ]
+    const tracks = [makeTrack({ id: 'match', key: '8A' }), makeTrack({ id: 'no', key: '9A' })]
     const r = searchLibrary(tracks, { keyExact: '8A' })
     expect(r.map((t) => t.id)).toEqual(['match'])
   })

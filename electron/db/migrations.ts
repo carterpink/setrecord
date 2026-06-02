@@ -9,9 +9,9 @@ import type Database from 'better-sqlite3'
  */
 export function runMigrations(db: Database.Database): void {
   // v2: art_gradient column — check existence unconditionally so corrupt version state can't skip it
-  const cols = (
-    db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>
-  ).map((c) => c.name)
+  const cols = (db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
 
   if (!cols.includes('art_gradient')) {
     db.exec('ALTER TABLE tracks ADD COLUMN art_gradient TEXT')
@@ -25,9 +25,9 @@ export function runMigrations(db: Database.Database): void {
   db.prepare('INSERT OR REPLACE INTO schema_version VALUES (3)').run()
 
   // v4: safety_score column on sets for persisting validation results
-  const setCols = (
-    db.prepare('PRAGMA table_info(sets)').all() as Array<{ name: string }>
-  ).map((c) => c.name)
+  const setCols = (db.prepare('PRAGMA table_info(sets)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
 
   if (!setCols.includes('safety_score')) {
     db.exec('ALTER TABLE sets ADD COLUMN safety_score INTEGER')
@@ -37,9 +37,9 @@ export function runMigrations(db: Database.Database): void {
 
   // v5: auto energy analysis — energy_raw (float) + energy_source provenance.
   // Existing rows are flagged 'pending' so the background analyser backfills them on next launch.
-  const colsV5 = (
-    db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>
-  ).map((c) => c.name)
+  const colsV5 = (db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
 
   if (!colsV5.includes('energy_raw')) {
     db.exec('ALTER TABLE tracks ADD COLUMN energy_raw REAL')
@@ -56,9 +56,9 @@ export function runMigrations(db: Database.Database): void {
   // v6: phantom track support — tracks imported from Discover with no library match.
   // `phantom` = 1 means file_path is a sentinel `discover://...` URL, not a real file.
   // `discover_meta` is JSON: { discoverSetId, discoverSetTitle, beatportUrl, soundcloudUrl, youtubeUrl }.
-  const colsV6 = (
-    db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>
-  ).map((c) => c.name)
+  const colsV6 = (db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
 
   if (!colsV6.includes('phantom')) {
     db.exec('ALTER TABLE tracks ADD COLUMN phantom INTEGER NOT NULL DEFAULT 0')
@@ -140,9 +140,9 @@ export function runMigrations(db: Database.Database): void {
   // extraction state ('pending' | 'embedded' | 'none' | 'failed') so the
   // background extractor doesn't re-scan files already found to have no art.
   // Existing rows default to 'pending' so they backfill on next launch.
-  const colsV11 = (
-    db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>
-  ).map((c) => c.name)
+  const colsV11 = (db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
 
   if (!colsV11.includes('album_art_source')) {
     db.exec("ALTER TABLE tracks ADD COLUMN album_art_source TEXT DEFAULT 'pending'")
@@ -182,9 +182,9 @@ export function runMigrations(db: Database.Database): void {
   `)
 
   // Add lifecycle columns to tracks (column-existence checked, idempotent)
-  const colsV12 = (
-    db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>
-  ).map((c) => c.name)
+  const colsV12 = (db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
 
   if (!colsV12.includes('lifecycle_state')) {
     db.exec('ALTER TABLE tracks ADD COLUMN lifecycle_state TEXT')
@@ -214,9 +214,9 @@ export function runMigrations(db: Database.Database): void {
   // v14: flagged-for-next-gig column. Set when the user flags an "untested" track
   // for testing at their next gig; cleared after the post-gig prompt resolves it.
   // Lifecycle state ('testing' / 'active' / 'archive') already lives in v12 columns.
-  const colsV14 = (
-    db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>
-  ).map((c) => c.name)
+  const colsV14 = (db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
 
   if (!colsV14.includes('flagged_for_gig_at')) {
     db.exec('ALTER TABLE tracks ADD COLUMN flagged_for_gig_at TEXT')
@@ -237,4 +237,16 @@ export function runMigrations(db: Database.Database): void {
   `)
 
   db.prepare('INSERT OR REPLACE INTO schema_version VALUES (15)').run()
+
+  // v16: saved loops per track (Rekordbox-style). JSON array of { startMs, endMs, beats? }.
+  // Beatgrid itself reuses existing columns: bpm + beatgrid_offset (first-downbeat anchor).
+  const colsV16 = (db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
+
+  if (!colsV16.includes('loops')) {
+    db.exec("ALTER TABLE tracks ADD COLUMN loops TEXT DEFAULT '[]'")
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (16)').run()
 }

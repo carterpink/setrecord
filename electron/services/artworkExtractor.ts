@@ -22,7 +22,7 @@ import {
   countPendingArtworkTracks,
   getPendingArtworkTracks,
   updateTrackArtwork,
-  type PendingArtworkRow,
+  type PendingArtworkRow
 } from '../db/queries'
 import type { ArtworkSource } from '../../src/types'
 
@@ -106,7 +106,7 @@ export function extractArtwork(
       `scale=${ARTWORK_SIZE}:${ARTWORK_SIZE}:force_original_aspect_ratio=increase,crop=${ARTWORK_SIZE}:${ARTWORK_SIZE}`,
       '-frames:v',
       '1',
-      outPath,
+      outPath
     ]
 
     let settled = false
@@ -137,7 +137,9 @@ export function extractArtwork(
     child.on('close', (code) => {
       // Non-zero exit usually means "no video/cover stream" → treat as no art.
       const ok =
-        code === 0 && existsSync(outPath) && (() => {
+        code === 0 &&
+        existsSync(outPath) &&
+        (() => {
           try {
             return statSync(outPath).size > 0
           } catch {
@@ -223,11 +225,7 @@ export async function runArtworkQueue(cbs: ArtworkQueueCallbacks = {}): Promise<
           console.error('[artworkExtractor] unexpected error on', row.id, err)
           updateTrackArtwork(db, row.id, null, 'failed')
           processed++
-          cbs.onItem?.(
-            { trackId: row.id, albumArtPath: null, source: 'failed' },
-            processed,
-            total
-          )
+          cbs.onItem?.({ trackId: row.id, albumArtPath: null, source: 'failed' }, processed, total)
         }
       }
     }

@@ -8,13 +8,16 @@ import { useCallback, useEffect, useRef } from 'react'
 export function useClickOrDoubleClick(
   onClick: () => void,
   onDoubleClick: () => void,
-  delayMs = 240,
+  delayMs = 240
 ): { onClick: () => void; onDoubleClick: () => void } {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => () => {
-    if (timerRef.current !== null) clearTimeout(timerRef.current)
-  }, [])
+  useEffect(
+    () => () => {
+      if (timerRef.current !== null) clearTimeout(timerRef.current)
+    },
+    []
+  )
 
   const handleClick = useCallback(() => {
     if (timerRef.current !== null) clearTimeout(timerRef.current)

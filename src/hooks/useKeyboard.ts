@@ -18,7 +18,8 @@ export function useKeyboard(): void {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent): void {
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase()
-      const inInput = tag === 'input' || tag === 'textarea' || (e.target as HTMLElement)?.isContentEditable
+      const inInput =
+        tag === 'input' || tag === 'textarea' || (e.target as HTMLElement)?.isContentEditable
       const cmd = e.metaKey || e.ctrlKey
 
       // ⌘K — focus search regardless of focus position
@@ -79,5 +80,5 @@ export function useKeyboard(): void {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 }

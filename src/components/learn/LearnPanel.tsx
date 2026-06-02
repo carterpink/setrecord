@@ -11,7 +11,11 @@ interface LearnPanelProps {
   headerLabel?: string
 }
 
-function DiagramRenderer({ explanation }: { explanation: LearnExplanation }): React.JSX.Element | null {
+function DiagramRenderer({
+  explanation
+}: {
+  explanation: LearnExplanation
+}): React.JSX.Element | null {
   const d = explanation.diagram
   if (!d) return null
   switch (d.kind) {
@@ -32,13 +36,16 @@ function DiagramRenderer({ explanation }: { explanation: LearnExplanation }): Re
  */
 export function LearnPanel({
   explanation,
-  headerLabel = 'Learn Mode',
+  headerLabel = 'Learn Mode'
 }: LearnPanelProps): React.JSX.Element {
   return (
     <div className="learn-card">
       <div className="learn-card-header">
         <GraduationCap size={14} strokeWidth={1.7} aria-hidden="true" />
-        <span className="ss-caption" style={{ textTransform: 'uppercase', letterSpacing: 0.5, opacity: 0.7 }}>
+        <span
+          className="ss-caption"
+          style={{ textTransform: 'uppercase', letterSpacing: 0.5, opacity: 0.7 }}
+        >
           {headerLabel}
         </span>
       </div>

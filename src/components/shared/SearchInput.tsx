@@ -11,7 +11,7 @@ interface SearchInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, '
 
 export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(function SearchInput(
   { kbd, className, placeholder = 'Search…', ...rest },
-  ref,
+  ref
 ) {
   return (
     <label className={clsx('search-input', className)}>

@@ -8,8 +8,10 @@ import {
 } from 'lucide-react'
 import type { RecallSection } from '@/types'
 import { useRecallStore } from '@/stores/recallStore'
+import { useLibraryStore } from '@/stores/libraryStore'
 import { useCanUse } from '@/stores/licenseStore'
 import { ProLock } from '@/components/shared/ProGate'
+import { NoLibraryState } from '@/components/shared/NoLibraryState'
 import { RediscoverSection } from './RediscoverSection'
 import { CratesSection } from './CratesSection'
 import { IdentitySection } from './IdentitySection'
@@ -30,6 +32,7 @@ const NAV: { id: RecallSection; label: string; icon: typeof Sparkles }[] = [
 export function RecallPanel(): React.JSX.Element {
   const section = useRecallStore((s) => s.section)
   const setSection = useRecallStore((s) => s.setSection)
+  const hasLibrary = useLibraryStore((s) => s.hasLibrary)
   const isPro = useCanUse('recall')
 
   // Free tier keeps the Library Health headline (see PRD §16); everything else
@@ -52,21 +55,29 @@ export function RecallPanel(): React.JSX.Element {
       </aside>
 
       <div className="recall-body">
-        {isPro && <RecallAsk />}
-        {!isPro && section !== 'health' ? (
+        {!hasLibrary ? (
           <div className="recall-scroll">
-            <ProLock feature="recall" />
+            <NoLibraryState body="Recall reads your whole collection — rediscovering forgotten gems, mapping your sound, and tracing the transitions you reach for. Import your library to bring it to life." />
           </div>
-        ) : section === 'conversations' ? (
-          <ConversationsSection />
         ) : (
-          <div className="recall-scroll">
-            {section === 'rediscover' && <RediscoverSection />}
-            {section === 'crates' && <CratesSection />}
-            {section === 'identity' && <IdentitySection />}
-            {section === 'combos' && <CombosSection />}
-            {section === 'health' && <HealthSection />}
-          </div>
+          <>
+            {isPro && <RecallAsk />}
+            {!isPro && section !== 'health' ? (
+              <div className="recall-scroll">
+                <ProLock feature="recall" />
+              </div>
+            ) : section === 'conversations' ? (
+              <ConversationsSection />
+            ) : (
+              <div className="recall-scroll">
+                {section === 'rediscover' && <RediscoverSection />}
+                {section === 'crates' && <CratesSection />}
+                {section === 'identity' && <IdentitySection />}
+                {section === 'combos' && <CombosSection />}
+                {section === 'health' && <HealthSection />}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

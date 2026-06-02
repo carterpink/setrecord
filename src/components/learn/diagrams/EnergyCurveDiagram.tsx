@@ -25,7 +25,7 @@ export function EnergyCurveDiagram({
   target,
   actual,
   width = 280,
-  height = 110,
+  height = 110
 }: EnergyCurveDiagramProps): React.JSX.Element {
   const padX = 8
   const padY = 8
@@ -77,26 +77,32 @@ export function EnergyCurveDiagram({
         )}
       </svg>
       <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 6 }}>
-        <span className="ss-caption" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <span
+          className="ss-caption"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+        >
           <span
             style={{
               display: 'inline-block',
               width: 14,
               height: 2,
               background: 'rgba(255,255,255,0.45)',
-              borderRadius: 1,
+              borderRadius: 1
             }}
           />
           Target
         </span>
-        <span className="ss-caption" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <span
+          className="ss-caption"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+        >
           <span
             style={{
               display: 'inline-block',
               width: 14,
               height: 2,
               background: 'var(--accent-primary, #C8FF3D)',
-              borderRadius: 1,
+              borderRadius: 1
             }}
           />
           Your set

@@ -30,7 +30,7 @@ export async function detectRekordbox(): Promise<RekordboxDetection> {
     appVersion: null,
     trackCount: null,
     playlistCount: null,
-    dbReadError: null,
+    dbReadError: null
   }
 
   // 1. ~/Library/Pioneer/rekordbox exists at all?
@@ -113,7 +113,7 @@ function parseXmlExportPath(raw: string): string | null {
     pick(obj, ['xml-import-export', 'exportPath']),
     pick(obj, ['options', 'exportXmlPath']),
     typeof obj.exportXmlPath === 'string' ? (obj.exportXmlPath as string) : undefined,
-    typeof obj.xmlExportPath === 'string' ? (obj.xmlExportPath as string) : undefined,
+    typeof obj.xmlExportPath === 'string' ? (obj.xmlExportPath as string) : undefined
   ]
   for (const c of candidates) {
     if (typeof c === 'string' && c.length > 0) return c
@@ -160,5 +160,5 @@ export const _internals = {
   REKORDBOX_DIR,
   MASTER_DB,
   OPTIONS_JSON,
-  parseXmlExportPath,
+  parseXmlExportPath
 }

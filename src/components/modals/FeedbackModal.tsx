@@ -30,16 +30,25 @@ export function FeedbackModal(): React.JSX.Element {
 
   const submit = async (): Promise<void> => {
     if (!message.trim()) return
-    const meta = typeof navigator !== 'undefined' ? `Sent from SetSense · ${navigator.platform}` : 'SetSense'
+    const meta =
+      typeof navigator !== 'undefined' ? `Sent from SetSense · ${navigator.platform}` : 'SetSense'
     if (typeof window.setsense !== 'undefined') {
-      await window.setsense.submitFeedback({ category, rating, message: message.trim(), email: email.trim() || undefined, meta })
+      await window.setsense.submitFeedback({
+        category,
+        rating,
+        message: message.trim(),
+        email: email.trim() || undefined,
+        meta
+      })
     }
     setSent(true)
   }
 
   const copyMessage = async (): Promise<void> => {
     try {
-      await navigator.clipboard.writeText(`[${category}${rating ? ` ${rating}/5` : ''}] ${message.trim()}`)
+      await navigator.clipboard.writeText(
+        `[${category}${rating ? ` ${rating}/5` : ''}] ${message.trim()}`
+      )
       setCopied(true)
       setTimeout(() => setCopied(false), 1800)
     } catch {
@@ -72,7 +81,10 @@ export function FeedbackModal(): React.JSX.Element {
           <div className="modal-header">
             <div>
               <span className="ss-h2">Send feedback</span>
-              <span className="ss-caption" style={{ marginLeft: 10, color: 'var(--text-tertiary)' }}>
+              <span
+                className="ss-caption"
+                style={{ marginLeft: 10, color: 'var(--text-tertiary)' }}
+              >
                 Shapes what we build next
               </span>
             </div>
@@ -86,13 +98,24 @@ export function FeedbackModal(): React.JSX.Element {
                   <Check size={26} strokeWidth={2} />
                 </div>
                 <h3 className="ss-h3">Thank you</h3>
-                <p className="ss-body-sm" style={{ color: 'var(--text-secondary)', textAlign: 'center' }}>
+                <p
+                  className="ss-body-sm"
+                  style={{ color: 'var(--text-secondary)', textAlign: 'center' }}
+                >
                   A pre-filled email just opened — hit send and it lands with us. If nothing opened,
                   email <strong>{SUPPORT_EMAIL}</strong> directly.
                 </p>
                 <div className="feedback-sent-actions">
-                  <button type="button" className="health-fix-btn" onClick={() => void copyMessage()}>
-                    {copied ? <Check size={13} strokeWidth={2} /> : <Copy size={13} strokeWidth={1.7} />}
+                  <button
+                    type="button"
+                    className="health-fix-btn"
+                    onClick={() => void copyMessage()}
+                  >
+                    {copied ? (
+                      <Check size={13} strokeWidth={2} />
+                    ) : (
+                      <Copy size={13} strokeWidth={1.7} />
+                    )}
                     {copied ? 'Copied' : 'Copy message'}
                   </button>
                   <Button variant="primary" onClick={closeModal}>
@@ -132,7 +155,9 @@ export function FeedbackModal(): React.JSX.Element {
                           size={22}
                           strokeWidth={1.6}
                           fill={(hoverRating || rating) >= n ? 'var(--accent)' : 'none'}
-                          color={(hoverRating || rating) >= n ? 'var(--accent)' : 'var(--text-tertiary)'}
+                          color={
+                            (hoverRating || rating) >= n ? 'var(--accent)' : 'var(--text-tertiary)'
+                          }
                         />
                       </button>
                     ))}
@@ -174,7 +199,12 @@ export function FeedbackModal(): React.JSX.Element {
                   <button type="button" className="btn btn-ghost" onClick={closeModal}>
                     Cancel
                   </button>
-                  <Button variant="primary" onClick={() => void submit()} disabled={!message.trim()} style={{ flex: 1 }}>
+                  <Button
+                    variant="primary"
+                    onClick={() => void submit()}
+                    disabled={!message.trim()}
+                    style={{ flex: 1 }}
+                  >
                     Send feedback
                   </Button>
                 </div>

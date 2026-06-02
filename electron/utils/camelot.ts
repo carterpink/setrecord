@@ -40,7 +40,7 @@ const OPEN_TO_CAMELOT: Record<string, string> = {
   A: '5B',
   'A#': '6B',
   Bb: '6B',
-  B: '7B',
+  B: '7B'
 }
 
 /** Convert open notation (e.g. "Am", "C#", "Db") to Camelot (e.g. "8A", "9B"). */
@@ -52,15 +52,37 @@ export function openNotationToCamelot(key: string): string | undefined {
 
 /** All 24 valid Camelot key strings. Used by the USB validator (Phase 7). */
 export const CAMELOT_KEYS: readonly string[] = [
-  '1A', '2A', '3A', '4A', '5A', '6A', '7A', '8A', '9A', '10A', '11A', '12A',
-  '1B', '2B', '3B', '4B', '5B', '6B', '7B', '8B', '9B', '10B', '11B', '12B',
+  '1A',
+  '2A',
+  '3A',
+  '4A',
+  '5A',
+  '6A',
+  '7A',
+  '8A',
+  '9A',
+  '10A',
+  '11A',
+  '12A',
+  '1B',
+  '2B',
+  '3B',
+  '4B',
+  '5B',
+  '6B',
+  '7B',
+  '8B',
+  '9B',
+  '10B',
+  '11B',
+  '12B'
 ] as const
 
 // ───────── Camelot compatibility ─────────
 
 export interface CamelotResult {
   relationship: 'perfect' | 'compatible' | 'neutral' | 'clash'
-  scoreModifier: number  // +30, +25, +20, +10, 0, or -20
+  scoreModifier: number // +30, +25, +20, +10, 0, or -20
   reason: string
 }
 

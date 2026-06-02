@@ -10,11 +10,10 @@ type ModalName =
   | 'validate'
   | 'export'
   | 'settings'
-  | 'setDetails'
-  | 'bulkImportConfirm'
   | 'feedback'
   | 'postGigPrompt'
   | 'upgrade'
+  | 'identityReady'
 
 interface PostGigPromptData {
   sessionId: string
@@ -25,12 +24,20 @@ interface PostGigPromptData {
 interface UIState {
   openModal: ModalName | null
   showModal: (name: ModalName) => void
+  /** Which view the ImportModal opens into. 'guide' jumps straight to the XML walkthrough. */
+  importInitialView: 'auto' | 'guide'
+  /** Open the import flow directly on the "How to export Rekordbox XML" guide. */
+  showImportGuide: () => void
   closeModal: () => void
   postGigPromptData: PostGigPromptData | null
   showPostGigPrompt: (data: PostGigPromptData) => void
   /** The Pro feature that triggered the paywall, for contextual upgrade copy. */
   upgradeContext: ProFeature | null
   showUpgrade: (feature?: ProFeature) => void
+  /** License key delivered via a setsense://activate deep-link, awaiting auto-activation. */
+  pendingActivationKey: string | null
+  showUpgradeWithKey: (key: string) => void
+  clearPendingActivationKey: () => void
   smartFilter: boolean
   toggleSmartFilter: () => void
   /** Rekordbox playlist filter for the library list. null = "All Tracks". */
@@ -59,12 +66,8 @@ interface UIState {
   // analyser is draining the pending queue.
   energyAnalysis: { processed: number; total: number } | null
   setEnergyAnalysis: (status: { processed: number; total: number } | null) => void
-  // Top-level app mode (Prepare = 3-panel set builder, Discover = library intelligence)
   mode: AppMode
   setMode: (mode: AppMode) => void
-  // Which discover set is currently open in SetDetailsModal
-  activeDiscoverSetId: string | null
-  openSetDetails: (setId: string) => void
   // Learn Mode — premium educational overlay (mirrors AppSettings, hydrated on boot)
   learnModeEnabled: boolean
   setLearnModeEnabled: (v: boolean) => void
@@ -87,20 +90,22 @@ function getInitialSidebarCollapsed(): boolean {
 function getInitialMode(): AppMode {
   if (typeof window === 'undefined') return 'Prepare'
   const saved = window.localStorage.getItem('setsense-mode')
-  // 'Recall' was the old name for the Discover tab; migrate it transparently.
-  // Legacy 'Discover' (YouTube discovery) is no longer navigable — fall through to Prepare.
-  if (saved === 'Discover' || saved === 'Recall') return 'Discover'
+  if (saved === 'Recall') return 'Recall'
   return 'Prepare'
 }
 
 function getInitialLibraryDensity(): 'standard' | 'compact' {
   if (typeof window === 'undefined') return 'standard'
-  return window.localStorage.getItem('setsense-library-density') === 'compact' ? 'compact' : 'standard'
+  return window.localStorage.getItem('setsense-library-density') === 'compact'
+    ? 'compact'
+    : 'standard'
 }
 
 function getInitialKeyNotation(): 'camelot' | 'standard' {
   if (typeof window === 'undefined') return 'camelot'
-  return window.localStorage.getItem('setsense-key-notation') === 'standard' ? 'standard' : 'camelot'
+  return window.localStorage.getItem('setsense-key-notation') === 'standard'
+    ? 'standard'
+    : 'camelot'
 }
 
 function getInitialSuggestionsSource(): string[] {
@@ -117,19 +122,26 @@ function getInitialSuggestionsSource(): string[] {
 
 export const useUiStore = create<UIState>((set) => ({
   openModal: null,
-  showModal: (name) => set({ openModal: name }),
+  showModal: (name) => set({ openModal: name, importInitialView: 'auto' }),
+  importInitialView: 'auto',
+  showImportGuide: () => set({ openModal: 'import', importInitialView: 'guide' }),
   closeModal: () =>
     set((s) => ({
       openModal: null,
-      // Clear the discover set ref when SetDetailsModal closes so re-opening fetches fresh state
-      activeDiscoverSetId: s.openModal === 'setDetails' ? null : s.activeDiscoverSetId,
+      importInitialView: 'auto' as const,
       // Drop post-gig data so a stale list can't reappear next open
-      postGigPromptData: s.openModal === 'postGigPrompt' ? null : s.postGigPromptData
+      postGigPromptData: s.openModal === 'postGigPrompt' ? null : s.postGigPromptData,
+      // Drop a consumed deep-link key when the upgrade modal closes
+      pendingActivationKey: s.openModal === 'upgrade' ? null : s.pendingActivationKey
     })),
   postGigPromptData: null,
   showPostGigPrompt: (data) => set({ postGigPromptData: data, openModal: 'postGigPrompt' }),
   upgradeContext: null,
   showUpgrade: (feature) => set({ upgradeContext: feature ?? null, openModal: 'upgrade' }),
+  pendingActivationKey: null,
+  showUpgradeWithKey: (key) =>
+    set({ pendingActivationKey: key, upgradeContext: null, openModal: 'upgrade' }),
+  clearPendingActivationKey: () => set({ pendingActivationKey: null }),
   smartFilter: false,
   toggleSmartFilter: () => set((s) => ({ smartFilter: !s.smartFilter })),
   selectedPlaylistId: null,
@@ -183,11 +195,8 @@ export const useUiStore = create<UIState>((set) => ({
     // Stop any in-flight preview so audio (and the global spacebar shortcut)
     // doesn't leak across tabs when leaving the panel that started it.
     usePlaybackStore.getState().stopPreview()
-    // Close any open modal on mode switch and clear the active discover set
-    set({ mode, openModal: null, activeDiscoverSetId: null })
+    set({ mode, openModal: null })
   },
-  activeDiscoverSetId: null,
-  openSetDetails: (setId) => set({ activeDiscoverSetId: setId, openModal: 'setDetails' }),
   learnModeEnabled: false,
   setLearnModeEnabled: (v) => {
     set({ learnModeEnabled: v })
@@ -204,3 +213,8 @@ export const useUiStore = create<UIState>((set) => ({
     set({ suggestionsSourcePlaylistIds: ids })
   }
 }))
+
+// Dev aid: expose the UI store so tooling can drive modals during local testing.
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  ;(window as unknown as { __ssUiStore?: typeof useUiStore }).__ssUiStore = useUiStore
+}

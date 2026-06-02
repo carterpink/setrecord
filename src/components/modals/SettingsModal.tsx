@@ -1,9 +1,8 @@
-import { useEffect, useState, useCallback, useRef, type KeyboardEvent } from 'react'
+import { useEffect, useState } from 'react'
 import FocusLock from 'react-focus-lock'
-import { GraduationCap, RefreshCw, Sparkles, X, Crown } from 'lucide-react'
+import { GraduationCap, RefreshCw, Shield, Sparkles, X, Crown } from 'lucide-react'
 import type { CDJModel, ImportSource } from '@/types'
 import { Button } from '@/components/shared/Button'
-import { Chip } from '@/components/shared/Chip'
 import { IconButton } from '@/components/shared/IconButton'
 import { RangeSlider } from '@/components/shared/RangeSlider'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
@@ -12,29 +11,19 @@ import { motion, modalBackdrop, modalPanel } from '@/components/shared/Motion'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useLicenseStore } from '@/stores/licenseStore'
-import { useDiscoverStore } from '@/stores/discoverStore'
+import { useCoachmarkStore } from '@/stores/coachmarkStore'
 import { useToastStore } from '@/stores/toastStore'
 import { LearnTooltip } from '@/components/learn/LearnTooltip'
-import { DISCOVER_GENRES } from '@/data/discoverGenres'
 
 const HARDWARE_OPTIONS: CDJModel[] = ['CDJ-2000NXS2', 'CDJ-3000', 'XDJ-RX3', 'XDJ-XZ', 'CDJ-2000']
 
-function dedupeCaseInsensitive(list: string[], incoming: string): string[] {
-  const lower = incoming.toLowerCase()
-  if (list.some((x) => x.toLowerCase() === lower)) return list
-  return [...list, incoming]
-}
-
-function splitPaste(raw: string): string[] {
-  return raw
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0)
-}
-
 function formatDate(iso: string | null): string | null {
   if (!iso) return null
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
 }
 
 /** Current-plan summary + activate / deactivate / restore controls. */
@@ -47,6 +36,21 @@ function LicenseSection(): React.JSX.Element {
   const [working, setWorking] = useState(false)
 
   const isPro = license.tier === 'pro'
+
+  // Humane, non-hostile messaging for the anti-abuse states. None of these
+  // brick the app — they explain what happened and what to do next.
+  const statusNotice: string | null =
+    license.status === 'device-mismatch'
+      ? 'This licence is activated on another device. Deactivate it there, or contact support to move it — your key is otherwise valid.'
+      : license.status === 'revoked'
+        ? 'This licence was cancelled or refunded. If that’s unexpected, contact support and we’ll help.'
+        : license.status === 'expired'
+          ? 'Your subscription has lapsed. Renew to restore Pro — your settings and library are untouched.'
+          : license.status === 'invalid'
+            ? 'This stored key couldn’t be verified. Re-paste it, or contact support.'
+            : license.clockWarning
+              ? 'Your system clock looks like it moved backwards. Pro still works; just check your date & time so subscription dates stay accurate.'
+              : null
 
   const handleDeactivate = async (): Promise<void> => {
     setWorking(true)
@@ -62,9 +66,20 @@ function LicenseSection(): React.JSX.Element {
 
   return (
     <div className="field-group settings-license">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+      <div
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}
+      >
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-          <Crown size={18} strokeWidth={1.6} style={{ marginTop: 2, color: isPro ? 'var(--accent)' : undefined, opacity: isPro ? 1 : 0.8 }} aria-hidden="true" />
+          <Crown
+            size={18}
+            strokeWidth={1.6}
+            style={{
+              marginTop: 2,
+              color: isPro ? 'var(--accent)' : undefined,
+              opacity: isPro ? 1 : 0.8
+            }}
+            aria-hidden="true"
+          />
           <div>
             <div className="ss-label">{isPro ? 'SetSense Pro' : 'Free plan'}</div>
             <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.45 }}>
@@ -77,12 +92,18 @@ function LicenseSection(): React.JSX.Element {
                       <span className="ss-mono">{license.keyMasked}</span>
                     </>
                   )}
-                  {license.buyerEmail && <div style={{ opacity: 0.8, marginTop: 2 }}>{license.buyerEmail}</div>}
+                  {license.buyerEmail && (
+                    <div style={{ opacity: 0.8, marginTop: 2 }}>{license.buyerEmail}</div>
+                  )}
                   {license.plan === 'subscription' && license.expiresAt && (
-                    <div style={{ marginTop: 2 }}>Renews / expires {formatDate(license.expiresAt)}</div>
+                    <div style={{ marginTop: 2 }}>
+                      Renews / expires {formatDate(license.expiresAt)}
+                    </div>
                   )}
                   {license.activatedAt && (
-                    <div style={{ opacity: 0.6, marginTop: 2 }}>Activated {formatDate(license.activatedAt)}</div>
+                    <div style={{ opacity: 0.6, marginTop: 2 }}>
+                      Activated {formatDate(license.activatedAt)}
+                    </div>
                   )}
                 </>
               ) : (
@@ -92,6 +113,27 @@ function LicenseSection(): React.JSX.Element {
           </div>
         </div>
       </div>
+      {statusNotice && (
+        <div
+          className="ss-caption"
+          role="status"
+          style={{
+            marginTop: 10,
+            padding: '8px 10px',
+            borderRadius: 8,
+            lineHeight: 1.45,
+            background: 'var(--surface-2, rgba(255,255,255,0.04))',
+            color: 'var(--text-secondary)'
+          }}
+        >
+          {statusNotice}
+        </div>
+      )}
+      {isPro && license.deviceBound && (
+        <div className="ss-caption" style={{ opacity: 0.6, marginTop: 6 }}>
+          Bound to this device.
+        </div>
+      )}
       <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {isPro ? (
           <Button variant="secondary" onClick={() => void handleDeactivate()} disabled={working}>
@@ -119,7 +161,6 @@ export function SettingsModal(): React.JSX.Element {
   const setLearnModeEnabled = useUiStore((s) => s.setLearnModeEnabled)
   const keyNotation = useUiStore((s) => s.keyNotation)
   const setKeyNotation = useUiStore((s) => s.setKeyNotation)
-  const loadTasteProfile = useDiscoverStore((s) => s.loadTasteProfile)
   const startAutoDetectFlow = useLibraryStore((s) => s.startAutoDetectFlow)
   const libraryStale = useLibraryStore((s) => s.libraryStale)
   const toast = useToastStore()
@@ -131,15 +172,9 @@ export function SettingsModal(): React.JSX.Element {
   // Local state — consistent with all other toggles; persists on Save
   const [learnMode, setLearnMode] = useState(false)
   const [memoryAi, setMemoryAi] = useState(false)
-  const [youtubeApiKey, setYoutubeApiKey] = useState('')
-  const [favouriteArtists, setFavouriteArtists] = useState<string[]>([])
-  const [favouriteGenres, setFavouriteGenres] = useState<string[]>([])
-  const [followedDJs, setFollowedDJs] = useState<string[]>([])
-  const [artistInput, setArtistInput] = useState('')
-  const [djInput, setDjInput] = useState('')
+  const [crashReportingEnabled, setCrashReportingEnabled] = useState(false)
   const [saving, setSaving] = useState(false)
   const [loaded, setLoaded] = useState(false)
-  const initialYoutubeKeyRef = useRef('')
   // Library source state
   const [lastImportSource, setLastImportSource] = useState<ImportSource | null>(null)
   const [lastImportPath, setLastImportPath] = useState<string | null>(null)
@@ -155,82 +190,18 @@ export function SettingsModal(): React.JSX.Element {
       setHarmonicMixing(s.harmonicMixingDefault)
       setLearnMode(s.learnModeEnabled ?? false)
       setMemoryAi(s.memoryAiEnabled ?? false)
-      setYoutubeApiKey(s.youtubeApiKey ?? '')
-      initialYoutubeKeyRef.current = s.youtubeApiKey ?? ''
-      setFavouriteArtists(s.favouriteArtists ?? [])
-      setFavouriteGenres(s.favouriteGenres ?? [])
-      setFollowedDJs(s.followedDJs ?? [])
       setLastImportSource(s.lastImportSource ?? null)
       setLastImportPath(s.lastImportPath ?? null)
       setLastImportAt(s.lastImportAt ?? null)
       setAutoDetectRekordbox(s.autoDetectRekordbox ?? true)
+      setCrashReportingEnabled(s.crashReportingEnabled ?? false)
       setLoaded(true)
     })
   }, [])
 
-  const toggleGenre = useCallback((g: string) => {
-    setFavouriteGenres((cur) => (cur.includes(g) ? cur.filter((x) => x !== g) : [...cur, g]))
-  }, [])
-
-  function commitTags(
-    raw: string,
-    setList: (updater: (cur: string[]) => string[]) => void,
-    setInput: (v: string) => void
-  ): void {
-    const parts = splitPaste(raw)
-    if (parts.length === 0) {
-      setInput('')
-      return
-    }
-    setList((cur) => parts.reduce((acc, p) => dedupeCaseInsensitive(acc, p), cur))
-    setInput('')
-  }
-
-  function tagInputKey(
-    e: KeyboardEvent<HTMLInputElement>,
-    value: string,
-    list: string[],
-    setList: (updater: (cur: string[]) => string[]) => void,
-    setInput: (v: string) => void
-  ): void {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault()
-      commitTags(value, setList, setInput)
-    } else if (e.key === 'Backspace' && value === '' && list.length > 0) {
-      e.preventDefault()
-      setList((cur) => cur.slice(0, -1))
-    }
-  }
 
   async function handleSave(): Promise<void> {
     setSaving(true)
-    const trimmedKey = youtubeApiKey.trim()
-    const keyChanged = trimmedKey !== initialYoutubeKeyRef.current.trim()
-
-    // Validate the YouTube key if it changed and isn't being cleared. A bad
-    // key dies silently in Discover otherwise — users blame the app.
-    if (keyChanged && trimmedKey !== '') {
-      try {
-        const result = await window.setsense.validateYoutubeApiKey(trimmedKey)
-        if (!result.ok) {
-          const messages: Record<string, string> = {
-            invalid_key: 'YouTube rejected that key. Double-check it on Google Cloud Console.',
-            quota_exceeded: 'That key works but its daily quota is already used up.',
-            network: 'Could not reach YouTube to verify the key. Check your connection.',
-            api_error: result.message
-          }
-          toast.error(messages[result.code] ?? result.message)
-          setSaving(false)
-          return
-        }
-      } catch (err) {
-        toast.error('Could not verify the YouTube key — try again in a moment.')
-        console.error('[settings] validate threw', err)
-        setSaving(false)
-        return
-      }
-    }
-
     try {
       await window.setsense.setSettings({
         targetHardware,
@@ -238,11 +209,8 @@ export function SettingsModal(): React.JSX.Element {
         defaultBpmMax: bpmHigh,
         harmonicMixingDefault: harmonicMixing,
         learnModeEnabled: learnMode,
-        youtubeApiKey: trimmedKey,
-        favouriteArtists,
-        favouriteGenres,
-        followedDJs,
-        autoDetectRekordbox
+        autoDetectRekordbox,
+        crashReportingEnabled
       })
     } catch (err) {
       toast.error('Could not save settings. Try again or restart the app.')
@@ -251,11 +219,8 @@ export function SettingsModal(): React.JSX.Element {
       return
     }
 
-    // Sync Learn Mode into the live UI store so changes take effect immediately
     setLearnModeEnabled(learnMode)
-    await loadTasteProfile()
     setSaving(false)
-    if (keyChanged && trimmedKey !== '') toast.success('YouTube key saved.')
     closeModal()
   }
 
@@ -327,6 +292,16 @@ export function SettingsModal(): React.JSX.Element {
                     </div>
                     <Toggle on={learnMode} onChange={setLearnMode} aria-label="Toggle Learn Mode" />
                   </div>
+                  {learnMode && (
+                    <button
+                      type="button"
+                      className="settings-link-btn"
+                      style={{ marginTop: 10, marginLeft: 28 }}
+                      onClick={() => useCoachmarkStore.getState().reset()}
+                    >
+                      Replay first-time tips
+                    </button>
+                  )}
                 </div>
 
                 {/* SetSense Intelligence — extended free-form understanding (Discover) */}
@@ -349,9 +324,9 @@ export function SettingsModal(): React.JSX.Element {
                       <div>
                         <div className="ss-label">Extended understanding</div>
                         <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2 }}>
-                          Discover conversations already work offline. Turn this on to also understand
-                          unusual, free-form phrasing — runs fully on your Mac, private and offline.
-                          ~2 GB one-time download on first enable.
+                          Understands unusual, free-form phrasing on top of the built-in search.
+                          Runs fully on your Mac — private, offline, and built in (no download). Turn
+                          off to skip loading it into memory.
                         </div>
                       </div>
                     </div>
@@ -369,7 +344,9 @@ export function SettingsModal(): React.JSX.Element {
 
                 {/* Key notation */}
                 <div className="field-group">
-                  <label className="ss-label" style={{ display: 'block', marginBottom: 8 }}>Key notation</label>
+                  <label className="ss-label" style={{ display: 'block', marginBottom: 8 }}>
+                    Key notation
+                  </label>
                   <SegmentedControl
                     options={['Camelot (9A)', 'Open Key (Am)']}
                     value={keyNotation === 'camelot' ? 'Camelot (9A)' : 'Open Key (Am)'}
@@ -490,7 +467,10 @@ export function SettingsModal(): React.JSX.Element {
 
                 <div className="field-group">
                   <div className="ss-label">Where SetSense reads your library from</div>
-                  <div className="ss-caption" style={{ opacity: 0.65, marginTop: 4, lineHeight: 1.45 }}>
+                  <div
+                    className="ss-caption"
+                    style={{ opacity: 0.65, marginTop: 4, lineHeight: 1.45 }}
+                  >
                     {lastImportSource ? (
                       <>
                         {lastImportSource === 'rekordbox-db'
@@ -509,7 +489,10 @@ export function SettingsModal(): React.JSX.Element {
                           </>
                         )}
                         {lastImportPath && (
-                          <div style={{ opacity: 0.5, marginTop: 4, wordBreak: 'break-all' }} className="ss-mono">
+                          <div
+                            style={{ opacity: 0.5, marginTop: 4, wordBreak: 'break-all' }}
+                            className="ss-mono"
+                          >
                             {lastImportPath}
                           </div>
                         )}
@@ -518,7 +501,15 @@ export function SettingsModal(): React.JSX.Element {
                       'No library imported yet.'
                     )}
                   </div>
-                  <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div
+                    style={{
+                      marginTop: 12,
+                      display: 'flex',
+                      gap: 8,
+                      alignItems: 'center',
+                      flexWrap: 'wrap'
+                    }}
+                  >
                     <Button
                       variant={libraryStale ? 'primary' : 'secondary'}
                       icon={RefreshCw}
@@ -560,7 +551,7 @@ export function SettingsModal(): React.JSX.Element {
                   </div>
                 </div>
 
-                {/* Taste profile */}
+                {/* Privacy — crash reporting */}
                 <div
                   className="settings-section-header ss-caption"
                   style={{
@@ -570,122 +561,52 @@ export function SettingsModal(): React.JSX.Element {
                     marginTop: 8
                   }}
                 >
-                  Taste profile
+                  Privacy
                 </div>
 
-                {/* Favourite genres */}
                 <div className="field-group">
-                  <label className="ss-label">Favourite genres</label>
                   <div
-                    className="ss-caption"
-                    style={{ opacity: 0.6, marginTop: 2, marginBottom: 8 }}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      gap: 16
+                    }}
                   >
-                    Shapes recommendations and clarity badges in Discover.
-                  </div>
-                  <div className="settings-chip-grid">
-                    {DISCOVER_GENRES.map((g) => (
-                      <Chip
-                        key={g}
-                        selected={favouriteGenres.includes(g)}
-                        onClick={() => toggleGenre(g)}
-                      >
-                        {g}
-                      </Chip>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Favourite artists */}
-                <div className="field-group">
-                  <label className="ss-label" htmlFor="settings-artist-input">
-                    Favourite artists
-                  </label>
-                  <div
-                    className="ss-caption"
-                    style={{ opacity: 0.6, marginTop: 2, marginBottom: 8 }}
-                  >
-                    Type a name and press Enter to add. Comma-paste to add several.
-                  </div>
-                  <div className="settings-tag-row">
-                    {favouriteArtists.map((a) => (
-                      <Chip key={a} className="settings-tag-chip">
-                        <span>{a}</span>
-                        <button
-                          type="button"
-                          className="settings-tag-remove"
-                          aria-label={`Remove ${a}`}
-                          onClick={() => setFavouriteArtists((cur) => cur.filter((x) => x !== a))}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <Shield
+                        size={18}
+                        strokeWidth={1.6}
+                        style={{ marginTop: 2, opacity: 0.8, flexShrink: 0 }}
+                        aria-hidden="true"
+                      />
+                      <div>
+                        <div className="ss-label">Crash reporting</div>
+                        <div
+                          className="ss-caption"
+                          style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.5 }}
                         >
-                          <X size={11} strokeWidth={2} />
-                        </button>
-                      </Chip>
-                    ))}
-                    <input
-                      id="settings-artist-input"
-                      type="text"
-                      className="settings-tag-input"
-                      value={artistInput}
-                      placeholder={favouriteArtists.length === 0 ? 'e.g. Bicep, Four Tet' : ''}
-                      onChange={(e) => setArtistInput(e.target.value)}
-                      onKeyDown={(e) =>
-                        tagInputKey(
-                          e,
-                          artistInput,
-                          favouriteArtists,
-                          setFavouriteArtists,
-                          setArtistInput
-                        )
-                      }
-                      onBlur={() =>
-                        artistInput && commitTags(artistInput, setFavouriteArtists, setArtistInput)
-                      }
-                      autoComplete="off"
-                      spellCheck={false}
+                          Opt in to send anonymous crash reports when the app unexpectedly
+                          quits. Reports include only the error type, a redacted stack trace
+                          (filenames, no paths), your OS version, and the app version.
+                        </div>
+                        <div
+                          className="ss-caption"
+                          style={{ opacity: 0.5, marginTop: 6, lineHeight: 1.45 }}
+                        >
+                          Your library, track titles, file paths, and personal data are never
+                          included. Off by default. Takes effect after restarting SetSense.
+                        </div>
+                      </div>
+                    </div>
+                    <Toggle
+                      on={crashReportingEnabled}
+                      onChange={setCrashReportingEnabled}
+                      aria-label="Toggle crash reporting"
                     />
                   </div>
                 </div>
 
-                {/* Followed DJs */}
-                <div className="field-group">
-                  <label className="ss-label" htmlFor="settings-dj-input">
-                    Followed DJs
-                  </label>
-                  <div
-                    className="ss-caption"
-                    style={{ opacity: 0.6, marginTop: 2, marginBottom: 8 }}
-                  >
-                    Sets by these DJs appear in the Following tab.
-                  </div>
-                  <div className="settings-tag-row">
-                    {followedDJs.map((d) => (
-                      <Chip key={d} className="settings-tag-chip">
-                        <span>{d}</span>
-                        <button
-                          type="button"
-                          className="settings-tag-remove"
-                          aria-label={`Remove ${d}`}
-                          onClick={() => setFollowedDJs((cur) => cur.filter((x) => x !== d))}
-                        >
-                          <X size={11} strokeWidth={2} />
-                        </button>
-                      </Chip>
-                    ))}
-                    <input
-                      id="settings-dj-input"
-                      type="text"
-                      className="settings-tag-input"
-                      value={djInput}
-                      placeholder={followedDJs.length === 0 ? 'e.g. Amelie Lens, Peggy Gou' : ''}
-                      onChange={(e) => setDjInput(e.target.value)}
-                      onKeyDown={(e) =>
-                        tagInputKey(e, djInput, followedDJs, setFollowedDJs, setDjInput)
-                      }
-                      onBlur={() => djInput && commitTags(djInput, setFollowedDJs, setDjInput)}
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
-                  </div>
-                </div>
               </div>
             )}
           </div>

@@ -1,3 +1,4 @@
+import { existsSync } from 'fs'
 import type Database from 'better-sqlite3'
 import type {
   LibraryFilters,
@@ -7,6 +8,7 @@ import type {
   Set as DJSet,
   CuePoint,
   HotCue,
+  Loop,
   EnergySource,
   ArtworkSource,
   Playlist,
@@ -41,6 +43,7 @@ function rowToTrack(row: Record<string, unknown>): Track {
     albumArtSource: ((row.album_art_source as ArtworkSource | null) ?? 'pending') as ArtworkSource,
     cuePoints: JSON.parse((row.cue_points as string) || '[]'),
     hotCues: JSON.parse((row.hot_cues as string) || '[]'),
+    loops: JSON.parse((row.loops as string) || '[]'),
     beatgridOffset: (row.beatgrid_offset as number) || undefined,
     playCount: (row.play_count as number) ?? 0,
     rating: (row.rating as number) ?? 0,
@@ -94,6 +97,7 @@ function trackToRow(track: Track): Record<string, unknown> {
     color: track.color ?? null,
     cue_points: JSON.stringify(track.cuePoints),
     hot_cues: JSON.stringify(track.hotCues),
+    loops: JSON.stringify(track.loops ?? []),
     beatgrid_offset: track.beatgridOffset ?? 0,
     art_gradient: track.artGradient ?? null,
     missing_file: track.missingFile ? 1 : 0,
@@ -122,13 +126,13 @@ const INSERT_TRACK = `
     id, rekordbox_id, title, artist, album, genre, bpm, key, key_open,
     energy, energy_raw, energy_source, duration, file_path, file_size, bitrate, format,
     album_art_path, album_art_url, album_art_source, play_count, rating, date_added,
-    last_played, comment, label, color, cue_points, hot_cues, beatgrid_offset,
+    last_played, comment, label, color, cue_points, hot_cues, loops, beatgrid_offset,
     missing_file, phantom, discover_meta, lifecycle_state, lifecycle_source
   ) VALUES (
     @id, @rekordbox_id, @title, @artist, @album, @genre, @bpm, @key, @key_open,
     @energy, @energy_raw, @energy_source, @duration, @file_path, @file_size, @bitrate, @format,
     @album_art_path, @album_art_url, @album_art_source, @play_count, @rating, @date_added,
-    @last_played, @comment, @label, @color, @cue_points, @hot_cues, @beatgrid_offset,
+    @last_played, @comment, @label, @color, @cue_points, @hot_cues, @loops, @beatgrid_offset,
     @missing_file, @phantom, @discover_meta, @lifecycle_state, @lifecycle_source
   )
   ON CONFLICT(file_path) DO UPDATE SET
@@ -154,6 +158,7 @@ const INSERT_TRACK = `
     color = excluded.color,
     cue_points = excluded.cue_points,
     hot_cues = excluded.hot_cues,
+    loops = excluded.loops,
     beatgrid_offset = excluded.beatgrid_offset,
     missing_file = excluded.missing_file,
     phantom = excluded.phantom,
@@ -224,7 +229,8 @@ export function getLibraryStats(db: Database.Database): LibraryStats {
       `SELECT
         COUNT(*) as total_tracks,
         COALESCE(SUM(duration), 0) as total_duration,
-        COUNT(*) FILTER (WHERE file_size IS NULL) as missing_files,
+        COUNT(*) FILTER (WHERE missing_file = 1) as missing_files,
+        COUNT(*) FILTER (WHERE file_size IS NULL) as unknown_size,
         COUNT(*) FILTER (WHERE format = 'unknown') as unsupported_formats,
         COUNT(*) FILTER (WHERE key IS NULL OR key = '') as no_key,
         COUNT(*) FILTER (WHERE bpm = 0) as no_bpm
@@ -236,6 +242,7 @@ export function getLibraryStats(db: Database.Database): LibraryStats {
     totalTracks: row.total_tracks,
     totalDuration: row.total_duration,
     missingFiles: row.missing_files,
+    unknownSize: row.unknown_size,
     unsupportedFormats: row.unsupported_formats,
     tracksWithoutKey: row.no_key,
     tracksWithoutBpm: row.no_bpm
@@ -305,6 +312,7 @@ function rowToSetTrack(row: Record<string, unknown>): SetTrack {
     albumArtSource: ((row.album_art_source as ArtworkSource | null) ?? 'pending') as ArtworkSource,
     cuePoints: JSON.parse((row.cue_points as string) || '[]'),
     hotCues: JSON.parse((row.hot_cues as string) || '[]'),
+    loops: JSON.parse((row.loops as string) || '[]'),
     beatgridOffset: (row.beatgrid_offset as number) || undefined,
     playCount: (row.play_count as number) ?? 0,
     rating: (row.rating as number) ?? 0,
@@ -543,7 +551,6 @@ export function setTrackMissingFile(
  * status changed so the caller can push events to the renderer.
  */
 export function runFileHealthCheck(db: Database.Database): Array<{ id: string; missing: boolean }> {
-  const { existsSync } = require('fs') as typeof import('fs')
   // Skip phantom tracks (file_path is a `discover://...` sentinel, not a real file)
   const rows = db
     .prepare('SELECT id, file_path, missing_file FROM tracks WHERE phantom = 0')
@@ -580,6 +587,25 @@ export function updateTrackCues(
     JSON.stringify(hotCues),
     trackId
   )
+}
+
+/** Persist beatgrid: BPM + first-downbeat anchor (ms). */
+export function updateTrackBeatgrid(
+  db: Database.Database,
+  trackId: string,
+  bpm: number,
+  beatgridOffset: number
+): void {
+  db.prepare('UPDATE tracks SET bpm = ?, beatgrid_offset = ? WHERE id = ?').run(
+    bpm,
+    beatgridOffset,
+    trackId
+  )
+}
+
+/** Persist saved loops for a track. */
+export function updateTrackLoops(db: Database.Database, trackId: string, loops: Loop[]): void {
+  db.prepare('UPDATE tracks SET loops = ? WHERE id = ?').run(JSON.stringify(loops), trackId)
 }
 
 /** Update editable metadata fields (used by the Recall Health "resolve" workflow). */
@@ -1207,10 +1233,7 @@ export function getTracksFlaggedForGig(db: Database.Database): Track[] {
  * Flagged tracks that appeared in a specific session (used post-gig to prompt
  * the user: "you played these flagged tracks — how did they go?").
  */
-export function getFlaggedTracksInSession(
-  db: Database.Database,
-  sessionId: string
-): Track[] {
+export function getFlaggedTracksInSession(db: Database.Database, sessionId: string): Track[] {
   const rows = db
     .prepare(
       `SELECT t.* FROM tracks t
@@ -1298,9 +1321,9 @@ export function deleteCrate(db: Database.Database, id: string): void {
 
 /** Normalised keys the user has marked "not actually duplicates" — hidden from Health. */
 export function getDismissedDuplicateGroupKeys(db: Database.Database): Set<string> {
-  const rows = db
-    .prepare('SELECT normalised_key FROM dismissed_duplicate_groups')
-    .all() as Array<{ normalised_key: string }>
+  const rows = db.prepare('SELECT normalised_key FROM dismissed_duplicate_groups').all() as Array<{
+    normalised_key: string
+  }>
   return new Set(rows.map((r) => r.normalised_key))
 }
 

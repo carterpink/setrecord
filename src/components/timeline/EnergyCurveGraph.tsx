@@ -5,7 +5,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  ReferenceLine,
+  ReferenceLine
 } from 'recharts'
 import type { EnergyCurveType, SetTrack } from '@/types'
 import { getTargetCurve } from '@/utils/energyCurve'
@@ -29,30 +29,39 @@ interface DotRenderProps {
   payload?: CurvePoint
 }
 
-function SelectedDot(props: DotRenderProps & { selectedPosition: number | null }): React.JSX.Element | null {
+function SelectedDot(
+  props: DotRenderProps & { selectedPosition: number | null }
+): React.JSX.Element | null {
   const { cx, cy, payload, selectedPosition } = props
   if (!payload || payload.position !== selectedPosition) return null
   return <circle cx={cx} cy={cy} r={4} fill="#C8FF3D" stroke="none" />
 }
 
-export function EnergyCurveGraph({ tracks, selectedPosition, viewMode = 'energy', energyCurveType }: Props): React.JSX.Element {
+export function EnergyCurveGraph({
+  tracks,
+  selectedPosition,
+  viewMode = 'energy',
+  energyCurveType
+}: Props): React.JSX.Element {
   if (tracks.length === 0) {
-    return <div className="tl-curve glass-2" style={{ height: 80, borderRadius: 'var(--radius-md)' }} />
+    return (
+      <div className="tl-curve glass-2" style={{ height: 80, borderRadius: 'var(--radius-md)' }} />
+    )
   }
 
-  const targetCurve = energyCurveType
-    ? getTargetCurve(energyCurveType, tracks.length)
-    : null
+  const targetCurve = energyCurveType ? getTargetCurve(energyCurveType, tracks.length) : null
 
   const data: CurvePoint[] = tracks.map((st, i) => ({
     position: i + 1,
-    actual: viewMode === 'energy'
-      ? (st.energyOverride ?? st.track.energy)
-      : Math.round(st.track.bpm * 10) / 10,
-    target: targetCurve ? targetCurve[i] : 5,
+    actual:
+      viewMode === 'energy'
+        ? (st.energyOverride ?? st.track.energy)
+        : Math.round(st.track.bpm * 10) / 10,
+    target: targetCurve ? targetCurve[i] : 5
   }))
 
-  const yDomain: [number | string, number | string] = viewMode === 'energy' ? [1, 10] : ['auto', 'auto']
+  const yDomain: [number | string, number | string] =
+    viewMode === 'energy' ? [1, 10] : ['auto', 'auto']
 
   return (
     <div className="tl-curve glass-2">
@@ -67,14 +76,14 @@ export function EnergyCurveGraph({ tracks, selectedPosition, viewMode = 'energy'
               borderRadius: 8,
               fontSize: 11,
               color: 'rgba(255,255,255,0.85)',
-              padding: '4px 8px',
+              padding: '4px 8px'
             }}
             itemStyle={{ color: 'rgba(255,255,255,0.7)' }}
             labelStyle={{ color: 'rgba(255,255,255,0.4)', marginBottom: 2 }}
             labelFormatter={(v) => `Track ${v}`}
             formatter={(value, name) => [
               value,
-              name === 'actual' ? (viewMode === 'energy' ? 'Energy' : 'BPM') : 'Target',
+              name === 'actual' ? (viewMode === 'energy' ? 'Energy' : 'BPM') : 'Target'
             ]}
             cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
           />

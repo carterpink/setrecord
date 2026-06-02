@@ -4,9 +4,9 @@ import type { Track } from '@/types'
 interface PlaybackState {
   previewTrack: Track | null
   isPlaying: boolean
-  currentTime: number   // ms
-  duration: number      // ms
-  volume: number        // 0–1
+  currentTime: number // ms
+  duration: number // ms
+  volume: number // 0–1
   /** Incrementing token; usePreviewAudio watches it to seek the singleton audio. */
   seekToken: number
   /** Target seek position in ms, applied when seekToken changes. */
@@ -37,5 +37,5 @@ export const usePlaybackStore = create<PlaybackState>((set, get) => ({
   setDuration: (ms) => set({ duration: ms }),
   setIsPlaying: (v) => set({ isPlaying: v }),
   requestSeek: (ms) => set({ seekTargetMs: ms, seekToken: get().seekToken + 1 }),
-  setVolume: (v) => set({ volume: Math.max(0, Math.min(1, v)) }),
+  setVolume: (v) => set({ volume: Math.max(0, Math.min(1, v)) })
 }))

@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react'
 import FocusLock from 'react-focus-lock'
-import { CheckCircle, FileText, FolderOpen, Lock, Loader2, RefreshCw, ShieldAlert, X } from 'lucide-react'
+import {
+  CheckCircle,
+  FileText,
+  FolderOpen,
+  Lock,
+  Loader2,
+  RefreshCw,
+  ShieldAlert,
+  X
+} from 'lucide-react'
 import type { LibraryStats, RekordboxDetection } from '@/types'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { useUiStore } from '@/stores/uiStore'
@@ -18,7 +27,7 @@ function formatLastModified(epochMs: number | null): string {
     return new Date(epochMs).toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
-      year: 'numeric',
+      year: 'numeric'
     })
   } catch {
     return ''
@@ -47,8 +56,10 @@ export function ImportModal(): React.JSX.Element {
     startAutoDetectFlow,
     confirmAutoDetectImport,
     triggerXmlImport,
-    resetImportFlow,
+    showXmlGuide,
+    resetImportFlow
   } = useLibraryStore()
+  const importInitialView = useUiStore((s) => s.importInitialView)
 
   // Tracks whether we've already shown the one-time consent gate to the user
   // before they kicked off a DB read. Persisted in settings on accept.
@@ -56,10 +67,15 @@ export function ImportModal(): React.JSX.Element {
   // Local UI sub-state for the confirm-consent step (between "detected" and "importing").
   const [showingConsent, setShowingConsent] = useState(false)
 
-  // Bootstrap: on first mount, if state is idle, run the detection.
+  // Bootstrap: on first mount, if state is idle, either run auto-detect or — when
+  // opened from a "How to export Rekordbox XML" link — jump straight to the guide.
   useEffect(() => {
     if (importState === 'idle') {
-      void startAutoDetectFlow()
+      if (importInitialView === 'guide') {
+        showXmlGuide()
+      } else {
+        void startAutoDetectFlow()
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -137,7 +153,10 @@ export function ImportModal(): React.JSX.Element {
 
           {/* ── Detecting ──────────────────────────────────────────────── */}
           {importState === 'detecting' && (
-            <div className="modal-body" style={{ alignItems: 'center', textAlign: 'center', gap: 16, padding: '24px 0' }}>
+            <div
+              className="modal-body"
+              style={{ alignItems: 'center', textAlign: 'center', gap: 16, padding: '24px 0' }}
+            >
               <Loader2
                 size={28}
                 strokeWidth={1.6}
@@ -182,22 +201,24 @@ export function ImportModal(): React.JSX.Element {
           {/* ── Importing (progress) ───────────────────────────────────── */}
           {isImporting && importProgress && (
             <div className="modal-body">
-              <div className="ss-caption" style={{ marginBottom: 8, color: 'var(--text-secondary)' }}>
+              <div
+                className="ss-caption"
+                style={{ marginBottom: 8, color: 'var(--text-secondary)' }}
+              >
                 {importProgress.phase === 'parsing' ? 'Reading library…' : 'Writing to SetSense…'}
               </div>
               <div className="progress-track glass-2">
                 <div className="progress-fill" style={{ width: `${pct}%` }} />
               </div>
               <div className="ss-caption" style={{ marginTop: 8 }}>
-                {numberFmt.format(importProgress.processed)} of {numberFmt.format(importProgress.total)} tracks
+                {numberFmt.format(importProgress.processed)} of{' '}
+                {numberFmt.format(importProgress.total)} tracks
               </div>
             </div>
           )}
 
           {/* ── Done ────────────────────────────────────────────────────── */}
-          {isDone && stats && (
-            <DoneState stats={stats} onClose={handleClose} />
-          )}
+          {isDone && stats && <DoneState stats={stats} onClose={handleClose} />}
         </motion.div>
       </FocusLock>
     </motion.div>
@@ -214,10 +235,18 @@ interface DetectedStateProps {
   onRetry: () => void | Promise<void>
 }
 
-function DetectedState({ detection, libraryStale, onImport, onUseXml, onRetry }: DetectedStateProps): React.JSX.Element {
+function DetectedState({
+  detection,
+  libraryStale,
+  onImport,
+  onUseXml,
+  onRetry
+}: DetectedStateProps): React.JSX.Element {
   const lastModified = formatLastModified(detection.dbMtime)
   const trackText =
-    detection.trackCount != null ? `${numberFmt.format(detection.trackCount)} tracks` : 'Tracks ready'
+    detection.trackCount != null
+      ? `${numberFmt.format(detection.trackCount)} tracks`
+      : 'Tracks ready'
   const playlistText =
     detection.playlistCount != null && detection.playlistCount > 0
       ? ` · ${numberFmt.format(detection.playlistCount)} playlists`
@@ -292,9 +321,18 @@ function DetectedState({ detection, libraryStale, onImport, onUseXml, onRetry }:
         SetSense reads your Rekordbox library read-only. Your Rekordbox file is never modified.
       </div>
       <div className="ss-caption" style={{ opacity: 0.45, marginTop: 6 }}>
-        Re-importing updates existing tracks and adds new ones. Energy analysis and cue points you&apos;ve set in SetSense are preserved.
+        Re-importing updates existing tracks and adds new ones. Energy analysis and cue points
+        you&apos;ve set in SetSense are preserved.
       </div>
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16, flexWrap: 'wrap' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 8,
+          justifyContent: 'flex-end',
+          marginTop: 16,
+          flexWrap: 'wrap'
+        }}
+      >
         <Button variant="secondary" onClick={onUseXml}>
           Use XML file instead
         </Button>
@@ -324,7 +362,15 @@ function ConsentGate({ onAccept, onCancel, onUseXml }: ConsentGateProps): React.
       <div className="ss-caption" style={{ opacity: 0.55, marginTop: 12 }}>
         You&apos;ll only see this once. You can switch to XML import any time.
       </div>
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16, flexWrap: 'wrap' }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 8,
+          justifyContent: 'flex-end',
+          marginTop: 16,
+          flexWrap: 'wrap'
+        }}
+      >
         <Button variant="secondary" onClick={onUseXml}>
           Use XML file instead
         </Button>
@@ -345,7 +391,11 @@ interface NotDetectedStateProps {
   onRetry: () => void | Promise<void>
 }
 
-function NotDetectedState({ importError, onChooseXml, onRetry }: NotDetectedStateProps): React.JSX.Element {
+function NotDetectedState({
+  importError,
+  onChooseXml,
+  onRetry
+}: NotDetectedStateProps): React.JSX.Element {
   return (
     <div className="modal-body">
       {importError === 'GENERIC' && (
@@ -353,11 +403,71 @@ function NotDetectedState({ importError, onChooseXml, onRetry }: NotDetectedStat
           Something went wrong with the last import. Try again or use a different file.
         </div>
       )}
-      <div className="ss-body-sm" style={{ marginBottom: 4 }}>
-        We couldn&apos;t auto-detect Rekordbox on this Mac. Export your library and we&apos;ll handle the rest.
+
+      <div className="ss-body-sm" style={{ marginBottom: 6 }}>
+        We couldn&apos;t find Rekordbox automatically — no problem. You can connect your library in
+        about 30 seconds.
       </div>
+
+      {/* Power-user shortcut: skip the guide and go straight to the picker. */}
+      <button
+        type="button"
+        onClick={onChooseXml}
+        className="ss-caption"
+        style={{
+          background: 'none',
+          border: 'none',
+          color: 'var(--accent)',
+          cursor: 'pointer',
+          padding: 0,
+          marginBottom: 16,
+          textAlign: 'left'
+        }}
+      >
+        Already have an export? Choose your XML file →
+      </button>
+
+      {/* First-timer explainer — what an export actually is and why it's safe. */}
+      <div
+        className="glass-2"
+        style={{
+          display: 'flex',
+          gap: 14,
+          alignItems: 'flex-start',
+          padding: '14px 16px',
+          borderRadius: 12,
+          marginBottom: 16
+        }}
+      >
+        <FileText
+          size={22}
+          strokeWidth={1.6}
+          style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }}
+          aria-hidden="true"
+        />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="ss-label" style={{ marginBottom: 4 }}>
+            What&apos;s a Rekordbox export?
+          </div>
+          <div className="ss-caption" style={{ opacity: 0.7 }}>
+            It&apos;s a single file that lists every track in your collection — BPM, key, cue points
+            and all. SetSense reads it to map out your music. It stays on your Mac, and your
+            Rekordbox library is never changed.
+          </div>
+        </div>
+      </div>
+
       <LibrarySourceGuide />
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16, flexWrap: 'wrap' }}>
+
+      <div
+        style={{
+          display: 'flex',
+          gap: 8,
+          justifyContent: 'flex-end',
+          marginTop: 16,
+          flexWrap: 'wrap'
+        }}
+      >
         <Button variant="secondary" icon={RefreshCw} onClick={onRetry}>
           Try detection again
         </Button>
@@ -388,10 +498,16 @@ function DoneState({ stats, onClose }: DoneStateProps): React.JSX.Element {
         </div>
         {stats.missingFiles > 0 && (
           <div className="stat-row warning">
-            <span className="ss-body-sm">Missing files</span>
+            <span className="ss-body-sm">Missing files (not on disk)</span>
             <span className="ss-mono" style={{ color: 'var(--semantic-warning)' }}>
               {numberFmt.format(stats.missingFiles)}
             </span>
+          </div>
+        )}
+        {stats.unknownSize > 0 && (
+          <div className="stat-row">
+            <span className="ss-body-sm">Unknown file size</span>
+            <span className="ss-mono">{numberFmt.format(stats.unknownSize)}</span>
           </div>
         )}
         {stats.tracksWithoutBpm > 0 && (
@@ -442,13 +558,21 @@ function PreviewCard({ icon: Icon, title, body, accent }: PreviewCardProps): Rea
         gap: 14,
         alignItems: 'flex-start',
         padding: '14px 16px',
-        borderRadius: 12,
+        borderRadius: 12
       }}
     >
-      <Icon size={22} strokeWidth={1.6} style={{ color: accentColor, flexShrink: 0, marginTop: 2 }} />
+      <Icon
+        size={22}
+        strokeWidth={1.6}
+        style={{ color: accentColor, flexShrink: 0, marginTop: 2 }}
+      />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div className="ss-label" style={{ marginBottom: 4 }}>{title}</div>
-        <div className="ss-caption" style={{ opacity: 0.7 }}>{body}</div>
+        <div className="ss-label" style={{ marginBottom: 4 }}>
+          {title}
+        </div>
+        <div className="ss-caption" style={{ opacity: 0.7 }}>
+          {body}
+        </div>
       </div>
     </div>
   )

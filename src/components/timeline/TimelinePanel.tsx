@@ -21,7 +21,7 @@ const VIEWS: readonly TimelineCurveView[] = ['Energy', 'BPM'] as const
 
 function SaveStatusBadge({
   status,
-  onRetry,
+  onRetry
 }: {
   status: 'idle' | 'saving' | 'unsaved' | 'error'
   onRetry: () => void
@@ -56,7 +56,7 @@ function SaveStatusBadge({
         color: 'var(--semantic-danger)',
         border: '1px solid rgba(220, 38, 38, 0.35)',
         cursor: 'pointer',
-        font: 'inherit',
+        font: 'inherit'
       }}
     >
       <AlertTriangle size={12} strokeWidth={1.8} aria-hidden="true" />
@@ -70,8 +70,15 @@ export function TimelinePanel(): React.JSX.Element {
   const [view, setView] = useState<TimelineCurveView>('Energy')
   const nameRef = useRef<HTMLInputElement>(null)
 
-  const { currentSet, selectedTrackId, setSelectedTrack, removeTrack, renameCurrentSet, createSet, addTrackAfterSelected } =
-    useSetStore()
+  const {
+    currentSet,
+    selectedTrackId,
+    setSelectedTrack,
+    removeTrack,
+    renameCurrentSet,
+    createSet,
+    addTrackAfterSelected
+  } = useSetStore()
   const saveStatus = useSetStore((s) => s.saveStatus)
   const retrySave = useSetStore((s) => s.retrySave)
   const showModal = useUiStore((s) => s.showModal)
@@ -117,22 +124,28 @@ export function TimelinePanel(): React.JSX.Element {
 
   // Ghost track: top suggestion for the currently selected track
   const selectedSetTrack = tracks.find((st) => st.id === selectedTrackId)
-  const ghostTrackId = selectedSetTrack?.trackId ?? (tracks.length > 0 ? tracks[tracks.length - 1].trackId : null)
+  const ghostTrackId =
+    selectedSetTrack?.trackId ?? (tracks.length > 0 ? tracks[tracks.length - 1].trackId : null)
   const currentTrackIds = tracks.map((st) => st.trackId)
-  const { suggestions: ghostSuggestions } = useSuggestions(ghostTrackId, currentSet?.id ?? null, 1, currentTrackIds)
+  const { suggestions: ghostSuggestions } = useSuggestions(
+    ghostTrackId,
+    currentSet?.id ?? null,
+    1,
+    currentTrackIds
+  )
   const topSuggestion = ghostSuggestions[0] ?? null
 
   const selectedPosition = selectedSetTrack ? selectedSetTrack.position + 1 : null
 
   const isEmpty = !currentSet || tracks.length === 0
 
-  function handleNameBlur(e: React.FocusEvent<HTMLInputElement>) {
+  function handleNameBlur(e: React.FocusEvent<HTMLInputElement>): void {
     const v = e.currentTarget.value.trim()
     if (v) renameCurrentSet(v)
     else if (nameRef.current && currentSet) nameRef.current.value = currentSet.name
   }
 
-  function handleNameKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+  function handleNameKeyDown(e: React.KeyboardEvent<HTMLInputElement>): void {
     if (e.key === 'Enter') e.currentTarget.blur()
     if (e.key === 'Escape') {
       if (nameRef.current && currentSet) nameRef.current.value = currentSet.name
@@ -156,7 +169,8 @@ export function TimelinePanel(): React.JSX.Element {
           {currentSet ? (
             <div className="ss-caption" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span>
-                {formatDuration(totalSeconds)} · {tracks.length} track{tracks.length !== 1 ? 's' : ''}
+                {formatDuration(totalSeconds)} · {tracks.length} track
+                {tracks.length !== 1 ? 's' : ''}
                 {bpmValues.length > 1
                   ? ` · avg ${bpmAvg} BPM (${Math.round(bpmMin)}–${Math.round(bpmMax)})`
                   : bpmValues.length === 1
@@ -166,7 +180,9 @@ export function TimelinePanel(): React.JSX.Element {
               <SaveStatusBadge status={saveStatus} onRetry={retrySave} />
             </div>
           ) : (
-            <div className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>No set loaded</div>
+            <div className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
+              No set loaded
+            </div>
           )}
         </div>
         {currentSet && tracks.length >= 2 && (
@@ -192,20 +208,26 @@ export function TimelinePanel(): React.JSX.Element {
         energyCurveType={currentSet?.energyCurveType}
       />
 
-      <div
-        ref={setNodeRef}
-        className={clsx('tl-list', isOver && 'drop-over')}
-      >
+      <div ref={setNodeRef} className={clsx('tl-list', isOver && 'drop-over')}>
         {isEmpty ? (
           <div className="tl-empty">
             <ListMusic size={32} strokeWidth={1} style={{ color: 'var(--text-tertiary)' }} />
             <div>
-              <div className="ss-body-sm" style={{ color: 'var(--text-secondary)', marginBottom: 4 }}>
+              <div
+                className="ss-body-sm"
+                style={{ color: 'var(--text-secondary)', marginBottom: 4 }}
+              >
                 Your set is empty. Add tracks from your library or let Set Architect build your set.
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <Button variant="primary" onClick={() => { createSet(); requestSearchFocus() }}>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  createSet()
+                  requestSearchFocus()
+                }}
+              >
                 Browse library
               </Button>
               <Button variant="ghost" onClick={() => showModal('architect')}>

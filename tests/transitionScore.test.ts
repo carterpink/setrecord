@@ -18,7 +18,7 @@ describe('scoreTransition', () => {
 
   it('classifies a clashing-key + big-BPM-jump transition as a trainwreck', () => {
     const from = makeTrack({ bpm: 120, key: '8A', energy: 5 })
-    const to = makeTrack({ bpm: 140, key: '2B', energy: 8 })  // far apart on the wheel + 20 BPM gap
+    const to = makeTrack({ bpm: 140, key: '2B', energy: 8 }) // far apart on the wheel + 20 BPM gap
     const result = scoreTransition(from, to)
 
     expect(result.overall).toBe('trainwreck')

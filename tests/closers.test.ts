@@ -24,7 +24,7 @@ describe('analyzeEnds', () => {
     const seqs = [
       ['a', 'b', 'c'],
       ['a', 'd', 'e'],
-      ['f', 'g', 'c'],
+      ['f', 'g', 'c']
     ]
     const { openers } = analyzeEnds(seqs)
     expect(openers[0]).toEqual({ trackId: 'a', count: 2 })
@@ -35,7 +35,7 @@ describe('analyzeEnds', () => {
     const seqs = [
       ['a', 'b', 'c'],
       ['d', 'e', 'c'],
-      ['f', 'g', 'h'],
+      ['f', 'g', 'h']
     ]
     const { closers } = analyzeEnds(seqs)
     expect(closers[0]).toEqual({ trackId: 'c', count: 2 })
@@ -47,7 +47,7 @@ describe('analyzeEnds', () => {
       ['z', 'a'],
       ['z', 'b'],
       ['z', 'c'],
-      ['y', 'a'],
+      ['y', 'a']
     ]
     const { openers, closers } = analyzeEnds(seqs)
     // z appears 3 times as opener, y once
@@ -60,10 +60,10 @@ describe('analyzeEnds', () => {
 
   it('handles the same track being both opener and closer in different sessions', () => {
     const seqs = [
-      ['pivot', 'x'],  // pivot = opener
-      ['pivot', 'y'],  // pivot = opener again → count 2
-      ['z', 'pivot'],  // pivot = closer → count 1
-      ['z', 'q'],      // q = closer (count 1, z is opener again)
+      ['pivot', 'x'], // pivot = opener
+      ['pivot', 'y'], // pivot = opener again → count 2
+      ['z', 'pivot'], // pivot = closer → count 1
+      ['z', 'q'] // q = closer (count 1, z is opener again)
     ]
     const { openers, closers } = analyzeEnds(seqs)
     // pivot should top openers (count 2)

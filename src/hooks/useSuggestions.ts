@@ -6,17 +6,20 @@ export function useSuggestions(
   setId: string | null,
   count = 6,
   excludeIds: string[] = [],
-  sourcePlaylistIds: string[] = [],
+  sourcePlaylistIds: string[] = []
 ): { suggestions: Suggestion[]; isLoading: boolean; refresh: () => void } {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Always hold the latest excludeIds without making it an effect dependency
+  // Always hold the latest excludeIds/sources without making them effect
+  // dependencies. Synced in an effect (not during render) per react-hooks/refs.
   const excludeRef = useRef(excludeIds)
-  excludeRef.current = excludeIds
   const sourceRef = useRef(sourcePlaylistIds)
-  sourceRef.current = sourcePlaylistIds
+  useEffect(() => {
+    excludeRef.current = excludeIds
+    sourceRef.current = sourcePlaylistIds
+  })
   // Stable key so changes in source selection retrigger fetching without
   // depending on array identity.
   const sourceKey = sourcePlaylistIds.join(',')
@@ -33,7 +36,7 @@ export function useSuggestions(
         setId ?? '',
         count,
         excludeRef.current,
-        sourceRef.current,
+        sourceRef.current
       )
       // Client-side safety filter: exclude any track that is currently in the set.
       // This is the final guard against the DB-save race condition — the renderer
@@ -45,6 +48,9 @@ export function useSuggestions(
     } finally {
       setIsLoading(false)
     }
+    // sourceKey is intentional: it isn't read in the body (we use sourceRef) but
+    // it must stay in deps so changing the source-playlist selection refetches.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trackId, setId, count, sourceKey])
 
   const refresh = useCallback(() => {
@@ -55,10 +61,7 @@ export function useSuggestions(
   useEffect(() => {
     if (timerRef.current !== null) clearTimeout(timerRef.current)
 
-    if (!trackId) {
-      setSuggestions([])
-      return
-    }
+    if (!trackId) return
 
     timerRef.current = setTimeout(() => {
       timerRef.current = null
@@ -70,5 +73,7 @@ export function useSuggestions(
     }
   }, [fetchSuggestions, trackId])
 
-  return { suggestions, isLoading, refresh }
+  // Mask stale suggestions when there's no track, rather than clearing state in
+  // the effect above (avoids react-hooks/set-state-in-effect).
+  return { suggestions: trackId ? suggestions : [], isLoading, refresh }
 }

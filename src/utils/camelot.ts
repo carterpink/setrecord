@@ -25,7 +25,14 @@ export function camelotCompatible(keyA: string, keyB: string): boolean {
   return numDist + letterDist <= 3
 }
 
-export type CamelotRelationship = 'perfect' | 'energy-shift' | 'mood-shift' | 'compatible' | 'neutral' | 'clash' | 'unknown'
+export type CamelotRelationship =
+  | 'perfect'
+  | 'energy-shift'
+  | 'mood-shift'
+  | 'compatible'
+  | 'neutral'
+  | 'clash'
+  | 'unknown'
 
 /**
  * Describes the wheel relationship between two Camelot keys for Learn Mode.
@@ -51,18 +58,30 @@ export function camelotRelationship(keyA: string, keyB: string): CamelotRelation
 
 /** Maps every Camelot key to its open (standard musical) notation equivalent. */
 const CAMELOT_TO_OPEN: Record<string, string> = {
-  '1A': 'Abm', '1B': 'B',
-  '2A': 'Ebm', '2B': 'F#',
-  '3A': 'Bbm', '3B': 'Db',
-  '4A': 'Fm',  '4B': 'Ab',
-  '5A': 'Cm',  '5B': 'Eb',
-  '6A': 'Gm',  '6B': 'Bb',
-  '7A': 'Dm',  '7B': 'F',
-  '8A': 'Am',  '8B': 'C',
-  '9A': 'Em',  '9B': 'G',
-  '10A': 'Bm', '10B': 'D',
-  '11A': 'F#m','11B': 'A',
-  '12A': 'Dbm','12B': 'E',
+  '1A': 'Abm',
+  '1B': 'B',
+  '2A': 'Ebm',
+  '2B': 'F#',
+  '3A': 'Bbm',
+  '3B': 'Db',
+  '4A': 'Fm',
+  '4B': 'Ab',
+  '5A': 'Cm',
+  '5B': 'Eb',
+  '6A': 'Gm',
+  '6B': 'Bb',
+  '7A': 'Dm',
+  '7B': 'F',
+  '8A': 'Am',
+  '8B': 'C',
+  '9A': 'Em',
+  '9B': 'G',
+  '10A': 'Bm',
+  '10B': 'D',
+  '11A': 'F#m',
+  '11B': 'A',
+  '12A': 'Dbm',
+  '12B': 'E'
 }
 
 /** Returns the open-notation key for a Camelot key, e.g. "9A" → "Am". Returns the input unchanged when unknown. */

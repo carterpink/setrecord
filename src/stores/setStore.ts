@@ -13,7 +13,7 @@ function pushUndo(set: DJSet): void {
   if (_undoStack.length > UNDO_LIMIT) _undoStack.shift()
 }
 
-/** Strip safetyScore so the badge shows "Not validated" until the user re-validates. */
+/** Strip safetyScore so the badge returns to its neutral "not validated yet" state until the user re-validates. */
 function invalidateSafetyScore(s: DJSet): DJSet {
   if (s.safetyScore === undefined) return s
   const { safetyScore: _, ...rest } = s

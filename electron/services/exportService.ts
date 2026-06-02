@@ -11,7 +11,7 @@ const HOT_CUE_COLORS: readonly string[] = [
   '#06B6D4', // E — cyan
   '#F97316', // F — orange
   '#A855F7', // G — purple
-  '#FFFFFF', // H — white
+  '#FFFFFF' // H — white
 ]
 
 function encodeFilePath(filePath: string): string {
@@ -29,7 +29,7 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   return {
     r: parseInt(clean.slice(0, 2), 16),
     g: parseInt(clean.slice(2, 4), 16),
-    b: parseInt(clean.slice(4, 6), 16),
+    b: parseInt(clean.slice(4, 6), 16)
   }
 }
 
@@ -42,8 +42,8 @@ function buildPositionMarks(track: Track): object[] {
         Name: '',
         Type: '0',
         Start: (cp.position / 1000).toFixed(3),
-        Num: '-1',
-      },
+        Num: '-1'
+      }
     })
   }
 
@@ -58,8 +58,8 @@ function buildPositionMarks(track: Track): object[] {
         Num: String(hc.index),
         Red: String(r),
         Green: String(g),
-        Blue: String(b),
-      },
+        Blue: String(b)
+      }
     })
   }
 
@@ -88,8 +88,8 @@ export async function exportSet(set: DJSet, filePath: string): Promise<ExportRes
           PlayCount: String(track.playCount ?? 0),
           Rating: String(track.rating ?? 0),
           Comments: track.comment ?? '',
-          Label: track.label ?? '',
-        },
+          Label: track.label ?? ''
+        }
       }
       if (posMarks.length > 0) {
         entry['POSITION_MARK'] = posMarks
@@ -98,18 +98,18 @@ export async function exportSet(set: DJSet, filePath: string): Promise<ExportRes
     })
 
     const playlistTracks = tracks.map((track, idx) => ({
-      $: { Key: track.rekordboxId ?? String(idx + 1) },
+      $: { Key: track.rekordboxId ?? String(idx + 1) }
     }))
 
     const djPlaylists = {
       DJ_PLAYLISTS: {
         $: { Version: '1.0.0' },
         PRODUCT: {
-          $: { Name: 'rekordbox', Version: '6.0.0', Company: 'Pioneer DJ' },
+          $: { Name: 'rekordbox', Version: '6.0.0', Company: 'Pioneer DJ' }
         },
         COLLECTION: {
           $: { Entries: String(tracks.length) },
-          TRACK: collectionEntries,
+          TRACK: collectionEntries
         },
         PLAYLISTS: {
           NODE: {
@@ -119,18 +119,18 @@ export async function exportSet(set: DJSet, filePath: string): Promise<ExportRes
                 Name: set.name,
                 Type: '1',
                 KeyType: '0',
-                Entries: String(tracks.length),
+                Entries: String(tracks.length)
               },
-              TRACK: playlistTracks,
-            },
-          },
-        },
-      },
+              TRACK: playlistTracks
+            }
+          }
+        }
+      }
     }
 
     const builder = new Builder({
       xmldec: { version: '1.0', encoding: 'UTF-8' },
-      renderOpts: { pretty: true, indent: '  ', newline: '\n' },
+      renderOpts: { pretty: true, indent: '  ', newline: '\n' }
     })
     const xml = builder.buildObject(djPlaylists)
 
@@ -151,7 +151,7 @@ export async function exportSet(set: DJSet, filePath: string): Promise<ExportRes
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : String(err),
+      error: err instanceof Error ? err.message : String(err)
     }
   }
 }

@@ -1,16 +1,11 @@
 import ElectronStore from 'electron-store'
 import type { CDJModel, ImportSource } from '../../src/types'
-import { getYoutubeApiKey, setYoutubeApiKey } from './secretStore'
 
 export interface AppSettings {
   targetHardware: CDJModel
   defaultBpmMin: number
   defaultBpmMax: number
   harmonicMixingDefault: boolean
-  youtubeApiKey: string
-  favouriteArtists: string[]
-  favouriteGenres: string[]
-  followedDJs: string[]
   learnModeEnabled: boolean
   hasSeenProficiencyAsk: boolean
   /** Opt-in to the bundled local LLM that powers natural-language Recall search. */
@@ -28,34 +23,37 @@ export interface AppSettings {
   rekordboxDbConsent: boolean
   /** Master toggle: when off, the Import flow skips detection and goes straight to XML picker. */
   autoDetectRekordbox: boolean
+  /**
+   * Opt-in anonymous crash reporting via Sentry.
+   * Off by default. Never sends library contents, track titles, file paths, or personal data.
+   * Changes take effect on the next app launch.
+   */
+  crashReportingEnabled: boolean
 }
 
-// `youtubeApiKey` lives in the OS keychain, not electron-store — see secretStore.ts.
-// Defaults here apply to everything else.
-type PersistedSettings = Omit<AppSettings, 'youtubeApiKey'>
-
-const DEFAULTS: PersistedSettings = {
+const DEFAULTS: AppSettings = {
   targetHardware: 'CDJ-2000NXS2',
   defaultBpmMin: 120,
   defaultBpmMax: 132,
   harmonicMixingDefault: true,
-  favouriteArtists: [],
-  favouriteGenres: [],
-  followedDJs: [],
   learnModeEnabled: false,
   hasSeenProficiencyAsk: false,
-  memoryAiEnabled: false,
+  // The language model ships in the app bundle, so extended understanding is on
+  // by default — there's no download to gate it behind. Users can still turn it
+  // off to skip loading the model into memory.
+  memoryAiEnabled: true,
   lastImportSource: null,
   lastImportPath: null,
   lastImportMtime: null,
   lastImportAt: null,
   rekordboxDbConsent: false,
   autoDetectRekordbox: true,
+  crashReportingEnabled: false
 }
 
-const store = new ElectronStore<PersistedSettings>({
+const store = new ElectronStore<AppSettings>({
   name: 'preferences',
-  defaults: DEFAULTS,
+  defaults: DEFAULTS
 })
 
 export function getSettings(): AppSettings {
@@ -64,19 +62,16 @@ export function getSettings(): AppSettings {
     defaultBpmMin: store.get('defaultBpmMin'),
     defaultBpmMax: store.get('defaultBpmMax'),
     harmonicMixingDefault: store.get('harmonicMixingDefault'),
-    youtubeApiKey: getYoutubeApiKey(),
-    favouriteArtists: store.get('favouriteArtists') ?? [],
-    favouriteGenres: store.get('favouriteGenres') ?? [],
-    followedDJs: store.get('followedDJs') ?? [],
     learnModeEnabled: store.get('learnModeEnabled') ?? false,
     hasSeenProficiencyAsk: store.get('hasSeenProficiencyAsk') ?? false,
-    memoryAiEnabled: store.get('memoryAiEnabled') ?? false,
+    memoryAiEnabled: store.get('memoryAiEnabled') ?? true,
     lastImportSource: store.get('lastImportSource') ?? null,
     lastImportPath: store.get('lastImportPath') ?? null,
     lastImportMtime: store.get('lastImportMtime') ?? null,
     lastImportAt: store.get('lastImportAt') ?? null,
     rekordboxDbConsent: store.get('rekordboxDbConsent') ?? false,
     autoDetectRekordbox: store.get('autoDetectRekordbox') ?? true,
+    crashReportingEnabled: store.get('crashReportingEnabled') ?? false
   }
 }
 
@@ -84,21 +79,23 @@ export async function setSettings(partial: Partial<AppSettings>): Promise<AppSet
   if (partial.targetHardware !== undefined) store.set('targetHardware', partial.targetHardware)
   if (partial.defaultBpmMin !== undefined) store.set('defaultBpmMin', partial.defaultBpmMin)
   if (partial.defaultBpmMax !== undefined) store.set('defaultBpmMax', partial.defaultBpmMax)
-  if (partial.harmonicMixingDefault !== undefined) store.set('harmonicMixingDefault', partial.harmonicMixingDefault)
-  if (partial.favouriteArtists !== undefined) store.set('favouriteArtists', partial.favouriteArtists)
-  if (partial.favouriteGenres !== undefined) store.set('favouriteGenres', partial.favouriteGenres)
-  if (partial.followedDJs !== undefined) store.set('followedDJs', partial.followedDJs)
-  if (partial.learnModeEnabled !== undefined) store.set('learnModeEnabled', partial.learnModeEnabled)
-  if (partial.hasSeenProficiencyAsk !== undefined) store.set('hasSeenProficiencyAsk', partial.hasSeenProficiencyAsk)
+  if (partial.harmonicMixingDefault !== undefined)
+    store.set('harmonicMixingDefault', partial.harmonicMixingDefault)
+  if (partial.learnModeEnabled !== undefined)
+    store.set('learnModeEnabled', partial.learnModeEnabled)
+  if (partial.hasSeenProficiencyAsk !== undefined)
+    store.set('hasSeenProficiencyAsk', partial.hasSeenProficiencyAsk)
   if (partial.memoryAiEnabled !== undefined) store.set('memoryAiEnabled', partial.memoryAiEnabled)
-  if (partial.lastImportSource !== undefined) store.set('lastImportSource', partial.lastImportSource)
+  if (partial.lastImportSource !== undefined)
+    store.set('lastImportSource', partial.lastImportSource)
   if (partial.lastImportPath !== undefined) store.set('lastImportPath', partial.lastImportPath)
   if (partial.lastImportMtime !== undefined) store.set('lastImportMtime', partial.lastImportMtime)
   if (partial.lastImportAt !== undefined) store.set('lastImportAt', partial.lastImportAt)
-  if (partial.rekordboxDbConsent !== undefined) store.set('rekordboxDbConsent', partial.rekordboxDbConsent)
-  if (partial.autoDetectRekordbox !== undefined) store.set('autoDetectRekordbox', partial.autoDetectRekordbox)
-  if (partial.youtubeApiKey !== undefined) {
-    await setYoutubeApiKey(partial.youtubeApiKey)
-  }
+  if (partial.rekordboxDbConsent !== undefined)
+    store.set('rekordboxDbConsent', partial.rekordboxDbConsent)
+  if (partial.autoDetectRekordbox !== undefined)
+    store.set('autoDetectRekordbox', partial.autoDetectRekordbox)
+  if (partial.crashReportingEnabled !== undefined)
+    store.set('crashReportingEnabled', partial.crashReportingEnabled)
   return getSettings()
 }

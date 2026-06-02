@@ -61,7 +61,8 @@ export function parseArchitectQuery(raw: string): ArchitectQueryResult {
   let vibe: SetVibe | undefined
   if (/\b(peak[- ]?time|peak hour|prime time|main set)\b/.test(q)) vibe = 'peak'
   else if (/\b(warm[- ]?up|opening|opener|early doors)\b/.test(q)) vibe = 'warmup'
-  else if (/\b(clos(e|ing|er)|last set|end of (the )?night|after[- ]?hours)\b/.test(q)) vibe = 'closing'
+  else if (/\b(clos(e|ing|er)|last set|end of (the )?night|after[- ]?hours)\b/.test(q))
+    vibe = 'closing'
   else if (/\b(festival|main stage)\b/.test(q)) vibe = 'festival'
   else if (/\b(underground|raw|hypnotic|dark|deep cuts?)\b/.test(q)) vibe = 'underground'
   else if (/\b(club night|club set|nightclub)\b/.test(q)) vibe = 'club'
@@ -101,9 +102,12 @@ export function parseArchitectQuery(raw: string): ArchitectQueryResult {
 
   // ── Energy curve ──────────────────────────────────────────────────────────
   let curve: EnergyCurveType | undefined
-  if (/\b(drop[- ]?in|straight in|start hot|hit hard|bang(ing)? from the start)\b/.test(q)) curve = 'drop-in'
-  else if (/\b(plateau|sustain|keep it high|steady peak|hold the energy)\b/.test(q)) curve = 'peak-sustain'
-  else if (/\b(wave|ebb and flow|up and down|peaks and valleys|dynamic|breathe)\b/.test(q)) curve = 'wave'
+  if (/\b(drop[- ]?in|straight in|start hot|hit hard|bang(ing)? from the start)\b/.test(q))
+    curve = 'drop-in'
+  else if (/\b(plateau|sustain|keep it high|steady peak|hold the energy)\b/.test(q))
+    curve = 'peak-sustain'
+  else if (/\b(wave|ebb and flow|up and down|peaks and valleys|dynamic|breathe)\b/.test(q))
+    curve = 'wave'
   else if (/\b(build|rise|rising|gradual|slow burn|ramp up|escalat)\b/.test(q)) curve = 'rise'
   if (curve) {
     params.followEnergyCurve = true
@@ -113,7 +117,8 @@ export function parseArchitectQuery(raw: string): ArchitectQueryResult {
 
   // ── Harmonic mixing ───────────────────────────────────────────────────────
   if (/\b(harmonic|in key|key mixing|mix in key|camelot)\b/.test(q)) params.harmonicMixing = true
-  else if (/\b(ignore key|no harmonic|don'?t worry about key)\b/.test(q)) params.harmonicMixing = false
+  else if (/\b(ignore key|no harmonic|don'?t worry about key)\b/.test(q))
+    params.harmonicMixing = false
 
   return { params, summary: notes.join(' · ') }
 }

@@ -4,12 +4,7 @@ import clsx from 'clsx'
 import type { Playlist } from '@/types'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { useUiStore } from '@/stores/uiStore'
-import {
-  motion,
-  AnimatePresence,
-  slideUp,
-  stagger,
-} from '@/components/shared/Motion'
+import { motion, AnimatePresence, slideUp, stagger } from '@/components/shared/Motion'
 
 const SNAPPY = [0.32, 0.72, 0.12, 1] as const
 
@@ -95,7 +90,7 @@ function PlaylistRow({ node, depth, expanded, onToggle }: RowProps): React.JSX.E
       <div
         className={clsx('playlist-row', {
           'playlist-row-selected': isSelected,
-          'playlist-row-folder': playlist.isFolder,
+          'playlist-row-folder': playlist.isFolder
         })}
         style={{ paddingLeft: 8 + depth * 12 }}
         onClick={handleClick}
@@ -124,7 +119,9 @@ function PlaylistRow({ node, depth, expanded, onToggle }: RowProps): React.JSX.E
         ) : (
           <Music2 size={13} strokeWidth={1.5} className="playlist-row-icon" />
         )}
-        <span className="playlist-row-name" title={playlist.name}>{playlist.name}</span>
+        <span className="playlist-row-name" title={playlist.name}>
+          {playlist.name}
+        </span>
         <span className="playlist-row-count">{count}</span>
       </div>
 
@@ -193,7 +190,10 @@ export function PlaylistSidebar(): React.JSX.Element | null {
     function onUp(): void {
       const el = rootRef.current
       const newWidth = el
-        ? Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, Math.round(parseFloat(el.style.width || String(startWidth)))))
+        ? Math.max(
+            MIN_WIDTH,
+            Math.min(MAX_WIDTH, Math.round(parseFloat(el.style.width || String(startWidth))))
+          )
         : startWidth
 
       // Re-enable CSS transition for future collapse/expand
@@ -217,11 +217,7 @@ export function PlaylistSidebar(): React.JSX.Element | null {
   const currentWidth = collapsed ? 34 : sidebarWidth
 
   return (
-    <div
-      ref={rootRef}
-      className="playlist-sidebar-root"
-      style={{ width: currentWidth }}
-    >
+    <div ref={rootRef} className="playlist-sidebar-root" style={{ width: currentWidth }}>
       <AnimatePresence mode="wait" initial={false}>
         {collapsed ? (
           /* ── Collapsed rail ── */
@@ -261,7 +257,7 @@ export function PlaylistSidebar(): React.JSX.Element | null {
                   fontSize: 11,
                   letterSpacing: '0.06em',
                   textTransform: 'uppercase',
-                  color: 'var(--text-tertiary)',
+                  color: 'var(--text-tertiary)'
                 }}
               >
                 Playlists
@@ -283,7 +279,7 @@ export function PlaylistSidebar(): React.JSX.Element | null {
                 <motion.div variants={slideUp}>
                   <div
                     className={clsx('playlist-row', {
-                      'playlist-row-selected': selectedPlaylistId === null,
+                      'playlist-row-selected': selectedPlaylistId === null
                     })}
                     style={{ paddingLeft: 8 }}
                     onClick={() => setSelectedPlaylist(null)}

@@ -12,10 +12,10 @@ function formatRule(r: CrateRule): string {
   else if (r.bpmMin != null) parts.push(`BPM ≥ ${r.bpmMin}`)
   else if (r.bpmMax != null) parts.push(`BPM ≤ ${r.bpmMax}`)
 
-  if (r.bpmTopPercentOfLibrary != null) parts.push(`BPM in top ${r.bpmTopPercentOfLibrary}% of library`)
+  if (r.bpmTopPercentOfLibrary != null)
+    parts.push(`BPM in top ${r.bpmTopPercentOfLibrary}% of library`)
 
-  if (r.energyMin != null && r.energyMax != null)
-    parts.push(`Energy ${r.energyMin}–${r.energyMax}`)
+  if (r.energyMin != null && r.energyMax != null) parts.push(`Energy ${r.energyMin}–${r.energyMax}`)
   else if (r.energyMin != null) parts.push(`Energy ≥ ${r.energyMin}`)
   else if (r.energyMax != null) parts.push(`Energy ≤ ${r.energyMax}`)
 

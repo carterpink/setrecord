@@ -26,7 +26,10 @@ export function GhostTrackCard({ suggestion, onAdd }: GhostTrackCardProps): Reac
           {track.artist} · {formatBpm(track.bpm)} · {track.key}
         </div>
         <div className="tl-q">
-          <span className="ss-caption" style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+          <span
+            className="ss-caption"
+            style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}
+          >
             Best suggestion
           </span>
         </div>

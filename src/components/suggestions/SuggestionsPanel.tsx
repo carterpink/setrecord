@@ -11,16 +11,17 @@ import { useSuggestions } from '@/hooks/useSuggestions'
 import { formatPosition } from '@/utils/format'
 import { useCanUse } from '@/stores/licenseStore'
 import { ProLock } from '@/components/shared/ProGate'
+import { NoLibraryState } from '@/components/shared/NoLibraryState'
 import { SuggestionCard } from './SuggestionCard'
 
 const listVariants = stagger(0.05)
-
 
 export function SuggestionsPanel(): React.JSX.Element {
   const { currentSet, selectedTrackId, addTrackAfterSelected } = useSetStore()
   const playlists = useLibraryStore((s) => s.playlists)
   const totalTracks = useLibraryStore((s) => s.tracks.length)
   const libraryTracks = useLibraryStore((s) => s.tracks)
+  const hasLibrary = useLibraryStore((s) => s.hasLibrary)
   const suggestionsSourcePlaylistIds = useUiStore((s) => s.suggestionsSourcePlaylistIds)
   const setSuggestionsSourcePlaylistIds = useUiStore((s) => s.setSuggestionsSourcePlaylistIds)
   const selectedLibraryTrackId = useUiStore((s) => s.selectedLibraryTrackId)
@@ -45,8 +46,21 @@ export function SuggestionsPanel(): React.JSX.Element {
     currentSet?.id ?? null,
     6,
     currentTrackIds,
-    suggestionsSourcePlaylistIds,
+    suggestionsSourcePlaylistIds
   )
+
+  // No library yet → route to import before anything else. There are no tracks
+  // to suggest from, so we never show a paywall or a fake "finding matches" state.
+  if (!hasLibrary) {
+    return (
+      <div className="panel glass-1">
+        <div className="sugg-header">
+          <div className="ss-h2">Suggested next</div>
+        </div>
+        <NoLibraryState body="Pick any track and SetSense suggests what mixes next — matched on key, BPM and energy. Import your library to get recommendations." />
+      </div>
+    )
+  }
 
   if (!canSuggest) {
     return (
@@ -102,7 +116,10 @@ export function SuggestionsPanel(): React.JSX.Element {
       <div className="sugg-list">
         {isLoading && suggestions.length === 0 ? (
           // Skeleton cards while computing suggestions
-          <div className="library-skeleton" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div
+            className="library-skeleton"
+            style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+          >
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
@@ -111,7 +128,7 @@ export function SuggestionsPanel(): React.JSX.Element {
                   borderRadius: 10,
                   padding: '12px 14px',
                   background: 'rgba(255,255,255,0.04)',
-                  height: 72,
+                  height: 72
                 }}
               />
             ))}

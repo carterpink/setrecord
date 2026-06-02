@@ -43,8 +43,7 @@ export function getActualCurve(tracks: SetTrack[]): number[] {
 export function getCurveDeviation(target: number[], actual: number[]): number {
   const len = Math.min(target.length, actual.length)
   if (len === 0) return 100
-  const mad =
-    target.slice(0, len).reduce((sum, t, i) => sum + Math.abs(t - actual[i]), 0) / len
+  const mad = target.slice(0, len).reduce((sum, t, i) => sum + Math.abs(t - actual[i]), 0) / len
   // MAD range is 0–9 (energy scale 1–10). Map to 0-100 score: 0 deviation → 100.
   return Math.max(0, Math.round(100 - (mad / 9) * 100))
 }

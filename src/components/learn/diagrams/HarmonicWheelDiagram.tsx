@@ -20,14 +20,14 @@ function polar(cx: number, cy: number, r: number, angleDeg: number): { x: number
 export function HarmonicWheelDiagram({
   fromKey,
   toKey,
-  size = 180,
+  size = 180
 }: HarmonicWheelDiagramProps): React.JSX.Element {
   const from = parseKey(fromKey)
   const to = parseKey(toKey)
   const cx = size / 2
   const cy = size / 2
   const rOuter = size * 0.46
-  const rInner = size * 0.30
+  const rInner = size * 0.3
   const rLabelOuter = (rOuter + size * 0.5) / 2 + 4
   const rLabelInner = (rInner + size * 0.05) / 2 + 12
 
@@ -40,9 +40,25 @@ export function HarmonicWheelDiagram({
       aria-label={`Camelot wheel showing ${fromKey} and ${toKey}`}
       style={{ display: 'block', margin: '0 auto' }}
     >
-      <title>Camelot wheel: {fromKey} → {toKey}</title>
-      <circle cx={cx} cy={cy} r={rOuter} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={1} />
-      <circle cx={cx} cy={cy} r={rInner} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={1} />
+      <title>
+        Camelot wheel: {fromKey} → {toKey}
+      </title>
+      <circle
+        cx={cx}
+        cy={cy}
+        r={rOuter}
+        fill="none"
+        stroke="rgba(255,255,255,0.12)"
+        strokeWidth={1}
+      />
+      <circle
+        cx={cx}
+        cy={cy}
+        r={rInner}
+        fill="none"
+        stroke="rgba(255,255,255,0.12)"
+        strokeWidth={1}
+      />
       {POSITIONS.map((num) => {
         const angle = (num / 12) * 360
         const outer = polar(cx, cy, rLabelOuter, angle)
@@ -62,7 +78,13 @@ export function HarmonicWheelDiagram({
               dominantBaseline="middle"
               fontSize={9}
               fontFamily="ui-monospace, SFMono-Regular, monospace"
-              fill={isFromOuter ? 'var(--accent-primary, #C8FF3D)' : isToOuter ? 'var(--semantic-success, #6dd58c)' : 'rgba(255,255,255,0.55)'}
+              fill={
+                isFromOuter
+                  ? 'var(--accent-primary, #C8FF3D)'
+                  : isToOuter
+                    ? 'var(--semantic-success, #6dd58c)'
+                    : 'rgba(255,255,255,0.55)'
+              }
               fontWeight={isFromOuter || isToOuter ? 700 : 400}
             >
               {outerKey}
@@ -74,7 +96,13 @@ export function HarmonicWheelDiagram({
               dominantBaseline="middle"
               fontSize={9}
               fontFamily="ui-monospace, SFMono-Regular, monospace"
-              fill={isFromInner ? 'var(--accent-primary, #C8FF3D)' : isToInner ? 'var(--semantic-success, #6dd58c)' : 'rgba(255,255,255,0.55)'}
+              fill={
+                isFromInner
+                  ? 'var(--accent-primary, #C8FF3D)'
+                  : isToInner
+                    ? 'var(--semantic-success, #6dd58c)'
+                    : 'rgba(255,255,255,0.55)'
+              }
               fontWeight={isFromInner || isToInner ? 700 : 400}
             >
               {innerKey}
@@ -82,25 +110,27 @@ export function HarmonicWheelDiagram({
           </g>
         )
       })}
-      {from && to && (() => {
-        const angleFrom = (from.num / 12) * 360
-        const angleTo = (to.num / 12) * 360
-        const rFrom = from.letter === 'B' ? rLabelOuter - 7 : rLabelInner + 7
-        const rTo = to.letter === 'B' ? rLabelOuter - 7 : rLabelInner + 7
-        const pFrom = polar(cx, cy, rFrom, angleFrom)
-        const pTo = polar(cx, cy, rTo, angleTo)
-        return (
-          <line
-            x1={pFrom.x}
-            y1={pFrom.y}
-            x2={pTo.x}
-            y2={pTo.y}
-            stroke="rgba(200,255,61,0.45)"
-            strokeWidth={1.2}
-            strokeDasharray="2,3"
-          />
-        )
-      })()}
+      {from &&
+        to &&
+        (() => {
+          const angleFrom = (from.num / 12) * 360
+          const angleTo = (to.num / 12) * 360
+          const rFrom = from.letter === 'B' ? rLabelOuter - 7 : rLabelInner + 7
+          const rTo = to.letter === 'B' ? rLabelOuter - 7 : rLabelInner + 7
+          const pFrom = polar(cx, cy, rFrom, angleFrom)
+          const pTo = polar(cx, cy, rTo, angleTo)
+          return (
+            <line
+              x1={pFrom.x}
+              y1={pFrom.y}
+              x2={pTo.x}
+              y2={pTo.y}
+              stroke="rgba(200,255,61,0.45)"
+              strokeWidth={1.2}
+              strokeDasharray="2,3"
+            />
+          )
+        })()}
     </svg>
   )
 }

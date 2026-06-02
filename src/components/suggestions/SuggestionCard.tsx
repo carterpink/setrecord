@@ -5,7 +5,7 @@ import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import type { Suggestion, Track } from '@/types'
 import { KeyChip } from '@/components/shared/KeyChip'
-import { Waveform } from '@/components/shared/Waveform'
+import { InlineWaveform } from '@/components/shared/InlineWaveform'
 import { motion, AnimatePresence } from '@/components/shared/Motion'
 import type { Variants } from 'framer-motion'
 import { useClickOrDoubleClick } from '@/hooks/useClickOrDoubleClick'
@@ -18,8 +18,8 @@ const cardVariants: Variants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.3, ease: [0.32, 0.72, 0.12, 1] },
-  },
+    transition: { duration: 0.3, ease: [0.32, 0.72, 0.12, 1] }
+  }
 }
 
 interface SuggestionCardProps {
@@ -36,7 +36,7 @@ export function SuggestionCard({
   suggestion,
   fromTrack,
   onPreview,
-  onAdd,
+  onAdd
 }: SuggestionCardProps): React.JSX.Element {
   const { track, matchReasons, best, transitionScore } = suggestion
   const [showBreakdown, setShowBreakdown] = useState(false)
@@ -45,22 +45,19 @@ export function SuggestionCard({
   const unavailable = missing || isPhantom
 
   const { startPreview, togglePlay, previewTrack, isPlaying } = usePlaybackStore()
-  const isThisPlaying =
-    previewTrack?.id === track.id && isPlaying && !missing && !isPhantom
+  const isThisPlaying = previewTrack?.id === track.id && isPlaying && !missing && !isPhantom
   // Only subscribe to currentTime ticks when this card is playing.
-  const previewCurrentTime = usePlaybackStore((s) =>
-    isThisPlaying ? s.currentTime : 0,
-  )
+  const previewCurrentTime = usePlaybackStore((s) => (isThisPlaying ? s.currentTime : 0))
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `sugg-${track.id}`,
     data: { source: 'library', track },
-    disabled: unavailable,
+    disabled: unavailable
   })
 
   const { onClick, onDoubleClick } = useClickOrDoubleClick(
     () => onPreview?.(),
-    () => onAdd?.(),
+    () => onAdd?.()
   )
 
   function handlePlayClick(e: React.MouseEvent | React.PointerEvent): void {
@@ -81,7 +78,7 @@ export function SuggestionCard({
       style={{
         transform: CSS.Translate.toString(transform),
         opacity: isDragging ? 0.4 : 1,
-        cursor: unavailable ? 'default' : isDragging ? 'grabbing' : 'grab',
+        cursor: unavailable ? 'default' : isDragging ? 'grabbing' : 'grab'
       }}
       onClick={unavailable ? undefined : onClick}
       onDoubleClick={unavailable ? undefined : onDoubleClick}
@@ -127,7 +124,12 @@ export function SuggestionCard({
           {isPhantom ? (
             <ShoppingCart size={13} strokeWidth={1.5} aria-hidden="true" />
           ) : missing ? (
-            <AlertCircle size={13} strokeWidth={1.5} color="var(--semantic-warning)" aria-hidden="true" />
+            <AlertCircle
+              size={13}
+              strokeWidth={1.5}
+              color="var(--semantic-warning)"
+              aria-hidden="true"
+            />
           ) : isThisPlaying ? (
             <Pause size={13} strokeWidth={1.5} aria-hidden="true" />
           ) : (
@@ -141,11 +143,21 @@ export function SuggestionCard({
         </div>
         <div style={{ textAlign: 'right' }}>
           <div className="sugg-mono">{formatBpm(track.bpm)}</div>
-          <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'flex-end' }}>
+          <div
+            style={{
+              marginTop: 4,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
+              justifyContent: 'flex-end'
+            }}
+          >
             {fromTrack?.key ? (
               <>
                 <KeyChip>{fromTrack.key}</KeyChip>
-                <span style={{ fontSize: 10, color: 'var(--text-tertiary)', lineHeight: 1 }}>→</span>
+                <span style={{ fontSize: 10, color: 'var(--text-tertiary)', lineHeight: 1 }}>
+                  →
+                </span>
                 <KeyChip>{track.key}</KeyChip>
               </>
             ) : (
@@ -162,11 +174,18 @@ export function SuggestionCard({
           type="button"
           className="sugg-breakdown-toggle"
           aria-expanded={showBreakdown}
-          onClick={(e) => { e.stopPropagation(); setShowBreakdown((v) => !v) }}
+          onClick={(e) => {
+            e.stopPropagation()
+            setShowBreakdown((v) => !v)
+          }}
           onPointerDown={(e) => e.stopPropagation()}
           title={showBreakdown ? 'Hide score breakdown' : 'Show score breakdown'}
         >
-          {showBreakdown ? <ChevronUp size={11} strokeWidth={2} /> : <ChevronDown size={11} strokeWidth={2} />}
+          {showBreakdown ? (
+            <ChevronUp size={11} strokeWidth={2} />
+          ) : (
+            <ChevronDown size={11} strokeWidth={2} />
+          )}
           <span>Score {transitionScore.score}/100</span>
         </button>
       </div>
@@ -189,11 +208,17 @@ export function SuggestionCard({
             </div>
             <div className="breakdown-row">
               <span>Key</span>
-              <span style={{ textTransform: 'capitalize' }}>{transitionScore.keyCompatibility.replace('-', ' ')}</span>
+              <span style={{ textTransform: 'capitalize' }}>
+                {transitionScore.keyCompatibility.replace('-', ' ')}
+              </span>
             </div>
             <div className="breakdown-row">
               <span>Energy delta</span>
-              <span>{transitionScore.energyDelta > 0 ? `+${transitionScore.energyDelta}` : transitionScore.energyDelta}</span>
+              <span>
+                {transitionScore.energyDelta > 0
+                  ? `+${transitionScore.energyDelta}`
+                  : transitionScore.energyDelta}
+              </span>
             </div>
             <div className="breakdown-row">
               <span style={{ color: 'var(--text-primary)' }}>Total</span>
@@ -209,9 +234,8 @@ export function SuggestionCard({
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
-          <Waveform
+          <InlineWaveform
             filePath={track.filePath}
-            compact
             currentTime={previewCurrentTime}
             onSeek={(ms) => usePlaybackStore.getState().requestSeek(ms)}
           />

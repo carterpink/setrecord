@@ -6,7 +6,7 @@ const { parseXmlExportPath } = _internals
 describe('parseXmlExportPath', () => {
   it('finds the XML export path under xml-import-export.export-path', () => {
     const raw = JSON.stringify({
-      'xml-import-export': { 'export-path': '/Users/dj/Music/rekordbox.xml' },
+      'xml-import-export': { 'export-path': '/Users/dj/Music/rekordbox.xml' }
     })
     expect(parseXmlExportPath(raw)).toBe('/Users/dj/Music/rekordbox.xml')
   })

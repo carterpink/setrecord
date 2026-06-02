@@ -17,7 +17,11 @@ interface LearnTooltipProps {
   iconLabel?: string
 }
 
-function DiagramRenderer({ explanation }: { explanation: LearnExplanation }): React.JSX.Element | null {
+function DiagramRenderer({
+  explanation
+}: {
+  explanation: LearnExplanation
+}): React.JSX.Element | null {
   const d = explanation.diagram
   if (!d) return null
   switch (d.kind) {
@@ -38,7 +42,7 @@ export function LearnTooltip({
   explanation,
   children,
   hideIcon,
-  iconLabel = 'Show explanation',
+  iconLabel = 'Show explanation'
 }: LearnTooltipProps): React.JSX.Element {
   const learnModeEnabled = useUiStore((s) => s.learnModeEnabled)
   const [open, setOpen] = useState(false)
@@ -72,10 +76,7 @@ export function LearnTooltip({
     if (!open) return
     function onDoc(e: MouseEvent): void {
       const target = e.target as Node
-      if (
-        btnRef.current?.contains(target) ||
-        popRef.current?.contains(target)
-      ) return
+      if (btnRef.current?.contains(target) || popRef.current?.contains(target)) return
       setOpen(false)
     }
     function onKey(e: KeyboardEvent): void {
@@ -130,7 +131,13 @@ export function LearnTooltip({
               role="dialog"
               aria-label="Explanation"
               className="learn-pop glass-3"
-              style={{ position: 'fixed', top: pos.top, left: pos.left, width: POP_WIDTH, zIndex: 9999 }}
+              style={{
+                position: 'fixed',
+                top: pos.top,
+                left: pos.left,
+                width: POP_WIDTH,
+                zIndex: 9999
+              }}
               initial={{ opacity: 0, y: 4, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 4, scale: 0.98 }}
@@ -139,7 +146,9 @@ export function LearnTooltip({
               onPointerDown={(e) => e.stopPropagation()}
             >
               {proLocked ? (
-                <div className="ss-body-sm">Learn Mode is a Pro feature. Upgrade to unlock explanations.</div>
+                <div className="ss-body-sm">
+                  Learn Mode is a Pro feature. Upgrade to unlock explanations.
+                </div>
               ) : (
                 <>
                   <div className="ss-body-sm" style={{ fontWeight: 600, marginBottom: 4 }}>
@@ -158,7 +167,7 @@ export function LearnTooltip({
             </motion.div>
           )}
         </AnimatePresence>,
-        document.body,
+        document.body
       )}
     </>
   )

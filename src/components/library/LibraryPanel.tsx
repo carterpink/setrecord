@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { AlignJustify, ArrowDownUp, FolderOpen, ListMusic, Menu, SlidersHorizontal, X } from 'lucide-react'
+import { AlignJustify, ArrowDownUp, ListMusic, Menu, SlidersHorizontal, X } from 'lucide-react'
 import type { ComboResult, LibraryTab, Track } from '@/types'
 import { SearchInput } from '@/components/shared/SearchInput'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { NoLibraryState } from '@/components/shared/NoLibraryState'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { IconButton } from '@/components/shared/IconButton'
 import { RangeSlider } from '@/components/shared/RangeSlider'
@@ -21,7 +22,16 @@ import { TrackContextMenu } from './TrackContextMenu'
 
 const TABS: readonly LibraryTab[] = ['Library', 'Crates', 'Sets'] as const
 
-type SortField = 'artist' | 'title' | 'bpm' | 'energy' | 'key' | 'dateAdded' | 'playCount' | 'duration' | 'rating'
+type SortField =
+  | 'artist'
+  | 'title'
+  | 'bpm'
+  | 'energy'
+  | 'key'
+  | 'dateAdded'
+  | 'playCount'
+  | 'duration'
+  | 'rating'
 type SortDir = 'asc' | 'desc'
 
 interface TrackFilters {
@@ -35,22 +45,55 @@ interface TrackFilters {
 }
 
 const SORT_LABELS: Record<SortField, string> = {
-  artist: 'Artist', title: 'Title', bpm: 'BPM', energy: 'Energy',
-  key: 'Key', dateAdded: 'Date added', playCount: 'Play count',
-  duration: 'Duration', rating: 'Rating',
+  artist: 'Artist',
+  title: 'Title',
+  bpm: 'BPM',
+  energy: 'Energy',
+  key: 'Key',
+  dateAdded: 'Date added',
+  playCount: 'Play count',
+  duration: 'Duration',
+  rating: 'Rating'
 }
 
 const CAMELOT_KEYS = [
-  '1A','2A','3A','4A','5A','6A','7A','8A','9A','10A','11A','12A',
-  '1B','2B','3B','4B','5B','6B','7B','8B','9B','10B','11B','12B',
+  '1A',
+  '2A',
+  '3A',
+  '4A',
+  '5A',
+  '6A',
+  '7A',
+  '8A',
+  '9A',
+  '10A',
+  '11A',
+  '12A',
+  '1B',
+  '2B',
+  '3B',
+  '4B',
+  '5B',
+  '6B',
+  '7B',
+  '8B',
+  '9B',
+  '10B',
+  '11B',
+  '12B'
 ]
 
 const FORMATS = ['mp3', 'aiff', 'wav', 'flac', 'm4a']
 
 function anyActive(f: TrackFilters): boolean {
   return !!(
-    f.bpmMin || f.bpmMax || f.energyMin || f.energyMax ||
-    f.key || f.genre || (f.format && f.format.length > 0)
+    f.bpmMin ||
+    f.bpmMax ||
+    f.energyMin ||
+    f.energyMax ||
+    f.key ||
+    f.genre ||
+    (f.format && f.format.length > 0)
   )
 }
 
@@ -84,7 +127,7 @@ export function LibraryPanel(): React.JSX.Element {
     setSelectedLibraryTrack,
     libraryDensity,
     toggleLibraryDensity,
-    showModal,
+    showModal
   } = useUiStore()
   const { startPreview, previewTrack, isPlaying } = usePlaybackStore()
 
@@ -98,9 +141,11 @@ export function LibraryPanel(): React.JSX.Element {
 
   // ── Search tip (one-time dismissible callout) ─────────────────────────────
   const [tipDismissed, setTipDismissed] = useState(
-    () => typeof window !== 'undefined' && localStorage.getItem('setsense-search-tip-dismissed') === 'true'
+    () =>
+      typeof window !== 'undefined' &&
+      localStorage.getItem('setsense-search-tip-dismissed') === 'true'
   )
-  function dismissTip() {
+  function dismissTip(): void {
     setTipDismissed(true)
     localStorage.setItem('setsense-search-tip-dismissed', 'true')
   }
@@ -109,7 +154,9 @@ export function LibraryPanel(): React.JSX.Element {
   const [ctxMenu, setCtxMenu] = useState<{ track: Track; x: number; y: number } | null>(null)
 
   // ── Combos popover state ──────────────────────────────────────────────────
-  const [combosData, setCombosData] = useState<{ track: Track; results: ComboResult[] } | null>(null)
+  const [combosData, setCombosData] = useState<{ track: Track; results: ComboResult[] } | null>(
+    null
+  )
 
   const selectedPlaylist = selectedPlaylistId
     ? (playlists.find((p) => p.id === selectedPlaylistId) ?? null)
@@ -159,8 +206,10 @@ export function LibraryPanel(): React.JSX.Element {
         if (filters.energyMin != null && t.energy < filters.energyMin) return false
         if (filters.energyMax != null && t.energy > filters.energyMax) return false
         if (filters.key && t.key !== filters.key) return false
-        if (filters.genre && !t.genre?.toLowerCase().includes(filters.genre.toLowerCase())) return false
-        if (filters.format && filters.format.length > 0 && !filters.format.includes(t.format)) return false
+        if (filters.genre && !t.genre?.toLowerCase().includes(filters.genre.toLowerCase()))
+          return false
+        if (filters.format && filters.format.length > 0 && !filters.format.includes(t.format))
+          return false
         return true
       })
     : playlistFiltered
@@ -185,19 +234,28 @@ export function LibraryPanel(): React.JSX.Element {
     const dir = sortDir === 'asc' ? 1 : -1
     return [...smartFiltered].sort((a, b) => {
       switch (sortField) {
-        case 'artist':    return dir * a.artist.localeCompare(b.artist)
-        case 'title':     return dir * a.title.localeCompare(b.title)
-        case 'bpm':       return dir * (a.bpm - b.bpm)
-        case 'energy':    return dir * (a.energy - b.energy)
-        case 'key':       return dir * a.key.localeCompare(b.key)
-        case 'dateAdded': return dir * (a.dateAdded ?? '').localeCompare(b.dateAdded ?? '')
-        case 'playCount': return dir * ((a.playCount ?? 0) - (b.playCount ?? 0))
-        case 'duration':  return dir * (a.duration - b.duration)
-        case 'rating':    return dir * ((a.rating ?? 0) - (b.rating ?? 0))
-        default: return 0
+        case 'artist':
+          return dir * a.artist.localeCompare(b.artist)
+        case 'title':
+          return dir * a.title.localeCompare(b.title)
+        case 'bpm':
+          return dir * (a.bpm - b.bpm)
+        case 'energy':
+          return dir * (a.energy - b.energy)
+        case 'key':
+          return dir * a.key.localeCompare(b.key)
+        case 'dateAdded':
+          return dir * (a.dateAdded ?? '').localeCompare(b.dateAdded ?? '')
+        case 'playCount':
+          return dir * ((a.playCount ?? 0) - (b.playCount ?? 0))
+        case 'duration':
+          return dir * (a.duration - b.duration)
+        case 'rating':
+          return dir * ((a.rating ?? 0) - (b.rating ?? 0))
+        default:
+          return 0
       }
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [smartFiltered, sortField, sortDir])
 
   const playingTrackId = previewTrack && isPlaying ? previewTrack.id : null
@@ -212,12 +270,12 @@ export function LibraryPanel(): React.JSX.Element {
   })
 
   // ── Context menu helpers ──────────────────────────────────────────────────
-  function handleContextMenu(track: Track, e: React.MouseEvent) {
+  function handleContextMenu(track: Track, e: React.MouseEvent): void {
     e.preventDefault()
     setCtxMenu({ track, x: e.clientX, y: e.clientY })
   }
 
-  async function handleShowCombos(track: Track) {
+  async function handleShowCombos(track: Track): Promise<void> {
     setCombosData({ track, results: [] })
     try {
       const results = await window.setsense.recallCombos(track.id)
@@ -227,18 +285,18 @@ export function LibraryPanel(): React.JSX.Element {
     }
   }
 
-  function handleFindSimilar(track: Track) {
+  function handleFindSimilar(track: Track): void {
     setSelectedLibraryTrack(track.id)
     if (!smartFilter) toggleSmartFilter()
   }
 
-  function handleEditCues(track: Track) {
+  function handleEditCues(track: Track): void {
     startPreview(track)
     showModal('cueEditor')
   }
 
   // ── Active filter chip helpers ────────────────────────────────────────────
-  function clearFilter(key: keyof TrackFilters) {
+  function clearFilter(key: keyof TrackFilters): void {
     setFilters((prev) => {
       const next = { ...prev }
       delete next[key]
@@ -260,7 +318,7 @@ export function LibraryPanel(): React.JSX.Element {
       {!tipDismissed && (
         <div className="search-tip">
           <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-            Also searches cue point labels — try "intro" or "drop"
+            Also searches cue point labels — try &ldquo;intro&rdquo; or &ldquo;drop&rdquo;
           </span>
           <button className="smart-filter-dismiss" onClick={dismissTip} aria-label="Dismiss tip">
             <X size={10} strokeWidth={2} />
@@ -285,13 +343,19 @@ export function LibraryPanel(): React.JSX.Element {
                 title="Sort library"
               >
                 {(Object.keys(SORT_LABELS) as SortField[]).map((f) => (
-                  <option key={f} value={f}>{SORT_LABELS[f]}</option>
+                  <option key={f} value={f}>
+                    {SORT_LABELS[f]}
+                  </option>
                 ))}
               </select>
               <button
                 className="library-sort-dir"
                 onClick={() => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
-                aria-label={sortDir === 'asc' ? 'Sort ascending — click for descending' : 'Sort descending — click for ascending'}
+                aria-label={
+                  sortDir === 'asc'
+                    ? 'Sort ascending — click for descending'
+                    : 'Sort descending — click for ascending'
+                }
                 title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
               >
                 <ArrowDownUp
@@ -316,7 +380,11 @@ export function LibraryPanel(): React.JSX.Element {
                 size="sm"
                 active={libraryDensity === 'compact'}
                 onClick={toggleLibraryDensity}
-                aria-label={libraryDensity === 'compact' ? 'Switch to standard view' : 'Switch to compact view'}
+                aria-label={
+                  libraryDensity === 'compact'
+                    ? 'Switch to standard view'
+                    : 'Switch to compact view'
+                }
                 title={libraryDensity === 'compact' ? 'Standard view' : 'Compact view'}
               />
             </div>
@@ -337,29 +405,37 @@ export function LibraryPanel(): React.JSX.Element {
                   <div className="filter-row filter-row--stacked">
                     <span className="filter-label ss-caption">BPM</span>
                     <RangeSlider
-                      min={60} max={200} step={1}
+                      min={60}
+                      max={200}
+                      step={1}
                       low={filters.bpmMin ?? 60}
                       high={filters.bpmMax ?? 200}
                       formatLabel={(v) => String(v)}
-                      onChange={(lo, hi) => setFilters((f) => ({
-                        ...f,
-                        bpmMin: lo === 60 ? undefined : lo,
-                        bpmMax: hi === 200 ? undefined : hi,
-                      }))}
+                      onChange={(lo, hi) =>
+                        setFilters((f) => ({
+                          ...f,
+                          bpmMin: lo === 60 ? undefined : lo,
+                          bpmMax: hi === 200 ? undefined : hi
+                        }))
+                      }
                     />
                   </div>
                   <div className="filter-row filter-row--stacked">
                     <span className="filter-label ss-caption">Energy</span>
                     <RangeSlider
-                      min={1} max={10} step={1}
+                      min={1}
+                      max={10}
+                      step={1}
                       low={filters.energyMin ?? 1}
                       high={filters.energyMax ?? 10}
                       formatLabel={(v) => String(v)}
-                      onChange={(lo, hi) => setFilters((f) => ({
-                        ...f,
-                        energyMin: lo === 1 ? undefined : lo,
-                        energyMax: hi === 10 ? undefined : hi,
-                      }))}
+                      onChange={(lo, hi) =>
+                        setFilters((f) => ({
+                          ...f,
+                          energyMin: lo === 1 ? undefined : lo,
+                          energyMax: hi === 10 ? undefined : hi
+                        }))
+                      }
                     />
                   </div>
                   <div className="filter-row">
@@ -367,11 +443,15 @@ export function LibraryPanel(): React.JSX.Element {
                     <select
                       className="filter-select"
                       value={filters.key ?? ''}
-                      onChange={(e) => setFilters((f) => ({ ...f, key: e.target.value || undefined }))}
+                      onChange={(e) =>
+                        setFilters((f) => ({ ...f, key: e.target.value || undefined }))
+                      }
                     >
                       <option value="">Any</option>
                       {CAMELOT_KEYS.map((k) => (
-                        <option key={k} value={k}>{k}</option>
+                        <option key={k} value={k}>
+                          {k}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -382,7 +462,9 @@ export function LibraryPanel(): React.JSX.Element {
                       type="text"
                       placeholder="e.g. tech house"
                       value={filters.genre ?? ''}
-                      onChange={(e) => setFilters((f) => ({ ...f, genre: e.target.value || undefined }))}
+                      onChange={(e) =>
+                        setFilters((f) => ({ ...f, genre: e.target.value || undefined }))
+                      }
                     />
                   </div>
                   <div className="filter-row">
@@ -394,11 +476,13 @@ export function LibraryPanel(): React.JSX.Element {
                           <button
                             key={fmt}
                             className={`filter-fmt-chip ${active ? 'active' : ''}`}
-                            onClick={() => setFilters((f) => {
-                              const cur = f.format ?? []
-                              const next = active ? cur.filter((x) => x !== fmt) : [...cur, fmt]
-                              return { ...f, format: next.length ? next : undefined }
-                            })}
+                            onClick={() =>
+                              setFilters((f) => {
+                                const cur = f.format ?? []
+                                const next = active ? cur.filter((x) => x !== fmt) : [...cur, fmt]
+                                return { ...f, format: next.length ? next : undefined }
+                              })
+                            }
                           >
                             {fmt.toUpperCase()}
                           </button>
@@ -407,10 +491,7 @@ export function LibraryPanel(): React.JSX.Element {
                     </div>
                   </div>
                   {anyActive(filters) && (
-                    <button
-                      className="filter-clear-all ss-caption"
-                      onClick={() => setFilters({})}
-                    >
+                    <button className="filter-clear-all ss-caption" onClick={() => setFilters({})}>
                       Clear all filters
                     </button>
                   )}
@@ -423,25 +504,64 @@ export function LibraryPanel(): React.JSX.Element {
           {anyActive(filters) && (
             <div className="active-filter-chips">
               {filters.bpmMin != null && (
-                <span className="active-filter-chip">BPM ≥ {filters.bpmMin}<button onClick={() => clearFilter('bpmMin')}><X size={9} /></button></span>
+                <span className="active-filter-chip">
+                  BPM ≥ {filters.bpmMin}
+                  <button onClick={() => clearFilter('bpmMin')}>
+                    <X size={9} />
+                  </button>
+                </span>
               )}
               {filters.bpmMax != null && (
-                <span className="active-filter-chip">BPM ≤ {filters.bpmMax}<button onClick={() => clearFilter('bpmMax')}><X size={9} /></button></span>
+                <span className="active-filter-chip">
+                  BPM ≤ {filters.bpmMax}
+                  <button onClick={() => clearFilter('bpmMax')}>
+                    <X size={9} />
+                  </button>
+                </span>
               )}
               {filters.energyMin != null && (
-                <span className="active-filter-chip">Energy ≥ {filters.energyMin}<button onClick={() => clearFilter('energyMin')}><X size={9} /></button></span>
+                <span className="active-filter-chip">
+                  Energy ≥ {filters.energyMin}
+                  <button onClick={() => clearFilter('energyMin')}>
+                    <X size={9} />
+                  </button>
+                </span>
               )}
               {filters.energyMax != null && (
-                <span className="active-filter-chip">Energy ≤ {filters.energyMax}<button onClick={() => clearFilter('energyMax')}><X size={9} /></button></span>
+                <span className="active-filter-chip">
+                  Energy ≤ {filters.energyMax}
+                  <button onClick={() => clearFilter('energyMax')}>
+                    <X size={9} />
+                  </button>
+                </span>
               )}
               {filters.key && (
-                <span className="active-filter-chip">Key: {filters.key}<button onClick={() => clearFilter('key')}><X size={9} /></button></span>
+                <span className="active-filter-chip">
+                  Key: {filters.key}
+                  <button onClick={() => clearFilter('key')}>
+                    <X size={9} />
+                  </button>
+                </span>
               )}
               {filters.genre && (
-                <span className="active-filter-chip">Genre: {filters.genre}<button onClick={() => clearFilter('genre')}><X size={9} /></button></span>
+                <span className="active-filter-chip">
+                  Genre: {filters.genre}
+                  <button onClick={() => clearFilter('genre')}>
+                    <X size={9} />
+                  </button>
+                </span>
               )}
               {filters.format?.map((fmt) => (
-                <span key={fmt} className="active-filter-chip">{fmt.toUpperCase()}<button onClick={() => setFilters((f) => ({ ...f, format: f.format?.filter((x) => x !== fmt) }))}><X size={9} /></button></span>
+                <span key={fmt} className="active-filter-chip">
+                  {fmt.toUpperCase()}
+                  <button
+                    onClick={() =>
+                      setFilters((f) => ({ ...f, format: f.format?.filter((x) => x !== fmt) }))
+                    }
+                  >
+                    <X size={9} />
+                  </button>
+                </span>
               ))}
             </div>
           )}
@@ -536,11 +656,7 @@ export function LibraryPanel(): React.JSX.Element {
             )}
 
             {!isLoading && !hasLibrary && (
-              <EmptyState
-                icon={FolderOpen}
-                title="No library yet"
-                body="Click Import in the top bar to load your Rekordbox XML export."
-              />
+              <NoLibraryState body="This is where every track you’ve prepped in Rekordbox lives — searchable, sortable, and ready to drop into a set. Import your library to fill it." />
             )}
 
             {!isLoading && hasLibrary && (
@@ -638,11 +754,26 @@ export function LibraryPanel(): React.JSX.Element {
           x={ctxMenu.x}
           y={ctxMenu.y}
           onClose={() => setCtxMenu(null)}
-          onPreview={() => { startPreview(ctxMenu.track); setCtxMenu(null) }}
-          onFindSimilar={() => { handleFindSimilar(ctxMenu.track); setCtxMenu(null) }}
-          onAddToSet={() => { addTrackAfterSelected(ctxMenu.track); setCtxMenu(null) }}
-          onEditCues={() => { handleEditCues(ctxMenu.track); setCtxMenu(null) }}
-          onShowCombos={() => { void handleShowCombos(ctxMenu.track); setCtxMenu(null) }}
+          onPreview={() => {
+            startPreview(ctxMenu.track)
+            setCtxMenu(null)
+          }}
+          onFindSimilar={() => {
+            handleFindSimilar(ctxMenu.track)
+            setCtxMenu(null)
+          }}
+          onAddToSet={() => {
+            addTrackAfterSelected(ctxMenu.track)
+            setCtxMenu(null)
+          }}
+          onEditCues={() => {
+            handleEditCues(ctxMenu.track)
+            setCtxMenu(null)
+          }}
+          onShowCombos={() => {
+            void handleShowCombos(ctxMenu.track)
+            setCtxMenu(null)
+          }}
         />
       )}
 
@@ -652,20 +783,41 @@ export function LibraryPanel(): React.JSX.Element {
           className="combos-overlay"
           role="dialog"
           aria-label={`Tracks played after ${combosData.track.title}`}
-          onClick={(e) => { if (e.target === e.currentTarget) setCombosData(null) }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setCombosData(null)
+          }}
         >
           <div className="combos-popover glass-3">
             <div className="combos-header">
               <div>
-                <div className="ss-label" style={{ color: 'var(--text-tertiary)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>After</div>
-                <div className="ss-body-sm" style={{ fontWeight: 500 }}>{combosData.track.title}</div>
+                <div
+                  className="ss-label"
+                  style={{
+                    color: 'var(--text-tertiary)',
+                    fontSize: 10,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em'
+                  }}
+                >
+                  After
+                </div>
+                <div className="ss-body-sm" style={{ fontWeight: 500 }}>
+                  {combosData.track.title}
+                </div>
               </div>
-              <button className="smart-filter-dismiss" onClick={() => setCombosData(null)} aria-label="Close">
+              <button
+                className="smart-filter-dismiss"
+                onClick={() => setCombosData(null)}
+                aria-label="Close"
+              >
                 <X size={12} strokeWidth={2} />
               </button>
             </div>
             {combosData.results.length === 0 ? (
-              <div className="ss-caption" style={{ color: 'var(--text-tertiary)', padding: '8px 0' }}>
+              <div
+                className="ss-caption"
+                style={{ color: 'var(--text-tertiary)', padding: '8px 0' }}
+              >
                 No play history yet. Import your Rekordbox performance data to see this.
               </div>
             ) : (
@@ -674,7 +826,9 @@ export function LibraryPanel(): React.JSX.Element {
                   <div key={c.track.id} className="combo-row">
                     <div className="combo-track">
                       <div className="ss-body-sm">{c.track.title}</div>
-                      <div className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>{c.track.artist}</div>
+                      <div className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
+                        {c.track.artist}
+                      </div>
                     </div>
                     <span className="combo-count ss-caption">{c.count}×</span>
                   </div>

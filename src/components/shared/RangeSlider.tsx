@@ -19,18 +19,18 @@ export function RangeSlider({
   high,
   onChange,
   formatLabel,
-  className,
+  className
 }: RangeSliderProps): React.JSX.Element {
   const range = max - min
   const lowPct = range === 0 ? 0 : ((low - min) / range) * 100
   const highPct = range === 0 ? 100 : ((high - min) / range) * 100
 
-  function handleLow(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleLow(e: React.ChangeEvent<HTMLInputElement>): void {
     const v = Math.min(Number(e.target.value), high - step)
     onChange(v, high)
   }
 
-  function handleHigh(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleHigh(e: React.ChangeEvent<HTMLInputElement>): void {
     const v = Math.max(Number(e.target.value), low + step)
     onChange(low, v)
   }
@@ -45,10 +45,7 @@ export function RangeSlider({
         {/* Visual track */}
         <div className="range-track" />
         {/* Chartreuse fill between handles */}
-        <div
-          className="range-fill"
-          style={{ left: `${lowPct}%`, width: `${highPct - lowPct}%` }}
-        />
+        <div className="range-fill" style={{ left: `${lowPct}%`, width: `${highPct - lowPct}%` }} />
         {/* Low handle — pointer-events on thumb only, not the track */}
         <input
           type="range"

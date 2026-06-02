@@ -4,7 +4,7 @@ import {
   tracksAfter,
   bestSequences,
   bridges,
-  terminalTracks,
+  terminalTracks
 } from '../electron/algorithms/memory/transitionGraph'
 
 describe('buildTransitionGraph', () => {
@@ -24,7 +24,11 @@ describe('buildTransitionGraph', () => {
   })
 
   it('accumulates counts across multiple sequences', () => {
-    const seqs = [['a', 'b', 'c'], ['a', 'b'], ['a', 'b']]
+    const seqs = [
+      ['a', 'b', 'c'],
+      ['a', 'b'],
+      ['a', 'b']
+    ]
     const g = buildTransitionGraph(seqs)
     expect(g.adjacency.get('a')?.get('b')).toBe(3) // seen 3 times
     expect(g.adjacency.get('b')?.get('c')).toBe(1) // only once
@@ -34,7 +38,7 @@ describe('buildTransitionGraph', () => {
     const g = buildTransitionGraph([
       ['x', 'y', 'z'],
       ['x', 'z'],
-      ['y', 'z'],
+      ['y', 'z']
     ])
     expect(g.adjacency.get('x')?.get('y')).toBe(1)
     expect(g.adjacency.get('x')?.get('z')).toBe(1)
@@ -50,9 +54,12 @@ describe('tracksAfter', () => {
 
   it('returns sorted-by-count results', () => {
     const seqs = [
-      ['a', 'b'], ['a', 'b'], ['a', 'b'],  // a→b: 3
-      ['a', 'c'], ['a', 'c'],               // a→c: 2
-      ['a', 'd'],                           // a→d: 1
+      ['a', 'b'],
+      ['a', 'b'],
+      ['a', 'b'], // a→b: 3
+      ['a', 'c'],
+      ['a', 'c'], // a→c: 2
+      ['a', 'd'] // a→d: 1
     ]
     const g = buildTransitionGraph(seqs)
     const after = tracksAfter(g, 'a')
@@ -84,7 +91,11 @@ describe('bestSequences', () => {
   })
 
   it('finds 2-track chains meeting minCount', () => {
-    const seqs = [['a', 'b'], ['a', 'b'], ['a', 'c']]
+    const seqs = [
+      ['a', 'b'],
+      ['a', 'b'],
+      ['a', 'c']
+    ]
     const g = buildTransitionGraph(seqs)
     const chains = bestSequences(g, 2, 2)
     expect(chains).toContainEqual(['a', 'b'])
@@ -92,7 +103,11 @@ describe('bestSequences', () => {
   })
 
   it('finds 3-track chains', () => {
-    const seqs = [['a', 'b', 'c'], ['a', 'b', 'c'], ['a', 'b', 'd']]
+    const seqs = [
+      ['a', 'b', 'c'],
+      ['a', 'b', 'c'],
+      ['a', 'b', 'd']
+    ]
     const g = buildTransitionGraph(seqs)
     const chains = bestSequences(g, 2, 3)
     expect(chains).toContainEqual(['a', 'b', 'c'])
@@ -123,7 +138,7 @@ describe('bridges', () => {
     // hub has: in from x,y; out to p,q → in=2, out=2 → qualifies
     const seqs = [
       ['x', 'hub', 'p'],
-      ['y', 'hub', 'q'],
+      ['y', 'hub', 'q']
     ]
     const g = buildTransitionGraph(seqs)
     const bs = bridges(g)
@@ -132,7 +147,7 @@ describe('bridges', () => {
 
   it('does NOT flag a node with only in=1 or out=1', () => {
     const seqs = [
-      ['a', 'mid', 'z'],  // mid has in=1, out=1
+      ['a', 'mid', 'z'] // mid has in=1, out=1
     ]
     const g = buildTransitionGraph(seqs)
     expect(bridges(g)).toHaveLength(0)
@@ -146,7 +161,7 @@ describe('bridges', () => {
       // hub2 with higher degree
       ['y1', 'hub2', 'q1'],
       ['y2', 'hub2', 'q2'],
-      ['y3', 'hub2', 'q3'],
+      ['y3', 'hub2', 'q3']
     ]
     const g = buildTransitionGraph(seqs)
     const bs = bridges(g)
@@ -175,7 +190,11 @@ describe('terminalTracks (dead-ends)', () => {
   })
 
   it('respects minOccurrences threshold', () => {
-    const seqs = [['a', 'b'], ['x', 'b'], ['p', 'q']]
+    const seqs = [
+      ['a', 'b'],
+      ['x', 'b'],
+      ['p', 'q']
+    ]
     // 'b' ends 2 sequences, 'q' ends 1 — with minOccurrences=2 only 'b' survives
     const result = terminalTracks(seqs, 2)
     expect(result).toHaveLength(1)
@@ -187,7 +206,7 @@ describe('terminalTracks (dead-ends)', () => {
       ['a', 'rare-end'],
       ['x', 'frequent-end'],
       ['y', 'frequent-end'],
-      ['z', 'frequent-end'],
+      ['z', 'frequent-end']
     ]
     const result = terminalTracks(seqs, 1)
     expect(result[0].trackId).toBe('frequent-end')

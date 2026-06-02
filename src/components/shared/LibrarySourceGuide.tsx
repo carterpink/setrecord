@@ -10,18 +10,18 @@ const STEPS: Step[] = [
   {
     icon: AppWindow,
     title: 'Open Rekordbox',
-    body: 'Launch the app on this Mac if it isn’t already running.',
+    body: 'Launch the app on this Mac if it isn’t already running.'
   },
   {
     icon: Download,
     title: 'File › Export Collection in xml format',
-    body: 'In the menu bar. Save the file anywhere — Desktop is fine.',
+    body: 'In the menu bar. Save the file anywhere — Desktop is fine.'
   },
   {
     icon: FolderOpen,
     title: 'Choose the file below',
-    body: 'SetSense reads the export read‑only — Rekordbox stays untouched.',
-  },
+    body: 'SetSense reads the export read‑only — Rekordbox stays untouched.'
+  }
 ]
 
 /**
@@ -37,7 +37,7 @@ export function LibrarySourceGuide(): React.JSX.Element {
         display: 'flex',
         flexDirection: 'column',
         gap: 16,
-        padding: '8px 0',
+        padding: '8px 0'
       }}
     >
       <div className="ss-body-sm" style={{ opacity: 0.7 }}>
@@ -50,7 +50,7 @@ export function LibrarySourceGuide(): React.JSX.Element {
           padding: 0,
           display: 'flex',
           flexDirection: 'column',
-          gap: 12,
+          gap: 12
         }}
       >
         {STEPS.map((step, idx) => (
@@ -63,7 +63,7 @@ export function LibrarySourceGuide(): React.JSX.Element {
               padding: '12px 14px',
               borderRadius: 10,
               background: 'var(--surface-2)',
-              border: '1px solid var(--border-subtle)',
+              border: '1px solid var(--border-subtle)'
             }}
           >
             <div
@@ -80,16 +80,13 @@ export function LibrarySourceGuide(): React.JSX.Element {
                 justifyContent: 'center',
                 fontSize: 12,
                 fontWeight: 600,
-                fontVariantNumeric: 'tabular-nums',
+                fontVariantNumeric: 'tabular-nums'
               }}
             >
               {idx + 1}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                className="ss-label"
-                style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-              >
+              <div className="ss-label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <step.icon size={15} strokeWidth={1.6} aria-hidden="true" />
                 <span>{step.title}</span>
               </div>

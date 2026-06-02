@@ -241,9 +241,7 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
           {rule.type === 'keyCompat' && (
             <select
               value={rule.keyCompatibleWith ?? ''}
-              onChange={(e) =>
-                updateRule(i, { keyCompatibleWith: e.target.value || undefined })
-              }
+              onChange={(e) => updateRule(i, { keyCompatibleWith: e.target.value || undefined })}
             >
               <option value="">— pick —</option>
               {CAMELOT_KEYS.map((k) => (
@@ -502,11 +500,7 @@ export function CratesSection(): React.JSX.Element {
               <button type="button" className="btn-primary" onClick={() => void handleFlag()}>
                 Flag for next gig
               </button>
-              <button
-                type="button"
-                className="btn-ghost"
-                onClick={() => setChecked(new Set())}
-              >
+              <button type="button" className="btn-ghost" onClick={() => setChecked(new Set())}>
                 Clear
               </button>
             </div>

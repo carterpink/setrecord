@@ -24,24 +24,16 @@ export function EmptyState({ icon: Icon, title, body, cta }: EmptyStateProps): R
         justifyContent: 'center',
         padding: '32px 16px',
         textAlign: 'center',
-        gap: 8,
+        gap: 8
       }}
     >
-      <Icon
-        size={32}
-        strokeWidth={1.5}
-        style={{ opacity: 0.35, marginBottom: 4 }}
-      />
+      <Icon size={32} strokeWidth={1.5} style={{ opacity: 0.35, marginBottom: 4 }} />
       <div className="ss-h3">{title}</div>
       <div className="ss-body-sm" style={{ opacity: 0.55, maxWidth: 240 }}>
         {body}
       </div>
       {cta && (
-        <button
-          className="btn btn-secondary"
-          style={{ marginTop: 8 }}
-          onClick={cta.onClick}
-        >
+        <button className="btn btn-secondary" style={{ marginTop: 8 }} onClick={cta.onClick}>
           {cta.label}
         </button>
       )}

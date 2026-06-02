@@ -5,11 +5,11 @@ import type {
   ComboResult,
   CrateWithCount,
   CuePoint,
-  DiscoverSet,
   EnergySource,
   GemResult,
   HealthReport,
   HotCue,
+  Loop,
   IdentitySnapshot,
   LifecycleCounts,
   ImportProgress,
@@ -31,7 +31,6 @@ import type {
   Set as DJSet,
   SetTrack,
   SmartCrate,
-  TasteProfile,
   Track,
   TransitionScore,
   Suggestion,
@@ -41,7 +40,6 @@ import type {
   ExportResult
 } from '../src/types'
 import type { AppSettings } from './services/settingsService'
-import type { ValidateApiKeyResult } from './services/discovery/youtubeClient'
 
 export interface EnergyProgress {
   processed: number
@@ -98,7 +96,13 @@ declare global {
       saveSet: (set: DJSet) => Promise<DJSet | null>
       deleteSet: (id: string) => Promise<void>
       // Algorithms (Phase 4-5)
-      getSuggestions: (trackId: string, setId: string, count: number, excludeIds?: string[], sourcePlaylistIds?: string[]) => Promise<Suggestion[]>
+      getSuggestions: (
+        trackId: string,
+        setId: string,
+        count: number,
+        excludeIds?: string[],
+        sourcePlaylistIds?: string[]
+      ) => Promise<Suggestion[]>
       scoreTransition: (fromId: string, toId: string) => Promise<TransitionScore | null>
       buildSet: (params: ArchitectParams) => Promise<SetTrack[]>
       validateForExport: (setId: string, hardware: CDJModel) => Promise<ValidationResult | null>
@@ -106,9 +110,13 @@ declare global {
       triggerHealthCheck: () => Promise<void>
       analyseEnergy: () => Promise<{ running: boolean }>
       energyPendingCount: () => Promise<number>
-      onFileStatusUpdate: (cb: (changes: Array<{ id: string; missing: boolean }>) => void) => () => void
+      onFileStatusUpdate: (
+        cb: (changes: Array<{ id: string; missing: boolean }>) => void
+      ) => () => void
       // Cue points (Phase 6)
       updateTrackCues: (trackId: string, cuePoints: CuePoint[], hotCues: HotCue[]) => Promise<void>
+      updateTrackBeatgrid: (trackId: string, bpm: number, beatgridOffset: number) => Promise<void>
+      updateTrackLoops: (trackId: string, loops: Loop[]) => Promise<void>
       setTrackEnergy: (trackId: string, energy: number) => Promise<void>
       updateTrackMeta: (trackId: string, fields: { bpm?: number; key?: string }) => Promise<void>
       relinkTrackFile: (trackId: string) => Promise<string | null>
@@ -119,14 +127,14 @@ declare global {
       // Settings (Phase 8)
       getSettings: () => Promise<AppSettings>
       setSettings: (partial: Partial<AppSettings>) => Promise<AppSettings>
-      validateYoutubeApiKey: (key: string) => Promise<ValidateApiKeyResult>
       // Licensing / SetSense Pro (Section 16)
       licenseGet: () => Promise<LicenseState>
       licenseActivate: (key: string) => Promise<LicenseActivationResult>
       licenseDeactivate: () => Promise<LicenseState>
+      licenseRefresh: () => Promise<LicenseState>
       licenseCheckout: (plan: CheckoutPlan, tipAmount?: number) => Promise<boolean>
-      // Shell — Discover (open Beatport/SoundCloud/YouTube links)
-      openExternal: (url: string) => Promise<boolean>
+      licenseConsumePendingActivation: () => Promise<string | null>
+      onLicenseActivateDeepLink: (cb: (key: string) => void) => () => void
       // Customer feedback (opens a pre-filled mail draft)
       submitFeedback: (payload: {
         category: string
@@ -154,26 +162,27 @@ declare global {
       usbForget: (id: string) => Promise<void>
       usbCopyToUSB: (srcPath: string, mountPath: string, filename: string) => Promise<USBCopyResult>
       onUsbDevicesChanged: (cb: (devices: USBDevice[]) => void) => () => void
-      // Discovery (Phase 2)
-      discoverBrowse: (
-        tasteProfile: TasteProfile,
-        opts?: { genres?: string[]; pageToken?: string | null; forceRefresh?: boolean; pageSize?: number },
-      ) => Promise<{ sets: DiscoverSet[]; nextPageToken: string | null; hasMore: boolean; error?: { code: string; message: string } }>
-      discoverGetTracklist: (
-        videoId: string,
-      ) => Promise<{ tracklist: import('../src/types').DiscoverTrack[]; confidence: number; source: string } | null>
-      discoverRefreshSet: (videoId: string, tasteProfile: TasteProfile) => Promise<DiscoverSet | null>
       // Play history (Phase 11)
       historySessions: () => Promise<PlaySession[]>
       historySessionTracks: (sessionId: string) => Promise<SessionTrack[]>
       historyForTrack: (trackId: string) => Promise<PlaySession[]>
-      historyMarkPerformed: (setId: string, opts?: { performedAt?: string; venue?: string }) => Promise<string | null>
+      historyMarkPerformed: (
+        setId: string,
+        opts?: { performedAt?: string; venue?: string }
+      ) => Promise<string | null>
       historyDelete: (sessionId: string) => Promise<void>
       historyImportFile: () => Promise<{ sessions: number; tracks: number }>
-      setTrackLifecycle: (trackId: string, state: string | null, source: 'computed' | 'user') => Promise<void>
+      setTrackLifecycle: (
+        trackId: string,
+        state: string | null,
+        source: 'computed' | 'user'
+      ) => Promise<void>
       // Flag-for-gig loop (Phase 14)
       lifecycleFlagForGig: (trackIds: string[]) => Promise<void>
-      lifecycleResolveGigFlag: (trackId: string, outcome: 'tested' | 'archive' | 'keep') => Promise<void>
+      lifecycleResolveGigFlag: (
+        trackId: string,
+        outcome: 'tested' | 'archive' | 'keep'
+      ) => Promise<void>
       lifecycleGetFlagged: () => Promise<Track[]>
       lifecycleFlaggedInSession: (sessionId: string) => Promise<Track[]>
       // Recall / memory engine (Phase 12)
@@ -189,10 +198,7 @@ declare global {
       recallIdentity: () => Promise<IdentitySnapshot>
       recallHealth: () => Promise<HealthReport>
       recallDismissDuplicate: (normalisedKey: string) => Promise<void>
-      recallResolveDuplicateGroup: (
-        normalisedKey: string,
-        archiveIds: string[]
-      ) => Promise<void>
+      recallResolveDuplicateGroup: (normalisedKey: string, archiveIds: string[]) => Promise<void>
       recallSearch: (params: LibrarySearchParams) => Promise<Track[]>
       // Recall local-AI layer (Phase 13)
       recallAiStatus: () => Promise<RecallAiStatus>

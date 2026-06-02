@@ -25,7 +25,7 @@ export function Button({
   const variantClass: Record<Variant, string> = {
     primary: 'btn-primary',
     secondary: 'btn-secondary',
-    ghost: 'btn-ghost',
+    ghost: 'btn-ghost'
   }
 
   return (

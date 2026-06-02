@@ -17,6 +17,16 @@ export interface HotCue {
   label?: string
 }
 
+/** A saved loop region (Rekordbox-style). */
+export interface Loop {
+  startMs: number
+  endMs: number
+  /** Optional length in beats, when the loop was set as a beat-loop. */
+  beats?: number
+  name?: string
+  color?: string
+}
+
 export type AudioFormat = 'mp3' | 'aiff' | 'wav' | 'flac' | 'm4a' | 'unknown'
 
 /** Where the current `energy` value came from. */
@@ -70,6 +80,8 @@ export interface Track {
   albumArtSource?: ArtworkSource
   cuePoints: CuePoint[]
   hotCues: HotCue[]
+  loops?: Loop[]
+  /** ms position of the first downbeat (beat 1 of bar 1). Anchors the beatgrid. */
   beatgridOffset?: number // ms
   playCount: number
   rating: number // 0-5 stars
@@ -90,7 +102,7 @@ export interface Track {
   lifecycleSource?: 'computed' | 'user'
   /** ISO timestamp of when the user flagged this track to be tested at their next gig. */
   flaggedForGigAt?: string
-  /** Populated for phantom tracks — links to buy/download and source set context. */
+  /** Stored in DB for phantom tracks imported from the old YouTube Discover feature. No longer rendered in UI. */
   discoverMeta?: {
     discoverSetId: string
     discoverSetTitle: string
@@ -193,7 +205,8 @@ export interface Suggestion {
 export interface LibraryStats {
   totalTracks: number
   totalDuration: number // seconds
-  missingFiles: number
+  missingFiles: number // tracks flagged missing_file = 1 (unavailable on disk)
+  unknownSize: number // tracks with no file_size recorded (metadata gap, not a missing file)
   unsupportedFormats: number
   tracksWithoutKey: number
   tracksWithoutBpm: number
@@ -332,80 +345,9 @@ export interface Playlist {
 
 // ───────── App-shell UI state ─────────
 
-export type AppMode = 'Prepare' | 'YouTubeDiscover' | 'Discover'
+export type AppMode = 'Prepare' | 'Recall'
 export type LibraryTab = 'Library' | 'Crates' | 'Sets'
 export type TimelineCurveView = 'Energy' | 'BPM'
-
-// ───────── Discover ─────────
-
-export type DiscoverTab = 'following' | 'explore'
-export type DiscoverSortMode = 'recommended' | 'newest' | 'mostViewed'
-
-export interface DiscoverFilters {
-  genres: string[]
-  durationBuckets: Array<'<60' | '60-120' | '120-180' | '>180'>
-  minViews: number
-  uploadedSince: 'week' | 'month' | 'year' | 'all'
-}
-
-export type ClarityKind = 'following-dj' | 'plays-artist' | 'matches-genre' | 'trending'
-
-export interface ClarityReason {
-  kind: ClarityKind
-  label: string
-  tooltip: string
-  matchedValue?: string
-}
-
-export interface DiscoverTrack {
-  id: string
-  position: number
-  artist: string
-  title: string
-  rawText: string
-  startSeconds?: number
-  durationSeconds?: number
-  confidence: number
-}
-
-export interface DiscoverSet {
-  id: string
-  videoId: string
-  title: string
-  djName: string
-  eventName?: string
-  description: string
-  thumbnailUrl: string
-  durationSeconds: number
-  viewCount: number
-  likeCount?: number
-  uploadedAt: string
-  tags: string[]
-  tracklist: DiscoverTrack[]
-  tracklistConfidence: number
-  tracklistSource?: 'description' | 'comments' | 'mixed'
-  clarity: ClarityReason
-}
-
-export interface TasteProfile {
-  favouriteArtists: string[]
-  favouriteGenres: string[]
-  followedDJs: string[]
-}
-
-export interface DiscoverTrackMatch {
-  discoverTrack: DiscoverTrack
-  match: Track | null
-  score: number
-}
-
-export interface BulkImportPreview {
-  setName: string
-  matches: DiscoverTrackMatch[]
-  matchedCount: number
-  unmatchedCount: number
-  alreadyInSetCount: number
-}
 
 // ───────── USB Devices ─────────
 
@@ -724,8 +666,21 @@ export interface RecallConversation {
 
 export type LicenseTier = 'free' | 'pro'
 export type LicensePlan = 'lifetime' | 'subscription'
-/** active = entitled now · expired = subscription lapsed · invalid = bad/forged key · none = no key. */
-export type LicenseStatus = 'active' | 'expired' | 'invalid' | 'none'
+/**
+ * active = entitled now · expired = subscription lapsed · invalid = bad/forged key ·
+ * device-mismatch = valid key bound to another machine · revoked = killed by the
+ * online gateway (refund/charge-back) · none = no key · trial = inside the free
+ * post-import Pro trial · trial-expired = trial used up, no paid key.
+ */
+export type LicenseStatus =
+  | 'active'
+  | 'expired'
+  | 'invalid'
+  | 'none'
+  | 'device-mismatch'
+  | 'revoked'
+  | 'trial'
+  | 'trial-expired'
 
 /**
  * The renderer-facing entitlement snapshot. Derived in the main process by
@@ -744,9 +699,25 @@ export interface LicenseState {
   activatedAt: string | null
   /** ISO expiry for subscription plans. null = perpetual (lifetime). */
   expiresAt: string | null
+  /** True when the key is locked to a specific device (v2, non-portable). */
+  deviceBound: boolean
+  /** True when the key is explicitly transferable across devices. */
+  portable: boolean
+  /** True when the system clock appears to have jumped backwards — surfaced softly, never bricks. */
+  clockWarning: boolean
+  /** ISO end of the free post-import Pro trial. Set whenever a trial has ever started (active or expired). */
+  trialEndsAt: string | null
+  /** Whole days left in the trial (≥1 while active, 0 once expired). null when no trial has started. */
+  trialDaysRemaining: number | null
 }
 
-export type LicenseActivationError = 'malformed' | 'bad-signature' | 'expired' | 'unknown'
+export type LicenseActivationError =
+  | 'malformed'
+  | 'bad-signature'
+  | 'expired'
+  | 'device-mismatch'
+  | 'revoked'
+  | 'unknown'
 
 export interface LicenseActivationResult {
   ok: boolean

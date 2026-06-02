@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import FocusLock from 'react-focus-lock'
 import { X, Check, Sparkles, Heart, KeyRound, Loader2 } from 'lucide-react'
 import { Button } from '@/components/shared/Button'
@@ -13,20 +13,31 @@ const ACTIVATION_MESSAGES: Record<LicenseActivationError, string> = {
   malformed: 'That key doesn’t look right. Paste the full key from your confirmation email.',
   'bad-signature': 'This key couldn’t be verified. Check for a typo, or contact support.',
   expired: 'This key has expired. Renew your subscription to reactivate Pro.',
-  unknown: 'Something went wrong activating that key. Try again in a moment.',
+  'device-mismatch':
+    'This key is already activated on another device. Deactivate it there first, or contact support to move your licence.',
+  revoked:
+    'This licence has been cancelled or refunded. If that’s a mistake, contact support and we’ll sort it out.',
+  unknown: 'Something went wrong activating that key. Try again in a moment.'
 }
 
 export function UpgradeModal(): React.JSX.Element {
   const closeModal = useUiStore((s) => s.closeModal)
   const upgradeContext = useUiStore((s) => s.upgradeContext)
+  const pendingActivationKey = useUiStore((s) => s.pendingActivationKey)
+  const clearPendingActivationKey = useUiStore((s) => s.clearPendingActivationKey)
   const checkout = useLicenseStore((s) => s.checkout)
   const activate = useLicenseStore((s) => s.activate)
   const isPro = useLicenseStore((s) => s.license.tier === 'pro')
+  const licenseStatus = useLicenseStore((s) => s.license.status)
+  const trialDaysRemaining = useLicenseStore((s) => s.license.trialDaysRemaining)
+  // A trial unlocks everything (tier === 'pro') but should still see the upsell.
+  const onTrial = licenseStatus === 'trial'
 
   const [keyInput, setKeyInput] = useState('')
   const [activating, setActivating] = useState(false)
   const [activationError, setActivationError] = useState<LicenseActivationError | null>(null)
   const [showKeyEntry, setShowKeyEntry] = useState(false)
+  const autoActivatedRef = useRef(false)
 
   const feature = upgradeContext ? PRO_FEATURES[upgradeContext] : null
 
@@ -34,8 +45,8 @@ export function UpgradeModal(): React.JSX.Element {
     void checkout(plan, tip)
   }
 
-  const handleActivate = async (): Promise<void> => {
-    const key = keyInput.trim()
+  const handleActivate = async (rawKey?: string): Promise<void> => {
+    const key = (rawKey ?? keyInput).trim()
     if (!key || activating) return
     setActivating(true)
     setActivationError(null)
@@ -52,6 +63,19 @@ export function UpgradeModal(): React.JSX.Element {
       setActivating(false)
     }
   }
+
+  // A deep-link delivered a key: reveal the field, pre-fill it, and activate
+  // automatically (once). The manual-paste UI stays as the fallback on error.
+  useEffect(() => {
+    if (!pendingActivationKey || autoActivatedRef.current) return
+    autoActivatedRef.current = true
+    setShowKeyEntry(true)
+    setKeyInput(pendingActivationKey)
+    void handleActivate(pendingActivationKey)
+    clearPendingActivationKey()
+    // handleActivate/clearPendingActivationKey are stable enough for a one-shot run.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingActivationKey])
 
   return (
     <motion.div
@@ -77,20 +101,28 @@ export function UpgradeModal(): React.JSX.Element {
         >
           <div className="modal-header">
             <div className="upgrade-title">
-              <Sparkles size={18} strokeWidth={1.7} className="upgrade-title-icon" aria-hidden="true" />
+              <Sparkles
+                size={18}
+                strokeWidth={1.7}
+                className="upgrade-title-icon"
+                aria-hidden="true"
+              />
               <span className="ss-h2">SetSense Pro</span>
             </div>
             <IconButton icon={X} size="sm" aria-label="Close" onClick={closeModal} />
           </div>
 
           <div className="modal-body">
-            {isPro ? (
+            {isPro && !onTrial ? (
               <div className="upgrade-success">
                 <div className="upgrade-success-icon">
                   <Check size={28} strokeWidth={2.2} />
                 </div>
                 <h3 className="ss-h3">You’re on Pro</h3>
-                <p className="ss-body-sm" style={{ color: 'var(--text-secondary)', textAlign: 'center' }}>
+                <p
+                  className="ss-body-sm"
+                  style={{ color: 'var(--text-secondary)', textAlign: 'center' }}
+                >
                   Everything’s unlocked — suggestions, Set Architect, Recall, Export and more.
                   Thanks for supporting SetSense.
                 </p>
@@ -100,10 +132,22 @@ export function UpgradeModal(): React.JSX.Element {
               </div>
             ) : (
               <>
-                {feature && (
+                {onTrial ? (
                   <div className="upgrade-context">
-                    <strong>{feature.label}</strong> is a Pro feature — {feature.blurb}
+                    <strong>
+                      You’re on a Pro trial —{' '}
+                      {trialDaysRemaining === 1 ? '1 day left' : `${trialDaysRemaining ?? 0} days left`}
+                      .
+                    </strong>{' '}
+                    Upgrade any time to keep Suggestions, Set Architect, Recall and Export when the
+                    trial ends.
                   </div>
+                ) : (
+                  feature && (
+                    <div className="upgrade-context">
+                      <strong>{feature.label}</strong> is a Pro feature — {feature.blurb}
+                    </div>
+                  )
                 )}
 
                 <div className="upgrade-plans">
@@ -115,7 +159,11 @@ export function UpgradeModal(): React.JSX.Element {
                       <span className="upgrade-plan-amount">{PRO_PRICING.subscription.price}</span>
                       <span className="upgrade-plan-period">{PRO_PRICING.subscription.period}</span>
                     </div>
-                    <Button variant="secondary" onClick={() => handleCheckout('subscription')} style={{ width: '100%' }}>
+                    <Button
+                      variant="secondary"
+                      onClick={() => handleCheckout('subscription')}
+                      style={{ width: '100%' }}
+                    >
                       Subscribe
                     </Button>
                   </div>
@@ -129,7 +177,11 @@ export function UpgradeModal(): React.JSX.Element {
                       <span className="upgrade-plan-amount">{PRO_PRICING.lifetime.price}</span>
                       <span className="upgrade-plan-period">{PRO_PRICING.lifetime.period}</span>
                     </div>
-                    <Button variant="primary" onClick={() => handleCheckout('lifetime')} style={{ width: '100%' }}>
+                    <Button
+                      variant="primary"
+                      onClick={() => handleCheckout('lifetime')}
+                      style={{ width: '100%' }}
+                    >
                       Buy lifetime
                     </Button>
                   </div>
@@ -167,6 +219,13 @@ export function UpgradeModal(): React.JSX.Element {
                 </div>
 
                 <div className="upgrade-restore">
+                  <p
+                    className="ss-caption"
+                    style={{ color: 'var(--text-tertiary)', marginBottom: 8 }}
+                  >
+                    After checkout, SetSense will activate automatically. If not, paste your key
+                    here.
+                  </p>
                   {showKeyEntry ? (
                     <div className="upgrade-key">
                       <label className="ss-label" htmlFor="license-key-input">
@@ -196,7 +255,11 @@ export function UpgradeModal(): React.JSX.Element {
                           onClick={() => void handleActivate()}
                           disabled={!keyInput.trim() || activating}
                         >
-                          {activating ? <Loader2 size={16} className="spin" aria-hidden="true" /> : 'Activate'}
+                          {activating ? (
+                            <Loader2 size={16} className="spin" aria-hidden="true" />
+                          ) : (
+                            'Activate'
+                          )}
                         </Button>
                       </div>
                       {activationError && (
@@ -206,7 +269,11 @@ export function UpgradeModal(): React.JSX.Element {
                       )}
                     </div>
                   ) : (
-                    <button type="button" className="upgrade-restore-link" onClick={() => setShowKeyEntry(true)}>
+                    <button
+                      type="button"
+                      className="upgrade-restore-link"
+                      onClick={() => setShowKeyEntry(true)}
+                    >
                       <KeyRound size={14} strokeWidth={1.7} aria-hidden="true" />
                       Already purchased? Enter your key
                     </button>

@@ -72,7 +72,14 @@ export interface MasterDb {
  *  - all other errors             → re-thrown with context
  */
 export async function openMasterDb(path: string): Promise<MasterDb> {
-  const sqlite3Module = (sqlcipher as { verbose: () => { Database: new (...args: unknown[]) => Sqlite3Database; OPEN_READONLY: number } }).verbose()
+  const sqlite3Module = (
+    sqlcipher as {
+      verbose: () => {
+        Database: new (...args: unknown[]) => Sqlite3Database
+        OPEN_READONLY: number
+      }
+    }
+  ).verbose()
   const { Database, OPEN_READONLY } = sqlite3Module
 
   const db = await new Promise<Sqlite3Database>((resolve, reject) => {
@@ -85,7 +92,7 @@ export async function openMasterDb(path: string): Promise<MasterDb> {
   // Apply cipher pragmas. Compatibility 4 matches Rekordbox 6/7's SQLCipher version.
   await runSerialized(db, [
     `PRAGMA cipher_compatibility = 4`,
-    `PRAGMA key = "x'${REKORDBOX_MASTER_DB_KEY}'"`,
+    `PRAGMA key = "x'${REKORDBOX_MASTER_DB_KEY}'"`
   ])
 
   // Sanity-check by reading sqlite_master. If the key is wrong, this throws
@@ -109,9 +116,11 @@ export async function openMasterDb(path: string): Promise<MasterDb> {
       }),
     get: <T>(sql: string, params: unknown[] = []): Promise<T | null> =>
       new Promise((resolve, reject) => {
-        db.get(sql, params, (err, row) => (err ? reject(err) : resolve((row as T | undefined) ?? null)))
+        db.get(sql, params, (err, row) =>
+          err ? reject(err) : resolve((row as T | undefined) ?? null)
+        )
       }),
-    close: (): Promise<void> => closeQuiet(db),
+    close: (): Promise<void> => closeQuiet(db)
   }
 }
 
@@ -146,10 +155,7 @@ function translateOpenError(err: Error): Error {
   if (/SQLITE_BUSY/i.test(msg) || /database is locked/i.test(msg)) {
     return new RekordboxLockedError()
   }
-  if (
-    /SQLITE_NOTADB/i.test(msg) ||
-    /file is (?:not a database|encrypted)/i.test(msg)
-  ) {
+  if (/SQLITE_NOTADB/i.test(msg) || /file is (?:not a database|encrypted)/i.test(msg)) {
     return new RekordboxKeyMismatchError()
   }
   return err

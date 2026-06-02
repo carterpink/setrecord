@@ -24,7 +24,11 @@ import type { SmartCrateRow } from '../db/queries'
 import { findForgottenGems } from '../algorithms/memory/forgottenGems'
 import { evaluateCrate, SEED_CRATES } from '../algorithms/memory/smartCrates'
 import { classifyAll } from '../algorithms/memory/lifecycle'
-import { buildTransitionGraph, tracksAfter, terminalTracks } from '../algorithms/memory/transitionGraph'
+import {
+  buildTransitionGraph,
+  tracksAfter,
+  terminalTracks
+} from '../algorithms/memory/transitionGraph'
 import { buildIdentity } from '../algorithms/memory/identity'
 import { analyzeHealth } from '../algorithms/memory/libraryHealth'
 import { analyzeEnds } from '../algorithms/memory/closers'

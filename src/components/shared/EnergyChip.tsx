@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
+import { Coachmark } from '@/components/learn/Coachmark'
 
 interface EnergyChipProps {
   value: number
@@ -16,7 +17,7 @@ export function EnergyChip({
   isOverride,
   editable,
   onChange,
-  className,
+  className
 }: EnergyChipProps): React.JSX.Element {
   const [editing, setEditing] = useState(false)
   const chipRef = useRef<HTMLSpanElement>(null)
@@ -55,7 +56,11 @@ export function EnergyChip({
     return (
       <span
         ref={chipRef}
-        className={clsx('nrg-chip nrg-chip--editing', isOverride && 'nrg-chip--override', className)}
+        className={clsx(
+          'nrg-chip nrg-chip--editing',
+          isOverride && 'nrg-chip--override',
+          className
+        )}
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.key === 'Escape' && setEditing(false)}
@@ -85,36 +90,34 @@ export function EnergyChip({
   }
 
   return (
-    <span
-      ref={chipRef}
-      className={clsx(
-        'nrg-chip',
-        editable && 'nrg-chip--clickable',
-        isOverride && 'nrg-chip--override',
-        className,
-      )}
-      title={
-        isOverride
-          ? `Energy: ${value}/10 (manually set)`
-          : `Energy: ${value}/10`
-      }
-      aria-label={`Energy ${value} of 10`}
-      role={editable ? 'button' : undefined}
-      tabIndex={editable ? 0 : undefined}
-      onClick={(e) => {
-        if (!editable) return
-        e.stopPropagation()
-        setEditing(true)
-      }}
-      onKeyDown={(e) => {
-        if (!editable) return
-        if (e.key === 'Enter' || e.key === ' ') {
+    <Coachmark concept="energy">
+      <span
+        ref={chipRef}
+        className={clsx(
+          'nrg-chip',
+          editable && 'nrg-chip--clickable',
+          isOverride && 'nrg-chip--override',
+          className
+        )}
+        title={isOverride ? `Energy: ${value}/10 (manually set)` : `Energy: ${value}/10`}
+        aria-label={`Energy ${value} of 10`}
+        role={editable ? 'button' : undefined}
+        tabIndex={editable ? 0 : undefined}
+        onClick={(e) => {
+          if (!editable) return
           e.stopPropagation()
           setEditing(true)
-        }
-      }}
-    >
-      {value}
-    </span>
+        }}
+        onKeyDown={(e) => {
+          if (!editable) return
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.stopPropagation()
+            setEditing(true)
+          }
+        }}
+      >
+        {value}
+      </span>
+    </Coachmark>
   )
 }

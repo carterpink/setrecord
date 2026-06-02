@@ -10,7 +10,7 @@ import {
   Trash2,
   Pencil,
   X,
-  Usb,
+  Usb
 } from 'lucide-react'
 import { motion, AnimatePresence } from '@/components/shared/Motion'
 import { useUSBStore } from '@/stores/usbStore'
@@ -55,7 +55,7 @@ function filesystemColor(fs: string): string {
 
 // ─── Storage bar ─────────────────────────────────────────────────────────────
 
-function StorageBar({ percentUsed }: { percentUsed: number }) {
+function StorageBar({ percentUsed }: { percentUsed: number }): React.JSX.Element {
   const color =
     percentUsed > 90
       ? 'var(--semantic-danger)'
@@ -64,15 +64,30 @@ function StorageBar({ percentUsed }: { percentUsed: number }) {
         : 'var(--accent)'
 
   return (
-    <div className="usb-storage-bar" role="progressbar" aria-valuenow={percentUsed} aria-valuemin={0} aria-valuemax={100}>
-      <div className="usb-storage-bar-fill" style={{ width: `${percentUsed}%`, background: color }} />
+    <div
+      className="usb-storage-bar"
+      role="progressbar"
+      aria-valuenow={percentUsed}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
+      <div
+        className="usb-storage-bar-fill"
+        style={{ width: `${percentUsed}%`, background: color }}
+      />
     </div>
   )
 }
 
 // ─── Rename input ─────────────────────────────────────────────────────────────
 
-function RenameInput({ device, onDone }: { device: USBDevice; onDone: () => void }) {
+function RenameInput({
+  device,
+  onDone
+}: {
+  device: USBDevice
+  onDone: () => void
+}): React.JSX.Element {
   const [value, setValue] = useState(device.customName ?? device.label)
   const inputRef = useRef<HTMLInputElement>(null)
   const updatePrefs = useUSBStore((s) => s.updatePrefs)
@@ -83,7 +98,7 @@ function RenameInput({ device, onDone }: { device: USBDevice; onDone: () => void
     inputRef.current?.select()
   }, [])
 
-  async function submit() {
+  async function submit(): Promise<void> {
     const trimmed = value.trim()
     if (trimmed && trimmed !== (device.customName ?? device.label)) {
       await updatePrefs(device.id, { customName: trimmed })
@@ -101,12 +116,20 @@ function RenameInput({ device, onDone }: { device: USBDevice; onDone: () => void
         maxLength={48}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') { e.preventDefault(); void submit() }
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            void submit()
+          }
           if (e.key === 'Escape') onDone()
         }}
         aria-label="Rename USB drive"
       />
-      <button type="button" className="usb-rename-ok" onClick={() => void submit()} aria-label="Save name">
+      <button
+        type="button"
+        className="usb-rename-ok"
+        onClick={() => void submit()}
+        aria-label="Save name"
+      >
         <Check size={13} strokeWidth={2} />
       </button>
     </div>
@@ -115,7 +138,7 @@ function RenameInput({ device, onDone }: { device: USBDevice; onDone: () => void
 
 // ─── Device card — connected ──────────────────────────────────────────────────
 
-function DeviceCard({ device }: { device: USBDevice }) {
+function DeviceCard({ device }: { device: USBDevice }): React.JSX.Element {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const { renamingDeviceId, setRenamingDeviceId, testingSpeedIds, updatePrefs, runSpeedTest } =
@@ -130,7 +153,7 @@ function DeviceCard({ device }: { device: USBDevice }) {
   // Close menu on outside click
   useEffect(() => {
     if (!menuOpen) return
-    function handler(e: MouseEvent) {
+    function handler(e: MouseEvent): void {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false)
       }
@@ -139,11 +162,11 @@ function DeviceCard({ device }: { device: USBDevice }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [menuOpen])
 
-  async function toggleFavorite() {
+  async function toggleFavorite(): Promise<void> {
     await updatePrefs(device.id, { isFavorite: !device.isFavorite })
   }
 
-  async function toggleExportTarget() {
+  async function toggleExportTarget(): Promise<void> {
     await updatePrefs(device.id, { isExportTarget: !device.isExportTarget })
     success(
       device.isExportTarget
@@ -152,7 +175,7 @@ function DeviceCard({ device }: { device: USBDevice }) {
     )
   }
 
-  async function handleSpeedTest() {
+  async function handleSpeedTest(): Promise<void> {
     setMenuOpen(false)
     try {
       await runSpeedTest(device.id, device.mountPath)
@@ -162,11 +185,18 @@ function DeviceCard({ device }: { device: USBDevice }) {
   }
 
   return (
-    <div className={`usb-device-card glass-1 ${device.isExportTarget ? 'usb-device-card--target' : ''}`}>
+    <div
+      className={`usb-device-card glass-1 ${device.isExportTarget ? 'usb-device-card--target' : ''}`}
+    >
       {/* Header row */}
       <div className="usb-card-header">
         <div className="usb-card-name-row">
-          <Usb size={13} strokeWidth={1.7} style={{ color: 'var(--accent)', flexShrink: 0 }} aria-hidden="true" />
+          <Usb
+            size={13}
+            strokeWidth={1.7}
+            style={{ color: 'var(--accent)', flexShrink: 0 }}
+            aria-hidden="true"
+          />
           {isRenaming ? (
             <RenameInput device={device} onDone={() => setRenamingDeviceId(null)} />
           ) : (
@@ -193,7 +223,11 @@ function DeviceCard({ device }: { device: USBDevice }) {
               }
               transition={{ duration: 0.42, ease: [0.32, 0.72, 0, 1] }}
             >
-              <Star size={13} strokeWidth={1.7} fill={device.isFavorite ? 'currentColor' : 'none'} />
+              <Star
+                size={13}
+                strokeWidth={1.7}
+                fill={device.isFavorite ? 'currentColor' : 'none'}
+              />
             </motion.span>
           </motion.button>
           {/* Export target */}
@@ -209,11 +243,7 @@ function DeviceCard({ device }: { device: USBDevice }) {
           >
             <motion.span
               style={{ display: 'inline-flex' }}
-              animate={
-                device.isExportTarget
-                  ? { scale: [1, 1.45, 0.88, 1.12, 1] }
-                  : { scale: 1 }
-              }
+              animate={device.isExportTarget ? { scale: [1, 1.45, 0.88, 1.12, 1] } : { scale: 1 }}
               transition={{ duration: 0.38, ease: [0.32, 0.72, 0, 1] }}
             >
               <Check size={13} strokeWidth={2} />
@@ -244,7 +274,10 @@ function DeviceCard({ device }: { device: USBDevice }) {
                     type="button"
                     className="usb-menu-item"
                     role="menuitem"
-                    onClick={() => { setMenuOpen(false); setRenamingDeviceId(device.id) }}
+                    onClick={() => {
+                      setMenuOpen(false)
+                      setRenamingDeviceId(device.id)
+                    }}
                   >
                     <Pencil size={12} strokeWidth={1.7} />
                     Rename
@@ -270,7 +303,9 @@ function DeviceCard({ device }: { device: USBDevice }) {
       <StorageBar percentUsed={device.percentUsed} />
       <div className="usb-storage-label ss-caption">
         <span>{formatBytes(device.freeBytes)} free</span>
-        <span>{formatBytes(device.totalBytes)} total · {device.percentUsed}% used</span>
+        <span>
+          {formatBytes(device.totalBytes)} total · {device.percentUsed}% used
+        </span>
       </div>
 
       {/* Metadata grid */}
@@ -311,7 +346,9 @@ function DeviceCard({ device }: { device: USBDevice }) {
         {device.lastExport && (
           <div className="usb-meta-item">
             <span className="usb-meta-label ss-caption">Last export</span>
-            <span className="usb-meta-value ss-caption">{formatRelativeDate(device.lastExport)}</span>
+            <span className="usb-meta-value ss-caption">
+              {formatRelativeDate(device.lastExport)}
+            </span>
           </div>
         )}
         {device.exportCount > 0 && (
@@ -335,7 +372,7 @@ function DeviceCard({ device }: { device: USBDevice }) {
 
 // ─── Remembered device row ────────────────────────────────────────────────────
 
-function RememberedRow({ device }: { device: RememberedUSBDevice }) {
+function RememberedRow({ device }: { device: RememberedUSBDevice }): React.JSX.Element {
   const forgetDevice = useUSBStore((s) => s.forgetDevice)
   const { info } = useToastStore()
   const displayName = device.customName ?? device.label
@@ -343,8 +380,15 @@ function RememberedRow({ device }: { device: RememberedUSBDevice }) {
   return (
     <div className="usb-remembered-row">
       <div className="usb-remembered-info">
-        <HardDrive size={12} strokeWidth={1.5} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} aria-hidden="true" />
-        <span className="ss-body-sm" style={{ color: 'var(--text-secondary)' }}>{displayName}</span>
+        <HardDrive
+          size={12}
+          strokeWidth={1.5}
+          style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}
+          aria-hidden="true"
+        />
+        <span className="ss-body-sm" style={{ color: 'var(--text-secondary)' }}>
+          {displayName}
+        </span>
         <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
           · {formatRelativeDate(device.lastSeen)}
           {device.exportCount > 0 ? ` · ${device.exportCount} exports` : ''}
@@ -368,7 +412,7 @@ function RememberedRow({ device }: { device: RememberedUSBDevice }) {
 
 // ─── Main panel ───────────────────────────────────────────────────────────────
 
-export function USBDetectionPanel() {
+export function USBDetectionPanel(): React.JSX.Element {
   const { connectedDevices, rememberedDevices, panelOpen, setPanelOpen, refreshDevices } =
     useUSBStore()
   const panelRef = useRef<HTMLDivElement>(null)
@@ -393,7 +437,7 @@ export function USBDetectionPanel() {
   // Close panel on outside click
   useEffect(() => {
     if (!panelOpen) return
-    function handler(e: MouseEvent) {
+    function handler(e: MouseEvent): void {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         setPanelOpen(false)
       }
@@ -402,7 +446,7 @@ export function USBDetectionPanel() {
     return () => document.removeEventListener('mousedown', handler)
   }, [panelOpen, setPanelOpen])
 
-  async function handleRefresh() {
+  async function handleRefresh(): Promise<void> {
     setRefreshing(true)
     try {
       await refreshDevices()
@@ -487,18 +531,24 @@ export function USBDetectionPanel() {
             <div className="usb-dropdown-body">
               {sortedConnected.length === 0 ? (
                 <div className="usb-empty">
-                  <HardDrive size={20} strokeWidth={1.3} style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
+                  <HardDrive
+                    size={20}
+                    strokeWidth={1.3}
+                    style={{ color: 'var(--text-tertiary)' }}
+                    aria-hidden="true"
+                  />
                   <span className="ss-body-sm" style={{ color: 'var(--text-tertiary)' }}>
                     No USB drives detected
                   </span>
-                  <span className="ss-caption" style={{ color: 'var(--text-disabled)', textAlign: 'center' }}>
+                  <span
+                    className="ss-caption"
+                    style={{ color: 'var(--text-disabled)', textAlign: 'center' }}
+                  >
                     Plug in a USB drive and click refresh
                   </span>
                 </div>
               ) : (
-                sortedConnected.map((device) => (
-                  <DeviceCard key={device.id} device={device} />
-                ))
+                sortedConnected.map((device) => <DeviceCard key={device.id} device={device} />)
               )}
 
               {/* Past (remembered) devices */}

@@ -3,7 +3,7 @@ import { Plus, Volume2, AlertCircle } from 'lucide-react'
 import type { Track } from '@/types'
 import { KeyChip } from '@/components/shared/KeyChip'
 import { EnergyChip } from '@/components/shared/EnergyChip'
-import { Waveform } from '@/components/shared/Waveform'
+import { InlineWaveform } from '@/components/shared/InlineWaveform'
 import { toMediaUrl } from '@/utils/mediaUrl'
 import { formatBpm } from '@/utils/format'
 import { useSetStore } from '@/stores/setStore'
@@ -48,7 +48,12 @@ export function RecallTrackLine({
 
   return (
     <div
-      className={clsx('recall-line', playing && 'playing', missing && 'missing', compact && 'compact')}
+      className={clsx(
+        'recall-line',
+        playing && 'playing',
+        missing && 'missing',
+        compact && 'compact'
+      )}
       role="button"
       tabIndex={0}
       title={missing ? `File not found: ${track.filePath}` : `${track.title} — ${track.artist}`}
@@ -115,9 +120,8 @@ export function RecallTrackLine({
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          <Waveform
+          <InlineWaveform
             filePath={track.filePath}
-            compact
             currentTime={previewCurrentTime}
             onSeek={(ms) => usePlaybackStore.getState().requestSeek(ms)}
           />

@@ -3,7 +3,7 @@ import type {
   Set as DJSet,
   Suggestion,
   MatchReason,
-  MatchReasonQuality,
+  MatchReasonQuality
 } from '../../src/types'
 import { scoreTransition } from './transitionScore'
 import { getKeyCompatibility } from '../utils/camelot'
@@ -37,7 +37,7 @@ function buildMatchReasons(
     reasons.push({
       label: `You've played this ${comboCount} times`,
       type: 'combo',
-      quality: 'positive',
+      quality: 'positive'
     })
   }
 
@@ -53,8 +53,7 @@ function buildMatchReasons(
   // BPM reason
   const bpmQuality: MatchReasonQuality =
     score.bpmDelta <= 2 ? 'positive' : score.bpmDelta <= 8 ? 'neutral' : 'warning'
-  const bpmLabel =
-    score.bpmDelta === 0 ? 'Identical BPM' : `±${Math.round(score.bpmDelta)} BPM`
+  const bpmLabel = score.bpmDelta === 0 ? 'Identical BPM' : `±${Math.round(score.bpmDelta)} BPM`
   reasons.push({ label: bpmLabel, type: 'bpm', quality: bpmQuality })
 
   // Energy reason — only if non-zero
@@ -82,20 +81,17 @@ export function getSuggestions(
    * after `currentTrack` in their performed sessions or saved sets. Tracks NOT
    * in the map are assumed to have 0 (no prior pairing recorded).
    */
-  comboLookup?: Map<string, number>,
+  comboLookup?: Map<string, number>
 ): Suggestion[] {
   // Merge DB-persisted set IDs with any IDs the renderer passes directly.
   // This handles the race where a newly added track hasn't been saved to DB yet
   // but must still be excluded from suggestions.
   const inSetIds = new Set([...set.tracks.map((st) => st.trackId), ...extraExcludeIds])
   const artistsInSet = new Set(set.tracks.map((st) => st.track.artist.toLowerCase()))
-  const nextPosition = set.tracks.length  // 0-indexed position of the next slot
+  const nextPosition = set.tracks.length // 0-indexed position of the next slot
 
   const candidates = library.filter(
-    (t) =>
-      !inSetIds.has(t.id) &&
-      !t.missingFile &&
-      Math.abs(t.bpm - currentTrack.bpm) <= 16,
+    (t) => !inSetIds.has(t.id) && !t.missingFile && Math.abs(t.bpm - currentTrack.bpm) <= 16
   )
 
   interface Scored {
@@ -141,7 +137,7 @@ export function getSuggestions(
       rank: i,
       matchReasons: buildMatchReasons(currentTrack, s.track, s.comboCount),
       best: i === 0,
-      comboCount: s.comboCount > 0 ? s.comboCount : undefined,
+      comboCount: s.comboCount > 0 ? s.comboCount : undefined
     }
   })
 }

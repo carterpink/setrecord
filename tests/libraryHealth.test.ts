@@ -107,9 +107,7 @@ describe('analyzeHealth', () => {
   })
 
   it('health score is 100 for a clean library', () => {
-    const tracks = [
-      makeTrack({ id: 'a', key: '8A', bpm: 128, format: 'mp3', missingFile: false })
-    ]
+    const tracks = [makeTrack({ id: 'a', key: '8A', bpm: 128, format: 'mp3', missingFile: false })]
     expect(analyzeHealth(tracks).healthScore).toBe(100)
   })
 

@@ -10,7 +10,7 @@ import {
   type RawHistoryRow,
   type RawPlaylistRow,
   type RawSongHistoryRow,
-  type RawSongPlaylistRow,
+  type RawSongPlaylistRow
 } from '../electron/services/rekordbox/dbReader'
 
 describe('combinePath', () => {
@@ -24,7 +24,7 @@ describe('combinePath', () => {
 
   it('decodes percent-encoded characters in paths', () => {
     expect(combinePath('/Users/dj/Music/', 'Bicep%20-%20Glue.wav')).toBe(
-      '/Users/dj/Music/Bicep - Glue.wav',
+      '/Users/dj/Music/Bicep - Glue.wav'
     )
   })
 
@@ -56,7 +56,7 @@ describe('mapContentRow', () => {
       Commnt: null,
       StockDate: '2024-01-15',
       created_at: '2024-01-15T00:00:00Z',
-      ...overrides,
+      ...overrides
     }
   }
 
@@ -119,7 +119,7 @@ describe('mapContentRow', () => {
     const cues: RawCueRow[] = [
       { ContentID: 'rb-1', Kind: 0, InMsec: 5000, Color: null, ActiveLoop: null },
       { ContentID: 'rb-1', Kind: 1, InMsec: 30000, Color: 0xff0044, ActiveLoop: 0 },
-      { ContentID: 'rb-1', Kind: 1, InMsec: 60000, Color: 0x00ff00, ActiveLoop: 1 },
+      { ContentID: 'rb-1', Kind: 1, InMsec: 60000, Color: 0x00ff00, ActiveLoop: 1 }
     ]
     const t = mapContentRow(row(), cues)
     expect(t!.cuePoints).toEqual([{ position: 5000, type: 'memory' }])
@@ -134,7 +134,7 @@ describe('bucketCuesByContent', () => {
     const rows: RawCueRow[] = [
       { ContentID: 'a', Kind: 0, InMsec: 1, Color: null, ActiveLoop: null },
       { ContentID: 'b', Kind: 0, InMsec: 2, Color: null, ActiveLoop: null },
-      { ContentID: 'a', Kind: 1, InMsec: 3, Color: null, ActiveLoop: 0 },
+      { ContentID: 'a', Kind: 1, InMsec: 3, Color: null, ActiveLoop: 0 }
     ]
     const map = bucketCuesByContent(rows)
     expect(map.get('a')).toHaveLength(2)
@@ -150,11 +150,11 @@ describe('mapPlaylists', () => {
   it('builds a tree with folder + leaf attributes and skips orphan members', () => {
     const playlistRows: RawPlaylistRow[] = [
       { ID: 'p-root', Name: 'Folder', Attribute: 1, ParentID: 'root' },
-      { ID: 'p-leaf', Name: 'Peak', Attribute: 0, ParentID: 'p-root' },
+      { ID: 'p-leaf', Name: 'Peak', Attribute: 0, ParentID: 'p-root' }
     ]
     const songRows: RawSongPlaylistRow[] = [
       { PlaylistID: 'p-leaf', ContentID: 'rb-1', TrackNo: 1 },
-      { PlaylistID: 'p-leaf', ContentID: 'rb-unknown', TrackNo: 2 },
+      { PlaylistID: 'p-leaf', ContentID: 'rb-unknown', TrackNo: 2 }
     ]
     const idMap = new Map([['rb-1', 'internal-uuid-1']])
     const playlists = mapPlaylists(playlistRows, songRows, idMap)
@@ -172,11 +172,11 @@ describe('mapSessions', () => {
   it('emits sessions and drops empty ones', () => {
     const historyRows: RawHistoryRow[] = [
       { ID: 'h1', Name: 'Friday', DateCreated: '2024-05-18T20:00:00Z' },
-      { ID: 'h2', Name: 'Saturday', DateCreated: '2024-05-19T20:00:00Z' },
+      { ID: 'h2', Name: 'Saturday', DateCreated: '2024-05-19T20:00:00Z' }
     ]
     const songHistoryRows: RawSongHistoryRow[] = [
       { HistoryID: 'h1', ContentID: 'rb-1', TrackNo: 1 },
-      { HistoryID: 'h2', ContentID: 'rb-unknown', TrackNo: 1 },
+      { HistoryID: 'h2', ContentID: 'rb-unknown', TrackNo: 1 }
     ]
     const idMap = new Map([['rb-1', 'internal-uuid-1']])
     const sessions = mapSessions(historyRows, songHistoryRows, idMap)
@@ -184,7 +184,7 @@ describe('mapSessions', () => {
     expect(sessions[0]).toMatchObject({
       name: 'Friday',
       performedAt: '2024-05-18',
-      trackIds: ['internal-uuid-1'],
+      trackIds: ['internal-uuid-1']
     })
   })
 })

@@ -1,6 +1,7 @@
-import { app, shell, BrowserWindow, ipcMain, dialog, protocol, net } from 'electron'
-import { existsSync, promises as fsp } from 'fs'
-import { join } from 'path'
+import { app, shell, BrowserWindow, ipcMain, dialog, protocol } from 'electron'
+import { existsSync, createReadStream, promises as fsp } from 'fs'
+import { Readable } from 'node:stream'
+import { join, resolve } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { initDb, getDb, resetDb, getDbPath } from './db/schema'
 import {
@@ -13,6 +14,8 @@ import {
   saveSet as dbSaveSet,
   deleteSet as dbDeleteSet,
   updateTrackCues,
+  updateTrackBeatgrid,
+  updateTrackLoops,
   updateTrackEnergy,
   updateTrackMeta,
   updateTrackFilePath,
@@ -43,6 +46,7 @@ import type {
   ArchitectParams,
   CuePoint,
   HotCue,
+  Loop,
   CDJModel,
   USBDevice
 } from '../src/types'
@@ -70,21 +74,23 @@ import { validateForHardware } from './services/usbValidator'
 import { exportSet } from './services/exportService'
 import { getSettings, setSettings } from './services/settingsService'
 import type { AppSettings } from './services/settingsService'
+import { initCrashReporter } from './services/crashReporter'
 import { loadSecretsFromKeychain } from './services/secretStore'
 import {
   getLicenseState,
   activateLicense,
   deactivateLicense,
-  isProEntitled,
+  refreshLicenseOnline,
+  isProEntitled
 } from './services/licenseService'
-import { COMMERCE_HOST, checkoutUrl } from './services/licensing/signingKey'
-import { validateApiKey } from './services/discovery/youtubeClient'
+import { loadDeviceId } from './services/licensing/deviceId'
+import { startTrial } from './services/licensing/trialStore'
 import {
-  browseDiscoverySets,
-  refreshDiscoverySet,
-  getSetTracklist
-} from './services/discovery/discoveryService'
-import type { TasteProfile } from '../src/types'
+  COMMERCE_HOST,
+  checkoutUrl,
+  ACTIVATION_SCHEME,
+  parseActivationUrl
+} from './services/licensing/signingKey'
 import {
   listUSBDevices,
   watchUSBDevices,
@@ -92,6 +98,50 @@ import {
   copyFileToUSB,
   speedConfidenceFromAge
 } from './services/usbDetector'
+
+/** MIME type for the media:// handler, by file extension. */
+function mediaMimeType(filePath: string): string {
+  const ext = filePath.slice(filePath.lastIndexOf('.') + 1).toLowerCase()
+  switch (ext) {
+    case 'mp3':
+      return 'audio/mpeg'
+    case 'wav':
+      return 'audio/wav'
+    case 'aif':
+    case 'aiff':
+      return 'audio/aiff'
+    case 'flac':
+      return 'audio/flac'
+    case 'm4a':
+    case 'mp4':
+      return 'audio/mp4'
+    case 'aac':
+      return 'audio/aac'
+    case 'ogg':
+    case 'oga':
+      return 'audio/ogg'
+    case 'opus':
+      return 'audio/opus'
+    case 'png':
+      return 'image/png'
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg'
+    case 'webp':
+      return 'image/webp'
+    case 'gif':
+      return 'image/gif'
+    default:
+      return 'application/octet-stream'
+  }
+}
+
+// Dev-only: expose the Chromium DevTools Protocol when SETSENSE_CDP=<port> is set,
+// so automated tooling can attach to the renderer. Inert in normal/production runs.
+if (process.env.SETSENSE_CDP) {
+  app.commandLine.appendSwitch('remote-debugging-port', process.env.SETSENSE_CDP)
+  app.commandLine.appendSwitch('remote-allow-origins', '*')
+}
 
 // Must be called synchronously before app.whenReady() for custom schemes to work
 // with media elements. Without stream:true the renderer rejects media:// for <audio>.
@@ -109,6 +159,75 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 let mainWindow: BrowserWindow
+
+// ── License activation deep-links (setsense://activate?key=…) ────────────────
+// A deep-link can arrive three ways: cold start (queued before the window
+// exists), while the app is already running (open-url on macOS), or as a launch
+// arg on Windows/Linux. We buffer the key until the renderer signals it has
+// mounted and attached its listener, then either flush it (cold start) or push
+// it live (running app). The key is untrusted here — licenseService re-verifies
+// the Ed25519 signature before it can grant Pro.
+let pendingActivationKey: string | null = null
+let rendererReady = false
+
+function deliverActivationKey(key: string): void {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.focus()
+  }
+  if (rendererReady && mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('license:activate-deeplink', key)
+  } else {
+    pendingActivationKey = key
+  }
+}
+
+/**
+ * Scan a process-argv array for an activation deep-link. Windows/Linux deliver
+ * the URL as a launch argument; our dev harness also accepts
+ * `--activate-url=setsense://activate?key=…` so cold-start can be exercised
+ * without OS-level scheme registration.
+ */
+function handleActivationArgv(argv: string[]): void {
+  for (const arg of argv) {
+    const candidate = arg.startsWith('--activate-url=') ? arg.slice('--activate-url='.length) : arg
+    if (!candidate.startsWith(`${ACTIVATION_SCHEME}://`)) continue
+    const key = parseActivationUrl(candidate)
+    if (key) {
+      deliverActivationKey(key)
+      return
+    }
+  }
+}
+
+// Single-instance lock: a second launch (e.g. clicking a setsense:// link while
+// the app is open on Windows/Linux) routes its argv to the running instance
+// instead of spawning a duplicate.
+const gotSingleInstanceLock = app.requestSingleInstanceLock()
+if (!gotSingleInstanceLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (_event, argv) => {
+    handleActivationArgv(argv)
+  })
+}
+
+// macOS delivers deep-links through open-url (both cold start and while running).
+app.on('open-url', (event, url) => {
+  event.preventDefault()
+  const key = parseActivationUrl(url)
+  if (key) deliverActivationKey(key)
+})
+
+// Register as the OS handler for the scheme. In dev (running via the electron
+// binary) we must pass the script path so the relaunch resolves to our app.
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient(ACTIVATION_SCHEME, process.execPath, [resolve(process.argv[1])])
+  }
+} else {
+  app.setAsDefaultProtocolClient(ACTIVATION_SCHEME)
+}
 
 /**
  * Try to open the library DB. If the file is corrupt or locked, surface a
@@ -223,7 +342,7 @@ function recordImport(source: 'rekordbox-db' | 'rekordbox-xml', path: string): v
       lastImportSource: source,
       lastImportPath: path,
       lastImportMtime: mtime,
-      lastImportAt: new Date().toISOString(),
+      lastImportAt: new Date().toISOString()
     })
   } catch (err) {
     console.error('[main] recordImport failed', err)
@@ -417,6 +536,8 @@ function registerIpcHandlers(): void {
     })
     // Persist source metadata so re-sync / stale detection has something to compare against.
     recordImport('rekordbox-xml', xmlPath)
+    // First real import arms the free 7-day Pro trial (set-once; later imports are a no-op).
+    if (result.total > 0) startTrial()
     // Run health check after import to immediately flag any missing files
     scheduleHealthCheck()
     // Auto-analyse energy for every newly-imported track (background, no UI block)
@@ -438,6 +559,8 @@ function registerIpcHandlers(): void {
         mainWindow.webContents.send('library:import-progress', progress)
       })
       recordImport('rekordbox-db', path)
+      // First real import arms the free 7-day Pro trial (set-once; later imports are a no-op).
+      if (result.total > 0) startTrial()
       scheduleHealthCheck()
       scheduleEnergyAnalysis()
       scheduleArtworkExtraction()
@@ -466,7 +589,7 @@ function registerIpcHandlers(): void {
       return {
         stale: currentMtime > lastMtime + 1000, // 1s slop tolerates fs precision quirks
         currentMtime,
-        lastImportMtime: settings.lastImportMtime ?? null,
+        lastImportMtime: settings.lastImportMtime ?? null
       }
     } catch {
       // Source file no longer exists at the recorded path — treat as not-stale (nothing to compare).
@@ -561,7 +684,7 @@ function registerIpcHandlers(): void {
         createdAt: '',
         updatedAt: '',
         tracks: [],
-        targetHardware: 'CDJ-2000NXS2' as const,
+        targetHardware: 'CDJ-2000NXS2' as const
       }
       let library = getAllTracks(db)
       if (sourcePlaylistIds.length > 0) {
@@ -648,6 +771,14 @@ function registerIpcHandlers(): void {
     updateTrackCues(getDb(), trackId, cuePoints, hotCues)
   })
 
+  ipcMain.handle('beatgrid:update', (_e, trackId: string, bpm: number, beatgridOffset: number) => {
+    updateTrackBeatgrid(getDb(), trackId, bpm, beatgridOffset)
+  })
+
+  ipcMain.handle('loops:update', (_e, trackId: string, loops: Loop[]) => {
+    updateTrackLoops(getDb(), trackId, loops)
+  })
+
   ipcMain.handle('track:set-energy', (_e, trackId: string, energy: number) => {
     updateTrackEnergy(getDb(), trackId, Math.max(1, Math.min(10, Math.round(energy))), null, 'user')
   })
@@ -683,14 +814,25 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('settings:set', (_e, partial: Partial<AppSettings>) => setSettings(partial))
 
-  ipcMain.handle('settings:validate-youtube-key', (_e, key: string) => validateApiKey(key))
-
   // ── Licensing / SetSense Pro (Section 16) ─────────────────────────────────
   ipcMain.handle('license:get', () => getLicenseState())
 
   ipcMain.handle('license:activate', (_e, key: string) => activateLicense(key))
 
   ipcMain.handle('license:deactivate', () => deactivateLicense())
+
+  // Best-effort online revocation/expiry refresh. Resolves to the (possibly
+  // updated) state; an unreachable gateway leaves the offline entitlement intact.
+  ipcMain.handle('license:refresh', () => refreshLicenseOnline())
+
+  // The renderer calls this once on mount: it marks the renderer ready (so later
+  // deep-links are pushed live) and drains any key buffered during cold start.
+  ipcMain.handle('license:consume-pending-activation', (): string | null => {
+    rendererReady = true
+    const key = pendingActivationKey
+    pendingActivationKey = null
+    return key
+  })
 
   // Open the external checkout / support page in the user's browser. Restricted
   // to the commerce host so a renderer compromise can't launch arbitrary URLs.
@@ -709,22 +851,7 @@ function registerIpcHandlers(): void {
     }
   )
 
-  // ── Shell (Discover external links) ──────────────────────────────────────
-  // Open URLs in the user's default browser, but only those matching our allowlist
-  // (Beatport / SoundCloud / YouTube). Anything else is refused — protects against
-  // a renderer compromise turning into an arbitrary URL launcher.
-  const SHELL_HOST_ALLOWLIST = new Set([
-    'beatport.com',
-    'www.beatport.com',
-    'soundcloud.com',
-    'www.soundcloud.com',
-    'youtube.com',
-    'www.youtube.com',
-    'youtu.be'
-  ])
-  // Customer feedback → open a pre-filled mail draft to the SetSense inbox.
-  // Uses a controlled mailto we construct here (the open-external allowlist below
-  // only covers https Discover links).
+  // ── Customer feedback ─────────────────────────────────────────────────────
   ipcMain.handle(
     'feedback:submit',
     async (
@@ -752,19 +879,6 @@ function registerIpcHandlers(): void {
       }
     }
   )
-
-  ipcMain.handle('shell:open-external', async (_e, url: string): Promise<boolean> => {
-    try {
-      const parsed = new URL(url)
-      if (parsed.protocol !== 'https:') return false
-      if (!SHELL_HOST_ALLOWLIST.has(parsed.host.toLowerCase())) return false
-      await shell.openExternal(url)
-      return true
-    } catch (err) {
-      console.error('[shell:open-external] refused:', err)
-      return false
-    }
-  })
 
   ipcMain.handle('export:set', async (_e, setId: string, _hardware: CDJModel) => {
     if (!isProEntitled()) return { success: false, error: 'pro_required' } // Pro gate — export is paid.
@@ -832,34 +946,6 @@ function registerIpcHandlers(): void {
     'usb:copy-to-usb',
     async (_e, srcPath: string, mountPath: string, filename: string) => {
       return copyFileToUSB(srcPath, mountPath, filename)
-    }
-  )
-
-  // ── Discovery (Phase 2) ───────────────────────────────────────────────────
-  ipcMain.handle(
-    'discover:browse',
-    async (
-      _e,
-      tasteProfile: TasteProfile,
-      opts: {
-        genres?: string[]
-        pageToken?: string | null
-        forceRefresh?: boolean
-        pageSize?: number
-      }
-    ) => {
-      return browseDiscoverySets(getDb(), tasteProfile, opts)
-    }
-  )
-
-  ipcMain.handle('discover:get-tracklist', async (_e, videoId: string) => {
-    return getSetTracklist(videoId, getDb())
-  })
-
-  ipcMain.handle(
-    'discover:refresh-set',
-    async (_e, videoId: string, tasteProfile: TasteProfile) => {
-      return refreshDiscoverySet(videoId, getDb(), tasteProfile)
     }
   )
 
@@ -985,31 +1071,91 @@ function registerIpcHandlers(): void {
 }
 
 app.whenReady().then(async () => {
+  // Bail if another instance owns the lock — this process is on its way out.
+  if (!gotSingleInstanceLock) return
+
   electronApp.setAppUserModelId('com.setsense.app')
+
+  // Init crash reporting before anything else so errors during startup are captured.
+  // Only runs when the user has explicitly opted in; default is off.
+  if (getSettings().crashReportingEnabled) {
+    initCrashReporter()
+  }
+
+  // Windows/Linux cold start: the deep-link (or our dev --activate-url flag)
+  // rides in on this process's argv. Buffer it now; the renderer drains it on mount.
+  handleActivationArgv(process.argv)
 
   // Pull the YouTube API key out of the OS keychain into our in-process cache
   // before any IPC handler can ask for it. Also migrates legacy electron-store
   // values on first run after the keychain upgrade.
   await loadSecretsFromKeychain()
 
+  // Load (or mint on first run) the anonymous device id before any license read,
+  // so device-binding checks have a stable id to compare against.
+  await loadDeviceId()
+
   // Reflect the persisted opt-in so getStatus() is accurate before any ask.
   // We do NOT auto-load the model here — that stays lazy (first ask / enable).
   memoryAssistant.setEnabled(getSettings().memoryAiEnabled)
 
   protocol.handle('media', async (req) => {
-    // URLs come in as media://<host>/<encoded-path>. Strip scheme + host and
-    // emit file:///<encoded-path>. The renderer always uses host=`local`
-    // (see src/utils/mediaUrl.ts) but we accept any host defensively.
-    const fileUrl = req.url.replace(/^media:\/\/[^/]+/, 'file://')
+    // media://local/<encoded-path> → absolute fs path. host is always `local`
+    // (see src/utils/mediaUrl.ts); each path segment is encodeURIComponent'd.
+    let filePath: string
     try {
-      const res = await net.fetch(fileUrl)
-      if (!res.ok) {
-        console.error('[media://] fetch returned', res.status, fileUrl)
+      filePath = decodeURIComponent(new URL(req.url).pathname)
+    } catch {
+      return new Response(null, { status: 400 })
+    }
+
+    try {
+      const stat = await fsp.stat(filePath)
+      const size = stat.size
+      const type = mediaMimeType(filePath)
+      // Honour HTTP Range so <audio> can seek and stream. Without this,
+      // Electron's file fetch returns 200/no-range → seekable is empty and any
+      // seek snaps back to 0 (the old "scrub restarts the song" bug).
+      const rangeHeader = req.headers.get('range')
+
+      if (rangeHeader) {
+        const match = /bytes=(\d*)-(\d*)/.exec(rangeHeader)
+        let start = match && match[1] ? parseInt(match[1], 10) : 0
+        let end = match && match[2] ? parseInt(match[2], 10) : size - 1
+        if (!Number.isFinite(start) || start < 0) start = 0
+        if (!Number.isFinite(end) || end >= size) end = size - 1
+        if (start > end || start >= size) {
+          return new Response(null, {
+            status: 416,
+            headers: { 'Content-Range': `bytes */${size}`, 'Accept-Ranges': 'bytes' }
+          })
+        }
+        const body = Readable.toWeb(
+          createReadStream(filePath, { start, end })
+        ) as unknown as ReadableStream
+        return new Response(body, {
+          status: 206,
+          headers: {
+            'Content-Type': type,
+            'Content-Range': `bytes ${start}-${end}/${size}`,
+            'Accept-Ranges': 'bytes',
+            'Content-Length': String(end - start + 1)
+          }
+        })
       }
-      return res
+
+      const body = Readable.toWeb(createReadStream(filePath)) as unknown as ReadableStream
+      return new Response(body, {
+        status: 200,
+        headers: {
+          'Content-Type': type,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': String(size)
+        }
+      })
     } catch (err) {
-      console.error('[media://] fetch threw', fileUrl, err)
-      return new Response(null, { status: 500 })
+      console.error('[media://] failed', filePath, err)
+      return new Response(null, { status: 404 })
     }
   })
 

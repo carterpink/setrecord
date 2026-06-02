@@ -4,7 +4,13 @@ import { parseStringPromise } from 'xml2js'
 import type { AudioFormat, ImportProgress, ImportResult, Playlist, Track } from '../../src/types'
 import { openNotationToCamelot } from '../utils/camelot'
 import { getDb } from '../db/schema'
-import { batchInsertTracks, getExistingTrackIdsByPath, getLibraryStats, replaceAllPlaylists, replaceRekordboxSessions } from '../db/queries'
+import {
+  batchInsertTracks,
+  getExistingTrackIdsByPath,
+  getLibraryStats,
+  replaceAllPlaylists,
+  replaceRekordboxSessions
+} from '../db/queries'
 
 /**
  * Normalised payload produced by any library source (XML, master.db, future
@@ -29,17 +35,13 @@ export interface ImportPayload {
 // Yield back to the Node.js event loop so Chromium can flush queued IPC messages.
 // Without this, webContents.send() calls accumulate but are never delivered to the
 // renderer until the entire handler returns — making the progress bar stay at 0%.
-const yieldToEventLoop = (): Promise<void> => new Promise(resolve => setImmediate(resolve))
+const yieldToEventLoop = (): Promise<void> => new Promise((resolve) => setImmediate(resolve))
 
 // ───────── Field mapping helpers ─────────
 
 function parseLocation(raw: string): string {
   // Rekordbox encodes paths as file://localhost/… or file:///…
-  return decodeURIComponent(
-    raw
-      .replace(/^file:\/\/localhost/, '')
-      .replace(/^file:\/\/\//, '/')
-  )
+  return decodeURIComponent(raw.replace(/^file:\/\/localhost/, '').replace(/^file:\/\/\//, '/'))
 }
 
 function parseFormat(filePath: string): AudioFormat {
@@ -50,7 +52,7 @@ function parseFormat(filePath: string): AudioFormat {
     '.aif': 'aiff',
     '.wav': 'wav',
     '.flac': 'flac',
-    '.m4a': 'm4a',
+    '.m4a': 'm4a'
   }
   return map[ext] ?? 'unknown'
 }
@@ -87,7 +89,7 @@ interface XmlNode {
  */
 function parsePlaylistTree(
   root: XmlNode | undefined,
-  rekordboxIdToTrackId: Map<string, string>,
+  rekordboxIdToTrackId: Map<string, string>
 ): Playlist[] {
   if (!root) return []
   const out: Playlist[] = []
@@ -118,7 +120,7 @@ function parsePlaylistTree(
       name,
       parentId,
       trackIds,
-      isFolder,
+      isFolder
     })
 
     for (const child of node.NODE ?? []) {
@@ -134,17 +136,26 @@ function parsePlaylistTree(
   return out
 }
 
-function parseCuePoints(marks: unknown[]): { cuePoints: Track['cuePoints']; hotCues: Track['hotCues'] } {
+function parseCuePoints(marks: unknown[]): {
+  cuePoints: Track['cuePoints']
+  hotCues: Track['hotCues']
+  loops: NonNullable<Track['loops']>
+} {
   const cuePoints: Track['cuePoints'] = []
   const hotCues: Track['hotCues'] = []
+  const loops: NonNullable<Track['loops']> = []
 
   for (const mark of marks ?? []) {
     const m = (mark as { $: Record<string, string> }).$
     if (!m) continue
     const position = parseFloat(m.Start ?? '0') * 1000 // seconds → ms
     const type = m.Type ?? '0'
+    // Rekordbox encodes a saved loop as a mark with an End attribute (Type "4").
+    const hasEnd = m.End !== undefined && m.End !== ''
 
-    if (type === '0') {
+    if (hasEnd || type === '4') {
+      loops.push({ startMs: position, endMs: parseFloat(m.End ?? '0') * 1000 })
+    } else if (type === '0') {
       cuePoints.push({ position, type: 'memory' })
     } else if (type === '1') {
       cuePoints.push({ position, type: 'cue' })
@@ -154,14 +165,25 @@ function parseCuePoints(marks: unknown[]): { cuePoints: Track['cuePoints']; hotC
       hotCues.push({
         index,
         position,
-        color: m.Red && m.Green && m.Blue
-          ? `rgb(${m.Red},${m.Green},${m.Blue})`
-          : undefined,
+        color: m.Red && m.Green && m.Blue ? `rgb(${m.Red},${m.Green},${m.Blue})` : undefined
       })
     }
   }
 
-  return { cuePoints, hotCues }
+  return { cuePoints, hotCues, loops }
+}
+
+/**
+ * First-downbeat anchor (ms) from the Rekordbox `<TEMPO>` grid. Inizio is the
+ * time of the first beat in seconds; we take the earliest TEMPO marker so the
+ * constant-tempo grid lines up with Rekordbox.
+ */
+function parseBeatgridOffset(tempos: unknown[] | undefined): number | undefined {
+  if (!tempos || tempos.length === 0) return undefined
+  const first = (tempos[0] as { $?: Record<string, string> })?.$
+  if (!first?.Inizio) return undefined
+  const inizio = parseFloat(first.Inizio)
+  return Number.isFinite(inizio) ? inizio * 1000 : undefined
 }
 
 // ───────── Rekordbox history parsing ─────────
@@ -174,28 +196,58 @@ export interface HistoryImportResult {
   tracks: number
 }
 
+const MONTH_NAMES: Record<string, string> = {
+  jan: '01',
+  feb: '02',
+  mar: '03',
+  apr: '04',
+  may: '05',
+  jun: '06',
+  jul: '07',
+  aug: '08',
+  sep: '09',
+  oct: '10',
+  nov: '11',
+  dec: '12'
+}
+
 /**
  * Attempt to parse a date from a Rekordbox history playlist name.
  *
  * Rekordbox names history session playlists with dates, but the exact format
- * varies by version and locale. Common patterns we've seen:
- *   "2024-05-18"
- *   "2024/05/18"
- *   "18.05.2024"
- *   "May 18, 2024"
- *   "2024-05-18 Club Night"  (date prefix with trailing text)
+ * varies by version and locale. Formats this handles (verified by unit test):
+ *   "2024-05-18" / "2024/05/18"      → ISO, the Rekordbox default
+ *   "2024-05-18 Club Night"          → ISO with trailing text
+ *   "18.05.2024"                     → European dot-separated (D.M.Y)
+ *   "May 18, 2024" / "18 May 2024"   → English month name
+ *
+ * Deliberately NOT handled (ambiguous or unobserved): purely numeric US
+ * "5/18/24" — D/M vs M/D cannot be told apart from European D/M, so guessing
+ * risks silently storing the wrong gig date.
  *
  * Returns an ISO date string (YYYY-MM-DD) or null when no date is found.
- * IMPORTANT: Verify against a real export before relying on exhaustive coverage.
  */
 function parseDateFromPlaylistName(name: string): string | null {
-  // ISO / dash-separated: 2024-05-18 (optionally followed by extra text)
+  // ISO / dash- or slash-separated: 2024-05-18 (optionally followed by extra text)
   const isoMatch = name.match(/(\d{4})[-/](\d{2})[-/](\d{2})/)
   if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`
 
   // European dot-separated: 18.05.2024
   const euroMatch = name.match(/(\d{2})\.(\d{2})\.(\d{4})/)
   if (euroMatch) return `${euroMatch[3]}-${euroMatch[2]}-${euroMatch[1]}`
+
+  // English month name: "May 18, 2024" or "18 May 2024".
+  const monthName = name.match(
+    /(?:([A-Za-z]{3,9})\.?\s+(\d{1,2})|(\d{1,2})\s+([A-Za-z]{3,9}))[,.]?\s+(\d{4})/
+  )
+  if (monthName) {
+    const monthWord = (monthName[1] ?? monthName[4] ?? '').slice(0, 3).toLowerCase()
+    const day = monthName[2] ?? monthName[3]
+    const month = MONTH_NAMES[monthWord]
+    if (month && day) {
+      return `${monthName[5]}-${month}-${day.padStart(2, '0')}`
+    }
+  }
 
   return null
 }
@@ -232,9 +284,14 @@ function isHistoryNode(node: XmlNode): boolean {
  */
 function parseHistoryNode(
   historyNode: XmlNode,
-  rekordboxIdToTrackId: Map<string, string>,
+  rekordboxIdToTrackId: Map<string, string>
 ): Array<{ name: string; performedAt: string | null; venue: string | null; trackIds: string[] }> {
-  const sessions: Array<{ name: string; performedAt: string | null; venue: string | null; trackIds: string[] }> = []
+  const sessions: Array<{
+    name: string
+    performedAt: string | null
+    venue: string | null
+    trackIds: string[]
+  }> = []
 
   // Guard: historyNode.NODE may be absent if HISTORY folder is empty
   const children = historyNode.NODE ?? []
@@ -277,7 +334,7 @@ function parseHistoryNode(
  */
 async function parseHistoryXml(
   xmlPath: string,
-  rekordboxIdToTrackId: Map<string, string>,
+  rekordboxIdToTrackId: Map<string, string>
 ): Promise<HistoryImportResult> {
   const db = getDb()
   try {
@@ -307,7 +364,7 @@ async function parseHistoryXml(
 
     console.log(
       `[history] parsed ${sessions.length} session(s) from HISTORY (${nonEmpty.length} non-empty, ` +
-      `${nonEmpty.reduce((n, s) => n + s.trackIds.length, 0)} total track refs)`
+        `${nonEmpty.reduce((n, s) => n + s.trackIds.length, 0)} total track refs)`
     )
 
     if (nonEmpty.length > 0) {
@@ -316,7 +373,7 @@ async function parseHistoryXml(
 
     return {
       sessions: nonEmpty.length,
-      tracks: nonEmpty.reduce((n, s) => n + s.trackIds.length, 0),
+      tracks: nonEmpty.reduce((n, s) => n + s.trackIds.length, 0)
     }
   } catch (err) {
     console.error('[history] parseHistoryXml failed', err)
@@ -374,7 +431,7 @@ export async function applyImport(
     onProgress({
       processed: Math.min(i + BATCH, payload.tracks.length),
       total,
-      phase: 'writing',
+      phase: 'writing'
     })
     await yieldToEventLoop()
   }
@@ -427,8 +484,7 @@ export async function importFromXml(
   const xml = readFileSync(xmlPath, 'utf-8')
   const parsed = await parseStringPromise(xml, { explicitArray: true })
 
-  const collection: unknown[] =
-    parsed?.DJ_PLAYLISTS?.COLLECTION?.[0]?.TRACK ?? []
+  const collection: unknown[] = parsed?.DJ_PLAYLISTS?.COLLECTION?.[0]?.TRACK ?? []
 
   const total: number = collection.length
   onProgress({ processed: 0, total, phase: 'parsing' })
@@ -454,12 +510,17 @@ export async function importFromXml(
 
   for (let i = 0; i < total; i++) {
     try {
-      const item = collection[i] as { $?: Record<string, string>; POSITION_MARK?: unknown[] }
+      const item = collection[i] as {
+        $?: Record<string, string>
+        POSITION_MARK?: unknown[]
+        TEMPO?: unknown[]
+      }
       const t = item.$
       if (!t?.Location) continue
 
       const filePath = parseLocation(t.Location)
-      const { cuePoints, hotCues } = parseCuePoints(item.POSITION_MARK ?? [])
+      const { cuePoints, hotCues, loops } = parseCuePoints(item.POSITION_MARK ?? [])
+      const beatgridOffset = parseBeatgridOffset(item.TEMPO)
 
       // Reuse the existing id when this file_path is already in the DB; otherwise mint a fresh one.
       // Paired with INSERT ... ON CONFLICT(file_path) DO UPDATE in queries.ts, this preserves
@@ -493,14 +554,15 @@ export async function importFromXml(
         format: parseFormat(filePath),
         cuePoints,
         hotCues,
-        beatgridOffset: undefined,
+        loops,
+        beatgridOffset,
         playCount: parseInt(t.PlayCount ?? '0', 10),
         rating: parseRating(t.Rating),
         dateAdded: t.DateAdded ? new Date(t.DateAdded).toISOString() : new Date().toISOString(),
         comment: t.Comments || undefined,
         label: t.Label || undefined,
         color: t.Colour || undefined,
-        missingFile: false, // health check will update this right after import
+        missingFile: false // health check will update this right after import
       })
     } catch {
       errors++
@@ -532,7 +594,7 @@ export async function importFromXml(
         sessions = parsedSessions.filter((s) => s.trackIds.length > 0)
         console.log(
           `[import] HISTORY: ${parsedSessions.length} session(s), ${sessions.length} non-empty, ` +
-          `${sessions.reduce((n, s) => n + s.trackIds.length, 0)} track refs`
+            `${sessions.reduce((n, s) => n + s.trackIds.length, 0)} track refs`
         )
       } else {
         console.log('[import] no HISTORY folder in XML — skipping history import')

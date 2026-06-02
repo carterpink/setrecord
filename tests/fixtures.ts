@@ -20,7 +20,7 @@ export function makeTrack(overrides: Partial<Track> = {}): Track {
     playCount: 0,
     rating: 0,
     dateAdded: new Date('2025-01-01T00:00:00Z').toISOString(),
-    missingFile: false,
+    missingFile: false
   }
   return { ...base, ...overrides }
 }

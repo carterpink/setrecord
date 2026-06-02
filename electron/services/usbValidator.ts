@@ -11,27 +11,29 @@ export function validateForHardware(set: DJSet, hardware: CDJModel): ValidationR
   for (const st of set.tracks) {
     const t = st.track
 
-    // Phantom tracks (from Discover) get a warning, not blocking. They have no
-    // real file — the rest of the per-format / per-bitrate checks are skipped
-    // since there's nothing to check.
+    // Phantom tracks (from Discover) have no real file on disk. Exporting one
+    // would point a CDJ at a track that isn't there — a guaranteed surprise at
+    // the gig — so it's blocking, not a warning. The per-format / per-bitrate
+    // checks are skipped since there's nothing on disk to check.
     if (t.phantom) {
       issues.push({
         trackId: t.id,
         trackTitle: t.title,
         type: 'missing_file',
-        severity: 'warning',
-        message: 'Not in your library yet — buy or download this track before exporting.',
+        severity: 'blocking',
+        message:
+          'Phantom track — not linked to a local file. Buy or download it, then import it into your library before exporting.'
       })
       continue
     }
 
-    if (!existsSync(t.filePath)) {
+    if (t.missingFile || !existsSync(t.filePath)) {
       issues.push({
         trackId: t.id,
         trackTitle: t.title,
         type: 'missing_file',
         severity: 'blocking',
-        message: `File not found on disk: ${t.filePath}`,
+        message: `File not found on disk — relink it from the Recall tab (Library health) before exporting: ${t.filePath}`
       })
     }
 
@@ -41,7 +43,7 @@ export function validateForHardware(set: DJSet, hardware: CDJModel): ValidationR
         trackTitle: t.title,
         type: 'unsupported_format',
         severity: 'blocking',
-        message: `${t.format.toUpperCase()} is not supported by ${hardware}. Use MP3, AIFF, or WAV.`,
+        message: `${t.format.toUpperCase()} is not supported by ${hardware}. Use MP3, AIFF, or WAV.`
       })
     }
 
@@ -51,7 +53,7 @@ export function validateForHardware(set: DJSet, hardware: CDJModel): ValidationR
         trackTitle: t.title,
         type: 'bitrate',
         severity: 'warning',
-        message: `Bitrate ${t.bitrate}kbps exceeds the 320kbps recommended maximum.`,
+        message: `Bitrate ${t.bitrate}kbps exceeds the 320kbps recommended maximum.`
       })
     }
 
@@ -61,7 +63,7 @@ export function validateForHardware(set: DJSet, hardware: CDJModel): ValidationR
         trackTitle: t.title,
         type: 'no_bpm',
         severity: 'warning',
-        message: 'No BPM data — beat-sync will not work on this track.',
+        message: 'No BPM data — beat-sync will not work on this track.'
       })
     }
 
@@ -71,7 +73,7 @@ export function validateForHardware(set: DJSet, hardware: CDJModel): ValidationR
         trackTitle: t.title,
         type: 'duration',
         severity: 'blocking',
-        message: `Duration ${Math.floor(t.duration / 60)}m exceeds the 99-minute hardware limit.`,
+        message: `Duration ${Math.floor(t.duration / 60)}m exceeds the 99-minute hardware limit.`
       })
     }
 
@@ -81,7 +83,7 @@ export function validateForHardware(set: DJSet, hardware: CDJModel): ValidationR
         trackTitle: t.title,
         type: 'hot_cues',
         severity: 'warning',
-        message: `${t.hotCues.length} hot cues — only 8 are supported on ${hardware}, extras will be dropped.`,
+        message: `${t.hotCues.length} hot cues — only 8 are supported on ${hardware}, extras will be dropped.`
       })
     }
   }
@@ -95,13 +97,13 @@ export function validateForHardware(set: DJSet, hardware: CDJModel): ValidationR
     .map((st) => ({
       trackTitle: st.track.title,
       hotCueCount: st.track.hotCues.length,
-      cuePointCount: st.track.cuePoints.length,
+      cuePointCount: st.track.cuePoints.length
     }))
 
   return {
     score,
     issues,
     isExportReady: blocking === 0,
-    cueSummary,
+    cueSummary
   }
 }

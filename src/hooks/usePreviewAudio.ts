@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import { toMediaUrl } from '@/utils/mediaUrl'
 import { getPreviewStartMs } from '@/utils/previewStart'
+import { setPreviewAudioElement } from '@/audio/previewAudioElement'
 
 /**
  * Singleton HTMLAudioElement for library-row preview.
@@ -19,10 +20,10 @@ export function usePreviewAudio(): void {
   useEffect(() => {
     const audio = new Audio()
     audioRef.current = audio
+    // Publish the singleton so passive visualisers can read currentTime per-frame.
+    setPreviewAudioElement(audio)
 
-    audio.addEventListener('timeupdate', () =>
-      setCurrentTime(audio.currentTime * 1000)
-    )
+    audio.addEventListener('timeupdate', () => setCurrentTime(audio.currentTime * 1000))
     audio.addEventListener('durationchange', () =>
       setDuration(isFinite(audio.duration) ? audio.duration * 1000 : 0)
     )
@@ -36,6 +37,7 @@ export function usePreviewAudio(): void {
     return () => {
       audio.pause()
       audio.src = ''
+      setPreviewAudioElement(null)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -60,7 +62,7 @@ export function usePreviewAudio(): void {
     // metadata); otherwise we wait for `loadedmetadata` to fall back to the
     // duration-relative heuristic.
     const knownStart = getPreviewStartMs(track, 0)
-    const seekTo = (ms: number) => {
+    const seekTo = (ms: number): void => {
       const secs = ms / 1000
       if (secs > 0) audio.currentTime = secs
     }
@@ -69,7 +71,7 @@ export function usePreviewAudio(): void {
       // Pre-set; browsers will clamp until metadata loads, then snap to value
       seekTo(knownStart)
     } else {
-      const onMeta = () => {
+      const onMeta = (): void => {
         audio.removeEventListener('loadedmetadata', onMeta)
         const durMs = isFinite(audio.duration) ? audio.duration * 1000 : 0
         seekTo(getPreviewStartMs(track, durMs))
@@ -120,4 +122,3 @@ export function usePreviewAudio(): void {
     }
   }, [seekToken])
 }
-

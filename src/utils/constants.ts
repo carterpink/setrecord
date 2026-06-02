@@ -7,7 +7,7 @@ export const HOT_CUE_COLORS: readonly string[] = [
   '#06B6D4', // E — cyan
   '#F97316', // F — orange
   '#A855F7', // G — purple
-  '#FFFFFF', // H — white
+  '#FFFFFF' // H — white
 ]
 
 export const HOT_CUE_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const

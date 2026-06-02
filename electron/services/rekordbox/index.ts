@@ -23,13 +23,17 @@ export async function detectRekordbox(): Promise<RekordboxDetection> {
   try {
     const db = await openMasterDb(fs.dbPath)
     try {
-      const trackRow = await db.get<{ n: number }>(`SELECT COUNT(*) AS n FROM djmdContent WHERE rb_local_deleted IS NULL OR rb_local_deleted = 0`)
-      const playlistRow = await db.get<{ n: number }>(`SELECT COUNT(*) AS n FROM djmdPlaylist WHERE rb_local_deleted IS NULL OR rb_local_deleted = 0`)
+      const trackRow = await db.get<{ n: number }>(
+        `SELECT COUNT(*) AS n FROM djmdContent WHERE rb_local_deleted IS NULL OR rb_local_deleted = 0`
+      )
+      const playlistRow = await db.get<{ n: number }>(
+        `SELECT COUNT(*) AS n FROM djmdPlaylist WHERE rb_local_deleted IS NULL OR rb_local_deleted = 0`
+      )
       return {
         ...fs,
         trackCount: trackRow?.n ?? 0,
         playlistCount: playlistRow?.n ?? 0,
-        dbReadError: null,
+        dbReadError: null
       }
     } finally {
       await db.close().catch(() => {})

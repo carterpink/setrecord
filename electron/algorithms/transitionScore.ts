@@ -1,4 +1,10 @@
-import type { Track, TransitionScore, TransitionQuality, KeyCompatibility, TransitionDotKind } from '../../src/types'
+import type {
+  Track,
+  TransitionScore,
+  TransitionQuality,
+  KeyCompatibility,
+  TransitionDotKind
+} from '../../src/types'
 import { getKeyCompatibility } from '../utils/camelot'
 
 // ───────── BPM scoring (35 pts) ─────────
@@ -33,8 +39,8 @@ function energyPoints(from: Track, to: Track): number {
   else if (abs === 3) pts = 8
   else pts = 2
 
-  if (delta === 1) pts += 2   // +1 energy going up = crowd building bonus
-  if (delta <= -2) pts -= 5   // sharp drop penalty
+  if (delta === 1) pts += 2 // +1 energy going up = crowd building bonus
+  if (delta <= -2) pts -= 5 // sharp drop penalty
 
   return Math.max(0, pts)
 }
@@ -42,7 +48,7 @@ function energyPoints(from: Track, to: Track): number {
 // ───────── Technical scoring (10 pts) ─────────
 
 function technicalPoints(from: Track, to: Track): number {
-  let pts = 2  // file-exists credit (assumed; no async disk check in algorithm)
+  let pts = 2 // file-exists credit (assumed; no async disk check in algorithm)
   if (from.format !== 'unknown' && from.format === to.format) pts += 5
   const br1 = from.bitrate ?? 0
   const br2 = to.bitrate ?? 0
@@ -69,7 +75,7 @@ function makeLabel(
   overall: TransitionQuality,
   keyRel: string,
   bpmDelta: number,
-  energyDelta: number,
+  energyDelta: number
 ): string {
   if (overall === 'clean') return 'Clean'
   const prefix = overall === 'messy' ? 'Messy' : 'Trainwreck'
@@ -99,8 +105,7 @@ export function scoreTransition(from: Track, to: Track): TransitionScore {
 
   const total = Math.min(100, Math.max(0, bpmPts + keyPts + ePts + techPts))
 
-  const overall: TransitionQuality =
-    total >= 75 ? 'clean' : total >= 45 ? 'messy' : 'trainwreck'
+  const overall: TransitionQuality = total >= 75 ? 'clean' : total >= 45 ? 'messy' : 'trainwreck'
 
   const keyCompatibility: KeyCompatibility = camelot.relationship
 
@@ -108,7 +113,7 @@ export function scoreTransition(from: Track, to: Track): TransitionScore {
   const factors = [
     { label: camelot.reason, points: keyPts },
     { label: bpmReasonLabel(bpmDelta), points: bpmPts },
-    { label: energyReasonLabel(energyDelta), points: ePts },
+    { label: energyReasonLabel(energyDelta), points: ePts }
   ].sort((a, b) => b.points - a.points)
 
   const reasons = factors.slice(0, 3).map((f) => f.label)
@@ -121,6 +126,6 @@ export function scoreTransition(from: Track, to: Track): TransitionScore {
     energyDelta,
     reasons,
     dotKind: makeDotKind(overall),
-    label: makeLabel(overall, camelot.relationship, bpmDelta, energyDelta),
+    label: makeLabel(overall, camelot.relationship, bpmDelta, energyDelta)
   }
 }

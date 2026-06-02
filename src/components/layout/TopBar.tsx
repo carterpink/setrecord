@@ -1,5 +1,17 @@
 import { useEffect } from 'react'
-import { Download, MessageSquareHeart, Moon, Settings, Sparkles, Sun, Upload, Volume1, Volume2, VolumeX } from 'lucide-react'
+import {
+  Download,
+  MessageSquareHeart,
+  Moon,
+  Settings,
+  Sparkles,
+  Sun,
+  TimerReset,
+  Upload,
+  Volume1,
+  Volume2,
+  VolumeX
+} from 'lucide-react'
 import type { AppMode, TransitionDotKind } from '@/types'
 import { Badge } from '@/components/shared/Badge'
 import { Button } from '@/components/shared/Button'
@@ -12,9 +24,9 @@ import { useLibraryStore } from '@/stores/libraryStore'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
-import { useLicenseStore } from '@/stores/licenseStore'
+import { useLicenseStore, useTrialInfo } from '@/stores/licenseStore'
 
-const MODES: readonly AppMode[] = ['Prepare', 'Discover'] as const
+const MODES: readonly AppMode[] = ['Prepare', 'Recall'] as const
 
 export function TopBar(): React.JSX.Element {
   const mode = useUiStore((s) => s.mode)
@@ -22,6 +34,7 @@ export function TopBar(): React.JSX.Element {
   const showModal = useUiStore((s) => s.showModal)
   const showUpgrade = useUiStore((s) => s.showUpgrade)
   const isPro = useLicenseStore((s) => s.license.tier === 'pro')
+  const trial = useTrialInfo()
   const lightMode = useUiStore((s) => s.lightMode)
   const toggleLightMode = useUiStore((s) => s.toggleLightMode)
   const currentSet = useSetStore((s) => s.currentSet)
@@ -45,16 +58,34 @@ export function TopBar(): React.JSX.Element {
 
   const score = currentSet?.safetyScore
   const hw = currentSet?.targetHardware
-  const dotKind: TransitionDotKind =
-    score == null ? 'info' : score >= 80 ? 'success' : score >= 50 ? 'warning' : 'danger'
-  const badgeValue = score != null && hw ? `${score}% · ${hw} ready` : 'Not validated'
+  const hasTracks = (currentSet?.tracks.length ?? 0) > 0
+  const validated = score != null
+
+  // Three states, all neutral until a validation run finds a real problem:
+  //   empty   — no set yet, or a set with no tracks → inviting prompt
+  //   pending — built but not validated → neutral, not a warning
+  //   scored  — validated → severity reflects the actual score
+  const dotKind: TransitionDotKind = !validated
+    ? 'info'
+    : score >= 80
+      ? 'success'
+      : score >= 50
+        ? 'warning'
+        : 'danger'
+  const badgeValue = validated
+    ? hw
+      ? `${score}% · ${hw} ready`
+      : `${score}%`
+    : hasTracks
+      ? 'Not validated yet'
+      : 'Build a set to check CDJ safety'
   const energyAnalysis = useUiStore((s) => s.energyAnalysis)
 
-  const badgeTitle = currentSet
-    ? score != null
+  const badgeTitle = hasTracks
+    ? validated
       ? `Safety score: ${score}% — click to re-validate for export`
       : 'Click to validate this set before export'
-    : 'Build a set to validate it'
+    : 'Add tracks to a set, then validate it for CDJ export'
 
   return (
     <div className="topbar glass-2">
@@ -72,7 +103,7 @@ export function TopBar(): React.JSX.Element {
           onClick={
             !isPro
               ? () => showUpgrade('export')
-              : currentSet
+              : hasTracks
                 ? () => showModal('validate')
                 : undefined
           }
@@ -141,7 +172,7 @@ export function TopBar(): React.JSX.Element {
                 borderRadius: 999,
                 background: 'var(--accent)',
                 boxShadow: '0 0 0 2px var(--surface-1)',
-                pointerEvents: 'none',
+                pointerEvents: 'none'
               }}
             />
           )}
@@ -168,6 +199,16 @@ export function TopBar(): React.JSX.Element {
           onClick={() => showModal('feedback')}
         />
         <IconButton icon={Settings} aria-label="Settings" onClick={() => showModal('settings')} />
+        {trial.onTrial && (
+          <Button
+            variant="ghost"
+            icon={TimerReset}
+            onClick={() => showUpgrade()}
+            title="You’re on a Pro trial — click to upgrade"
+          >
+            {trial.daysRemaining === 1 ? 'Trial · 1 day' : `Trial · ${trial.daysRemaining} days`}
+          </Button>
+        )}
         {isPro ? (
           <Button variant="primary" icon={Download} onClick={() => showModal('export')}>
             Export

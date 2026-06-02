@@ -6,11 +6,11 @@ import type {
   ComboResult,
   CrateWithCount,
   CuePoint,
-  DiscoverSet,
   EnergySource,
   GemResult,
   HealthReport,
   HotCue,
+  Loop,
   IdentitySnapshot,
   ImportResult,
   LifecycleCounts,
@@ -29,7 +29,6 @@ import type {
   SessionTrack,
   Set as DJSet,
   SmartCrate,
-  TasteProfile,
   Track,
   USBCopyResult,
   USBDevice
@@ -58,7 +57,6 @@ export interface ArtworkUpdate {
   albumArtPath: string
 }
 import type { AppSettings } from './services/settingsService'
-import type { ValidateApiKeyResult } from './services/discovery/youtubeClient'
 
 const setsense = {
   // ── Library ──────────────────────────────────────────────────────────────
@@ -151,8 +149,7 @@ const setsense = {
   // ── File health (Phase 6) ─────────────────────────────────────────────────
   triggerHealthCheck: (): Promise<void> => ipcRenderer.invoke('library:health-check'),
 
-  analyseEnergy: (): Promise<{ running: boolean }> =>
-    ipcRenderer.invoke('library:analyse-energy'),
+  analyseEnergy: (): Promise<{ running: boolean }> => ipcRenderer.invoke('library:analyse-energy'),
 
   energyPendingCount: (): Promise<number> => ipcRenderer.invoke('library:energy-pending-count'),
 
@@ -170,6 +167,12 @@ const setsense = {
   // ── Cue points (Phase 6) ─────────────────────────────────────────────────
   updateTrackCues: (trackId: string, cuePoints: CuePoint[], hotCues: HotCue[]): Promise<void> =>
     ipcRenderer.invoke('cues:update', trackId, cuePoints, hotCues),
+
+  updateTrackBeatgrid: (trackId: string, bpm: number, beatgridOffset: number): Promise<void> =>
+    ipcRenderer.invoke('beatgrid:update', trackId, bpm, beatgridOffset),
+
+  updateTrackLoops: (trackId: string, loops: Loop[]): Promise<void> =>
+    ipcRenderer.invoke('loops:update', trackId, loops),
 
   setTrackEnergy: (trackId: string, energy: number): Promise<void> =>
     ipcRenderer.invoke('track:set-energy', trackId, energy),
@@ -194,9 +197,6 @@ const setsense = {
   setSettings: (partial: Partial<AppSettings>) =>
     ipcRenderer.invoke('settings:set', partial) as Promise<AppSettings>,
 
-  validateYoutubeApiKey: (key: string) =>
-    ipcRenderer.invoke('settings:validate-youtube-key', key) as Promise<ValidateApiKeyResult>,
-
   // ── Licensing / SetSense Pro (Section 16) ──────────────────────────────────
   licenseGet: (): Promise<LicenseState> => ipcRenderer.invoke('license:get'),
 
@@ -205,11 +205,22 @@ const setsense = {
 
   licenseDeactivate: (): Promise<LicenseState> => ipcRenderer.invoke('license:deactivate'),
 
+  licenseRefresh: (): Promise<LicenseState> => ipcRenderer.invoke('license:refresh'),
+
   licenseCheckout: (plan: CheckoutPlan, tipAmount?: number): Promise<boolean> =>
     ipcRenderer.invoke('license:checkout', plan, tipAmount),
 
-  // ── Shell (Discover) ──────────────────────────────────────────────────────
-  openExternal: (url: string): Promise<boolean> => ipcRenderer.invoke('shell:open-external', url),
+  // Deep-link activation (setsense://activate?key=…). Called once on mount to
+  // drain any key buffered during cold start.
+  licenseConsumePendingActivation: (): Promise<string | null> =>
+    ipcRenderer.invoke('license:consume-pending-activation'),
+
+  // Live deep-links that arrive while the app is already running.
+  onLicenseActivateDeepLink: (cb: (key: string) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, key: string): void => cb(key)
+    ipcRenderer.on('license:activate-deeplink', handler)
+    return () => ipcRenderer.removeListener('license:activate-deeplink', handler)
+  },
 
   // ── Customer feedback ─────────────────────────────────────────────────────
   submitFeedback: (payload: {
@@ -252,33 +263,6 @@ const setsense = {
     ipcRenderer.on('usb:devices-changed', handler)
     return () => ipcRenderer.removeListener('usb:devices-changed', handler)
   },
-
-  // ── Discovery (Phase 2) ───────────────────────────────────────────────────
-  discoverBrowse: (
-    tasteProfile: TasteProfile,
-    opts?: {
-      genres?: string[]
-      pageToken?: string | null
-      forceRefresh?: boolean
-      pageSize?: number
-    }
-  ): Promise<{
-    sets: DiscoverSet[]
-    nextPageToken: string | null
-    hasMore: boolean
-    error?: { code: string; message: string }
-  }> => ipcRenderer.invoke('discover:browse', tasteProfile, opts ?? {}),
-
-  discoverGetTracklist: (
-    videoId: string
-  ): Promise<{
-    tracklist: import('../src/types').DiscoverTrack[]
-    confidence: number
-    source: string
-  } | null> => ipcRenderer.invoke('discover:get-tracklist', videoId),
-
-  discoverRefreshSet: (videoId: string, tasteProfile: TasteProfile): Promise<DiscoverSet | null> =>
-    ipcRenderer.invoke('discover:refresh-set', videoId, tasteProfile),
 
   // ── Play history (Phase 11) ────────────────────────────────────────────────
   historySessions: (): Promise<PlaySession[]> => ipcRenderer.invoke('history:get-sessions'),

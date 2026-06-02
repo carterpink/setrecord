@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import type { TransitionDotKind } from '@/types'
+import { Coachmark } from '@/components/learn/Coachmark'
 
 interface TransitionDotProps {
   kind: TransitionDotKind
@@ -10,8 +11,11 @@ interface TransitionDotProps {
  * 8px semantic dot with a soft glow. `trainwreck` renders a small triangle instead.
  */
 export function TransitionDot({ kind, className }: TransitionDotProps): React.JSX.Element {
-  if (kind === 'trainwreck') {
-    return <span className={clsx('triangle', className)} aria-hidden="true" />
-  }
-  return <span className={clsx('dot', kind, className)} aria-hidden="true" />
+  const dot =
+    kind === 'trainwreck' ? (
+      <span className={clsx('triangle', className)} aria-hidden="true" />
+    ) : (
+      <span className={clsx('dot', kind, className)} aria-hidden="true" />
+    )
+  return <Coachmark concept="transition">{dot}</Coachmark>
 }
