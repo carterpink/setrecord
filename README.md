@@ -191,13 +191,14 @@ require any of these credentials.
 >   [`electron-builder.yml`](electron-builder.yml) defines the feed and the mac
 >   `zip` target is built, but nothing auto-publishes (CI never runs
 >   `electron-builder`).
-> - **Stage 2 — auto-download (gated, not built).** Full `electron-updater`
->   self-replacing updates are **blocked on NFR-901**: the ~1.9 GB Recall model
->   ships in `extraResources`, so it rides inside every artifact and a macOS
->   auto-update would re-download ~2 GB per release. The model must first be
->   decoupled from the bundle (load from `userData`, download once on first run)
->   — and that trades away today's "works offline from first launch" promise, so
->   it needs a product decision before it's turned on.
+> - **Auto-download — decided against (NFR-901).** Full `electron-updater`
+>   self-replacing updates are **not** pursued. The ~1.9 GB Recall model is
+>   bundled by design so "Extended understanding" works offline from first
+>   launch; that means it rides inside every artifact, and a self-replacing macOS
+>   update would re-download ~2 GB per release. We keep the model 100% bundled
+>   and treat manual-download + the Stage-1 notice above as the **permanent**
+>   delivery mechanism. (Differential updates would only help on Windows/NSIS;
+>   macOS has no block-level diff for the app bundle.)
 
 ## Support & contact
 

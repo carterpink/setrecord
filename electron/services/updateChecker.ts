@@ -1,10 +1,11 @@
 /**
  * updateChecker.ts — Stage-1 update delivery (NFR-1001, "Auto-update").
  *
- * SetSense has NO in-app installer: electron-updater is intentionally not wired
- * (the ~1.9 GB bundled Recall model makes full self-replacing updates a 2 GB
- * download per release on macOS — see README "Auto-update" / NFR-901). Until the
- * model is decoupled from the app bundle, releases are distributed manually.
+ * SetSense has NO in-app installer: electron-updater is intentionally not wired.
+ * The ~1.9 GB Recall model is bundled by design (offline from first launch), so
+ * a full self-replacing update would be a ~2 GB download per release on macOS.
+ * Decision (NFR-901): keep the model 100% bundled and distribute updates
+ * manually — this notice IS the permanent delivery mechanism, not a stopgap.
  *
  * This module is the lightweight safety net so a manually-distributed build is
  * never fully dark: on launch we ask GitHub for the latest *published* release,

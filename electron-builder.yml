@@ -52,13 +52,13 @@ nsis:
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
 mac:
-  # dmg = the manual-download artifact for new users. zip = REQUIRED for any
-  # future electron-updater flow (the updater consumes the zip on macOS, not the
-  # dmg). Both are signed + notarized identically. Auto-install stays OFF — see
-  # the `publish` block below and README "Auto-update".
+  # DMG only. We deliberately do NOT build the `zip` target: zip exists purely to
+  # feed electron-updater's self-replacing flow, which we don't use — the ~1.9 GB
+  # model is bundled by design (offline from first launch), so a self-replacing
+  # update would be a ~2 GB download per release. Updates are manual-download; the
+  # app just notifies (see `publish` below and README "Auto-update").
   target:
     - dmg
-    - zip
   hardenedRuntime: true
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
@@ -96,14 +96,13 @@ npmRebuild: false
 # Update feed (NFR-1001). This defines WHERE releases live; it does NOT turn on
 # auto-install. electron-builder only publishes when invoked with `--publish`
 # (CI runs `electron-vite build`, never `electron-builder`, so it never auto-
-# publishes). The app today only does a Stage-1 "you're behind" check that links
-# here — see electron/services/updateChecker.ts and README "Auto-update".
+# publishes). It's where you upload the signed DMG that the in-app update notice
+# links to — see electron/services/updateChecker.ts and README "Auto-update".
 #
-# Stage-2 (real electron-updater auto-download) is gated on decoupling the
-# ~1.9 GB Recall model from the bundle (NFR-901): while the model ships in
-# extraResources it rides inside every artifact, so a self-replacing macOS
-# update is a ~2 GB download per release. Don't enable auto-download until the
-# model loads from userData instead of the app bundle.
+# DECISION (NFR-901): the model is bundled 100%. We are NOT pursuing
+# electron-updater auto-download — with the ~1.9 GB model inside every artifact
+# a self-replacing update is a ~2 GB download per release. Manual-download +
+# in-app "you're behind" notice is the intended, permanent delivery mechanism.
 publish:
   provider: github
   owner: carterpink
