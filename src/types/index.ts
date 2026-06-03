@@ -35,6 +35,56 @@ export type EnergySource = 'pending' | 'rekordbox' | 'computed' | 'failed' | 'mi
 /** State of embedded album-artwork extraction for a track. */
 export type ArtworkSource = 'pending' | 'embedded' | 'none' | 'failed'
 
+// ───────── Auto-tagging ─────────
+
+/** Plain-language tag categories inferred from audio + metadata. */
+export type TagCategory = 'vibe' | 'energy' | 'bestFor' | 'time' | 'vocals' | 'genreBlend'
+
+/** Where a tag came from. 'user' locks its category against re-inference. */
+export type TagSource = 'auto' | 'user'
+
+/**
+ * A single tag on a track. `value` is a stable taxonomy slug — see
+ * src/utils/tagging/taxonomy.ts, the single source of truth for tag identities.
+ */
+export interface TrackTag {
+  category: TagCategory
+  value: string
+  source: TagSource
+}
+
+/** Normalised 0..1 audio features persisted per track; the input to tag inference. */
+export interface TrackAnalysisFeatures {
+  rms: number
+  brightness: number
+  loudness: number
+  vocalness: number
+}
+
+/** One tag value with how many tracks carry it — for the Tags view facets. */
+export interface TagCoverageCount {
+  category: TagCategory
+  value: string
+  count: number
+}
+
+/** Aggregate tag coverage across the library. */
+export interface TagCoverage {
+  totalTracks: number
+  taggedTracks: number
+  counts: TagCoverageCount[]
+}
+
+/** Result of writing native MyTags into the Rekordbox master.db. */
+export interface RekordboxTagWriteResult {
+  success: boolean
+  /** Where the pre-write backup of master.db was saved. */
+  backupPath?: string
+  tagsCreated?: number
+  associations?: number
+  error?: string
+}
+
 // ───────── Lifecycle state ─────────
 
 /**
@@ -56,6 +106,8 @@ export type LifecycleState =
 export interface Track {
   id: string // UUID, generated on import
   rekordboxId?: string // Original Rekordbox TrackID
+  /** Which DJ-software source this track was last imported from. undefined = legacy/Rekordbox. */
+  source?: 'rekordbox' | 'serato' | 'engine'
   title: string
   artist: string
   album?: string
@@ -102,6 +154,10 @@ export interface Track {
   lifecycleSource?: 'computed' | 'user'
   /** ISO timestamp of when the user flagged this track to be tested at their next gig. */
   flaggedForGigAt?: string
+  /** Normalised audio features (0..1) used to infer tags. Written by the analyser. */
+  analysisFeatures?: TrackAnalysisFeatures
+  /** Plain-language tags (auto-inferred + user overrides). Populated on library load. */
+  tags?: TrackTag[]
   /** Stored in DB for phantom tracks imported from the old YouTube Discover feature. No longer rendered in UI. */
   discoverMeta?: {
     discoverSetId: string
@@ -116,8 +172,24 @@ export interface Track {
 
 export type SetVibe = 'peak' | 'mixed' | 'club' | 'warmup' | 'closing' | 'festival' | 'underground'
 export type VenueType = 'club' | 'festival' | 'bar' | 'private' | 'outdoor'
+/** The role a set played within a night — used as gig metadata on a PlaySession. */
+export type SetSlot = 'opener' | 'peak' | 'closer' | 'b2b' | 'other'
 export type EnergyCurveType = 'rise' | 'peak-sustain' | 'wave' | 'drop-in' | 'custom'
 export type CDJModel = 'CDJ-2000NXS2' | 'CDJ-3000' | 'XDJ-RX3' | 'XDJ-XZ' | 'CDJ-2000'
+
+/** Which DJ-hardware ecosystem an export targets. */
+export type Ecosystem = 'pioneer' | 'engine'
+
+/**
+ * Where an export is headed. Pioneer/Rekordbox writes an XML; Engine/Denon
+ * writes an Engine Library straight to a USB drive. `hardware` only applies to
+ * the Pioneer ecosystem (CDJ format/era differences); Engine OS gear shares one
+ * broad format set, so a single 'engine' target covers all current Denon units.
+ */
+export interface ExportTarget {
+  ecosystem: Ecosystem
+  hardware?: CDJModel
+}
 
 export interface SetTrack {
   id: string // UUID for this set slot
@@ -147,6 +219,19 @@ export interface Set {
   energyCurveType?: EnergyCurveType
   safetyScore?: number // 0-100
   targetHardware?: CDJModel
+  /**
+   * The variation seed Set Architect used to generate this set. Lets a saved
+   * set be reproduced: same seed + same params + unchanged library ⇒ same set.
+   * Absent for hand-built sets or sets that pre-date seeded generation.
+   */
+  architectSeed?: number
+  /**
+   * The Set Architect engine version that produced this set (see
+   * ARCHITECT_ALGORITHM_VERSION). Reproduction is only guaranteed within the
+   * same version — bump the constant whenever buildSet's selection logic
+   * changes so we never promise identical reproduction across engine revisions.
+   */
+  algorithmVersion?: number
 }
 
 /** Lightweight set metadata for the timeline header (no tracks array). */
@@ -181,7 +266,7 @@ export type TransitionDotKind = 'success' | 'warning' | 'danger' | 'info' | 'tra
 
 // ───────── Suggestions ─────────
 
-export type MatchReasonType = 'key' | 'bpm' | 'energy' | 'genre' | 'texture' | 'combo'
+export type MatchReasonType = 'key' | 'bpm' | 'energy' | 'genre' | 'texture' | 'combo' | 'tags'
 export type MatchReasonQuality = 'positive' | 'neutral' | 'warning'
 
 export interface MatchReason {
@@ -210,6 +295,27 @@ export interface LibraryStats {
   unsupportedFormats: number
   tracksWithoutKey: number
   tracksWithoutBpm: number
+  tracksWithPendingEnergy: number // energy not yet analysed (energy_source = 'pending')
+}
+
+/** Activation funnel events; each maps to a write-once timestamp in ProgressState. */
+export type FirstEvent = 'import' | 'suggestion' | 'set' | 'export'
+
+/** Retention / activation progress (brief #22, Phase B). Persisted in the main process. */
+export interface ProgressState {
+  firstImportAt: string | null
+  firstSuggestionSeenAt: string | null
+  firstSetStartedAt: string | null
+  firstExportAt: string | null
+  /** Milestone ids already celebrated, so a toast never repeats. */
+  milestonesSeen: string[]
+  /** Monday-based week ordinal of the last active week (internal). */
+  lastActiveWeek: number | null
+  /** Consecutive active weeks, including the current one. */
+  currentStreak: number
+  longestStreak: number
+  /** User dismissed the onboarding checklist on Home. */
+  checklistDismissed: boolean
 }
 
 export interface LibraryFilters {
@@ -236,7 +342,43 @@ export interface ImportResult {
   stats: LibraryStats
 }
 
-export type ImportSource = 'rekordbox-db' | 'rekordbox-xml'
+export type ImportSource = 'rekordbox-db' | 'rekordbox-xml' | 'serato' | 'engine'
+
+/**
+ * Progress for a provider's deferred post-import enrichment pass (e.g. Serato's
+ * file-tag cue/beatgrid extraction). Streamed on `library:post-import-progress`
+ * after the main import finishes; the renderer reloads the library on `done`.
+ */
+export interface PostImportProgress {
+  sourceId: LibrarySourceId
+  processed: number
+  total: number
+  phase: 'extracting' | 'done'
+}
+
+// ───────── Cross-platform import sources ─────────
+
+/** Stable id for each supported DJ-software library source. */
+export type LibrarySourceId = 'rekordbox' | 'serato' | 'engine-dj'
+
+/** Why a source's library couldn't be read, surfaced to the picker UI. */
+export type SourceReadError = 'locked' | 'unsupported' | 'unknown' | null
+
+/**
+ * Result of probing one DJ-software source's install. Aggregated across all
+ * registered sources to drive the import source-picker. Source-specific extras
+ * live in `meta` (e.g. Rekordbox version + the full RekordboxDetection).
+ */
+export interface SourceDetection {
+  sourceId: LibrarySourceId
+  label: string
+  installed: boolean
+  libraryPath: string | null
+  trackCount: number | null
+  playlistCount: number | null
+  readError: SourceReadError
+  meta?: Record<string, unknown>
+}
 
 /**
  * Snapshot of what we found in the user's Rekordbox install. All fields are
@@ -308,7 +450,45 @@ export interface ExportResult {
   error?: string
 }
 
+// ───────── Beatport playlist export ─────────
+
+export type BeatportConfidence = 'high' | 'medium' | 'low'
+
+/**
+ * One track resolved into the match keys Beatport's importer (and third-party
+ * tools like Soundiiz / TuneMyMusic) use to find the catalog entry. Derived
+ * from existing library metadata at export time — never persisted, never
+ * written back to the library.
+ */
+export interface BeatportRow {
+  trackId: string
+  position: number // 1-indexed order in the set
+  title: string
+  mix?: string // e.g. "Extended Mix", "Someone's Remix"
+  artist: string
+  remixers?: string
+  label?: string
+  catalog?: string
+  isrc?: string
+  bpm: number
+  key: string // open-key notation preferred for readability
+  genre?: string
+  duration: number // seconds
+  searchUrl: string // Beatport search fallback for unmatched tracks
+  confidence: BeatportConfidence
+  reasons: string[] // human-readable notes shown in the manual-fix UI
+}
+
 // ───────── Architect ─────────
+
+/**
+ * Set Architect engine version, stamped onto every generated Set
+ * (Set.algorithmVersion). A given `variationSeed` only reproduces the same set
+ * within the same version. **Bump this whenever buildSet's track-selection
+ * logic changes** (scoring, candidate pools, RNG wiring) so reproduction across
+ * engine revisions is treated as best-effort rather than guaranteed.
+ */
+export const ARCHITECT_ALGORITHM_VERSION = 1
 
 export interface ArchitectParams {
   targetDuration: number // minutes
@@ -323,10 +503,40 @@ export interface ArchitectParams {
   energyCurveType: EnergyCurveType
   excludedTracks?: string[]
   seedTrack?: string
+  /**
+   * Opt-in variation seed. When undefined the builder is fully deterministic
+   * (top-scored picks). When set, the opener and candidate selection draw
+   * pseudo-randomly from the strongest matches so "Regenerate" yields a
+   * different — but still constraint-valid — arrangement.
+   */
+  variationSeed?: number
   /** Restrict the source pool to tracks in these Rekordbox playlists. Empty/undefined = whole library. */
   sourcePlaylistIds?: string[]
   /** Tracks pinned at fixed positions. Algorithm preserves these and bridges between them. */
   lockedTracks?: Array<{ position: number; trackId: string }>
+  /**
+   * Manual genre mixing-profile override (e.g. 'tech-house'). Undefined = auto:
+   * the engine detects the dominant style from the source library. See
+   * electron/algorithms/genreProfiles.ts.
+   */
+  genreProfileId?: string
+}
+
+/**
+ * Renderer-facing summary of a genre mixing profile. Full profile params live
+ * in electron/algorithms/genreProfiles.ts; the UI only needs label + blurb.
+ */
+export interface GenreProfileSummary {
+  id: string
+  label: string
+  /** Plain fragment for "This set follows {blurb}." copy. */
+  blurb: string
+}
+
+/** Result of genre auto-detection: the detected default + all selectable styles. */
+export interface GenreProfileInfo {
+  detected: GenreProfileSummary
+  profiles: GenreProfileSummary[]
 }
 
 // ───────── Playlists (imported from Rekordbox) ─────────
@@ -345,8 +555,8 @@ export interface Playlist {
 
 // ───────── App-shell UI state ─────────
 
-export type AppMode = 'Prepare' | 'Recall'
-export type LibraryTab = 'Library' | 'Crates' | 'Sets'
+export type AppMode = 'Home' | 'Library' | 'Build'
+export type LibraryTab = 'Collection' | 'Crates' | 'Sets'
 export type TimelineCurveView = 'Energy' | 'BPM'
 
 // ───────── USB Devices ─────────
@@ -442,6 +652,10 @@ export interface CrateRule {
   durationMaxSec?: number
   /** Track BPM must sit in the top N percentile of the supplied library's BPM distribution. */
   bpmTopPercentOfLibrary?: number
+  /** Track must carry ALL of these tag slugs (any category). */
+  tagsInclude?: string[]
+  /** Track must carry NONE of these tag slugs (any category). */
+  tagsExclude?: string[]
 }
 
 /** A complete smart crate definition. */
@@ -569,6 +783,89 @@ export interface RecallAiStatus {
   error?: string
 }
 
+/** Lifecycle of the optional on-device speech-to-text model. */
+export type VoiceState = 'absent' | 'downloading' | 'loading' | 'ready' | 'error'
+
+/** State of the on-device voice model that powers spoken requests in Home. */
+export interface VoiceStatus {
+  state: VoiceState
+  /** Whether the model file exists on disk (bundled or self-healed). */
+  downloaded: boolean
+  /** 0–1 download progress while state==='downloading'. */
+  progress?: number
+  error?: string
+}
+
+/**
+ * Outcome of asking the OS for microphone access before capture.
+ * - 'granted'     — proceed with getUserMedia.
+ * - 'denied'      — user/MDM has blocked the mic; the renderer points them at
+ *                   System Settings rather than failing with a generic error.
+ * - 'unavailable' — no mic-permission concept on this platform (proceed).
+ */
+export type MicAccess = 'granted' | 'denied' | 'unavailable'
+
+/**
+ * Structured routing output from the local model — a plain-English request
+ * mapped to ONE intent plus any slots it could extract. The renderer executes
+ * the intent against the deterministic engines, so this carries data only.
+ */
+export type RecallRouteIntent =
+  | 'smart_filter'
+  | 'similar_to'
+  | 'build_set'
+  | 'forgotten_gems'
+  | 'tracks_after'
+  | 'best_closers'
+  | 'best_openers'
+  | 'top_sequences'
+  | 'dead_ends'
+  | 'lifecycle'
+  | 'health'
+  | 'identity'
+  | 'duplicates'
+  | 'count'
+  | 'unknown'
+
+export interface RecallRoute {
+  intent: RecallRouteIntent
+  /** A named track (for tracks_after / similar_to). */
+  trackQuery?: string
+  /** Free text title/artist/album contains. */
+  text?: string
+  artist?: string
+  genre?: string
+  bpmMin?: number
+  bpmMax?: number
+  energyMin?: number
+  energyMax?: number
+  keyExact?: string
+  minRating?: number
+  maxRating?: number
+  neverPlayed?: boolean
+  dormantMonths?: number
+  durationMinSec?: number
+  durationMaxSec?: number
+  /** Relative "added in the last N days" — converted to addedAfter by the caller. */
+  addedWithinDays?: number
+  /** Plain-language auto-tag values to match (e.g. "punchy", "dark", "vocal"). */
+  tags?: string[]
+  /** Gig filters — a venue/city/date-range/event-type the track was PLAYED at. */
+  performedVenue?: string
+  performedCity?: string
+  /** ISO date bounds for when the track was played live. */
+  performedAfter?: string
+  performedBefore?: string
+  performedEventType?: VenueType
+  sort?: LibrarySearchParams['sort']
+  limit?: number
+  /** build_set: target peak BPM, set length, ramp shape, optional genre blend. */
+  targetBpm?: number
+  lengthMinutes?: number
+  shape?: 'slow burn' | 'steady'
+  genreBlend?: string[]
+}
+
 /** Result of a natural-language Discover query, routed to a deterministic engine intent. */
 export interface RecallAskResult {
   /** The engine intent the question was routed to. */
@@ -585,11 +882,25 @@ export interface RecallAskResult {
 /** Active section within the Discover tab. */
 export type RecallSection =
   | 'conversations'
+  | 'uncover'
   | 'rediscover'
+  | 'tags'
   | 'crates'
   | 'identity'
   | 'combos'
+  | 'gigs'
   | 'health'
+
+/** Where an Uncover card was sourced from — drives its pill colour + label. */
+export type UncoverSource = 'heater' | 'gem' | 'untested' | 'audition'
+
+/** A single swipeable card in the Uncover deck. */
+export interface UncoverCard {
+  track: Track
+  source: UncoverSource
+  /** One-line, human reason this track surfaced ("dormant 9 months", etc.). */
+  reason: string
+}
 
 // ───────── Discover conversations (SetSense Intelligence) ─────────
 
@@ -619,8 +930,22 @@ export interface LibrarySearchParams {
   addedAfter?: string
   /** ISO timestamp; only tracks added on or before this date pass. */
   addedBefore?: string
+  /** Venue name (case-insensitive contains) the track must have been PLAYED at. */
+  performedVenue?: string
+  /** City (case-insensitive contains) the track must have been PLAYED in. */
+  performedCity?: string
+  /** ISO date; only tracks played in a session on/after this date pass. */
+  performedAfter?: string
+  /** ISO date; only tracks played in a session on/before this date pass. */
+  performedBefore?: string
+  /** Event type of the session the track was played in (club | festival | …). */
+  performedEventType?: VenueType
+  /** Set slot of the session the track was played in (opener | peak | …). */
+  performedSetSlot?: SetSlot
   /** Substring (case-insensitive) that must appear in any hot-cue or cue-point label. */
   cueLabel?: string
+  /** Plain-language auto-tag values; a track matches if it carries ANY of them. */
+  tags?: string[]
   sort?:
     | 'mostPlayed'
     | 'leastPlayed'
@@ -739,6 +1064,17 @@ export interface PlaySession {
   /** ISO date the gig happened (may be null for manually-created sessions without a known date). */
   performedAt?: string
   venue?: string
+  /** How `venue` (and other derived metadata) was set: 'auto' = parsed from a
+   * Rekordbox history-session name; 'user' = edited by the DJ. Auto never clobbers user. */
+  venueSource?: 'auto' | 'user'
+  /** Kind of event — reuses the VenueType vocabulary (club | festival | …). */
+  eventType?: VenueType
+  /** City the gig took place in (free-text). */
+  city?: string
+  /** Country the gig took place in (free-text). */
+  country?: string
+  /** The role this set played within the night. */
+  setSlot?: SetSlot
   /** Duration in seconds (optional; populated when known). */
   duration?: number
   /** Links back to a SetSense set when source='setsense'. */
@@ -746,6 +1082,29 @@ export interface PlaySession {
   createdAt: string
   /** Derived from the session_tracks count — not stored in the sessions row itself. */
   trackCount: number
+}
+
+/** Editable gig-metadata fields on a session (used by update + bulk-assign). */
+export interface SessionMetadataPatch {
+  venue?: string | null
+  eventType?: VenueType | null
+  city?: string | null
+  country?: string | null
+  setSlot?: SetSlot | null
+}
+
+/** Filter for session-oriented queries ("sets I played in July 2025 at Hi Ibiza"). */
+export interface SessionFilter {
+  /** Venue name, case-insensitive contains. */
+  venue?: string
+  /** City, case-insensitive contains. */
+  city?: string
+  /** ISO date lower bound (inclusive) on performed_at. */
+  after?: string
+  /** ISO date upper bound (inclusive) on performed_at. */
+  before?: string
+  eventType?: VenueType
+  setSlot?: SetSlot
 }
 
 /** A single track position within a PlaySession. */

@@ -25,8 +25,11 @@ const POP_WIDTH = 248
  */
 export function Coachmark({ concept, children }: CoachmarkProps): React.JSX.Element {
   const learnModeEnabled = useUiStore((s) => s.learnModeEnabled)
+  const isBeginner = useUiStore((s) => s.isBeginner)
   const isPro = useIsPro()
-  const eligible = learnModeEnabled && isPro
+  // Beginners always get the free first-sight tips (they persist after the
+  // trial); advanced Learn-Mode users still need Pro for them.
+  const eligible = (isBeginner || learnModeEnabled) && (isBeginner || isPro)
 
   const [ownerId] = useState(nextCoachmarkOwner)
   const seen = useCoachmarkStore((s) => Boolean(s.seen[concept]))

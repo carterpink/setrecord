@@ -60,6 +60,10 @@ interface UIState {
   onboardingVisible: boolean
   showOnboarding: () => void
   hideOnboarding: () => void
+  /** True once the user finished or skipped onboarding — gates the first-run modal. */
+  hasCompletedOnboarding: boolean
+  /** Persist completion and dismiss the onboarding modal in one call. */
+  completeOnboarding: () => void
   lightMode: boolean
   toggleLightMode: () => void
   // Background energy analysis status — null when idle, populated while the
@@ -71,7 +75,17 @@ interface UIState {
   // Learn Mode — premium educational overlay (mirrors AppSettings, hydrated on boot)
   learnModeEnabled: boolean
   setLearnModeEnabled: (v: boolean) => void
-  hydrateFromSettings: (s: { learnModeEnabled: boolean }) => void
+  /**
+   * Self-identified beginner. Distinct from Learn Mode: this unlocks the *free*
+   * basic jargon explainers so beginners keep them after the trial lapses.
+   */
+  isBeginner: boolean
+  setIsBeginner: (v: boolean) => void
+  hydrateFromSettings: (s: {
+    learnModeEnabled: boolean
+    isBeginner: boolean
+    hasCompletedOnboarding: boolean
+  }) => void
   /** Suggestions panel source pool — independent of the library sidebar filter. */
   suggestionsSourcePlaylistIds: string[]
   setSuggestionsSourcePlaylistIds: (ids: string[]) => void
@@ -88,10 +102,14 @@ function getInitialSidebarCollapsed(): boolean {
 }
 
 function getInitialMode(): AppMode {
-  if (typeof window === 'undefined') return 'Prepare'
+  // "Home" is the conversational front door; "Library" is the analytical
+  // workspace; "Build" is the set-builder. Migrate legacy persisted values:
+  // Recall/Discover → Home, Prepare → Build, old "Library" front-door → Home.
+  if (typeof window === 'undefined') return 'Home'
   const saved = window.localStorage.getItem('setsense-mode')
-  if (saved === 'Recall') return 'Recall'
-  return 'Prepare'
+  if (saved === 'Prepare' || saved === 'Build') return 'Build'
+  if (saved === 'Home' || saved === 'Library' || saved === 'Build') return saved as AppMode
+  return 'Home'
 }
 
 function getInitialLibraryDensity(): 'standard' | 'compact' {
@@ -178,6 +196,13 @@ export const useUiStore = create<UIState>((set) => ({
   onboardingVisible: false,
   showOnboarding: () => set({ onboardingVisible: true }),
   hideOnboarding: () => set({ onboardingVisible: false }),
+  hasCompletedOnboarding: false,
+  completeOnboarding: () => {
+    set({ hasCompletedOnboarding: true, onboardingVisible: false })
+    if (typeof window !== 'undefined' && window.setsense) {
+      void window.setsense.setSettings({ hasCompletedOnboarding: true })
+    }
+  },
   lightMode: getInitialLightMode(),
   toggleLightMode: () =>
     set((s) => {
@@ -204,7 +229,15 @@ export const useUiStore = create<UIState>((set) => ({
       void window.setsense.setSettings({ learnModeEnabled: v })
     }
   },
-  hydrateFromSettings: ({ learnModeEnabled }) => set({ learnModeEnabled }),
+  isBeginner: false,
+  setIsBeginner: (v) => {
+    set({ isBeginner: v })
+    if (typeof window !== 'undefined' && window.setsense) {
+      void window.setsense.setSettings({ isBeginner: v })
+    }
+  },
+  hydrateFromSettings: ({ learnModeEnabled, isBeginner, hasCompletedOnboarding }) =>
+    set({ learnModeEnabled, isBeginner, hasCompletedOnboarding }),
   suggestionsSourcePlaylistIds: getInitialSuggestionsSource(),
   setSuggestionsSourcePlaylistIds: (ids) => {
     if (typeof window !== 'undefined') {

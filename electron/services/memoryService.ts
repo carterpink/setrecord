@@ -11,6 +11,8 @@ import {
   getAllSets,
   getSessions,
   getSessionTracks,
+  getTrackIdsPlayedWhere,
+  querySessions,
   createCrate,
   getCrates,
   updateCrate,
@@ -44,7 +46,9 @@ import type {
   CrateWithCount,
   LifecycleCounts,
   ComboResult,
-  LibrarySearchParams
+  LibrarySearchParams,
+  SessionFilter,
+  PlaySession
 } from '../../src/types'
 
 export type { CrateWithCount, LifecycleCounts, ComboResult } from '../../src/types'
@@ -338,7 +342,25 @@ export async function resolveDuplicateGroup(
 
 /** Deterministic, model-free library search powering Intelligence conversations. */
 export async function search(params: LibrarySearchParams): Promise<Track[]> {
-  return searchLibrary(getAllTracks(getDb()), params)
+  const db = getDb()
+  // If the query carries gig constraints (venue/city/date-range/event/slot),
+  // resolve them to the set of track ids played in matching sessions and
+  // intersect with the in-memory track filters. Returns null when no gig
+  // constraint is present, so ordinary searches are unaffected.
+  const allowedTrackIds = getTrackIdsPlayedWhere(db, {
+    venue: params.performedVenue,
+    city: params.performedCity,
+    after: params.performedAfter,
+    before: params.performedBefore,
+    eventType: params.performedEventType,
+    setSlot: params.performedSetSlot
+  })
+  return searchLibrary(getAllTracks(db), params, allowedTrackIds)
+}
+
+/** Session-oriented query powering "all sets I played in July 2025" / "my festival sets". */
+export async function searchSessions(filter: SessionFilter): Promise<PlaySession[]> {
+  return querySessions(getDb(), filter)
 }
 
 /** Best openers / closers across performed sessions + saved sets, joined to track objects. */
@@ -355,6 +377,46 @@ export async function getEnds(): Promise<{ openers: ComboResult[]; closers: Comb
       })
       .filter((x): x is ComboResult => x !== null)
   return { openers: join(openers), closers: join(closers) }
+}
+
+/** Camelot adjacency: same wheel number, relative major/minor, or ±1 number. */
+function harmonicallyClose(a: string, b: string): boolean {
+  const pa = a.match(/^(\d{1,2})([ab])$/i)
+  const pb = b.match(/^(\d{1,2})([ab])$/i)
+  if (!pa || !pb) return false
+  const na = +pa[1]
+  const nb = +pb[1]
+  const la = pa[2].toLowerCase()
+  const lb = pb[2].toLowerCase()
+  if (na === nb) return true // same key or relative major/minor
+  if (la === lb && (Math.abs(na - nb) === 1 || Math.abs(na - nb) === 11)) return true // ±1 around the wheel
+  return false
+}
+
+/**
+ * Find tracks similar to a seed by sonic proximity — BPM, energy, harmonic key,
+ * genre, and shared auto-tags. Used for "songs like X" / "more like that".
+ */
+export async function findSimilar(trackId: string, count = 12): Promise<Track[]> {
+  const tracks = getAllTracks(getDb()).filter((t) => t.phantom !== true)
+  const seed = tracks.find((t) => t.id === trackId)
+  if (!seed) return []
+  const seedTags = new Set((seed.tags ?? []).map((x) => x.value.toLowerCase()))
+  const score = (t: Track): number => {
+    let s = 0
+    s += Math.max(0, 8 - Math.abs((t.bpm ?? 0) - (seed.bpm ?? 0))) // ±8 BPM band
+    s += Math.max(0, 5 - Math.abs((t.energy ?? 0) - (seed.energy ?? 0))) * 1.2
+    if (t.genre && seed.genre && t.genre.toLowerCase() === seed.genre.toLowerCase()) s += 6
+    if (t.key && seed.key && harmonicallyClose(seed.key, t.key)) s += 5
+    s += (t.tags ?? []).filter((x) => seedTags.has(x.value.toLowerCase())).length * 1.5
+    return s
+  }
+  return tracks
+    .filter((t) => t.id !== trackId)
+    .map((t) => ({ t, s: score(t) }))
+    .sort((a, b) => b.s - a.s)
+    .slice(0, count)
+    .map((x) => x.t)
 }
 
 /** Fuzzy-resolve a free-text "title / artist" query to a single library track. */

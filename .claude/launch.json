@@ -4,8 +4,14 @@
     {
       "name": "renderer-preview",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["vite", "--port", "5175", "--strictPort"],
-      "port": 5175
+      "runtimeArgs": ["vite", "--config", "vite.hud.config.ts"],
+      "port": 5199
+    },
+    {
+      "name": "app-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--config", "vite.config.ts", "--port", "5198"],
+      "port": 5198
     }
   ]
 }

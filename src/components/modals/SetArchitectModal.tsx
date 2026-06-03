@@ -1,17 +1,15 @@
-import { useMemo, useState } from 'react'
-import FocusLock from 'react-focus-lock'
-import { ArrowRight, Loader, Lock, Sparkles, X } from 'lucide-react'
-import type { ArchitectParams, EnergyCurveType, SetTrack, SetVibe, VenueType } from '@/types'
+import { useEffect, useMemo, useState } from 'react'
+import { Check, ChevronDown, Copy, Loader, Lock, RefreshCw, Sparkles, X } from 'lucide-react'
+import type { ArchitectParams, EnergyCurveType, GenreProfileInfo, SetTrack, SetVibe } from '@/types'
 import { Button } from '@/components/shared/Button'
 import { Chip } from '@/components/shared/Chip'
 import { PlaylistSourceDropdown } from '@/components/shared/PlaylistSourceDropdown'
 import { IconButton } from '@/components/shared/IconButton'
 import { RangeSlider } from '@/components/shared/RangeSlider'
-import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { Slider } from '@/components/shared/Slider'
-import { Toggle } from '@/components/shared/Toggle'
 import { NoLibraryState } from '@/components/shared/NoLibraryState'
-import { motion, AnimatePresence, modalBackdrop, modalPanel } from '@/components/shared/Motion'
+import { motion, AnimatePresence } from '@/components/shared/Motion'
+import { Modal } from '@/components/shared/Modal'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
@@ -19,7 +17,10 @@ import { LearnPanel } from '@/components/learn/LearnPanel'
 import { explainEnergyArc } from '@/utils/learnMode/explanations'
 import { getTargetCurve } from '@/utils/energyCurve'
 import { parseArchitectQuery } from '@/utils/architectQuery'
+import { decodeSeed, encodeSeed, freshSeed } from '@/utils/seed'
 
+// Sensible hidden defaults for the parameters we no longer expose in the UI.
+// The builder still reads them; we just don't make the DJ tune them.
 const DEFAULT_PARAMS: ArchitectParams = {
   targetDuration: 60,
   vibe: 'peak',
@@ -34,10 +35,23 @@ const DEFAULT_PARAMS: ArchitectParams = {
 }
 
 const VIBES: SetVibe[] = ['peak', 'mixed', 'club', 'warmup', 'closing', 'festival', 'underground']
-const VENUES: VenueType[] = ['club', 'festival', 'bar', 'private', 'outdoor']
-const SLOT_TIMES = ['early', 'peak', 'late', 'closing'] as const
-const CROWD_AGES = ['young', 'mixed', 'mature'] as const
-const CURVE_TYPES: EnergyCurveType[] = ['rise', 'peak-sustain', 'wave', 'drop-in']
+
+// The energy-curve taxonomy is no longer a user control — we pick one smart
+// shape from the chosen vibe. Keeps the engine + Learn Mode fully functional
+// without asking the DJ to reason about curve types.
+const CURVE_BY_VIBE: Record<SetVibe, EnergyCurveType> = {
+  warmup: 'rise',
+  club: 'rise',
+  peak: 'peak-sustain',
+  festival: 'peak-sustain',
+  mixed: 'wave',
+  underground: 'wave',
+  closing: 'wave'
+}
+
+function deriveCurveType(vibe: SetVibe): EnergyCurveType {
+  return CURVE_BY_VIBE[vibe] ?? 'rise'
+}
 
 function formatMinutes(min: number): string {
   const h = Math.floor(min / 60)
@@ -69,14 +83,67 @@ export function SetArchitectModal(): React.JSX.Element {
     [playlists]
   )
 
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [phase, setPhase] = useState<'form' | 'result'>('form')
   const [params, setParams] = useState<ArchitectParams>(DEFAULT_PARAMS)
   const [setName, setSetName] = useState('')
   const [isBuilding, setIsBuilding] = useState(false)
   const [buildError, setBuildError] = useState<string | null>(null)
   const [resultTracks, setResultTracks] = useState<SetTrack[]>([])
+  // The exact params used for the most recent build — drives the Learn panel and
+  // the eventual commit so the curve/vibe shown match what was generated.
+  const [resultParams, setResultParams] = useState<ArchitectParams>(DEFAULT_PARAMS)
   /** Empty array = no constraint (use whole library). */
   const [selectedSourcePlaylistIds, setSelectedSourcePlaylistIds] = useState<string[]>([])
+
+  // Genre mixing intelligence: the engine auto-detects the dominant style of the
+  // source pool ("Auto"); the DJ can override it ("optimise for tech house").
+  const [genreInfo, setGenreInfo] = useState<GenreProfileInfo | null>(null)
+  /** null = Auto (let the engine detect); otherwise a manual profile id. */
+  const [genreOverride, setGenreOverride] = useState<string | null>(null)
+  /** The style blurb the most recent build actually used — drives the result copy. */
+  const [resultBlurb, setResultBlurb] = useState('')
+
+  // ── Seeded regeneration (FR-305) ──
+  // Every build runs with a variation seed so it's reproducible. By default
+  // Regenerate mints a fresh seed (a new take); when the seed is locked it
+  // reuses the current one (reproduce). The seed itself lives quietly behind an
+  // "Advanced" disclosure — pasteable to reproduce a shared or saved set.
+  const [seedLocked, setSeedLocked] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [seedDraft, setSeedDraft] = useState('')
+  const [seedError, setSeedError] = useState(false)
+  const [seedCopied, setSeedCopied] = useState(false)
+
+  // Refresh the detected default + selectable styles whenever the source pool
+  // changes, so "Auto" always reflects the tracks being built from.
+  useEffect(() => {
+    let cancelled = false
+    window.setsense
+      .genreProfiles(selectedSourcePlaylistIds)
+      .then((info) => {
+        if (!cancelled) setGenreInfo(info)
+      })
+      .catch(() => {
+        /* leave genreInfo null — the field simply hides */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedSourcePlaylistIds])
+
+  // Manual override genres (everything except the generic "Auto" entry).
+  const overrideProfiles = useMemo(
+    () => (genreInfo?.profiles ?? []).filter((p) => p.id !== 'generic'),
+    [genreInfo]
+  )
+
+  // Resolve the blurb for the currently selected style (for the result copy).
+  function resolveBlurb(): string {
+    if (genreOverride) {
+      return genreInfo?.profiles.find((p) => p.id === genreOverride)?.blurb ?? 'a balanced flow'
+    }
+    return genreInfo?.detected.blurb ?? 'a balanced flow'
+  }
 
   // Live count of the source pool — gives the user confidence before they hit Build.
   const sourcePoolSize = useMemo(() => {
@@ -94,20 +161,32 @@ export function SetArchitectModal(): React.JSX.Element {
     setParams((p) => ({ ...p, [key]: value }))
   }
 
-  // Natural-language brief → params (same deterministic tech as Recall conversations).
+  // Natural-language brief → params (same deterministic tech as Library conversations).
   const [nlText, setNlText] = useState('')
   const [nlSummary, setNlSummary] = useState('')
   function applyNl(): void {
     const { params: parsed, summary } = parseArchitectQuery(nlText)
     if (Object.keys(parsed).length === 0) {
-      setNlSummary('Couldn’t read that — try “2-hour peak club set, 126–130, build then sustain”.')
+      setNlSummary('Couldn’t read that — try “2-hour peak club set, 126–130”.')
       return
     }
     setParams((p) => ({ ...p, ...parsed }))
     setNlSummary(`Applied: ${summary}`)
   }
 
-  async function handleBuild(): Promise<void> {
+  // Build (or regenerate) a set. Every build runs with a variation seed so the
+  // result is reproducible. By default each call mints a fresh seed → "one
+  // possible set" (variation is the feature). Reproduce by passing an explicit
+  // seed (paste) or by locking the current one. We do NOT commit to the sidebar
+  // here; that happens only on "Use this set".
+  async function runBuild(seedOverride?: number): Promise<void> {
+    // Resolve the seed: explicit override > locked (reuse) > fresh (vary).
+    const variationSeed =
+      seedOverride !== undefined
+        ? seedOverride
+        : seedLocked && resultParams.variationSeed !== undefined
+          ? resultParams.variationSeed
+          : freshSeed()
     setIsBuilding(true)
     setBuildError(null)
     try {
@@ -117,367 +196,487 @@ export function SetArchitectModal(): React.JSX.Element {
       }))
       const paramsForBuild: ArchitectParams = {
         ...params,
+        energyCurveType: deriveCurveType(params.vibe),
+        variationSeed,
         ...(selectedSourcePlaylistIds.length > 0
           ? { sourcePlaylistIds: selectedSourcePlaylistIds }
           : {}),
+        ...(genreOverride ? { genreProfileId: genreOverride } : {}),
         ...(lockedTracks.length > 0 ? { lockedTracks } : {})
       }
       const [setTracks] = await Promise.all([
         window.setsense.buildSet(paramsForBuild) as Promise<SetTrack[]>,
-        new Promise<void>((r) => setTimeout(r, 1000))
+        new Promise<void>((r) => setTimeout(r, 700))
       ])
       if (!setTracks || setTracks.length === 0) {
         setBuildError('No tracks matched — try widening the BPM range or duration.')
         setIsBuilding(false)
         return
       }
-      populateFromArchitect(setTracks, params, setName.trim() || undefined)
+      setResultTracks(setTracks)
+      setResultParams(paramsForBuild)
+      setResultBlurb(resolveBlurb())
+      setPhase('result')
       setIsBuilding(false)
-      if (learnModeEnabled) {
-        setResultTracks(setTracks)
-        setStep(3)
-      } else {
-        closeModal()
-      }
     } catch {
       setBuildError('Build failed. Try adjusting your BPM range or duration.')
       setIsBuilding(false)
     }
   }
 
-  const stepTitle = step === 1 ? 'Set the feel' : step === 2 ? 'Set the shape' : 'Set built'
-  const stepSubtitle = step === 1 ? 'Step 1 of 2' : step === 2 ? 'Step 2 of 2' : 'Result'
+  // Copy the current set's seed (base36) to the clipboard for sharing/reproducing.
+  function copySeed(): void {
+    if (resultParams.variationSeed === undefined) return
+    navigator.clipboard?.writeText(encodeSeed(resultParams.variationSeed)).then(
+      () => {
+        setSeedCopied(true)
+        window.setTimeout(() => setSeedCopied(false), 1500)
+      },
+      () => {
+        /* clipboard blocked — silently no-op */
+      }
+    )
+  }
+
+  // Rebuild from a pasted seed, reproducing a shared or saved set. Locks the
+  // seed so a follow-up Regenerate keeps reproducing rather than varying.
+  function reproduceFromSeed(): void {
+    const decoded = decodeSeed(seedDraft)
+    if (decoded === null) {
+      setSeedError(true)
+      return
+    }
+    setSeedError(false)
+    setSeedDraft('')
+    setSeedLocked(true)
+    void runBuild(decoded)
+  }
+
+  // Commit the previewed set to the timeline + sidebar, then close.
+  function useThisSet(): void {
+    populateFromArchitect(resultTracks, resultParams, setName.trim() || undefined)
+    closeModal()
+  }
+
+  const subtitle = phase === 'form' ? 'Build a set' : 'One possible set'
 
   return (
-    <motion.div
-      className="modal-overlay"
-      variants={modalBackdrop}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      onClick={closeModal}
-    >
-      <FocusLock returnFocus>
-        <motion.div
-          className="modal glass-3"
-          variants={modalPanel}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          style={{ maxWidth: 520 }}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Set Architect"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="modal-header">
-            <div>
-              <span className="ss-h2">Set Architect</span>
-              <span
-                className="ss-caption"
-                style={{ marginLeft: 10, color: 'var(--text-tertiary)' }}
-              >
-                {stepSubtitle}
-              </span>
-            </div>
-            <IconButton icon={X} size="sm" aria-label="Close" onClick={closeModal} />
-          </div>
+    <Modal onClose={closeModal} ariaLabel="Set Architect" maxWidth={520}>
+      {/* Header */}
+      <div className="modal-header">
+        <div>
+          <span className="ss-h2">Set Architect</span>
+          <span className="ss-caption" style={{ marginLeft: 10, color: 'var(--text-tertiary)' }}>
+            {subtitle}
+          </span>
+        </div>
+        <IconButton icon={X} size="sm" aria-label="Close" onClick={closeModal} />
+      </div>
 
-          <div className="modal-body">
-            {totalTracks === 0 ? (
-              <NoLibraryState body="Set Architect builds a full set for you — picking tracks that flow on key, BPM and energy across the night. Import your library so it has tracks to work with." />
-            ) : (
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={step}
-                  initial={{ opacity: 0, x: 24 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -24 }}
-                  transition={{ duration: 0.3, ease: [0.32, 0.72, 0.12, 1] }}
-                >
-                  {/* ── Step 1: Feel ── */}
-                  {step === 1 && (
-                    <>
-                      <div className="arch-section-label">{stepTitle}</div>
+      <div className="modal-body">
+        {totalTracks === 0 ? (
+          <NoLibraryState body="Set Architect builds a full set for you — picking tracks that flow on key, BPM and energy across the night. Import your library so it has tracks to work with." />
+        ) : (
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={phase}
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.3, ease: [0.32, 0.72, 0.12, 1] }}
+            >
+              {/* ── Form ── */}
+              {phase === 'form' && (
+                <>
+                  <div className="arch-field arch-nl">
+                    <label className="ss-label">
+                      <Sparkles
+                        size={13}
+                        strokeWidth={1.7}
+                        style={{ verticalAlign: '-2px', marginRight: 5 }}
+                      />
+                      Describe it in words
+                    </label>
+                    <div className="arch-nl-row">
+                      <input
+                        className="arch-input"
+                        placeholder="e.g. 2-hour peak club set, 126–130"
+                        value={nlText}
+                        onChange={(e) => setNlText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            applyNl()
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={applyNl}
+                        disabled={nlText.trim() === ''}
+                      >
+                        Apply
+                      </button>
+                    </div>
+                    {nlSummary && <span className="arch-nl-summary">{nlSummary}</span>}
+                  </div>
 
-                      <div className="arch-field arch-nl">
-                        <label className="ss-label">
-                          <Sparkles
-                            size={13}
-                            strokeWidth={1.7}
-                            style={{ verticalAlign: '-2px', marginRight: 5 }}
+                  <div className="arch-field">
+                    <label className="ss-label">Set name</label>
+                    <input
+                      className="arch-input"
+                      placeholder={`${params.vibe} set`}
+                      value={setName}
+                      onChange={(e) => setSetName(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="arch-field">
+                    <label className="ss-label">Vibe</label>
+                    <div className="arch-chips">
+                      {VIBES.map((v) => (
+                        <Chip key={v} selected={params.vibe === v} onClick={() => patch('vibe', v)}>
+                          {v}
+                        </Chip>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="arch-field">
+                    <div className="arch-field-header">
+                      <label className="ss-label">Duration</label>
+                      <span className="ss-mono" style={{ fontSize: 12 }}>
+                        {formatMinutes(params.targetDuration)}
+                      </span>
+                    </div>
+                    <Slider
+                      value={params.targetDuration}
+                      min={30}
+                      max={240}
+                      step={15}
+                      onChange={(v) => patch('targetDuration', v)}
+                    />
+                  </div>
+
+                  {genreInfo && overrideProfiles.length > 0 && (
+                    <div className="arch-field">
+                      <label className="ss-label">Optimise for</label>
+                      <div className="arch-chips">
+                        <Chip
+                          selected={genreOverride === null}
+                          onClick={() => setGenreOverride(null)}
+                        >
+                          {genreInfo.detected.id !== 'generic'
+                            ? `Auto · ${genreInfo.detected.label}`
+                            : 'Auto'}
+                        </Chip>
+                        {overrideProfiles.map((p) => (
+                          <Chip
+                            key={p.id}
+                            selected={genreOverride === p.id}
+                            onClick={() => setGenreOverride(p.id)}
+                          >
+                            {p.label}
+                          </Chip>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="arch-field">
+                    <label className="ss-label">BPM range</label>
+                    <RangeSlider
+                      min={60}
+                      max={200}
+                      step={1}
+                      low={params.bpmMin}
+                      high={params.bpmMax}
+                      onChange={(low, high) =>
+                        setParams((p) => ({ ...p, bpmMin: low, bpmMax: high }))
+                      }
+                      formatLabel={(v) => `${v}`}
+                    />
+                  </div>
+
+                  {leafPlaylists.length > 0 && (
+                    <div className="arch-field">
+                      <div className="arch-field-header">
+                        <label className="ss-label">Draw tracks from</label>
+                        <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
+                          {sourcePoolSize.toLocaleString()} tracks
+                        </span>
+                      </div>
+                      <PlaylistSourceDropdown
+                        playlists={playlists}
+                        selectedIds={selectedSourcePlaylistIds}
+                        onChange={setSelectedSourcePlaylistIds}
+                        totalCount={totalTracks}
+                      />
+                    </div>
+                  )}
+
+                  {lockedFromTimeline.length > 0 && (
+                    <div
+                      className="ss-caption"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        marginTop: 12,
+                        color: 'var(--accent)'
+                      }}
+                    >
+                      <Lock size={11} strokeWidth={2} aria-hidden="true" />
+                      <span>
+                        {lockedFromTimeline.length} locked track
+                        {lockedFromTimeline.length === 1 ? '' : 's'} will stay in place
+                      </span>
+                    </div>
+                  )}
+
+                  {buildError && (
+                    <div
+                      className="ss-caption"
+                      style={{ color: 'var(--semantic-danger)', marginTop: 8 }}
+                    >
+                      {buildError}
+                    </div>
+                  )}
+
+                  <div style={{ marginTop: 24 }}>
+                    {isBuilding ? (
+                      <div className="arch-building" style={{ justifyContent: 'center' }}>
+                        <Loader size={15} strokeWidth={1.5} className="arch-spinner" />
+                        <span className="ss-body-sm" style={{ color: 'var(--text-secondary)' }}>
+                          Building…
+                        </span>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="primary"
+                        icon={Sparkles}
+                        onClick={() => runBuild()}
+                        style={{ width: '100%' }}
+                      >
+                        Build set
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* ── Result ── */}
+              {phase === 'result' && (
+                <>
+                  <div className="ss-body-sm" style={{ marginBottom: 12, opacity: 0.8 }}>
+                    Here’s one possible {resultTracks.length}-track set — every build is a valid
+                    arrangement. Regenerate for another take.
+                  </div>
+
+                  {resultBlurb && (
+                    <div
+                      className="ss-caption"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        marginBottom: 12,
+                        color: 'var(--accent)'
+                      }}
+                    >
+                      <Sparkles size={11} strokeWidth={2} aria-hidden="true" />
+                      <span>This set follows {resultBlurb}.</span>
+                    </div>
+                  )}
+
+                  <ol className="arch-result-list">
+                    {resultTracks.map((st, i) => (
+                      <li key={st.id} className="arch-result-row">
+                        <span className="arch-result-pos ss-mono">{i + 1}</span>
+                        <span className="arch-result-meta">
+                          <span className="arch-result-title">
+                            {st.track.title}
+                            {st.locked && (
+                              <Lock
+                                size={10}
+                                strokeWidth={2}
+                                style={{
+                                  marginLeft: 6,
+                                  verticalAlign: '-1px',
+                                  color: 'var(--accent)'
+                                }}
+                                aria-label="locked"
+                              />
+                            )}
+                          </span>
+                          <span className="arch-result-artist">{st.track.artist}</span>
+                        </span>
+                        <span className="arch-result-bpm ss-mono">{Math.round(st.track.bpm)}</span>
+                      </li>
+                    ))}
+                  </ol>
+
+                  {learnModeEnabled && (
+                    <div style={{ marginTop: 14 }}>
+                      <LearnPanel
+                        explanation={explainEnergyArc(
+                          resultParams.energyCurveType,
+                          getTargetCurve(resultParams.energyCurveType, resultTracks.length),
+                          resultTracks
+                        )}
+                      />
+                    </div>
+                  )}
+
+                  <div className="arch-actions" style={{ marginTop: 18 }}>
+                    <Button
+                      variant="secondary"
+                      icon={isBuilding ? undefined : seedLocked ? Lock : RefreshCw}
+                      onClick={() => runBuild()}
+                      disabled={isBuilding}
+                      title={
+                        seedLocked
+                          ? 'Seed locked — rebuilds the same set'
+                          : 'Build another arrangement'
+                      }
+                    >
+                      {isBuilding
+                        ? seedLocked
+                          ? 'Reproducing…'
+                          : 'Regenerating…'
+                        : seedLocked
+                          ? 'Reproduce'
+                          : 'Regenerate'}
+                    </Button>
+                    <Button variant="primary" onClick={useThisSet} style={{ flex: 1 }}>
+                      Use this set
+                    </Button>
+                  </div>
+
+                  {/* Advanced — seed visibility & reproduction (hidden by default). */}
+                  <div
+                    style={{
+                      marginTop: 16,
+                      borderTop: '1px solid var(--border-subtle)',
+                      paddingTop: 12
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setShowAdvanced((v) => !v)}
+                      aria-expanded={showAdvanced}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        background: 'none',
+                        border: 'none',
+                        padding: 0,
+                        cursor: 'pointer',
+                        color: 'var(--text-tertiary)',
+                        font: 'inherit'
+                      }}
+                    >
+                      <ChevronDown
+                        size={13}
+                        strokeWidth={2}
+                        aria-hidden="true"
+                        style={{
+                          transform: showAdvanced ? 'none' : 'rotate(-90deg)',
+                          transition: 'transform 0.15s ease'
+                        }}
+                      />
+                      <span className="ss-caption">Advanced · seed &amp; reproduce</span>
+                    </button>
+
+                    {showAdvanced && (
+                      <div
+                        style={{
+                          marginTop: 12,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 12
+                        }}
+                      >
+                        {resultParams.variationSeed !== undefined && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
+                              Seed
+                            </span>
+                            <code className="ss-mono" style={{ fontSize: 13 }}>
+                              {encodeSeed(resultParams.variationSeed)}
+                            </code>
+                            <IconButton
+                              icon={seedCopied ? Check : Copy}
+                              size="sm"
+                              aria-label={seedCopied ? 'Seed copied' : 'Copy seed'}
+                              onClick={copySeed}
+                            />
+                          </div>
+                        )}
+
+                        <label
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={seedLocked}
+                            onChange={(e) => setSeedLocked(e.target.checked)}
                           />
-                          Describe it in words
+                          <span className="ss-caption">
+                            Lock seed — Regenerate reproduces this set instead of a new take
+                          </span>
                         </label>
+
                         <div className="arch-nl-row">
                           <input
                             className="arch-input"
-                            placeholder="e.g. 2-hour peak club set, 126–130, build then sustain"
-                            value={nlText}
-                            onChange={(e) => setNlText(e.target.value)}
+                            placeholder="Paste a seed to reproduce…"
+                            value={seedDraft}
+                            onChange={(e) => {
+                              setSeedDraft(e.target.value)
+                              setSeedError(false)
+                            }}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
                                 e.preventDefault()
-                                applyNl()
+                                reproduceFromSeed()
                               }
                             }}
                           />
                           <button
                             type="button"
                             className="btn btn-secondary"
-                            onClick={applyNl}
-                            disabled={nlText.trim() === ''}
+                            onClick={reproduceFromSeed}
+                            disabled={seedDraft.trim() === '' || isBuilding}
                           >
-                            Apply
+                            Reproduce
                           </button>
                         </div>
-                        {nlSummary && <span className="arch-nl-summary">{nlSummary}</span>}
-                      </div>
-
-                      <div className="arch-field">
-                        <label className="ss-label">Vibe</label>
-                        <div className="arch-chips">
-                          {VIBES.map((v) => (
-                            <Chip
-                              key={v}
-                              selected={params.vibe === v}
-                              onClick={() => patch('vibe', v)}
-                            >
-                              {v}
-                            </Chip>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="arch-row-2">
-                        <div className="arch-field">
-                          <label className="ss-label">Slot time</label>
-                          <SegmentedControl
-                            options={SLOT_TIMES}
-                            value={params.slotTime as (typeof SLOT_TIMES)[number]}
-                            onChange={(v) => patch('slotTime', v)}
-                          />
-                        </div>
-                        <div className="arch-field">
-                          <label className="ss-label">Crowd</label>
-                          <SegmentedControl
-                            options={CROWD_AGES}
-                            value={params.crowdAge}
-                            onChange={(v) => patch('crowdAge', v)}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="arch-field">
-                        <label className="ss-label">Venue</label>
-                        <div className="arch-chips">
-                          {VENUES.map((v) => (
-                            <Chip
-                              key={v}
-                              selected={params.venueType === v}
-                              onClick={() => patch('venueType', v)}
-                            >
-                              {v}
-                            </Chip>
-                          ))}
-                        </div>
-                      </div>
-
-                      {leafPlaylists.length > 0 && (
-                        <div className="arch-field">
-                          <div className="arch-field-header">
-                            <label className="ss-label">Draw tracks from</label>
-                            <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                              {sourcePoolSize.toLocaleString()} tracks
-                            </span>
-                          </div>
-                          <PlaylistSourceDropdown
-                            playlists={playlists}
-                            selectedIds={selectedSourcePlaylistIds}
-                            onChange={setSelectedSourcePlaylistIds}
-                            totalCount={totalTracks}
-                          />
-                        </div>
-                      )}
-
-                      <div style={{ marginTop: 24 }}>
-                        <Button
-                          variant="primary"
-                          icon={ArrowRight}
-                          onClick={() => setStep(2)}
-                          style={{ width: '100%' }}
-                        >
-                          Next
-                        </Button>
-                      </div>
-                    </>
-                  )}
-
-                  {/* ── Step 3: Result (Learn Mode) ── */}
-                  {step === 3 && (
-                    <>
-                      <div className="arch-section-label">{stepTitle}</div>
-                      <div className="ss-body-sm" style={{ marginBottom: 8, opacity: 0.75 }}>
-                        Built a {resultTracks.length}-track set. Here&apos;s why this arrangement
-                        works.
-                      </div>
-                      <LearnPanel
-                        explanation={explainEnergyArc(
-                          params.energyCurveType,
-                          getTargetCurve(params.energyCurveType, resultTracks.length),
-                          resultTracks
-                        )}
-                      />
-                      <div className="arch-actions" style={{ marginTop: 20 }}>
-                        <Button variant="primary" onClick={closeModal} style={{ flex: 1 }}>
-                          View set
-                        </Button>
-                      </div>
-                    </>
-                  )}
-
-                  {/* ── Step 2: Shape ── */}
-                  {step === 2 && (
-                    <>
-                      <div className="arch-section-label">{stepTitle}</div>
-
-                      {/* Set name */}
-                      <div className="arch-field">
-                        <label className="ss-label">Set name</label>
-                        <input
-                          className="arch-input"
-                          placeholder={`${params.vibe} — ${params.slotTime}`}
-                          value={setName}
-                          onChange={(e) => setSetName(e.target.value)}
-                        />
-                      </div>
-
-                      {/* Duration */}
-                      <div className="arch-field">
-                        <div className="arch-field-header">
-                          <label className="ss-label">Duration</label>
-                          <span className="ss-mono" style={{ fontSize: 12 }}>
-                            {formatMinutes(params.targetDuration)}
+                        {seedError && (
+                          <span className="ss-caption" style={{ color: 'var(--semantic-danger)' }}>
+                            That doesn’t look like a valid seed.
                           </span>
-                        </div>
-                        <Slider
-                          value={params.targetDuration}
-                          min={30}
-                          max={240}
-                          step={15}
-                          onChange={(v) => patch('targetDuration', v)}
-                        />
-                      </div>
-
-                      {/* BPM range */}
-                      <div className="arch-field">
-                        <label className="ss-label">BPM range</label>
-                        <RangeSlider
-                          min={60}
-                          max={200}
-                          step={1}
-                          low={params.bpmMin}
-                          high={params.bpmMax}
-                          onChange={(low, high) =>
-                            setParams((p) => ({ ...p, bpmMin: low, bpmMax: high }))
-                          }
-                          formatLabel={(v) => `${v}`}
-                        />
-                      </div>
-
-                      {/* Toggles row */}
-                      <div className="arch-toggles">
-                        <div className="arch-toggle-row">
-                          <span className="ss-body-sm">Harmonic mixing</span>
-                          <Toggle
-                            on={params.harmonicMixing}
-                            onChange={(v) => patch('harmonicMixing', v)}
-                            aria-label="Harmonic mixing"
-                          />
-                        </div>
-                        <div className="arch-toggle-row">
-                          <span className="ss-body-sm">Follow energy curve</span>
-                          <Toggle
-                            on={params.followEnergyCurve}
-                            onChange={(v) => patch('followEnergyCurve', v)}
-                            aria-label="Follow energy curve"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Energy curve type */}
-                      {params.followEnergyCurve && (
-                        <div className="arch-field" style={{ marginTop: 16 }}>
-                          <label className="ss-label">Energy curve</label>
-                          <SegmentedControl
-                            options={CURVE_TYPES}
-                            value={params.energyCurveType}
-                            onChange={(v) => patch('energyCurveType', v)}
-                          />
-                        </div>
-                      )}
-
-                      {lockedFromTimeline.length > 0 && (
-                        <div
-                          className="ss-caption"
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 6,
-                            marginTop: 12,
-                            color: 'var(--accent)'
-                          }}
-                        >
-                          <Lock size={11} strokeWidth={2} aria-hidden="true" />
-                          <span>
-                            {lockedFromTimeline.length} locked track
-                            {lockedFromTimeline.length === 1 ? '' : 's'} will stay in place
-                          </span>
-                        </div>
-                      )}
-
-                      {buildError && (
-                        <div
-                          className="ss-caption"
-                          style={{ color: 'var(--semantic-danger)', marginTop: 8 }}
-                        >
-                          {buildError}
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="arch-actions">
-                        <button
-                          className="btn btn-ghost"
-                          onClick={() => {
-                            setStep(1)
-                            setBuildError(null)
-                          }}
-                        >
-                          ← Back
-                        </button>
-                        {isBuilding ? (
-                          <div className="arch-building">
-                            <Loader size={15} strokeWidth={1.5} className="arch-spinner" />
-                            <span className="ss-body-sm" style={{ color: 'var(--text-secondary)' }}>
-                              Building…
-                            </span>
-                          </div>
-                        ) : (
-                          <Button variant="primary" onClick={handleBuild} style={{ flex: 1 }}>
-                            Build set
-                          </Button>
                         )}
+                        <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
+                          Same seed and settings reproduce this set — as long as your library hasn’t
+                          changed.
+                        </span>
                       </div>
-                    </>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            )}
-          </div>
-        </motion.div>
-      </FocusLock>
-    </motion.div>
+                    )}
+                  </div>
+                </>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        )}
+      </div>
+    </Modal>
   )
 }

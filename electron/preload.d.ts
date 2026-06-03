@@ -1,12 +1,19 @@
 import type { ElectronAPI } from '@electron-toolkit/preload'
 import type {
+  ExportResult as BackupExportResult,
+  InspectResult as BackupInspectResult,
+  ImportResult as BackupImportResult
+} from './services/backupService'
+import type {
   ArchitectParams,
   CDJModel,
   ComboResult,
   CrateWithCount,
   CuePoint,
+  Ecosystem,
   EnergySource,
   GemResult,
+  GenreProfileInfo,
   HealthReport,
   HotCue,
   Loop,
@@ -24,22 +31,38 @@ import type {
   PlaySession,
   RecallAiStatus,
   RecallAskResult,
+  RecallRoute,
+  VoiceStatus,
+  MicAccess,
+  LibrarySourceId,
+  PostImportProgress,
   RekordboxDetection,
   RekordboxStaleStatus,
+  SourceDetection,
   RememberedUSBDevice,
   SessionTrack,
+  SessionFilter,
+  SessionMetadataPatch,
+  SetSlot,
+  VenueType,
   Set as DJSet,
   SetTrack,
   SmartCrate,
+  TagCategory,
+  TagCoverage,
+  RekordboxTagWriteResult,
   Track,
+  TrackTag,
   TransitionScore,
   Suggestion,
   USBCopyResult,
   USBDevice,
   ValidationResult,
-  ExportResult
+  ExportResult,
+  BeatportRow
 } from '../src/types'
 import type { AppSettings } from './services/settingsService'
+import type { ProgressState, FirstEvent } from './services/progressService'
 
 export interface EnergyProgress {
   processed: number
@@ -62,6 +85,18 @@ export interface ArtworkProgress {
 export interface ArtworkUpdate {
   trackId: string
   albumArtPath: string
+}
+
+export interface TagsProgress {
+  processed: number
+  total: number
+  phase: 'tagging' | 'done'
+}
+
+export interface EngineExportProgress {
+  processed: number
+  total: number
+  phase: 'copying' | 'writing' | 'done'
 }
 
 declare global {
@@ -90,6 +125,10 @@ declare global {
       detectRekordbox: () => Promise<RekordboxDetection>
       importFromRekordboxDb: (path: string) => Promise<ImportResult>
       checkRekordboxStale: () => Promise<RekordboxStaleStatus>
+      // Cross-platform import sources (Rekordbox / Serato / Engine DJ)
+      detectImportSources: () => Promise<SourceDetection[]>
+      runImport: (sourceId: LibrarySourceId, libraryPath: string) => Promise<ImportResult>
+      onPostImportProgress: (cb: (p: PostImportProgress) => void) => () => void
       // Sets (Phase 3)
       getSets: () => Promise<DJSet[]>
       getSet: (id: string) => Promise<DJSet | null>
@@ -105,7 +144,14 @@ declare global {
       ) => Promise<Suggestion[]>
       scoreTransition: (fromId: string, toId: string) => Promise<TransitionScore | null>
       buildSet: (params: ArchitectParams) => Promise<SetTrack[]>
-      validateForExport: (setId: string, hardware: CDJModel) => Promise<ValidationResult | null>
+      genreProfiles: (sourcePlaylistIds?: string[]) => Promise<GenreProfileInfo>
+      validateForExport: (
+        setId: string,
+        hardware: CDJModel,
+        ecosystem?: Ecosystem
+      ) => Promise<ValidationResult | null>
+      exportSetToEngineUsb: (setId: string, mountPath: string) => Promise<ExportResult>
+      onEngineExportProgress: (cb: (p: EngineExportProgress) => void) => () => void
       // File health (Phase 6)
       triggerHealthCheck: () => Promise<void>
       analyseEnergy: () => Promise<{ running: boolean }>
@@ -120,13 +166,47 @@ declare global {
       setTrackEnergy: (trackId: string, energy: number) => Promise<void>
       updateTrackMeta: (trackId: string, fields: { bpm?: number; key?: string }) => Promise<void>
       relinkTrackFile: (trackId: string) => Promise<string | null>
+      // Auto-tags
+      tagsCoverage: () => Promise<TagCoverage>
+      tagsForTrack: (trackId: string) => Promise<TrackTag[]>
+      tagsRetag: () => Promise<{ running: boolean }>
+      tagsSetOverride: (
+        trackId: string,
+        category: TagCategory,
+        values: string[]
+      ) => Promise<TrackTag[] | null>
+      tagsResetToAuto: (trackId: string, category?: TagCategory) => Promise<TrackTag[] | null>
+      tagsExportXml: () => Promise<{
+        success: boolean
+        filePath?: string
+        trackCount?: number
+        error?: string
+      }>
+      tagsWriteMyTags: () => Promise<RekordboxTagWriteResult>
+      onTagsProgress: (cb: (p: TagsProgress) => void) => () => void
       // Audio raw bytes for waveform decoding
       readAudioFile: (filePath: string) => Promise<ArrayBuffer | null>
       // Export (Phase 7)
       exportSet: (setId: string, hardware: CDJModel) => Promise<ExportResult | null>
+      exportBeatportCsv: (setName: string, rows: BeatportRow[]) => Promise<ExportResult | null>
       // Settings (Phase 8)
       getSettings: () => Promise<AppSettings>
       setSettings: (partial: Partial<AppSettings>) => Promise<AppSettings>
+      // Backup & migration (backendless export/import)
+      backupExport: (passphrase?: string) => Promise<BackupExportResult>
+      backupPick: () => Promise<string | null>
+      backupInspect: (filePath: string, passphrase?: string) => Promise<BackupInspectResult>
+      backupImport: (
+        filePath: string,
+        mode: 'restore' | 'merge',
+        passphrase?: string
+      ) => Promise<BackupImportResult>
+      // Retention / activation progress (brief #22, Phase B)
+      progressGet: () => Promise<ProgressState>
+      progressSet: (partial: Partial<ProgressState>) => Promise<ProgressState>
+      progressMarkFirst: (event: FirstEvent) => Promise<ProgressState>
+      progressClaimMilestone: (id: string) => Promise<boolean>
+      progressRecordActivity: () => Promise<ProgressState>
       // Licensing / SetSense Pro (Section 16)
       licenseGet: () => Promise<LicenseState>
       licenseActivate: (key: string) => Promise<LicenseActivationResult>
@@ -166,9 +246,19 @@ declare global {
       historySessions: () => Promise<PlaySession[]>
       historySessionTracks: (sessionId: string) => Promise<SessionTrack[]>
       historyForTrack: (trackId: string) => Promise<PlaySession[]>
+      historyQuerySessions: (filter?: SessionFilter) => Promise<PlaySession[]>
+      historyUpdateSession: (sessionId: string, patch: SessionMetadataPatch) => Promise<void>
+      historyBulkAssign: (filter: SessionFilter, patch: SessionMetadataPatch) => Promise<number>
       historyMarkPerformed: (
         setId: string,
-        opts?: { performedAt?: string; venue?: string }
+        opts?: {
+          performedAt?: string
+          venue?: string
+          eventType?: VenueType
+          city?: string
+          country?: string
+          setSlot?: SetSlot
+        }
       ) => Promise<string | null>
       historyDelete: (sessionId: string) => Promise<void>
       historyImportFile: () => Promise<{ sessions: number; tracks: number }>
@@ -204,7 +294,28 @@ declare global {
       recallAiStatus: () => Promise<RecallAiStatus>
       recallAiEnable: (enabled: boolean) => Promise<RecallAiStatus>
       recallAiAsk: (question: string) => Promise<RecallAskResult>
+      recallAiRoute: (question: string, contextJson?: string) => Promise<RecallRoute>
+      recallSimilar: (trackId: string, count?: number) => Promise<Track[]>
+      recallEnds: () => Promise<{ openers: ComboResult[]; closers: ComboResult[] }>
       onRecallAiProgress: (cb: (s: RecallAiStatus) => void) => () => void
+      // On-device voice (Phase 13)
+      speechVoiceStatus: () => Promise<VoiceStatus>
+      speechTranscribe: (pcm: Float32Array) => Promise<string>
+      speechEnsureMicAccess: () => Promise<MicAccess>
+      speechPrepareVoice: () => Promise<VoiceStatus>
+      onVoiceProgress: (cb: (s: VoiceStatus) => void) => () => void
+      // SetSense Live overlay
+      liveStart: () => Promise<void>
+      liveStop: () => Promise<void>
+      liveSetIgnoreMouse: (ignore: boolean) => void
+      onLiveOverlayClosed: (cb: () => void) => () => void
+      liveAudioWindow: (samples: Float32Array) => void
+      liveScreenText: (lines: string[]) => void
+      onLiveData: (
+        cb: (data: import('./services/live/liveEngine').LiveDataPayload) => void
+      ) => () => void
+      onLiveIndexProgress: (cb: (p: { done: number; total: number }) => void) => () => void
+      onLiveReady: (cb: (s: { indexedTracks: number }) => void) => () => void
     }
   }
 }

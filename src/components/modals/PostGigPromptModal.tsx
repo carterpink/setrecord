@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import FocusLock from 'react-focus-lock'
 import { Check, X, FlaskConical, Archive } from 'lucide-react'
 import { Button } from '@/components/shared/Button'
 import { IconButton } from '@/components/shared/IconButton'
-import { motion, modalBackdrop, modalPanel } from '@/components/shared/Motion'
+import { Modal } from '@/components/shared/Modal'
 import { useUiStore } from '@/stores/uiStore'
 import { useRecallStore } from '@/stores/recallStore'
 
@@ -41,89 +40,64 @@ export function PostGigPromptModal(): React.JSX.Element | null {
   }
 
   return (
-    <motion.div
-      className="modal-overlay"
-      variants={modalBackdrop}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      onClick={closeModal}
-    >
-      <FocusLock returnFocus>
-        <motion.div
-          className="modal glass-3"
-          variants={modalPanel}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          style={{ maxWidth: 520 }}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Post-gig review"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="modal-header">
-            <div>
-              <span className="ss-h2">You tested {data.tracks.length} flagged tracks</span>
-              <span
-                className="ss-caption"
-                style={{ marginLeft: 10, color: 'var(--text-tertiary)' }}
-              >
-                How did each one go?
-              </span>
-            </div>
-            <IconButton icon={X} size="sm" aria-label="Close" onClick={closeModal} />
-          </div>
+    <Modal onClose={closeModal} ariaLabel="Post-gig review" maxWidth={520}>
+      <div className="modal-header">
+        <div>
+          <span className="ss-h2">You tested {data.tracks.length} flagged tracks</span>
+          <span className="ss-caption" style={{ marginLeft: 10, color: 'var(--text-tertiary)' }}>
+            How did each one go?
+          </span>
+        </div>
+        <IconButton icon={X} size="sm" aria-label="Close" onClick={closeModal} />
+      </div>
 
-          <div className="modal-body">
-            <div className="post-gig-list">
-              {data.tracks.map((track) => {
-                const choice = outcomes[track.id]
-                return (
-                  <div key={track.id} className="post-gig-row">
-                    <div className="post-gig-meta">
-                      <div className="post-gig-title">{track.title}</div>
-                      <div className="post-gig-artist">{track.artist}</div>
-                    </div>
-                    <div className="post-gig-actions">
-                      <button
-                        type="button"
-                        className={`post-gig-pick${choice === 'tested' ? ' active tested' : ''}`}
-                        onClick={() => setOutcome(track.id, 'tested')}
-                      >
-                        <Check size={13} strokeWidth={1.7} /> Tested
-                      </button>
-                      <button
-                        type="button"
-                        className={`post-gig-pick${choice === 'keep' ? ' active' : ''}`}
-                        onClick={() => setOutcome(track.id, 'keep')}
-                      >
-                        <FlaskConical size={13} strokeWidth={1.7} /> Not yet
-                      </button>
-                      <button
-                        type="button"
-                        className={`post-gig-pick${choice === 'archive' ? ' active archive' : ''}`}
-                        onClick={() => setOutcome(track.id, 'archive')}
-                      >
-                        <Archive size={13} strokeWidth={1.7} /> Archive
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
+      <div className="modal-body">
+        <div className="post-gig-list">
+          {data.tracks.map((track) => {
+            const choice = outcomes[track.id]
+            return (
+              <div key={track.id} className="post-gig-row">
+                <div className="post-gig-meta">
+                  <div className="post-gig-title">{track.title}</div>
+                  <div className="post-gig-artist">{track.artist}</div>
+                </div>
+                <div className="post-gig-actions">
+                  <button
+                    type="button"
+                    className={`post-gig-pick${choice === 'tested' ? ' active tested' : ''}`}
+                    onClick={() => setOutcome(track.id, 'tested')}
+                  >
+                    <Check size={13} strokeWidth={1.7} /> Tested
+                  </button>
+                  <button
+                    type="button"
+                    className={`post-gig-pick${choice === 'keep' ? ' active' : ''}`}
+                    onClick={() => setOutcome(track.id, 'keep')}
+                  >
+                    <FlaskConical size={13} strokeWidth={1.7} /> Not yet
+                  </button>
+                  <button
+                    type="button"
+                    className={`post-gig-pick${choice === 'archive' ? ' active archive' : ''}`}
+                    onClick={() => setOutcome(track.id, 'archive')}
+                  >
+                    <Archive size={13} strokeWidth={1.7} /> Archive
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
 
-          <div className="modal-footer">
-            <Button variant="ghost" onClick={closeModal}>
-              Skip for now
-            </Button>
-            <Button variant="primary" onClick={() => void finish()}>
-              Save
-            </Button>
-          </div>
-        </motion.div>
-      </FocusLock>
-    </motion.div>
+      <div className="modal-footer">
+        <Button variant="ghost" onClick={closeModal}>
+          Skip for now
+        </Button>
+        <Button variant="primary" onClick={() => void finish()}>
+          Save
+        </Button>
+      </div>
+    </Modal>
   )
 }

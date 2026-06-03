@@ -77,7 +77,7 @@ export function HarmonicWheelDiagram({
               textAnchor="middle"
               dominantBaseline="middle"
               fontSize={9}
-              fontFamily="ui-monospace, SFMono-Regular, monospace"
+              fontFamily="var(--font-sans)"
               fill={
                 isFromOuter
                   ? 'var(--accent-primary, #C8FF3D)'
@@ -95,7 +95,7 @@ export function HarmonicWheelDiagram({
               textAnchor="middle"
               dominantBaseline="middle"
               fontSize={9}
-              fontFamily="ui-monospace, SFMono-Regular, monospace"
+              fontFamily="var(--font-sans)"
               fill={
                 isFromInner
                   ? 'var(--accent-primary, #C8FF3D)'

@@ -2,8 +2,26 @@ import type { Track, Set as DJSet, SetTrack, ArchitectParams } from '../../src/t
 import { getSuggestions } from './suggestions'
 import { scoreTransition } from './transitionScore'
 import { getTargetCurve } from './energyCurve'
+import { GENERIC_PROFILE, type MixingProfile } from './genreProfiles'
 
 // ───────── Helpers ─────────
+
+/**
+ * Small deterministic PRNG (mulberry32). Used only when the caller passes a
+ * `variationSeed` — it lets "Regenerate" produce a different arrangement from
+ * the same params while staying reproducible for a given seed. Without a seed
+ * the builder takes the top-scored pick everywhere (fully deterministic).
+ */
+function mulberry32(seed: number): () => number {
+  let a = seed >>> 0
+  return () => {
+    a |= 0
+    a = (a + 0x6d2b79f5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
 
 function makeSetTrack(track: Track, position: number, locked = false): SetTrack {
   return {
@@ -15,7 +33,12 @@ function makeSetTrack(track: Track, position: number, locked = false): SetTrack 
   }
 }
 
-function selectOpener(pool: Track[], targetEnergy: number, excluded: string[]): Track | null {
+function selectOpener(
+  pool: Track[],
+  targetEnergy: number,
+  excluded: string[],
+  rng: (() => number) | null = null
+): Track | null {
   const candidates = pool.filter((t) => !excluded.includes(t.id))
   if (candidates.length === 0) return null
 
@@ -28,6 +51,13 @@ function selectOpener(pool: Track[], targetEnergy: number, excluded: string[]): 
   })
 
   scored.sort((a, b) => b.score - a.score)
+  // With a variation seed, draw from the strongest few openers instead of
+  // always the single best — gives "Regenerate" a different but still-fitting
+  // start without compromising quality.
+  if (rng) {
+    const k = Math.min(4, scored.length)
+    return scored[Math.floor(rng() * k)].track
+  }
   return scored[0].track
 }
 
@@ -35,29 +65,37 @@ function pickCandidate(
   suggestions: ReturnType<typeof getSuggestions>,
   targetEnergy: number,
   tolerance: number,
-  harmonicMixing: boolean
+  harmonicMixing: boolean,
+  rng: (() => number) | null = null
 ): Track | null {
+  const matches: Track[] = []
   for (const s of suggestions) {
     if (Math.abs(s.track.energy - targetEnergy) > tolerance) continue
     if (harmonicMixing && s.transitionScore.keyCompatibility === 'clash') continue
-    return s.track
+    if (!rng) return s.track
+    matches.push(s.track)
+    // suggestions are pre-sorted by transition score; cap variation to the top
+    // few so a regenerated set stays musically tight.
+    if (matches.length >= 3) break
   }
-  return null
+  if (matches.length === 0) return null
+  return matches[Math.floor(rng!() * matches.length)]
 }
 
 function findBetterTrack(
   from: Track,
   current: Track,
   pool: Track[],
-  harmonicMixing: boolean
+  harmonicMixing: boolean,
+  profile: MixingProfile
 ): Track | null {
-  const currentScore = scoreTransition(from, current).score
+  const currentScore = scoreTransition(from, current, profile).score
   let best: Track | null = null
   let bestScore = currentScore
 
   for (const candidate of pool) {
-    if (Math.abs(candidate.bpm - from.bpm) > 16) continue
-    const ts = scoreTransition(from, candidate)
+    if (Math.abs(candidate.bpm - from.bpm) > profile.bpm.maxStep) continue
+    const ts = scoreTransition(from, candidate, profile)
     if (harmonicMixing && ts.keyCompatibility === 'clash') continue
     if (ts.score > bestScore) {
       bestScore = ts.score
@@ -69,7 +107,14 @@ function findBetterTrack(
 
 // ───────── Main export ─────────
 
-export function buildSet(params: ArchitectParams, library: Track[]): SetTrack[] {
+export function buildSet(
+  params: ArchitectParams,
+  library: Track[],
+  profile: MixingProfile = GENERIC_PROFILE
+): SetTrack[] {
+  // Opt-in variation: undefined seed → deterministic top-scored picks.
+  const rng = params.variationSeed !== undefined ? mulberry32(params.variationSeed) : null
+
   // Resolve locked tracks first — they bypass BPM/source filtering and are never rejected.
   const lockSpec = params.lockedTracks ?? []
   const libraryById = new Map(library.map((t) => [t.id, t]))
@@ -127,7 +172,7 @@ export function buildSet(params: ArchitectParams, library: Track[]): SetTrack[] 
   if (lockByPos.has(0)) {
     setTracks.push(makeSetTrack(lockByPos.get(0)!, 0, true))
   } else {
-    const opener = selectOpener(filtered, curve[0], params.excludedTracks ?? [])
+    const opener = selectOpener(filtered, curve[0], params.excludedTracks ?? [], rng)
     if (!opener) return []
     setTracks.push(makeSetTrack(opener, 0))
     usedIds.add(opener.id)
@@ -154,7 +199,7 @@ export function buildSet(params: ArchitectParams, library: Track[]): SetTrack[] 
     const nextLock = findNextLockAfter(i)
     const distToNextLock = nextLock ? nextLock.position - i : Infinity
 
-    const suggestions = getSuggestions(lastTrack, remaining, partialSet, 30)
+    const suggestions = getSuggestions(lastTrack, remaining, partialSet, 30, [], undefined, profile)
 
     let candidate: Track | null = null
 
@@ -168,7 +213,7 @@ export function buildSet(params: ArchitectParams, library: Track[]): SetTrack[] 
       for (const s of suggestions) {
         if (params.harmonicMixing && s.transitionScore.keyCompatibility === 'clash') continue
         const back = s.transitionScore.score
-        const forward = scoreTransition(s.track, nextLock.track).score
+        const forward = scoreTransition(s.track, nextLock.track, profile).score
         const energyPenalty = Math.abs(s.track.energy - targetEnergy) * 4
         const combined = back * W_BACK + forward * W_FORWARD - energyPenalty
         if (combined > bestScore) {
@@ -182,8 +227,8 @@ export function buildSet(params: ArchitectParams, library: Track[]): SetTrack[] 
     // Fallback (or default) selection — original tolerance ladder.
     if (!candidate) {
       candidate =
-        pickCandidate(suggestions, targetEnergy, 1.5, params.harmonicMixing) ??
-        pickCandidate(suggestions, targetEnergy, 3, params.harmonicMixing) ??
+        pickCandidate(suggestions, targetEnergy, 1.5, params.harmonicMixing, rng) ??
+        pickCandidate(suggestions, targetEnergy, 3, params.harmonicMixing, rng) ??
         suggestions[0]?.track ??
         null
     }
@@ -203,13 +248,14 @@ export function buildSet(params: ArchitectParams, library: Track[]): SetTrack[] 
     let repaired = false
     for (let i = 1; i < setTracks.length; i++) {
       if (setTracks[i].locked) continue
-      const ts = scoreTransition(setTracks[i - 1].track, setTracks[i].track)
+      const ts = scoreTransition(setTracks[i - 1].track, setTracks[i].track, profile)
       if (ts.score < 45) {
         const better = findBetterTrack(
           setTracks[i - 1].track,
           setTracks[i].track,
           repairPool,
-          params.harmonicMixing
+          params.harmonicMixing,
+          profile
         )
         if (better) {
           const oldTrack = setTracks[i].track
@@ -231,6 +277,6 @@ export function buildSet(params: ArchitectParams, library: Track[]): SetTrack[] 
   // Final scoring — preserve `locked` flag through the map.
   return setTracks.map((st, i) => ({
     ...st,
-    transitionScore: i > 0 ? scoreTransition(setTracks[i - 1].track, st.track) : undefined
+    transitionScore: i > 0 ? scoreTransition(setTracks[i - 1].track, st.track, profile) : undefined
   }))
 }

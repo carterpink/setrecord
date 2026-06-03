@@ -249,4 +249,105 @@ export function runMigrations(db: Database.Database): void {
   }
 
   db.prepare('INSERT OR REPLACE INTO schema_version VALUES (16)').run()
+
+  // v17: auto-tagger.
+  // `analysis_features` (JSON: { rms, brightness, loudness, vocalness }, all 0..1)
+  // persists the normalised audio features so tags can be re-inferred without
+  // re-decoding. `track_tags` stores the plain-language tags (auto + user override).
+  // Existing analysed rows are reset to 'pending' so the background analyser
+  // backfills features + the new vocal proxy on next launch — the energy cache was
+  // bumped to v2 in the same change, so cached scores recompute cleanly anyway.
+  // Energy values are unchanged by the recompute (only the vocal feature is new).
+  const colsV17 = (db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
+
+  if (!colsV17.includes('analysis_features')) {
+    db.exec('ALTER TABLE tracks ADD COLUMN analysis_features TEXT')
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS track_tags (
+      track_id TEXT NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
+      category TEXT NOT NULL,
+      value TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'auto',
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (track_id, category, value)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_track_tags_value ON track_tags(value);
+    CREATE INDEX IF NOT EXISTS idx_track_tags_track ON track_tags(track_id);
+  `)
+
+  // Backfill: re-analyse already-computed tracks so they gain analysis_features +
+  // the vocal proxy. Preserve manual energy ('user') and never touch phantoms.
+  db.exec(
+    "UPDATE tracks SET energy_source = 'pending' WHERE energy_source = 'computed' AND phantom = 0"
+  )
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (17)').run()
+
+  // v18: cross-platform import provenance.
+  // `source` records which DJ-software library a track was last imported from
+  // ('rekordbox' | 'serato'). Nullable: existing rows predate multi-source
+  // import and are treated as Rekordbox. Set on import; used for UI labelling
+  // and to scope source-specific background passes (e.g. Serato cue extraction).
+  const colsV18 = (db.prepare('PRAGMA table_info(tracks)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
+
+  if (!colsV18.includes('source')) {
+    db.exec('ALTER TABLE tracks ADD COLUMN source TEXT')
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (18)').run()
+
+  // v19: gig metadata on play_sessions — when/where a set was played, queryable.
+  // `event_type` reuses the VenueType vocabulary (club | festival | bar | private |
+  // outdoor). `city` / `country` locate the gig beyond the venue name. `set_slot`
+  // records the role played (opener | peak | closer | b2b | other). `venue_source`
+  // ('auto' | 'user') mirrors the energy_source/tag-source pattern: a venue derived
+  // automatically from a Rekordbox history-session name never overwrites a user edit.
+  const colsV19 = (
+    db.prepare('PRAGMA table_info(play_sessions)').all() as Array<{ name: string }>
+  ).map((c) => c.name)
+
+  if (!colsV19.includes('event_type')) {
+    db.exec('ALTER TABLE play_sessions ADD COLUMN event_type TEXT')
+  }
+  if (!colsV19.includes('city')) {
+    db.exec('ALTER TABLE play_sessions ADD COLUMN city TEXT')
+  }
+  if (!colsV19.includes('country')) {
+    db.exec('ALTER TABLE play_sessions ADD COLUMN country TEXT')
+  }
+  if (!colsV19.includes('set_slot')) {
+    db.exec('ALTER TABLE play_sessions ADD COLUMN set_slot TEXT')
+  }
+  if (!colsV19.includes('venue_source')) {
+    db.exec("ALTER TABLE play_sessions ADD COLUMN venue_source TEXT NOT NULL DEFAULT 'user'")
+  }
+
+  db.exec('CREATE INDEX IF NOT EXISTS idx_play_sessions_venue ON play_sessions(venue)')
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (19)').run()
+
+  // v20: reproducible Set Architect generation (FR-305).
+  // `architect_seed` persists the variation seed that produced a set so it can
+  // be reproduced; `algorithm_version` records the engine version, since the
+  // same seed only reproduces within the same version. Both nullable — existing
+  // and hand-built sets simply have no seed.
+  const colsV20 = (db.prepare('PRAGMA table_info(sets)').all() as Array<{ name: string }>).map(
+    (c) => c.name
+  )
+
+  if (!colsV20.includes('architect_seed')) {
+    db.exec('ALTER TABLE sets ADD COLUMN architect_seed INTEGER')
+  }
+  if (!colsV20.includes('algorithm_version')) {
+    db.exec('ALTER TABLE sets ADD COLUMN algorithm_version INTEGER')
+  }
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (20)').run()
 }

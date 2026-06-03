@@ -1,8 +1,29 @@
-import { app, shell, BrowserWindow, ipcMain, dialog, protocol } from 'electron'
+import {
+  app,
+  shell,
+  BrowserWindow,
+  ipcMain,
+  dialog,
+  protocol,
+  screen,
+  session,
+  desktopCapturer
+} from 'electron'
 import { existsSync, createReadStream, promises as fsp } from 'fs'
 import { Readable } from 'node:stream'
 import { join, resolve } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import {
+  buildLiveIndex,
+  startLive,
+  stopLive,
+  processWindow,
+  processDetectedTrack,
+  matchText,
+  readNowPlaying,
+  isIndexReady,
+  liveStatus
+} from './services/live/liveEngine'
 import { initDb, getDb, resetDb, getDbPath } from './db/schema'
 import {
   getAllTracks,
@@ -32,6 +53,9 @@ import {
   getSessions,
   getSessionTracks,
   getSessionsForTrack,
+  querySessions,
+  updateSession,
+  bulkAssignSessions,
   markSetAsPerformed,
   deleteSession,
   setTrackLifecycle,
@@ -39,8 +63,16 @@ import {
   resolveGigFlag,
   getTracksFlaggedForGig,
   getFlaggedTracksInSession,
-  pruneDuplicateSetsenseSessions
+  pruneDuplicateSetsenseSessions,
+  getTagCoverage,
+  getTagsForTrack,
+  setUserTags,
+  resetTagsToAuto,
+  getSchemaVersion,
+  getExistingTrackIdsByPath
 } from './db/queries'
+import { exportBackup, inspectBackup, importBackup } from './services/backupService'
+import { retagLibrary, retagTrack } from './services/tagging/tagger'
 import type {
   Set as DJSet,
   LibraryFilters,
@@ -49,9 +81,12 @@ import type {
   HotCue,
   Loop,
   CDJModel,
-  USBDevice
+  Ecosystem,
+  USBDevice,
+  TagCategory,
+  BeatportRow
 } from '../src/types'
-import { importFromXml, importHistoryFile } from './services/libraryImport'
+import { importFromXml, importHistoryFile, applyImport } from './services/libraryImport'
 import {
   detectRekordbox,
   importFromMasterDb,
@@ -64,18 +99,50 @@ import {
   isAnalysisRunning,
   pendingCount as pendingEnergyCount
 } from './services/energyAnalyser'
-import { runArtworkQueue, isArtworkRunning } from './services/artworkExtractor'
+import { runArtworkQueue, isArtworkRunning, pruneArtworkCache } from './services/artworkExtractor'
+import { detectAllSources, getProvider } from './services/import/registry'
+import type { ImportedTrackRef, LibrarySourceProvider } from './services/import/types'
+import type {
+  ImportProgress,
+  ImportSource,
+  LibrarySourceId,
+  PostImportProgress
+} from '../src/types'
 import { scoreTransition } from './algorithms/transitionScore'
 import { getSuggestions } from './algorithms/suggestions'
 import { buildSet } from './algorithms/setArchitect'
+import {
+  detectDominantProfile,
+  getProfile,
+  listProfileSummaries,
+  toSummary,
+  type MixingProfile
+} from './algorithms/genreProfiles'
 import * as memoryService from './services/memoryService'
 import * as memoryAssistant from './services/memoryAssistant'
-import type { SmartCrate, LibrarySearchParams } from '../src/types'
-import { validateForHardware } from './services/usbValidator'
-import { exportSet } from './services/exportService'
-import { getSettings, setSettings } from './services/settingsService'
+import * as speech from './services/speech/transcribeService'
+import type {
+  SmartCrate,
+  LibrarySearchParams,
+  SessionFilter,
+  SessionMetadataPatch,
+  VenueType,
+  SetSlot
+} from '../src/types'
+import { validateForTarget } from './services/usbValidator'
+import { exportSetToEngineUsb } from './services/engine/engineExport'
+import { exportSet, exportLibraryTagsXml } from './services/exportService'
+import { exportBeatportCsv } from './services/beatport/csvExport'
+import { writeMyTags } from './services/rekordbox/myTagWriter'
+import {
+  getSettings,
+  setSettings,
+  getPortableSettings,
+  applyPortableSettings
+} from './services/settingsService'
 import type { AppSettings } from './services/settingsService'
-import { initCrashReporter } from './services/crashReporter'
+import { initCrashReporter, closeCrashReporter } from './services/crashReporter'
+import { checkForUpdatesAndNotify } from './services/updateChecker'
 import { loadSecretsFromKeychain } from './services/secretStore'
 import {
   getLicenseState,
@@ -86,6 +153,15 @@ import {
 } from './services/licenseService'
 import { loadDeviceId } from './services/licensing/deviceId'
 import { startTrial } from './services/licensing/trialStore'
+import {
+  getProgress,
+  setProgress,
+  markFirst,
+  claimMilestone,
+  recordActivity,
+  type ProgressState,
+  type FirstEvent
+} from './services/progressService'
 import {
   COMMERCE_HOST,
   checkoutUrl,
@@ -160,6 +236,12 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 let mainWindow: BrowserWindow
+
+/** Transparent always-on-top SetSense Live overlay (lazily created). */
+let overlayWindow: BrowserWindow | null = null
+
+/** Now-Playing (AppleScript) poll while a live session is active. */
+let nowPlayingPoll: ReturnType<typeof setInterval> | null = null
 
 // ── License activation deep-links (setsense://activate?key=…) ────────────────
 // A deep-link can arrive three ways: cold start (queued before the window
@@ -303,6 +385,14 @@ function createWindow(): void {
     }
   })
 
+  // Allow Chromium to throttle this renderer when it's hidden/minimised — at
+  // rest there is nothing the user can see, so paying full 60fps for the aurora,
+  // glass blur and animation loops behind another app just wastes CPU/GPU.
+  // SetSense Live is the one exception: it captures master-out from this
+  // renderer while the app is tucked behind Rekordbox, so live:start flips
+  // throttling off for the duration of the session and live:stop restores it.
+  mainWindow.webContents.setBackgroundThrottling(true)
+
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
     // Background file health check on every launch — catches moved/deleted files
@@ -329,6 +419,85 @@ function createWindow(): void {
 }
 
 /**
+ * Create (or reveal) the SetSense Live overlay: a frameless, transparent,
+ * always-on-top window that floats over Rekordbox (and across Spaces /
+ * fullscreen apps). The surface is click-through by default — the renderer
+ * toggles that off (live:set-ignore-mouse) while the pointer is over the glass
+ * chrome, so clicks otherwise pass straight through to the decks below.
+ */
+function showOverlayWindow(): void {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.showInactive()
+    return
+  }
+
+  const { workArea } = screen.getPrimaryDisplay()
+  overlayWindow = new BrowserWindow({
+    x: workArea.x,
+    y: workArea.y,
+    width: workArea.width,
+    height: workArea.height,
+    show: false,
+    frame: false,
+    transparent: true,
+    hasShadow: false,
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    focusable: false,
+    // Avoid a black flash before the transparent surface paints.
+    backgroundColor: '#00000000',
+    webPreferences: {
+      preload: join(__dirname, '../preload/preload.js'),
+      sandbox: false,
+      contextIsolation: true
+    }
+  })
+
+  // Float above normal windows and remain visible over fullscreen Rekordbox /
+  // across all Spaces.
+  overlayWindow.setAlwaysOnTop(true, 'screen-saver')
+  overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+  // Start fully click-through; the renderer opts specific regions back in.
+  overlayWindow.setIgnoreMouseEvents(true, { forward: true })
+
+  overlayWindow.on('ready-to-show', () => overlayWindow?.showInactive())
+  overlayWindow.on('closed', () => {
+    overlayWindow = null
+    if (nowPlayingPoll) clearInterval(nowPlayingPoll)
+    nowPlayingPoll = null
+    stopLive()
+    // Overlay dismissed directly (not via live:stop) — re-enable throttling so
+    // the hidden main renderer doesn't keep burning cycles.
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.setBackgroundThrottling(true)
+    }
+    // Restore the main app and keep its "Go Live" toggle in sync if the overlay
+    // was closed from its own End button.
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.restore()
+      mainWindow.webContents.send('live:overlay-closed')
+    }
+  })
+
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    overlayWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/overlay.html`)
+  } else {
+    overlayWindow.loadFile(join(__dirname, '../renderer/overlay.html'))
+  }
+}
+
+function hideOverlayWindow(): void {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.close()
+    overlayWindow = null
+  }
+}
+
+/**
  * Run the file-existence health check in the background (next tick so it
  * doesn't delay the caller) and push any status changes to the renderer.
  */
@@ -336,7 +505,7 @@ function createWindow(): void {
  * Record where the just-completed import came from so re-sync + stale detection
  * have a baseline to compare against. Idempotent — safe to call multiple times.
  */
-function recordImport(source: 'rekordbox-db' | 'rekordbox-xml', path: string): void {
+function recordImport(source: ImportSource, path: string): void {
   try {
     const mtime = statSync(path).mtimeMs
     void setSettings({
@@ -416,6 +585,31 @@ function scheduleEnergyAnalysis(): void {
 }
 
 /**
+ * Re-infer plain-language tags across the library from already-stored audio
+ * features (no audio decode). Runs off the main tick and streams progress so the
+ * Tags view can show a bar; the renderer reloads the library on 'done'.
+ */
+function scheduleRetag(): void {
+  setImmediate(() => {
+    const send = (processed: number, total: number, phase: 'tagging' | 'done'): void => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('library:tags-progress', { processed, total, phase })
+      }
+    }
+    try {
+      send(0, 0, 'tagging')
+      const { processed, total } = retagLibrary(getDb(), {
+        onProgress: (p, t) => send(p, t, p === t ? 'done' : 'tagging')
+      })
+      send(processed, total, 'done')
+    } catch (err) {
+      console.error('[tags] retag failed', err)
+      send(0, 0, 'done')
+    }
+  })
+}
+
+/**
  * Kick the background album-artwork extractor (idempotent — no-op if already
  * running). Mirrors scheduleEnergyAnalysis: progress events are throttled to
  * one per ~250ms, but per-item updates fire on every track so library rows
@@ -465,6 +659,36 @@ function scheduleArtworkExtraction(): void {
       }
     }).catch((err) => {
       console.error('[artwork] extractor queue crashed', err)
+    })
+  })
+}
+
+/**
+ * Run a provider's deferred enrichment pass in the background after import.
+ * Used by sources whose cues/beatgrids don't arrive inline (Serato keeps them in
+ * file tags; Engine packs them in blobs). Progress is throttled to ~250ms and
+ * forwarded on `library:post-import-progress`; the renderer reloads the library
+ * on 'done' to surface the new cues. Idempotent — the provider's own queue
+ * guards against overlapping runs.
+ */
+function schedulePostImport(
+  sourceId: LibrarySourceId,
+  provider: LibrarySourceProvider,
+  tracks: ImportedTrackRef[]
+): void {
+  if (!provider.postImport || tracks.length === 0) return
+  setImmediate(() => {
+    let lastProgressEmit = 0
+    const emit = (p: Omit<PostImportProgress, 'sourceId'>): void => {
+      if (!mainWindow || mainWindow.isDestroyed()) return
+      const now = Date.now()
+      if (p.phase === 'done' || now - lastProgressEmit >= 250) {
+        lastProgressEmit = now
+        mainWindow.webContents.send('library:post-import-progress', { sourceId, ...p })
+      }
+    }
+    void provider.postImport!(tracks, emit).catch((err) => {
+      console.error('[import] postImport pass crashed for', sourceId, err)
     })
   })
 }
@@ -529,6 +753,94 @@ function startUSBWatcher(): void {
 }
 
 function registerIpcHandlers(): void {
+  // ── SetSense Live overlay ──────────────────────────────────────────────────
+  const pushLive = (data: unknown): void => {
+    if (data && overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.webContents.send('live:data', data)
+    }
+  }
+
+  ipcMain.handle('live:start', () => {
+    showOverlayWindow()
+    // Get the main app out of the way so the overlay floats over Rekordbox.
+    // Live captures audio from this renderer while it's minimised, so keep it
+    // running at full speed (no background throttling) until live:stop.
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.setBackgroundThrottling(false)
+      mainWindow.minimize()
+    }
+
+    try {
+      const lib = getAllTracks(getDb())
+      // Screen-read + metadata work immediately (match by name), so start the
+      // session and tell the overlay to listen right away.
+      startLive(lib)
+      if (overlayWindow && !overlayWindow.isDestroyed()) {
+        overlayWindow.webContents.send('live:ready', liveStatus())
+      }
+
+      // Poll the Now-Playing metadata (Spotify/Apple Music) as one sensor.
+      if (nowPlayingPoll) clearInterval(nowPlayingPoll)
+      nowPlayingPoll = setInterval(() => {
+        void readNowPlaying().then((text) => {
+          const m = text ? matchText([text]) : null
+          pushLive(processDetectedTrack(m?.trackId ?? null, m?.score ?? 0, Date.now()))
+        })
+      }, 2000)
+
+      // Build the audio fingerprint index in the background (fallback sensor for
+      // your own files); progress only to the main window, never blocks listening.
+      if (!isIndexReady()) {
+        buildLiveIndex(lib, (done, total) => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('live:index-progress', { done, total })
+          }
+        })
+          .then(() => startLive(getAllTracks(getDb()))) // re-wire audio matcher
+          .catch((err) => console.error('[live] index build failed', err))
+      }
+    } catch (err) {
+      console.error('[live] start failed', err)
+    }
+  })
+  ipcMain.handle('live:stop', () => {
+    if (nowPlayingPoll) clearInterval(nowPlayingPoll)
+    nowPlayingPoll = null
+    stopLive()
+    hideOverlayWindow()
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      // Live is over — let the renderer throttle again when hidden.
+      mainWindow.webContents.setBackgroundThrottling(true)
+      mainWindow.restore()
+      mainWindow.focus()
+    }
+  })
+  // OCR'd text lines from the screen reader → match by name → push to overlay.
+  ipcMain.on('live:screen-text', (_event, lines: string[]) => {
+    try {
+      const m = matchText(Array.isArray(lines) ? lines : [])
+      if (m) pushLive(processDetectedTrack(m.trackId, m.score, Date.now()))
+    } catch {
+      // never let a bad frame crash main
+    }
+  })
+  // Audio probe windows (fingerprint fallback) → identify → push to overlay.
+  ipcMain.on('live:audio-window', (_event, samples: Float32Array) => {
+    try {
+      const pcm = samples instanceof Float32Array ? samples : new Float32Array(samples)
+      pushLive(processWindow(pcm, Date.now()))
+    } catch {
+      // never let a bad window crash the main process
+    }
+  })
+  // Toggle click-through for the overlay surface. The renderer sends `false`
+  // while the pointer is over interactive glass, `true` otherwise.
+  ipcMain.on('live:set-ignore-mouse', (_event, ignore: boolean) => {
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.setIgnoreMouseEvents(!!ignore, { forward: true })
+    }
+  })
+
   // ── Library ──────────────────────────────────────────────────────────────
 
   ipcMain.handle('library:import', async (_event, xmlPath: string) => {
@@ -538,7 +850,10 @@ function registerIpcHandlers(): void {
     // Persist source metadata so re-sync / stale detection has something to compare against.
     recordImport('rekordbox-xml', xmlPath)
     // First real import arms the free 7-day Pro trial (set-once; later imports are a no-op).
-    if (result.total > 0) startTrial()
+    if (result.total > 0) {
+      startTrial()
+      markFirst('import')
+    }
     // Run health check after import to immediately flag any missing files
     scheduleHealthCheck()
     // Auto-analyse energy for every newly-imported track (background, no UI block)
@@ -561,7 +876,10 @@ function registerIpcHandlers(): void {
       })
       recordImport('rekordbox-db', path)
       // First real import arms the free 7-day Pro trial (set-once; later imports are a no-op).
-      if (result.total > 0) startTrial()
+      if (result.total > 0) {
+        startTrial()
+        markFirst('import')
+      }
       scheduleHealthCheck()
       scheduleEnergyAnalysis()
       scheduleArtworkExtraction()
@@ -596,6 +914,59 @@ function registerIpcHandlers(): void {
       // Source file no longer exists at the recorded path — treat as not-stale (nothing to compare).
       return { stale: false, currentMtime: null, lastImportMtime: settings.lastImportMtime ?? null }
     }
+  })
+
+  // ── Cross-platform import sources (Rekordbox / Serato / Engine DJ) ─────────
+
+  ipcMain.handle('import:detect-sources', async () => {
+    return detectAllSources()
+  })
+
+  /**
+   * Generic import for any `payload`-routed source (Serato, Engine DJ, …).
+   * Rekordbox keeps its own `rekordbox:import-db` handler (native-ipc routing)
+   * because it carries a consent gate + locked/key-mismatch + XML fallback.
+   *
+   * read → applyImport → shared housekeeping → optional deferred postImport().
+   */
+  ipcMain.handle('import:run', async (_event, sourceId: LibrarySourceId, libraryPath: string) => {
+    const provider = getProvider(sourceId)
+    if (!provider) throw new Error(`Unknown import source: ${sourceId}`)
+    if (provider.capabilities.importRouting !== 'payload') {
+      throw new Error(`Source "${sourceId}" uses native import routing, not import:run`)
+    }
+
+    const emitProgress = (progress: ImportProgress): void => {
+      mainWindow.webContents.send('library:import-progress', progress)
+    }
+
+    const existingIdsByPath = getExistingTrackIdsByPath(getDb())
+    const payload = await provider.read(libraryPath, emitProgress, existingIdsByPath)
+    const result = await applyImport(payload, emitProgress)
+
+    // Bookkeeping for stale-detection — providers name the file to watch.
+    const watchPath = provider.watchPathFor ? provider.watchPathFor(libraryPath) : libraryPath
+    recordImport(provider.sourceTag, watchPath)
+
+    // First real import arms the free 7-day Pro trial (set-once thereafter).
+    if (result.total > 0) {
+      startTrial()
+      markFirst('import')
+    }
+    scheduleHealthCheck()
+    scheduleEnergyAnalysis()
+    scheduleArtworkExtraction()
+
+    // Sources whose cues/beatgrids don't arrive inline enrich in the background.
+    if (provider.postImport && !provider.capabilities.readsCuesInline) {
+      const importedTracks: ImportedTrackRef[] = payload.tracks.map((t) => ({
+        id: t.id,
+        filePath: t.filePath,
+        bpm: t.bpm
+      }))
+      schedulePostImport(sourceId, provider, importedTracks)
+    }
+    return result
   })
 
   ipcMain.handle('library:get-all', (_event, filters?: LibraryFilters) => {
@@ -652,11 +1023,41 @@ function registerIpcHandlers(): void {
 
   // ── Algorithms ────────────────────────────────────────────────────────────
 
+  // Genre mixing profile for the whole library. Detection scans every track, so
+  // we cache the result and only recompute when the track count changes (a cheap
+  // COUNT query) — imports change the count; one-off genre edits are rare enough
+  // that a slightly stale profile is harmless until the next import.
+  let cachedProfile: { count: number; profile: MixingProfile } | null = null
+  function libraryProfile(): MixingProfile {
+    const db = getDb()
+    const count = countTracks(db)
+    if (cachedProfile && cachedProfile.count === count) return cachedProfile.profile
+    const profile = detectDominantProfile(getAllTracks(db))
+    cachedProfile = { count, profile }
+    return profile
+  }
+
   ipcMain.handle('algo:score-transition', (_e, fromId: string, toId: string) => {
     const from = getTrackById(getDb(), fromId)
     const to = getTrackById(getDb(), toId)
     if (!from || !to) return null
-    return scoreTransition(from, to)
+    return scoreTransition(from, to, libraryProfile())
+  })
+
+  // Detected dominant style + the full list of selectable profiles. Optionally
+  // scoped to a source-playlist pool so the Architect's "Auto" reflects the
+  // tracks the DJ is actually building from.
+  ipcMain.handle('algo:genre-profiles', (_e, sourcePlaylistIds: string[] = []) => {
+    const db = getDb()
+    let tracks = getAllTracks(db)
+    if (sourcePlaylistIds.length > 0) {
+      const allowed = getTrackIdsForPlaylists(db, sourcePlaylistIds)
+      tracks = tracks.filter((t) => allowed.has(t.id))
+    }
+    return {
+      detected: toSummary(detectDominantProfile(tracks)),
+      profiles: listProfileSummaries()
+    }
   })
 
   ipcMain.handle(
@@ -696,7 +1097,7 @@ function registerIpcHandlers(): void {
       // Consult the transition graph — tracks the DJ has played after `track`
       // before get a scoring boost and a "you've played this N times" chip.
       const comboLookup = await memoryService.getComboLookupFor(trackId)
-      return getSuggestions(track, library, set, count, excludeIds, comboLookup)
+      return getSuggestions(track, library, set, count, excludeIds, comboLookup, libraryProfile())
     }
   )
 
@@ -724,7 +1125,12 @@ function registerIpcHandlers(): void {
         }
       }
     }
-    return buildSet(params, library)
+    // Manual override wins; otherwise auto-detect the dominant style from the
+    // (already playlist-narrowed) source pool the set is built from.
+    const profile = params.genreProfileId
+      ? getProfile(params.genreProfileId)
+      : detectDominantProfile(library)
+    return buildSet(params, library, profile)
   })
 
   // ── File health (Phase 6) ────────────────────────────────────────────────
@@ -751,6 +1157,142 @@ function registerIpcHandlers(): void {
     'library:update-track-meta',
     (_e, trackId: string, fields: { bpm?: number; key?: string }) => {
       updateTrackMeta(getDb(), trackId, fields)
+    }
+  )
+
+  // ── Auto-tags ─────────────────────────────────────────────────────────────
+  // Tags compute + display for everyone; overrides + reset are Pro.
+
+  ipcMain.handle('tags:coverage', () => getTagCoverage(getDb()))
+
+  ipcMain.handle('tags:for-track', (_e, trackId: string) => getTagsForTrack(getDb(), trackId))
+
+  // Re-infer tags across the library from stored features (free — keeps display fresh).
+  ipcMain.handle('tags:retag', () => {
+    scheduleRetag()
+    return { running: true }
+  })
+
+  ipcMain.handle(
+    'tags:set-override',
+    (_e, trackId: string, category: TagCategory, values: string[]) => {
+      if (!isProEntitled()) return null // Pro gate — manual tag overrides are paid.
+      setUserTags(getDb(), trackId, category, values)
+      return getTagsForTrack(getDb(), trackId)
+    }
+  )
+
+  ipcMain.handle('tags:reset', (_e, trackId: string, category?: TagCategory) => {
+    if (!isProEntitled()) return null
+    resetTagsToAuto(getDb(), trackId, category)
+    retagTrack(getDb(), trackId) // re-infer immediately from stored features
+    return getTagsForTrack(getDb(), trackId)
+  })
+
+  // Safe hand-off: write tags into a Rekordbox XML (tags land in Comments).
+  ipcMain.handle('tags:export-xml', async () => {
+    if (!isProEntitled()) return { success: false, error: 'pro_required' }
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: 'Export tags to Rekordbox XML',
+      defaultPath: 'setsense-tags.xml',
+      filters: [{ name: 'Rekordbox XML', extensions: ['xml'] }]
+    })
+    if (canceled || !filePath) return { success: false, error: 'cancelled' }
+    return exportLibraryTagsXml(getAllTracks(getDb()), filePath)
+  })
+
+  // Advanced: write native MyTags straight into master.db (auto-backup + rollback).
+  ipcMain.handle('tags:write-mytags', async () => {
+    if (!isProEntitled()) return { success: false, error: 'pro_required' }
+    const detection = await detectRekordbox()
+    if (!detection.installed || !detection.dbPath) {
+      return {
+        success: false,
+        error: 'No Rekordbox database found on this Mac. Use the XML option instead.'
+      }
+    }
+    const entries = getAllTracks(getDb())
+      .filter((t) => t.rekordboxId && (t.tags?.length ?? 0) > 0)
+      .map((t) => ({
+        rekordboxId: t.rekordboxId as string,
+        tags: (t.tags ?? [])
+          .filter((tag) => tag.value)
+          .map((tag) => ({ category: tag.category, value: tag.value }))
+      }))
+    if (entries.length === 0) {
+      return { success: false, error: 'No tagged tracks are linked to your Rekordbox library yet.' }
+    }
+    return writeMyTags(detection.dbPath, entries)
+  })
+
+  // ── Backup & migration ──────────────────────────────────────────────────────
+  // Backendless export/import of the SetSense overlay (tags, sets, sessions,
+  // crates, lifecycle). Re-links to the destination machine's own library; never
+  // touches local file paths. Not Pro-gated — owning and moving your own data is
+  // a trust feature, not an upsell.
+
+  ipcMain.handle('backup:export', async (_e, passphrase?: string) => {
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: 'Export SetSense backup',
+      defaultPath: `SetSense-backup-${new Date().toISOString().slice(0, 10)}.setsense`,
+      filters: [{ name: 'SetSense Backup', extensions: ['setsense'] }]
+    })
+    if (canceled || !filePath) return { success: false, error: 'cancelled' }
+
+    // Encryption is the default. With no passphrase, require a deliberate,
+    // informed opt-out before writing a plaintext bundle that anyone could read.
+    let allowUnencrypted = false
+    if (!passphrase) {
+      const { response } = await dialog.showMessageBox(mainWindow, {
+        type: 'warning',
+        buttons: ['Cancel', 'Export without encryption'],
+        defaultId: 0,
+        cancelId: 0,
+        title: 'Unencrypted backup',
+        message: 'Export this backup without encryption?',
+        detail:
+          'This file will contain your gig history (venues, cities, dates), play counts, tags ' +
+          'and library — and anyone who opens it can read all of it.\n\n' +
+          'To protect it, cancel and enter a passphrase first. There’s no recovery if a ' +
+          'passphrase is lost.'
+      })
+      if (response === 0) return { success: false, error: 'cancelled' }
+      allowUnencrypted = true
+    }
+
+    return exportBackup(getDb(), filePath, {
+      passphrase: passphrase || undefined,
+      allowUnencrypted,
+      appVersion: app.getVersion(),
+      settings: getPortableSettings()
+    })
+  })
+
+  ipcMain.handle('backup:pick', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      title: 'Choose a SetSense backup',
+      filters: [{ name: 'SetSense Backup', extensions: ['setsense'] }],
+      properties: ['openFile']
+    })
+    return canceled ? null : filePaths[0]
+  })
+
+  ipcMain.handle('backup:inspect', (_e, filePath: string, passphrase?: string) => {
+    return inspectBackup(filePath, {
+      passphrase: passphrase || undefined,
+      localSchemaVersion: getSchemaVersion(getDb()),
+      localTrackCount: countTracks(getDb())
+    })
+  })
+
+  ipcMain.handle(
+    'backup:import',
+    (_e, filePath: string, mode: 'restore' | 'merge', passphrase?: string) => {
+      const result = importBackup(getDb(), filePath, { mode, passphrase: passphrase || undefined })
+      if (result.success && result.settings) {
+        applyPortableSettings(result.settings as unknown as Partial<AppSettings>)
+      }
+      return result
     }
   )
 
@@ -802,18 +1344,37 @@ function registerIpcHandlers(): void {
 
   // ── Export + Validation (Phase 7) ────────────────────────────────────────
 
-  ipcMain.handle('algo:validate', async (_e, setId: string, hardware: CDJModel) => {
-    const set = getSetById(getDb(), setId)
-    if (!set) return null
-    const result = validateForHardware(set, hardware)
-    dbSaveSet(getDb(), { ...set, safetyScore: result.score, targetHardware: hardware })
-    return result
-  })
+  ipcMain.handle(
+    'algo:validate',
+    async (_e, setId: string, hardware: CDJModel, ecosystem: Ecosystem = 'pioneer') => {
+      const set = getSetById(getDb(), setId)
+      if (!set) return null
+      const result = validateForTarget(set, { ecosystem, hardware })
+      dbSaveSet(getDb(), { ...set, safetyScore: result.score, targetHardware: hardware })
+      return result
+    }
+  )
 
   // ── Settings ───────────────────────────────────────────────────────────────
   ipcMain.handle('settings:get', () => getSettings())
 
-  ipcMain.handle('settings:set', (_e, partial: Partial<AppSettings>) => setSettings(partial))
+  ipcMain.handle('settings:set', async (_e, partial: Partial<AppSettings>) => {
+    const next = await setSettings(partial)
+    // Honour crash-reporting consent withdrawal immediately: turning the toggle
+    // off stops reporting this session rather than waiting for a restart.
+    // Enabling still takes effect on next launch (so startup errors are caught).
+    if (partial.crashReportingEnabled === false) {
+      await closeCrashReporter()
+    }
+    return next
+  })
+
+  // ── Retention / activation progress (brief #22, Phase B) ──────────────────
+  ipcMain.handle('progress:get', () => getProgress())
+  ipcMain.handle('progress:set', (_e, partial: Partial<ProgressState>) => setProgress(partial))
+  ipcMain.handle('progress:markFirst', (_e, event: FirstEvent) => markFirst(event))
+  ipcMain.handle('progress:claimMilestone', (_e, id: string) => claimMilestone(id))
+  ipcMain.handle('progress:recordActivity', () => recordActivity())
 
   // ── Licensing / SetSense Pro (Section 16) ─────────────────────────────────
   ipcMain.handle('license:get', () => getLicenseState())
@@ -895,6 +1456,47 @@ function registerIpcHandlers(): void {
     return exportSet(set, filePath)
   })
 
+  // Gig-ready Engine DJ (Denon) export: writes an Engine Library + copies audio
+  // straight onto a USB drive. Re-validates and refuses on any blocking issue
+  // (missing / non-owned tracks) so a half-usable drive never reaches the gig.
+  ipcMain.handle('export:engine-usb', async (_e, setId: string, mountPath: string) => {
+    if (!isProEntitled()) return { success: false, error: 'pro_required' } // Pro gate — export is paid.
+    const set = getSetById(getDb(), setId)
+    if (!set) return { success: false, error: 'Set not found' }
+    if (!mountPath) return { success: false, error: 'No USB drive selected.' }
+
+    // No surprises at the gig: a single blocking issue aborts the whole export.
+    const validation = validateForTarget(set, { ecosystem: 'engine' })
+    if (!validation.isExportReady) {
+      return { success: false, error: 'Fix blocking issues before exporting to USB.' }
+    }
+
+    const result = await exportSetToEngineUsb(set, mountPath, (progress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('library:engine-export-progress', progress)
+      }
+    })
+    return result
+  })
+
+  // Beatport playlist export. Rows arrive already resolved (and possibly
+  // user-corrected) from the renderer; we just pick a destination and write the
+  // CSV. The library is never read or modified here.
+  ipcMain.handle('beatport:export-csv', async (_e, setName: string, rows: BeatportRow[]) => {
+    if (!isProEntitled()) return { success: false, error: 'pro_required' } // Pro gate — export is paid.
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return { success: false, error: 'No tracks to export.' }
+    }
+    const safeName = (setName || 'set').replace(/[/\\?%*:|"<>]/g, '-')
+    const date = new Date().toISOString().slice(0, 10)
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      defaultPath: `${safeName}_SetSense_Beatport_${date}.csv`,
+      filters: [{ name: 'Beatport CSV', extensions: ['csv'] }]
+    })
+    if (canceled || !filePath) return { success: false }
+    return exportBeatportCsv(rows, filePath)
+  })
+
   // ── USB Detection (Phase 9) ───────────────────────────────────────────────────
 
   ipcMain.handle('usb:list', async () => {
@@ -964,9 +1566,35 @@ function registerIpcHandlers(): void {
     return getSessionsForTrack(getDb(), trackId)
   })
 
+  ipcMain.handle('history:query-sessions', (_e, filter: SessionFilter = {}) => {
+    return querySessions(getDb(), filter)
+  })
+
+  ipcMain.handle('history:update-session', (_e, sessionId: string, patch: SessionMetadataPatch) => {
+    updateSession(getDb(), sessionId, patch)
+  })
+
+  ipcMain.handle(
+    'history:bulk-assign',
+    (_e, filter: SessionFilter, patch: SessionMetadataPatch) => {
+      return bulkAssignSessions(getDb(), filter, patch)
+    }
+  )
+
   ipcMain.handle(
     'history:mark-performed',
-    (_e, setId: string, opts: { performedAt?: string; venue?: string } = {}) => {
+    (
+      _e,
+      setId: string,
+      opts: {
+        performedAt?: string
+        venue?: string
+        eventType?: VenueType
+        city?: string
+        country?: string
+        setSlot?: SetSlot
+      } = {}
+    ) => {
       return markSetAsPerformed(getDb(), setId, opts)
     }
   )
@@ -1035,6 +1663,10 @@ function registerIpcHandlers(): void {
       memoryService.resolveDuplicateGroup(normalisedKey, archiveIds)
   )
   ipcMain.handle('recall:search', (_e, params: LibrarySearchParams) => memoryService.search(params))
+  ipcMain.handle('recall:similar', (_e, trackId: string, count?: number) =>
+    memoryService.findSimilar(trackId, count)
+  )
+  ipcMain.handle('recall:ends', () => memoryService.getEnds())
 
   // ── Recall local-AI layer (Phase 13) ──────────────────────────────────────
 
@@ -1068,6 +1700,25 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('recall:ai-ask', async (_e, question: string) => {
     return memoryAssistant.ask(question)
+  })
+
+  ipcMain.handle('recall:ai-route', async (_e, question: string, contextJson?: string) => {
+    return memoryAssistant.route(question, contextJson)
+  })
+
+  // ── On-device voice (Phase 13) ────────────────────────────────────────────
+  ipcMain.handle('speech:voice-status', () => speech.getVoiceStatus())
+  ipcMain.handle('speech:ensure-mic-access', () => speech.ensureMicAccess())
+  ipcMain.handle('speech:prepare', () => speech.prepareModel())
+  // Stream one-time model download/load progress to the renderer's setup chip.
+  speech.setVoiceProgressListener((status) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('speech:voice-progress', status)
+    }
+  })
+  ipcMain.handle('speech:transcribe', async (_e, pcm: Float32Array) => {
+    // pcm arrives as a structured-cloned Float32Array (16 kHz mono).
+    return speech.transcribe(pcm instanceof Float32Array ? pcm : new Float32Array(pcm))
   })
 }
 
@@ -1171,13 +1822,67 @@ app.whenReady().then(async () => {
     console.error('[startup] pruneDuplicateSetsenseSessions failed', err)
   }
 
+  // Reclaim orphaned album art for tracks that no longer exist (NFR-901 cache
+  // cleanup policy). Cheap; bounds the artwork cache to the live library.
+  try {
+    const { removed, bytesFreed } = pruneArtworkCache()
+    if (removed > 0) {
+      console.log(`[startup] pruned ${removed} orphaned artwork file(s), ${bytesFreed} bytes freed`)
+    }
+  } catch (err) {
+    console.error('[startup] pruneArtworkCache failed', err)
+  }
+
   registerIpcHandlers()
+
+  // Auto-grant the primary screen to getDisplayMedia so the Live screen-reader
+  // captures without an in-app picker. (macOS still gates this behind the
+  // one-time Screen Recording permission for the app.)
+  session.defaultSession.setDisplayMediaRequestHandler(
+    (_request, callback) => {
+      desktopCapturer
+        .getSources({ types: ['screen'] })
+        .then((sources) => callback(sources[0] ? { video: sources[0] } : {}))
+        .catch(() => callback({}))
+    },
+    { useSystemPicker: false }
+  )
+
+  // Web-layer permission gate. SetSense only ever requests the microphone (voice
+  // input — FR-705) and screen capture (the Live screen-reader); everything else
+  // is denied. macOS still enforces its own TCC prompt on top of this. Without an
+  // explicit handler we'd inherit Electron's default-grant behaviour, which is
+  // both broader than we need and version-dependent.
+  const grantPermission = (permission: string, details?: { mediaTypes?: string[] }): boolean => {
+    if (permission === 'media') {
+      // getUserMedia({ audio: true }) → mediaTypes ['audio']. We never ask for
+      // the camera, so deny any request that includes video. Some Electron
+      // versions omit mediaTypes; treat an empty list as the audio path.
+      const types = details?.mediaTypes ?? []
+      return types.length === 0 || (types.includes('audio') && !types.includes('video'))
+    }
+    // Screen capture flows through setDisplayMediaRequestHandler above.
+    return permission === 'display-capture'
+  }
+  session.defaultSession.setPermissionRequestHandler((_wc, permission, callback, details) => {
+    callback(grantPermission(permission, details as { mediaTypes?: string[] }))
+  })
+  session.defaultSession.setPermissionCheckHandler((_wc, permission, _origin, details) => {
+    return grantPermission(permission, details as unknown as { mediaTypes?: string[] })
+  })
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
   createWindow()
+
+  // Stage-1 update delivery (NFR-1001): best-effort "you're behind" check that
+  // links to the download page. No in-app installer — see updateChecker.ts /
+  // README "Auto-update". Fire-and-forget: it's throttled to once a day, skips
+  // unpackaged builds, and never throws. The network round-trip outlasts the
+  // window's ready-to-show, so the dialog (if any) lands over a painted UI.
+  void checkForUpdatesAndNotify(mainWindow)
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

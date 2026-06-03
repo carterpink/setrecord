@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { AlignJustify, ArrowDownUp, ListMusic, Menu, SlidersHorizontal, X } from 'lucide-react'
+import { AlignJustify, ArrowDownUp, Folder, ListMusic, Menu, Music, SlidersHorizontal, X } from 'lucide-react'
 import type { ComboResult, LibraryTab, Track } from '@/types'
 import { SearchInput } from '@/components/shared/SearchInput'
 import { EmptyState } from '@/components/shared/EmptyState'
@@ -18,9 +18,10 @@ import { TrackRow } from './TrackRow'
 import { SetListRow } from './SetListRow'
 import { PlaylistSidebar } from './PlaylistSidebar'
 import { CratesLibraryTab } from './CratesLibraryTab'
+import { TagEditorPopover } from './tags/TagEditorPopover'
 import { TrackContextMenu } from './TrackContextMenu'
 
-const TABS: readonly LibraryTab[] = ['Library', 'Crates', 'Sets'] as const
+const TABS: readonly LibraryTab[] = ['Collection', 'Crates', 'Sets'] as const
 
 type SortField =
   | 'artist'
@@ -98,7 +99,7 @@ function anyActive(f: TrackFilters): boolean {
 }
 
 export function LibraryPanel(): React.JSX.Element {
-  const [tab, setTab] = useState<LibraryTab>('Library')
+  const [tab, setTab] = useState<LibraryTab>('Collection')
   const {
     tracks,
     searchQuery,
@@ -153,6 +154,9 @@ export function LibraryPanel(): React.JSX.Element {
   // ── Context menu state ────────────────────────────────────────────────────
   const [ctxMenu, setCtxMenu] = useState<{ track: Track; x: number; y: number } | null>(null)
 
+  // ── Tag editor state (per-track override popover) ─────────────────────────
+  const [tagEditorTrack, setTagEditorTrack] = useState<Track | null>(null)
+
   // ── Combos popover state ──────────────────────────────────────────────────
   const [combosData, setCombosData] = useState<{ track: Track; results: ComboResult[] } | null>(
     null
@@ -165,7 +169,7 @@ export function LibraryPanel(): React.JSX.Element {
   const searchRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
     if (searchFocusTick > 0) {
-      setTab('Library')
+      setTab('Collection')
       setTimeout(() => searchRef.current?.focus(), 50)
     }
   }, [searchFocusTick])
@@ -328,10 +332,15 @@ export function LibraryPanel(): React.JSX.Element {
       )}
 
       <div className="library-tabs">
-        <SegmentedControl options={TABS} value={tab} onChange={setTab} />
+        <SegmentedControl
+          options={TABS}
+          value={tab}
+          onChange={setTab}
+          icons={{ Collection: Music, Crates: Folder, Sets: ListMusic }}
+        />
       </div>
 
-      {tab === 'Library' && (
+      {tab === 'Collection' && (
         <>
           {/* Sort / filter / density toolbar */}
           <div className="library-toolbar">
@@ -569,7 +578,7 @@ export function LibraryPanel(): React.JSX.Element {
         </>
       )}
 
-      {tab === 'Library' && (
+      {tab === 'Collection' && (
         <div className="library-split">
           <PlaylistSidebar />
           <div className="library-main">
@@ -665,6 +674,11 @@ export function LibraryPanel(): React.JSX.Element {
                 ref={scrollContainerRef}
                 className="track-list"
                 style={{ overflowY: 'auto', flex: 1 }}
+                // NFR-107 benchmark markers — the cold-start harness waits for
+                // data-bench-library-ready and the scroll harness scrolls this
+                // element. Inert in production. See bench/app/run.mjs.
+                data-bench-library-ready="true"
+                data-bench-track-count={displayTracks.length}
               >
                 {displayTracks.length === 0 ? (
                   <div className="library-empty" style={{ padding: 16 }}>
@@ -704,6 +718,7 @@ export function LibraryPanel(): React.JSX.Element {
                             track={track}
                             inSet={setTrackIds.has(track.id)}
                             playing={previewTrack?.id === track.id && isPlaying}
+                            selected={selectedLibraryTrackId === track.id}
                             compact={libraryDensity === 'compact'}
                             onClick={() => {
                               setSelectedLibraryTrack(track.id)
@@ -712,6 +727,7 @@ export function LibraryPanel(): React.JSX.Element {
                             }}
                             onDoubleClick={() => addTrackAfterSelected(track)}
                             onContextMenu={(e) => handleContextMenu(track, e)}
+                            onMenuKey={(c) => setCtxMenu({ track, x: c.x, y: c.y })}
                             onShowCombos={() => handleShowCombos(track)}
                           />
                         </div>
@@ -775,7 +791,16 @@ export function LibraryPanel(): React.JSX.Element {
             void handleShowCombos(ctxMenu.track)
             setCtxMenu(null)
           }}
+          onEditTags={() => {
+            setTagEditorTrack(ctxMenu.track)
+            setCtxMenu(null)
+          }}
         />
+      )}
+
+      {/* Tag override popover (Pro) */}
+      {tagEditorTrack && (
+        <TagEditorPopover track={tagEditorTrack} onClose={() => setTagEditorTrack(null)} />
       )}
 
       {/* Combos popover */}

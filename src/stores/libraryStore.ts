@@ -6,10 +6,14 @@ import type {
   HotCue,
   Loop,
   ImportProgress,
+  LibrarySourceId,
   LibraryStats,
   Playlist,
   RekordboxDetection,
-  Track
+  SourceDetection,
+  TagCategory,
+  Track,
+  TrackTag
 } from '@/types'
 import { gradientForId } from '@/utils/format'
 import { useLicenseStore } from '@/stores/licenseStore'
@@ -22,14 +26,25 @@ import { useLicenseStore } from '@/stores/licenseStore'
  *                       ▼           ▼              │
  *                  not-detected ───┴──► (XML picker)
  *
- *   - idle:         modal closed, nothing in progress
- *   - detecting:    running rekordbox:detect
- *   - detected:     master.db found, awaiting user confirmation
- *   - not-detected: no usable Rekordbox install — show XML guide
- *   - importing:    actively reading + writing (progress events come in)
- *   - done:         finished, stats screen
+ *   - idle:          modal closed, nothing in progress
+ *   - source-picker: choosing a DJ-software source (Rekordbox / Serato / …)
+ *   - detecting:     running rekordbox:detect
+ *   - detected:      master.db found, awaiting user confirmation
+ *   - source-detected: payload source (Serato/Engine) found, awaiting confirmation
+ *   - not-detected:  no usable Rekordbox install — show XML guide
+ *   - importing:     actively reading + writing (progress events come in)
+ *   - done:          finished, stats screen
  */
-export type ImportState = 'idle' | 'detecting' | 'detected' | 'not-detected' | 'importing' | 'done'
+export type ImportState =
+  | 'idle'
+  | 'source-picker'
+  | 'detecting'
+  | 'detected'
+  // Confirm screen for a payload-routed source (Serato, Engine DJ).
+  | 'source-detected'
+  | 'not-detected'
+  | 'importing'
+  | 'done'
 
 /** Attach a deterministic gradient to every track that lacks real artwork. */
 function withGradient(tracks: Track[]): Track[] {
@@ -54,6 +69,10 @@ interface LibraryState {
   importState: ImportState
   /** Result of the most recent rekordbox:detect call. */
   detection: RekordboxDetection | null
+  /** All detected DJ-software sources (drives the source picker). */
+  availableSources: SourceDetection[]
+  /** Which source the user picked in the source picker. */
+  selectedSourceId: LibrarySourceId | null
   /** True when an in-place re-sync is available (master.db newer than last import). */
   libraryStale: boolean
   /** Error code from a failed import — drives "DB locked" / "key mismatch" UI. */
@@ -61,7 +80,13 @@ interface LibraryState {
 
   loadLibrary: () => Promise<void>
   setSearchQuery: (q: string) => void
-  /** Kick off the auto-detect flow — used by Onboarding step 3 + TopBar Import + Settings Re-sync. */
+  /** Detect all sources and show the picker — the canonical Import entry point. */
+  startImportFlow: () => Promise<void>
+  /** Pick a source from the picker and route into its import flow. */
+  selectSource: (id: LibrarySourceId) => Promise<void>
+  /** Confirm a detected payload-routed library (Serato, Engine DJ) and import it. */
+  confirmSourceImport: () => Promise<void>
+  /** Kick off the Rekordbox auto-detect flow — used by Onboarding + TopBar + Settings Re-sync. */
   startAutoDetectFlow: () => Promise<void>
   /** Confirm a detected master.db and import from it. */
   confirmAutoDetectImport: () => Promise<void>
@@ -79,6 +104,12 @@ interface LibraryState {
   patchTrackEnergy: (trackId: string, energy: number, source: EnergySource) => void
   patchTrackArtwork: (trackId: string, albumArtPath: string) => void
   setTrackEnergy: (trackId: string, energy: number) => Promise<void>
+  /** Replace a track's tags locally (optimistic / after an override round-trip). */
+  patchTrackTags: (trackId: string, tags: TrackTag[]) => void
+  /** Set one tag category from a user override (Pro), persisting + patching. */
+  setTrackTags: (trackId: string, category: TagCategory, values: string[]) => Promise<void>
+  /** Clear a user override so the category re-infers (Pro). */
+  resetTrackTagsToAuto: (trackId: string, category?: TagCategory) => Promise<void>
   updateTrackMeta: (trackId: string, fields: { bpm?: number; key?: string }) => Promise<void>
   relinkTrackFile: (trackId: string) => Promise<string | null>
   applyFileStatusChanges: (changes: Array<{ id: string; missing: boolean }>) => void
@@ -105,6 +136,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   playlistTrackIndex: new Map(),
   importState: 'idle',
   detection: null,
+  availableSources: [],
+  selectedSourceId: null,
   libraryStale: false,
   importError: null,
 
@@ -184,6 +217,21 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     await window.setsense.setTrackEnergy(trackId, clamped)
   },
 
+  patchTrackTags: (trackId, tags) => {
+    const patch = (arr: Track[]): Track[] => arr.map((t) => (t.id === trackId ? { ...t, tags } : t))
+    set((s) => ({ tracks: patch(s.tracks), searchResults: patch(s.searchResults) }))
+  },
+
+  setTrackTags: async (trackId, category, values) => {
+    const updated = await window.setsense.tagsSetOverride(trackId, category, values)
+    if (updated) get().patchTrackTags(trackId, updated)
+  },
+
+  resetTrackTagsToAuto: async (trackId, category) => {
+    const updated = await window.setsense.tagsResetToAuto(trackId, category)
+    if (updated) get().patchTrackTags(trackId, updated)
+  },
+
   updateTrackMeta: async (trackId, fields) => {
     const patch = (arr: Track[]): Track[] =>
       arr.map((t) =>
@@ -219,6 +267,70 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
   refreshFileHealth: async () => {
     await window.setsense.triggerHealthCheck()
+  },
+
+  startImportFlow: async () => {
+    set({
+      importState: 'detecting',
+      detection: null,
+      availableSources: [],
+      selectedSourceId: null,
+      importProgress: null,
+      importError: null
+    })
+    try {
+      const sources = await window.setsense.detectImportSources()
+      set({ availableSources: sources, importState: 'source-picker' })
+    } catch (err) {
+      console.error('[libraryStore] detectImportSources failed', err)
+      // Fall back to the Rekordbox-only flow so import still works.
+      await get().startAutoDetectFlow()
+    }
+  },
+
+  selectSource: async (id) => {
+    set({ selectedSourceId: id })
+    if (id === 'rekordbox') {
+      // Rekordbox owns its native consent-gated detect/import flow.
+      await get().startAutoDetectFlow()
+      return
+    }
+    // Payload-routed sources (Serato, Engine DJ): show the confirm screen when a
+    // readable library was detected, else bounce back to the picker.
+    const source = get().availableSources.find((s) => s.sourceId === id)
+    if (source?.installed && !source.readError && source.libraryPath) {
+      set({ importState: 'source-detected' })
+    } else {
+      set({ importState: 'source-picker' })
+    }
+  },
+
+  confirmSourceImport: async () => {
+    const id = get().selectedSourceId
+    if (!id || id === 'rekordbox') return
+    const source = get().availableSources.find((s) => s.sourceId === id)
+    if (!source?.libraryPath) return
+
+    set({ importState: 'importing', importProgress: null, importError: null })
+    const unsubscribe = window.setsense.onImportProgress((p) => set({ importProgress: p }))
+    try {
+      const result = await window.setsense.runImport(id, source.libraryPath)
+      set({ stats: result.stats, importState: 'done', libraryStale: false })
+      void useLicenseStore.getState().hydrate()
+      await get().loadLibrary()
+      // Cues/beatgrids stream in via a background pass — reload when it finishes.
+      const stop = window.setsense.onPostImportProgress((p) => {
+        if (p.phase === 'done') {
+          stop()
+          void get().loadLibrary()
+        }
+      })
+    } catch (err) {
+      console.error('[libraryStore] runImport failed for', id, err)
+      set({ importState: 'source-picker', importError: 'GENERIC' })
+    } finally {
+      unsubscribe()
+    }
   },
 
   startAutoDetectFlow: async () => {
@@ -310,6 +422,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     set({
       importState: 'idle',
       detection: null,
+      availableSources: [],
+      selectedSourceId: null,
       importProgress: null,
       importError: null
     })

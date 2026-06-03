@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { RefreshCw, Sparkles } from 'lucide-react'
+import { APP_NAME } from '@/utils/constants'
 import { IconButton } from '@/components/shared/IconButton'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { PlaylistSourceDropdown } from '@/components/shared/PlaylistSourceDropdown'
@@ -12,6 +14,7 @@ import { formatPosition } from '@/utils/format'
 import { useCanUse } from '@/stores/licenseStore'
 import { ProLock } from '@/components/shared/ProGate'
 import { NoLibraryState } from '@/components/shared/NoLibraryState'
+import { useProgressStore } from '@/stores/progressStore'
 import { SuggestionCard } from './SuggestionCard'
 
 const listVariants = stagger(0.05)
@@ -49,6 +52,12 @@ export function SuggestionsPanel(): React.JSX.Element {
     suggestionsSourcePlaylistIds
   )
 
+  // Activation moment: the first time real suggestions render, record it. This
+  // is the core "what mixes next" payoff and the leading retention indicator.
+  useEffect(() => {
+    if (suggestions.length > 0) void useProgressStore.getState().markFirst('suggestion')
+  }, [suggestions.length])
+
   // No library yet → route to import before anything else. There are no tracks
   // to suggest from, so we never show a paywall or a fake "finding matches" state.
   if (!hasLibrary) {
@@ -57,7 +66,9 @@ export function SuggestionsPanel(): React.JSX.Element {
         <div className="sugg-header">
           <div className="ss-h2">Suggested next</div>
         </div>
-        <NoLibraryState body="Pick any track and SetSense suggests what mixes next — matched on key, BPM and energy. Import your library to get recommendations." />
+        <NoLibraryState
+          body={`Pick any track and ${APP_NAME} suggests what mixes next — matched on key, BPM and energy. Import your library to get recommendations.`}
+        />
       </div>
     )
   }

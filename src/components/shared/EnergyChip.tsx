@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { Coachmark } from '@/components/learn/Coachmark'
+import { LearnTooltip } from '@/components/learn/LearnTooltip'
+import { explainEnergyView } from '@/utils/learnMode/explanations'
+import { BEGINNER_TOOLTIP_COPY } from '@/utils/learnMode/coachmarks'
 
 interface EnergyChipProps {
   value: number
@@ -91,33 +94,39 @@ export function EnergyChip({
 
   return (
     <Coachmark concept="energy">
-      <span
-        ref={chipRef}
-        className={clsx(
-          'nrg-chip',
-          editable && 'nrg-chip--clickable',
-          isOverride && 'nrg-chip--override',
-          className
-        )}
-        title={isOverride ? `Energy: ${value}/10 (manually set)` : `Energy: ${value}/10`}
-        aria-label={`Energy ${value} of 10`}
-        role={editable ? 'button' : undefined}
-        tabIndex={editable ? 0 : undefined}
-        onClick={(e) => {
-          if (!editable) return
-          e.stopPropagation()
-          setEditing(true)
-        }}
-        onKeyDown={(e) => {
-          if (!editable) return
-          if (e.key === 'Enter' || e.key === ' ') {
+      <LearnTooltip
+        explanation={explainEnergyView()}
+        basic={BEGINNER_TOOLTIP_COPY.energy}
+        iconLabel="What is the energy score?"
+      >
+        <span
+          ref={chipRef}
+          className={clsx(
+            'nrg-chip',
+            editable && 'nrg-chip--clickable',
+            isOverride && 'nrg-chip--override',
+            className
+          )}
+          title={isOverride ? `Energy: ${value}/10 (manually set)` : `Energy: ${value}/10`}
+          aria-label={`Energy ${value} of 10`}
+          role={editable ? 'button' : undefined}
+          tabIndex={editable ? 0 : undefined}
+          onClick={(e) => {
+            if (!editable) return
             e.stopPropagation()
             setEditing(true)
-          }
-        }}
-      >
-        {value}
-      </span>
+          }}
+          onKeyDown={(e) => {
+            if (!editable) return
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.stopPropagation()
+              setEditing(true)
+            }
+          }}
+        >
+          {value}
+        </span>
+      </LearnTooltip>
     </Coachmark>
   )
 }

@@ -38,5 +38,20 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Benchmarks (Tier A — PRD §11 budgets)
+        # Headless micro-benchmarks: suggestions <100ms, 20-track build <500ms,
+        # import-parse canary. The full SQLite import auto-skips here because
+        # better-sqlite3 is built for the Electron ABI (see import.bench.test.ts);
+        # it runs in the nightly job. Fails the build on a budget breach.
+        run: npm run bench:node
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-node-results
+          path: bench/results/node-latest.json
+          if-no-files-found: ignore
+
       - name: Build (renderer + main, no installer)
         run: npm run build

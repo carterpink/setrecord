@@ -5,11 +5,7 @@ import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useLicenseStore } from '@/stores/licenseStore'
 
-interface BottomDockProps {
-  visible: boolean
-}
-
-export function BottomDock({ visible }: BottomDockProps): React.JSX.Element {
+export function BottomDock(): React.JSX.Element {
   const { showModal, showUpgrade, smartFilter, toggleSmartFilter } = useUiStore()
   const { selectedTrackId } = useSetStore()
   const isPro = useLicenseStore((s) => s.license.tier === 'pro')
@@ -19,7 +15,7 @@ export function BottomDock({ visible }: BottomDockProps): React.JSX.Element {
 
   return (
     <div className="dock-trigger">
-      <div className={`dock-wrap${visible ? ' dock-visible' : ''}`}>
+      <div className="dock-wrap dock-visible">
         <div className="dock glass-3">
           {/* Set Architect — Pro */}
           <span className="dock-item" data-label={isPro ? 'Set Architect' : 'Set Architect — Pro'}>

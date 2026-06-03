@@ -19,12 +19,12 @@ import type { ComboResult, SetTrack, Track } from '@/types'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
-import { formatBpm, formatDuration, formatPosition } from '@/utils/format'
+import { formatDuration, formatPosition } from '@/utils/format'
 import { EnergyChip } from '@/components/shared/EnergyChip'
 import { TransitionDot } from '@/components/shared/TransitionDot'
 import { InlineWaveform } from '@/components/shared/InlineWaveform'
 import { KeyChip } from '@/components/shared/KeyChip'
-import { Coachmark } from '@/components/learn/Coachmark'
+import { BpmChip } from '@/components/shared/BpmChip'
 import { LearnTooltip } from '@/components/learn/LearnTooltip'
 import { explainTransition } from '@/utils/learnMode/explanations'
 
@@ -210,8 +210,7 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
           </div>
           <div className="ss-body-sm" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span>
-              {track.artist} · <Coachmark concept="bpm">{formatBpm(track.bpm)}</Coachmark> ·{' '}
-              <KeyChip>{track.key}</KeyChip>
+              {track.artist} · <BpmChip>{track.bpm}</BpmChip> · <KeyChip>{track.key}</KeyChip>
             </span>
             <span
               onClick={(e) => e.stopPropagation()}

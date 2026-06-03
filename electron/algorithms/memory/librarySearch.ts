@@ -73,9 +73,21 @@ function sortTracks(tracks: Track[], sort: LibrarySearchParams['sort']): Track[]
   }
 }
 
-export function searchLibrary(tracks: Track[], p: LibrarySearchParams): Track[] {
+/**
+ * @param allowedTrackIds When provided, only tracks in this set survive — used to
+ *   intersect "played at venue X / in month Y" results (resolved from the session
+ *   tables upstream) with the in-memory track filters below. Pass null/undefined
+ *   when no gig filter is active. An empty set legitimately yields no results.
+ */
+export function searchLibrary(
+  tracks: Track[],
+  p: LibrarySearchParams,
+  allowedTrackIds?: Set<string> | null
+): Track[] {
   // Phantom (Discover-only) tracks aren't real files — never surface them here.
   let out = tracks.filter((t) => t.phantom !== true)
+
+  if (allowedTrackIds) out = out.filter((t) => allowedTrackIds.has(t.id))
 
   if (p.text) {
     const q = p.text.toLowerCase()
@@ -118,6 +130,16 @@ export function searchLibrary(tracks: Track[], p: LibrarySearchParams): Track[] 
       // Hot cues carry labels; CuePoint (memory/cue) currently has no label field
       // in the SetSense schema, so we only check hot cues here.
       return t.hotCues.some((hc) => (hc.label ?? '').toLowerCase().includes(needle))
+    })
+  }
+
+  if (p.tags && p.tags.length > 0) {
+    const wanted = p.tags.map((x) => x.toLowerCase())
+    out = out.filter((t) => {
+      const vals = (t.tags ?? []).map((tag) => tag.value.toLowerCase())
+      // Match if the track carries any requested tag (substring-tolerant both ways
+      // so "vocal" matches "vocals" and "dark" matches "dark/moody").
+      return wanted.some((w) => vals.some((v) => v.includes(w) || w.includes(v)))
     })
   }
 

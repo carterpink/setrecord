@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildSet } from '../electron/algorithms/setArchitect'
+import { getProfile } from '../electron/algorithms/genreProfiles'
 import type { ArchitectParams, Track } from '../src/types'
 import { makeTrack } from './fixtures'
 
@@ -79,6 +80,82 @@ describe('buildSet', () => {
     expect(a).toEqual(b)
   })
 
+  it('still deterministic when variationSeed is undefined (the default path)', () => {
+    // Guards the opt-in nature of variation: omitting the seed must not change
+    // behaviour vs. the historical builder.
+    const seeded = buildSet({ ...PARAMS, variationSeed: undefined }, buildLibrary()).map(
+      (st) => st.trackId
+    )
+    const plain = buildSet(PARAMS, buildLibrary()).map((st) => st.trackId)
+    expect(seeded).toEqual(plain)
+  })
+
+  it('a given variationSeed is reproducible', () => {
+    const a = buildSet({ ...PARAMS, variationSeed: 42 }, buildLibrary()).map((st) => st.trackId)
+    const b = buildSet({ ...PARAMS, variationSeed: 42 }, buildLibrary()).map((st) => st.trackId)
+    expect(a).toEqual(b)
+  })
+
+  it('a given seed is reproducible across the FULL param surface (locks + source + profile)', () => {
+    // The reproducibility contract must hold with every axis engaged, not just
+    // the bare params — locks and the bridge pass also consume the RNG.
+    const lib = buildLibrary()
+    const full: ArchitectParams = {
+      ...PARAMS,
+      variationSeed: 99,
+      targetDuration: 90,
+      lockedTracks: [
+        { position: 0, trackId: 't-3' },
+        { position: 4, trackId: 't-17' }
+      ]
+    }
+    const a = buildSet(full, lib, getProfile('tech-house')).map((st) => st.trackId)
+    const b = buildSet(full, lib, getProfile('tech-house')).map((st) => st.trackId)
+    expect(a).toEqual(b)
+    // And the locks still landed where requested.
+    expect(a[0]).toBe('t-3')
+    expect(a[4]).toBe('t-17')
+  })
+
+  it('seed pins variation, NOT the library: a changed pool may yield a different set', () => {
+    // Documents the best-effort reproduction contract (FR-305). Same seed +
+    // same params, but a track removed from the pool — the output is ALLOWED to
+    // differ. This guards against anyone later filing library-drift as a bug.
+    const seeded: ArchitectParams = { ...PARAMS, variationSeed: 7 }
+    const full = buildSet(seeded, buildLibrary()).map((st) => st.trackId)
+
+    // Drop a track the seeded build actually used, then rebuild with the same seed.
+    const usedId = full[2]
+    const shrunk = buildLibrary().filter((t) => t.id !== usedId)
+    const after = buildSet(seeded, shrunk).map((st) => st.trackId)
+
+    // The contract is "may differ" — at minimum the dropped track is gone.
+    expect(after).not.toContain(usedId)
+  })
+
+  it('different variationSeeds can yield a different arrangement within constraints', () => {
+    const lib = buildLibrary()
+    const variants = [1, 2, 3, 4, 5, 6].map((seed) =>
+      buildSet({ ...PARAMS, variationSeed: seed }, lib).map((st) => st.trackId)
+    )
+    // At least one seed must differ from the deterministic baseline.
+    const baseline = buildSet(PARAMS, lib).map((st) => st.trackId)
+    const anyDifferent = variants.some(
+      (v) => v.length !== baseline.length || v.some((id, i) => id !== baseline[i])
+    )
+    expect(anyDifferent).toBe(true)
+
+    // Every variant must still respect the BPM window (locks aside, none here).
+    const byId = new Map(lib.map((t) => [t.id, t]))
+    for (const v of variants) {
+      for (const id of v) {
+        const t = byId.get(id)!
+        expect(t.bpm).toBeGreaterThanOrEqual(PARAMS.bpmMin - 5)
+        expect(t.bpm).toBeLessThanOrEqual(PARAMS.bpmMax + 5)
+      }
+    }
+  })
+
   it('returns an empty set when no track matches the BPM window', () => {
     const tooFast: ArchitectParams = { ...PARAMS, bpmMin: 170, bpmMax: 180 }
     expect(buildSet(tooFast, buildLibrary())).toEqual([])
@@ -131,5 +208,53 @@ describe('buildSet', () => {
     expect(out.length).toBeGreaterThanOrEqual(10)
     expect(out[9].trackId).toBe('t-5')
     expect(out[9].locked).toBe(true)
+  })
+
+  // A library split into two tempo clusters (~122 and ~142) with a >16 BPM gap
+  // between them. The genre profile's maxStep governs whether the builder may
+  // bridge that gap.
+  function clusteredLibrary(): Track[] {
+    const tracks: Track[] = []
+    for (let i = 0; i < 12; i++) {
+      tracks.push(
+        makeTrack({
+          id: `lo-${i}`,
+          bpm: 122 + (i % 3),
+          key: CAMELOT_RING[i % CAMELOT_RING.length],
+          energy: 3 + (i % 7)
+        })
+      )
+      tracks.push(
+        makeTrack({
+          id: `hi-${i}`,
+          bpm: 142 + (i % 3),
+          key: CAMELOT_RING[(i + 5) % CAMELOT_RING.length],
+          energy: 3 + (i % 7)
+        })
+      )
+    }
+    return tracks
+  }
+
+  it('respects the genre profile maxStep between adjacent tracks', () => {
+    const lib = clusteredLibrary()
+    const wide: ArchitectParams = { ...PARAMS, bpmMin: 120, bpmMax: 146, targetDuration: 90 }
+    const dnb = getProfile('dnb') // maxStep 10 — cannot bridge the ~20 BPM cluster gap
+
+    const out = buildSet(wide, lib, dnb)
+    expect(out.length).toBeGreaterThan(1)
+
+    const byId = new Map(lib.map((t) => [t.id, t]))
+    for (let i = 1; i < out.length; i++) {
+      const prev = byId.get(out[i - 1].trackId)!
+      const cur = byId.get(out[i].trackId)!
+      expect(Math.abs(cur.bpm - prev.bpm)).toBeLessThanOrEqual(dnb.bpm.maxStep)
+    }
+  })
+
+  it('builds a valid set under an explicit genre profile', () => {
+    const out = buildSet(PARAMS, buildLibrary(), getProfile('tech-house'))
+    expect(out.length).toBeGreaterThan(3)
+    expect(out.map((st) => st.position)).toEqual(out.map((_, i) => i))
   })
 })

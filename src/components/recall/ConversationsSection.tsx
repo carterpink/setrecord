@@ -25,7 +25,7 @@ function ResultTracks({
   const createSetFromTracks = useSetStore((s) => s.createSetFromTracks)
   const addTracksToCurrent = useSetStore((s) => s.addTracksToCurrent)
   if (tracks.length === 0) return null
-  const name = precedingQuery.slice(0, 48) || 'Intelligence picks'
+  const name = precedingQuery.slice(0, 48) || 'Library picks'
   return (
     <div className="recall-conv-result">
       <div className="recall-conv-actions">

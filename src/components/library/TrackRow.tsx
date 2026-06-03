@@ -4,11 +4,13 @@ import { AlertCircle, History, ShoppingCart, Volume2 } from 'lucide-react'
 import type { Track } from '@/types'
 import { EnergyChip } from '@/components/shared/EnergyChip'
 import { KeyChip } from '@/components/shared/KeyChip'
+import { BpmChip } from '@/components/shared/BpmChip'
 import { InlineWaveform } from '@/components/shared/InlineWaveform'
+import { TagChip } from '@/components/library/tags/TagChip'
+import { rowDisplayTags } from '@/utils/tagging/taxonomy'
 import { useClickOrDoubleClick } from '@/hooks/useClickOrDoubleClick'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { usePlaybackStore } from '@/stores/playbackStore'
-import { formatBpm } from '@/utils/format'
 import { toMediaUrl } from '@/utils/mediaUrl'
 
 interface TrackRowProps {
@@ -16,9 +18,12 @@ interface TrackRowProps {
   playing?: boolean
   inSet?: boolean
   compact?: boolean
+  selected?: boolean
   onClick?: () => void
   onDoubleClick?: () => void
   onContextMenu?: (e: React.MouseEvent) => void
+  /** Keyboard-triggered context menu (Shift+F10 / ContextMenu key). */
+  onMenuKey?: (coords: { x: number; y: number }) => void
   onShowCombos?: () => void
 }
 
@@ -27,14 +32,39 @@ export function TrackRow({
   playing,
   inSet,
   compact,
+  selected,
   onClick,
   onDoubleClick,
   onContextMenu,
+  onMenuKey,
   onShowCombos
 }: TrackRowProps): React.JSX.Element {
   const isPhantom = track.phantom === true
   const missing = track.missingFile === true && !isPhantom
   const unavailable = missing || isPhantom
+
+  // Screen-reader-only status — the playing / in-set / unavailable states are
+  // otherwise conveyed by colour or icon alone (WCAG 1.4.1 / 1.3.3).
+  const srStatus = [
+    playing && !missing ? 'Now playing.' : '',
+    inSet ? 'Already in your set.' : '',
+    isPhantom ? 'Phantom — not in your library.' : missing ? 'File not found.' : '',
+    selected ? 'Selected.' : ''
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  // Shared keydown: Enter selects; Shift+F10 / ContextMenu key opens the menu.
+  function handleKeyDown(e: React.KeyboardEvent): void {
+    if (e.key === 'Enter' && !unavailable) {
+      onClick?.()
+    } else if ((e.shiftKey && e.key === 'F10') || e.key === 'ContextMenu') {
+      if (!onMenuKey) return
+      e.preventDefault()
+      const r = e.currentTarget.getBoundingClientRect()
+      onMenuKey({ x: r.left + 24, y: r.bottom })
+    }
+  }
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `lib-${track.id}`,
     data: { source: 'library', track },
@@ -72,14 +102,14 @@ export function TrackRow({
         onClick={unavailable ? undefined : handleClick}
         onDoubleClick={unavailable ? undefined : handleDoubleClick}
         onContextMenu={unavailable ? undefined : onContextMenu}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !unavailable) onClick?.()
-        }}
+        onKeyDown={handleKeyDown}
         title={
           isPhantom ? 'Phantom track' : missing ? `File not found: ${track.filePath}` : undefined
         }
+        aria-current={playing && !missing ? 'true' : undefined}
         {...(unavailable ? {} : { ...listeners, ...attributes })}
       >
+        {srStatus && <span className="sr-only">{srStatus}</span>}
         <div className="compact-meta">
           <span className="compact-title">{track.title}</span>
           <span className="compact-sep" aria-hidden="true">
@@ -89,7 +119,7 @@ export function TrackRow({
           <span className="compact-artist">{track.artist}</span>
         </div>
         <div className="compact-actions">
-          <span className="track-bpm">{formatBpm(track.bpm)}</span>
+          <BpmChip className="track-bpm">{track.bpm}</BpmChip>
           <KeyChip>{track.key}</KeyChip>
           {onShowCombos && !unavailable && (
             <button
@@ -133,9 +163,7 @@ export function TrackRow({
       onClick={unavailable ? undefined : handleClick}
       onDoubleClick={unavailable ? undefined : handleDoubleClick}
       onContextMenu={unavailable ? undefined : onContextMenu}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' && !unavailable) onClick?.()
-      }}
+      onKeyDown={handleKeyDown}
       title={
         isPhantom
           ? 'Phantom track — buy or download to enable'
@@ -143,8 +171,10 @@ export function TrackRow({
             ? `File not found: ${track.filePath}`
             : undefined
       }
+      aria-current={playing && !missing ? 'true' : undefined}
       {...(unavailable ? {} : { ...listeners, ...attributes })}
     >
+      {srStatus && <span className="sr-only">{srStatus}</span>}
       <div
         className="track-art"
         style={{
@@ -231,9 +261,24 @@ export function TrackRow({
             track.artist
           )}
         </div>
+        {!unavailable && track.tags && track.tags.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              gap: 4,
+              marginTop: 4,
+              flexWrap: 'nowrap',
+              overflow: 'hidden'
+            }}
+          >
+            {rowDisplayTags(track.tags, 3).map((t) => (
+              <TagChip key={`${t.category}:${t.value}`} category={t.category} value={t.value} />
+            ))}
+          </div>
+        )}
       </div>
       <div className="track-bpm" style={{ gridArea: 'bpm' }}>
-        {formatBpm(track.bpm)}
+        <BpmChip>{track.bpm}</BpmChip>
       </div>
       <div style={{ gridArea: 'key' }}>
         <KeyChip>{track.key}</KeyChip>

@@ -8,11 +8,55 @@
  * lever: common DJ requests resolve instantly and exactly.
  */
 
-import type { LibrarySearchParams } from '../types'
+import type { LibrarySearchParams, SessionFilter, VenueType } from '../types'
 
 export type ConvTurn =
   | { kind: 'search'; params: LibrarySearchParams; narration: string }
+  | { kind: 'sessions'; filter: SessionFilter; narration: string }
   | { kind: 'ask' }
+
+const MONTHS: Record<string, number> = {
+  january: 1,
+  jan: 1,
+  february: 2,
+  feb: 2,
+  march: 3,
+  mar: 3,
+  april: 4,
+  apr: 4,
+  may: 5,
+  june: 6,
+  jun: 6,
+  july: 7,
+  jul: 7,
+  august: 8,
+  aug: 8,
+  september: 9,
+  sep: 9,
+  sept: 9,
+  october: 10,
+  oct: 10,
+  november: 11,
+  nov: 11,
+  december: 12,
+  dec: 12
+}
+
+/** Last day of a month (handles Feb/leap years) for building a performed-date upper bound. */
+function lastDayOfMonth(year: number, month1: number): number {
+  return new Date(Date.UTC(year, month1, 0)).getUTCDate()
+}
+
+const EVENT_TYPES: Array<{ re: RegExp; type: VenueType }> = [
+  { re: /\bfestivals?\b/, type: 'festival' },
+  { re: /\bclubs?\b/, type: 'club' },
+  { re: /\bbars?\b/, type: 'bar' },
+  { re: /\bprivate( events?| part(y|ies))?\b/, type: 'private' },
+  { re: /\b(outdoor|open.?air|beach|pool)\b/, type: 'outdoor' }
+]
+
+/** Captured "at <venue>" strings that are clearly not venues. */
+const NON_VENUE = new Set(['peak', 'peak time', 'home', 'work', 'night', 'day', 'once', 'least'])
 
 // Longest-first so multi-word genres win over their suffixes.
 const GENRES = [
@@ -330,6 +374,70 @@ export function interpretTurn(raw: string, prev: LibrarySearchParams): ConvTurn 
     }
   }
 
+  // ── Performed when/where (gig metadata) ──────────────────────────────────
+  // Only parse performance constraints when the query is clearly about playing
+  // — "songs I PLAYED at X", "my festival SETS", "GIGS in July". This gate keeps
+  // "tracks at 128 bpm" / "house in 2024" out of the venue/date parsers. BPM and
+  // key tokens were already stripped above, so the numeric "at"/"in" forms are gone.
+  const perfContext =
+    /\b(play|plays|played|playing|spun|spin|gig|gigs|set|sets|night|nights|performed|performance|performances|venue|residency)\b/.test(
+      q
+    )
+  let performedVenue: string | undefined
+  let performedAfter: string | undefined
+  let performedBefore: string | undefined
+  let performedEventType: VenueType | undefined
+  let performedMonthLabel: string | undefined
+
+  if (perfContext) {
+    // Month + year → a one-month performed range. "in july 2025" / "july 2025".
+    const monthYear = work.match(
+      /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{4})\b/
+    )
+    if (monthYear) {
+      const m = MONTHS[monthYear[1]]
+      const y = +monthYear[2]
+      if (m && y >= 1990 && y <= 2100) {
+        const mm = String(m).padStart(2, '0')
+        const dd = String(lastDayOfMonth(y, m)).padStart(2, '0')
+        performedAfter = `${y}-${mm}-01`
+        performedBefore = `${y}-${mm}-${dd}`
+        performedMonthLabel = `${monthYear[1]} ${y}`
+        work = work.replace(monthYear[0], ' ')
+      }
+    }
+    // Bare year with performance context → that whole year. "sets in 2025".
+    if (!performedAfter) {
+      const perfYear = work.match(/\bin\s+(\d{4})\b/)
+      if (perfYear) {
+        const y = +perfYear[1]
+        if (y >= 1990 && y <= 2100) {
+          performedAfter = `${y}-01-01`
+          performedBefore = `${y}-12-31`
+          work = work.replace(perfYear[0], ' ')
+        }
+      }
+    }
+    // Venue: "at <name>" up to a trailing time/stopword or end of string.
+    const atVenue = work.match(
+      /\bat\s+([a-z0-9][a-z0-9'&.\s]{1,38}?)(?=\s+(?:in|on|during|last|this|back|when|while)\b|[,.]|$)/
+    )
+    if (atVenue) {
+      const cand = atVenue[1].replace(/\s+/g, ' ').trim()
+      if (cand && !NON_VENUE.has(cand)) {
+        performedVenue = cand
+        work = work.replace(atVenue[0], ' ')
+      }
+    }
+    // Event type: festival / club / bar / private / outdoor.
+    for (const { re, type } of EVENT_TYPES) {
+      if (re.test(q)) {
+        performedEventType = type
+        break
+      }
+    }
+  }
+
   // ── Count / limit ─────────────────────────────────────────────────────────
   // Strip rating ("5 star") and dormancy ("6 months") digits first so they're
   // never mistaken for a track count.
@@ -429,9 +537,34 @@ export function interpretTurn(raw: string, prev: LibrarySearchParams): ConvTurn 
   if (durationMaxSec != null) detected.durationMaxSec = durationMaxSec
   if (addedAfter) detected.addedAfter = addedAfter
   if (addedBefore) detected.addedBefore = addedBefore
+  if (performedVenue) detected.performedVenue = performedVenue
+  if (performedAfter) detected.performedAfter = performedAfter
+  if (performedBefore) detected.performedBefore = performedBefore
+  if (performedEventType) detected.performedEventType = performedEventType
   if (cueLabel) detected.cueLabel = cueLabel
   if (sort) detected.sort = sort
   if (limit != null) detected.limit = limit
+
+  // Sets-vs-songs: when a gig constraint is present and the user asked about
+  // SETS/GIGS/NIGHTS (not songs/tracks), return a session-oriented result that
+  // the Gigs view renders. Otherwise gig constraints stay on the track search.
+  const hasGigFilter = !!(performedVenue || performedAfter || performedEventType)
+  if (hasGigFilter) {
+    const sessionNoun = /\b(sets?|gigs?|nights?|performances?|residenc(?:y|ies))\b/.test(q)
+    const songNoun = /\b(songs?|tracks?|tunes?|cuts?|records?)\b/.test(q)
+    if (sessionNoun && !songNoun) {
+      const filter: SessionFilter = {}
+      if (performedVenue) filter.venue = performedVenue
+      if (performedAfter) filter.after = performedAfter
+      if (performedBefore) filter.before = performedBefore
+      if (performedEventType) filter.eventType = performedEventType
+      return {
+        kind: 'sessions',
+        filter,
+        narration: describeSessions(filter, performedMonthLabel)
+      }
+    }
+  }
 
   const detectedAnything = hasParams(detected)
   const text = !detectedAnything && !reshuffle ? textQuery(q) : ''
@@ -491,6 +624,12 @@ function describe(p: LibrarySearchParams, popularityNote: boolean, reshuffle: bo
     parts.push('recently added')
   }
   if (p.cueLabel) parts.push(`cue labelled “${p.cueLabel}”`)
+  if (p.performedVenue) parts.push(`you played at ${p.performedVenue}`)
+  if (p.performedEventType) parts.push(`from your ${p.performedEventType} sets`)
+  if (p.performedAfter) {
+    const label = performedRangeLabel(p.performedAfter, p.performedBefore)
+    if (label) parts.push(`played ${label}`)
+  }
 
   const sortWord =
     p.sort === 'mostPlayed'
@@ -513,4 +652,43 @@ function describe(p: LibrarySearchParams, popularityNote: boolean, reshuffle: bo
   if (popularityNote)
     s += ' (I can’t see live charts offline, so these are ranked from your own play history.)'
   return s
+}
+
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December'
+]
+
+/** Human label for a performed-date range: a single month, a year, or a span. */
+function performedRangeLabel(after?: string, before?: string): string {
+  if (!after) return ''
+  const a = after.slice(0, 10)
+  const b = (before ?? '').slice(0, 10)
+  const [ay, am] = a.split('-').map(Number)
+  // Whole-month range (first → last day of the same month).
+  if (b && b.startsWith(`${a.slice(0, 7)}-`)) return `${MONTH_NAMES[am - 1]} ${ay}`
+  // Whole-year range.
+  if (a.endsWith('-01-01') && b.endsWith('-12-31')) return `in ${ay}`
+  return b ? `between ${a} and ${b}` : `since ${a}`
+}
+
+/** Narration for a session-oriented result shown in the Gigs view. */
+function describeSessions(filter: SessionFilter, monthLabel?: string): string {
+  const bits: string[] = []
+  if (filter.eventType) bits.push(`${filter.eventType} sets`)
+  else bits.push('sets')
+  if (filter.venue) bits.push(`at ${filter.venue}`)
+  const when = monthLabel ?? performedRangeLabel(filter.after, filter.before)
+  if (when) bits.push(monthLabel ? `in ${when}` : when)
+  return `Opening your ${bits.join(' ')} in the Gigs view.`
 }

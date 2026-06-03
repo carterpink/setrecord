@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from '@/components/shared/Motion'
 import type { Variants } from 'framer-motion'
 import { useClickOrDoubleClick } from '@/hooks/useClickOrDoubleClick'
 import { usePlaybackStore } from '@/stores/playbackStore'
-import { formatBpm } from '@/utils/format'
+import { BpmChip } from '@/components/shared/BpmChip'
 import { MatchReasonChips } from './MatchReasonChips'
 
 const cardVariants: Variants = {
@@ -142,7 +142,7 @@ export function SuggestionCard({
           <div className="sugg-artist">{track.artist}</div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div className="sugg-mono">{formatBpm(track.bpm)}</div>
+          <BpmChip className="sugg-mono">{track.bpm}</BpmChip>
           <div
             style={{
               marginTop: 4,

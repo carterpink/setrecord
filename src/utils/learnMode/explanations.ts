@@ -146,7 +146,17 @@ export function explainMatchReason(reason: MatchReason, from: Track, to: Track):
     case 'combo':
       return {
         summary: "You've played this transition before",
-        detail: `${reason.label}. Surfaced from your saved sets and performed sessions — muscle-memory transitions outrank algorithmic suggestions of equal score.`
+        detail: `${reason.label}. Surfaced from your saved sets and performed sessions — muscle-memory transitions outrank other suggestions of equal score.`
+      }
+    case 'tags':
+      return {
+        summary: 'These tracks share a vibe',
+        detail: `${reason.label}. Both tracks carry the same plain-language vibe tag, so they tend to sit well together beyond just key and BPM.`
+      }
+    default:
+      return {
+        summary: reason.label,
+        detail: reason.label
       }
   }
 }
@@ -233,6 +243,27 @@ export function explainCamelotKey(key: string): LearnExplanation {
         : ''
     } Far-apart keys clash.`,
     diagram: { kind: 'harmonic-wheel', fromKey: key, toKey: key }
+  }
+}
+
+// ───────── BPM chip ─────────
+
+export function explainBpmView(): LearnExplanation {
+  return {
+    summary: 'BPM — beats per minute',
+    detail:
+      "A track's tempo. Mixing tracks within a few BPM of each other keeps the kick drums lined up through the blend; larger gaps need a tempo nudge (or a sync) or the beats drift apart. Most CDJs let you bend ±6% comfortably.",
+    diagram: { kind: 'bpm-ramp', fromBpm: 124, toBpm: 126 }
+  }
+}
+
+// ───────── Energy score chip ─────────
+
+export function explainEnergyView(): LearnExplanation {
+  return {
+    summary: 'Energy score (1–10)',
+    detail:
+      'How hard a track hits, scored 1 (mellow) to 10 (peak-time). Use it to shape the night: step energy up gradually to build the floor, and avoid sudden drops that can empty it. You can override any score by clicking it.'
   }
 }
 

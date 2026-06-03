@@ -89,6 +89,16 @@ function evalRule(rule: CrateRule, track: Track, now: Date, bpmThreshold: number
 
   if (rule.bpmTopPercentOfLibrary !== undefined && track.bpm < bpmThreshold) return false
 
+  // Plain-language tags: must carry ALL of tagsInclude and NONE of tagsExclude.
+  if (rule.tagsInclude && rule.tagsInclude.length > 0) {
+    const have = new Set((track.tags ?? []).map((t) => t.value))
+    if (!rule.tagsInclude.every((slug) => have.has(slug))) return false
+  }
+  if (rule.tagsExclude && rule.tagsExclude.length > 0) {
+    const have = new Set((track.tags ?? []).map((t) => t.value))
+    if (rule.tagsExclude.some((slug) => have.has(slug))) return false
+  }
+
   return true
 }
 

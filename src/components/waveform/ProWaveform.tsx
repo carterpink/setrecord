@@ -87,6 +87,10 @@ export const ProWaveform = forwardRef<ProWaveformHandle, ProWaveformProps>(
     const dirtyRef = useRef(true)
     const dragRef = useRef<null | 'main' | 'mini'>(null)
     const lastZoomEmit = useRef(0)
+    // Last blitted playhead/scroll/zoom — lets the loop skip the per-frame blit +
+    // minimap draw on frames where nothing moved (paused, not scrubbing). Same
+    // pixels, no wasted canvas work.
+    const lastDrawRef = useRef({ cur: Number.NaN, scrollMs: Number.NaN, pxPerSec: Number.NaN })
 
     const visibleMs = (): number => {
       const w = widthRef.current
@@ -217,12 +221,28 @@ export const ProWaveform = forwardRef<ProWaveformHandle, ProWaveformProps>(
           view.current.scrollMs = clampScroll(cur - visibleMs() / 2)
           dirtyRef.current = true
         }
-        if (dirtyRef.current) {
+        const wasDirty = dirtyRef.current
+        if (wasDirty) {
           renderStatic()
           dirtyRef.current = false
         }
-        blitAndPlayhead(cur)
-        drawMinimap(cur)
+        // Only repaint the moving layer when the playhead or view actually
+        // changed (or the static layer was just rebuilt). A paused, un-scrubbed
+        // waveform produces an identical frame, so skip it.
+        const v = view.current
+        const ld = lastDrawRef.current
+        if (
+          wasDirty ||
+          cur !== ld.cur ||
+          v.scrollMs !== ld.scrollMs ||
+          v.pxPerSec !== ld.pxPerSec
+        ) {
+          blitAndPlayhead(cur)
+          drawMinimap(cur)
+          ld.cur = cur
+          ld.scrollMs = v.scrollMs
+          ld.pxPerSec = v.pxPerSec
+        }
         raf = requestAnimationFrame(loop)
       }
       raf = requestAnimationFrame(loop)
@@ -518,6 +538,8 @@ export const ProWaveform = forwardRef<ProWaveformHandle, ProWaveformProps>(
       <div ref={wrapRef} style={{ width: '100%', userSelect: 'none' }}>
         <canvas
           ref={miniRef}
+          role="img"
+          aria-label="Track overview waveform. Click or drag to scrub; use the playback controls and arrow keys to navigate."
           style={{ display: 'block', width: '100%', cursor: 'pointer', borderRadius: 6 }}
           onPointerDown={(e) => {
             dragRef.current = 'mini'
@@ -535,6 +557,8 @@ export const ProWaveform = forwardRef<ProWaveformHandle, ProWaveformProps>(
         />
         <canvas
           ref={mainRef}
+          role="img"
+          aria-label="Detailed waveform. Click or drag to set the playhead; Space plays or pauses, left and right arrows nudge by 100ms."
           style={{
             display: 'block',
             width: '100%',

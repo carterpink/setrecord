@@ -14,7 +14,14 @@ import type {
   Playlist,
   PlaySession,
   SessionTrack,
-  LifecycleState
+  SessionFilter,
+  SessionMetadataPatch,
+  LifecycleState,
+  TrackTag,
+  TagCategory,
+  TagSource,
+  TrackAnalysisFeatures,
+  TagCoverage
 } from '../../src/types'
 
 // ───────── Row → Track ─────────
@@ -23,6 +30,7 @@ function rowToTrack(row: Record<string, unknown>): Track {
   return {
     id: row.id as string,
     rekordboxId: (row.rekordbox_id as string) || undefined,
+    source: (row.source as 'rekordbox' | 'serato' | null) ?? undefined,
     title: row.title as string,
     artist: row.artist as string,
     album: (row.album as string) || undefined,
@@ -58,6 +66,9 @@ function rowToTrack(row: Record<string, unknown>): Track {
     lifecycleState: (row.lifecycle_state as LifecycleState | null) ?? undefined,
     lifecycleSource: (row.lifecycle_source as 'computed' | 'user' | null) ?? undefined,
     flaggedForGigAt: (row.flagged_for_gig_at as string) || undefined,
+    analysisFeatures: row.analysis_features
+      ? (JSON.parse(row.analysis_features as string) as TrackAnalysisFeatures)
+      : undefined,
     discoverMeta: row.discover_meta
       ? (JSON.parse(row.discover_meta as string) as Track['discoverMeta'])
       : undefined
@@ -70,6 +81,7 @@ function trackToRow(track: Track): Record<string, unknown> {
   return {
     id: track.id,
     rekordbox_id: track.rekordboxId ?? null,
+    source: track.source ?? null,
     title: track.title,
     artist: track.artist,
     album: track.album ?? null,
@@ -104,7 +116,8 @@ function trackToRow(track: Track): Record<string, unknown> {
     phantom: track.phantom ? 1 : 0,
     discover_meta: track.discoverMeta ? JSON.stringify(track.discoverMeta) : null,
     lifecycle_state: track.lifecycleState ?? null,
-    lifecycle_source: track.lifecycleSource ?? 'computed'
+    lifecycle_source: track.lifecycleSource ?? 'computed',
+    analysis_features: track.analysisFeatures ? JSON.stringify(track.analysisFeatures) : null
   }
 }
 
@@ -123,20 +136,21 @@ function trackToRow(track: Track): Record<string, unknown> {
  */
 const INSERT_TRACK = `
   INSERT INTO tracks (
-    id, rekordbox_id, title, artist, album, genre, bpm, key, key_open,
+    id, rekordbox_id, source, title, artist, album, genre, bpm, key, key_open,
     energy, energy_raw, energy_source, duration, file_path, file_size, bitrate, format,
     album_art_path, album_art_url, album_art_source, play_count, rating, date_added,
     last_played, comment, label, color, cue_points, hot_cues, loops, beatgrid_offset,
-    missing_file, phantom, discover_meta, lifecycle_state, lifecycle_source
+    missing_file, phantom, discover_meta, lifecycle_state, lifecycle_source, analysis_features
   ) VALUES (
-    @id, @rekordbox_id, @title, @artist, @album, @genre, @bpm, @key, @key_open,
+    @id, @rekordbox_id, @source, @title, @artist, @album, @genre, @bpm, @key, @key_open,
     @energy, @energy_raw, @energy_source, @duration, @file_path, @file_size, @bitrate, @format,
     @album_art_path, @album_art_url, @album_art_source, @play_count, @rating, @date_added,
     @last_played, @comment, @label, @color, @cue_points, @hot_cues, @loops, @beatgrid_offset,
-    @missing_file, @phantom, @discover_meta, @lifecycle_state, @lifecycle_source
+    @missing_file, @phantom, @discover_meta, @lifecycle_state, @lifecycle_source, @analysis_features
   )
   ON CONFLICT(file_path) DO UPDATE SET
     rekordbox_id = excluded.rekordbox_id,
+    source = excluded.source,
     title = excluded.title,
     artist = excluded.artist,
     album = excluded.album,
@@ -168,6 +182,7 @@ const INSERT_TRACK = `
     energy = CASE WHEN tracks.energy_source = 'computed' THEN tracks.energy ELSE excluded.energy END,
     energy_raw = CASE WHEN tracks.energy_source = 'computed' THEN tracks.energy_raw ELSE excluded.energy_raw END,
     energy_source = CASE WHEN tracks.energy_source = 'computed' THEN tracks.energy_source ELSE excluded.energy_source END,
+    analysis_features = CASE WHEN tracks.energy_source = 'computed' THEN tracks.analysis_features ELSE excluded.analysis_features END,
     album_art_path = CASE WHEN tracks.album_art_source = 'embedded' THEN tracks.album_art_path ELSE excluded.album_art_path END,
     album_art_source = CASE WHEN tracks.album_art_source = 'embedded' THEN tracks.album_art_source ELSE excluded.album_art_source END
 `
@@ -213,7 +228,9 @@ export function getAllTracks(db: Database.Database, filters?: LibraryFilters): T
     .prepare(`SELECT * FROM tracks ${where} ORDER BY artist ASC, title ASC`)
     .all(params) as Record<string, unknown>[]
 
-  return rows.map(rowToTrack)
+  const tracks = rows.map(rowToTrack)
+  attachTags(db, tracks)
+  return tracks
 }
 
 export function getTrackById(db: Database.Database, id: string): Track | undefined {
@@ -233,7 +250,8 @@ export function getLibraryStats(db: Database.Database): LibraryStats {
         COUNT(*) FILTER (WHERE file_size IS NULL) as unknown_size,
         COUNT(*) FILTER (WHERE format = 'unknown') as unsupported_formats,
         COUNT(*) FILTER (WHERE key IS NULL OR key = '') as no_key,
-        COUNT(*) FILTER (WHERE bpm = 0) as no_bpm
+        COUNT(*) FILTER (WHERE bpm = 0) as no_bpm,
+        COUNT(*) FILTER (WHERE energy_source = 'pending') as pending_energy
       FROM tracks`
     )
     .get() as Record<string, number>
@@ -245,13 +263,25 @@ export function getLibraryStats(db: Database.Database): LibraryStats {
     unknownSize: row.unknown_size,
     unsupportedFormats: row.unsupported_formats,
     tracksWithoutKey: row.no_key,
-    tracksWithoutBpm: row.no_bpm
+    tracksWithoutBpm: row.no_bpm,
+    tracksWithPendingEnergy: row.pending_energy
   }
 }
 
 export function countTracks(db: Database.Database): number {
   const row = db.prepare('SELECT COUNT(*) as n FROM tracks').get() as { n: number }
   return row.n
+}
+
+/**
+ * Highest applied schema version. Used by the backup importer to refuse a bundle
+ * produced by a newer build whose extra columns this DB can't represent.
+ */
+export function getSchemaVersion(db: Database.Database): number {
+  const row = db.prepare('SELECT MAX(version) as v FROM schema_version').get() as {
+    v: number | null
+  }
+  return row.v ?? 0
 }
 
 /**
@@ -358,7 +388,9 @@ function rowToSet(row: Record<string, unknown>, tracks: SetTrack[]): DJSet {
     slotTime: (row.slot_time as string) || undefined,
     energyCurveType: (row.energy_curve_type as DJSet['energyCurveType']) || undefined,
     targetHardware: (row.target_hardware as DJSet['targetHardware']) || 'CDJ-2000NXS2',
-    safetyScore: row.safety_score != null ? (row.safety_score as number) : undefined
+    safetyScore: row.safety_score != null ? (row.safety_score as number) : undefined,
+    architectSeed: row.architect_seed != null ? (row.architect_seed as number) : undefined,
+    algorithmVersion: row.algorithm_version != null ? (row.algorithm_version as number) : undefined
   }
 }
 
@@ -389,10 +421,12 @@ export function saveSet(db: Database.Database, set: DJSet): void {
       `
       INSERT INTO sets (id, name, created_at, updated_at, target_duration,
         target_bpm_min, target_bpm_max, vibe, venue, slot_time,
-        energy_curve_type, target_hardware, safety_score)
+        energy_curve_type, target_hardware, safety_score,
+        architect_seed, algorithm_version)
       VALUES (@id, @name, @created_at, @updated_at, @target_duration,
         @target_bpm_min, @target_bpm_max, @vibe, @venue, @slot_time,
-        @energy_curve_type, @target_hardware, @safety_score)
+        @energy_curve_type, @target_hardware, @safety_score,
+        @architect_seed, @algorithm_version)
       ON CONFLICT(id) DO UPDATE SET
         name = excluded.name,
         updated_at = excluded.updated_at,
@@ -404,7 +438,9 @@ export function saveSet(db: Database.Database, set: DJSet): void {
         slot_time = excluded.slot_time,
         energy_curve_type = excluded.energy_curve_type,
         target_hardware = excluded.target_hardware,
-        safety_score = excluded.safety_score
+        safety_score = excluded.safety_score,
+        architect_seed = excluded.architect_seed,
+        algorithm_version = excluded.algorithm_version
     `
     ).run({
       id: set.id,
@@ -419,7 +455,9 @@ export function saveSet(db: Database.Database, set: DJSet): void {
       slot_time: set.slotTime ?? null,
       energy_curve_type: set.energyCurveType ?? null,
       target_hardware: set.targetHardware ?? 'CDJ-2000NXS2',
-      safety_score: set.safetyScore ?? null
+      safety_score: set.safetyScore ?? null,
+      architect_seed: set.architectSeed ?? null,
+      algorithm_version: set.algorithmVersion ?? null
     })
 
     db.prepare('DELETE FROM set_tracks WHERE set_id = ?').run(set.id)
@@ -608,6 +646,11 @@ export function updateTrackLoops(db: Database.Database, trackId: string, loops: 
   db.prepare('UPDATE tracks SET loops = ? WHERE id = ?').run(JSON.stringify(loops), trackId)
 }
 
+/** Persist a track's colour tag (e.g. from the Serato Markers2 COLOR entry). */
+export function updateTrackColor(db: Database.Database, trackId: string, color: string): void {
+  db.prepare('UPDATE tracks SET color = ? WHERE id = ?').run(color, trackId)
+}
+
 /** Update editable metadata fields (used by the Recall Health "resolve" workflow). */
 export function updateTrackMeta(
   db: Database.Database,
@@ -663,22 +706,37 @@ export interface PendingEnergyRow {
   filePath: string
   bpm: number
   missingFile: number
+  /** Metadata the tag rules read once energy is computed. */
+  key: string
+  genre: string | null
+  duration: number
 }
 
 export function getPendingEnergyTracks(db: Database.Database): PendingEnergyRow[] {
   const rows = db
     .prepare(
-      `SELECT id, file_path, bpm, missing_file
+      `SELECT id, file_path, bpm, missing_file, key, genre, duration
        FROM tracks
        WHERE (energy_source = 'pending' OR energy_source IS NULL) AND phantom = 0
        ORDER BY date_added DESC`
     )
-    .all() as Array<{ id: string; file_path: string; bpm: number; missing_file: number }>
+    .all() as Array<{
+    id: string
+    file_path: string
+    bpm: number
+    missing_file: number
+    key: string | null
+    genre: string | null
+    duration: number | null
+  }>
   return rows.map((r) => ({
     id: r.id,
     filePath: r.file_path,
     bpm: r.bpm,
-    missingFile: r.missing_file
+    missingFile: r.missing_file,
+    key: r.key ?? '',
+    genre: r.genre ?? null,
+    duration: r.duration ?? 0
   }))
 }
 
@@ -689,6 +747,193 @@ export function countPendingEnergyTracks(db: Database.Database): number {
     )
     .get() as { n: number }
   return row.n
+}
+
+/** Persist the normalised audio features used for tag inference. */
+export function updateTrackAnalysisFeatures(
+  db: Database.Database,
+  trackId: string,
+  features: TrackAnalysisFeatures
+): void {
+  db.prepare('UPDATE tracks SET analysis_features = ? WHERE id = ?').run(
+    JSON.stringify(features),
+    trackId
+  )
+}
+
+// ───────── Auto-tagging ─────────
+
+/** A track + the metadata the tag rules read, for the (re)tagging passes. */
+export interface TagInputRow {
+  id: string
+  energy: number
+  bpm: number
+  key: string
+  genre: string | null
+  duration: number
+  analysisFeatures: TrackAnalysisFeatures | null
+}
+
+/**
+ * Every analysable track with its stored features. The retag pass runs the rules
+ * over these without re-decoding audio. Tracks without features yet are skipped
+ * by the caller.
+ */
+export function getTagInputRows(db: Database.Database): TagInputRow[] {
+  const rows = db
+    .prepare(
+      `SELECT id, energy, bpm, key, genre, duration, analysis_features
+       FROM tracks
+       WHERE phantom = 0`
+    )
+    .all() as Array<Record<string, unknown>>
+  return rows.map((r) => ({
+    id: r.id as string,
+    energy: (r.energy as number | null) ?? 5,
+    bpm: (r.bpm as number) ?? 0,
+    key: (r.key as string) ?? '',
+    genre: (r.genre as string | null) ?? null,
+    duration: (r.duration as number) ?? 0,
+    analysisFeatures: r.analysis_features
+      ? (JSON.parse(r.analysis_features as string) as TrackAnalysisFeatures)
+      : null
+  }))
+}
+
+interface TagRowRaw {
+  track_id: string
+  category: string
+  value: string
+  source: string
+}
+
+function rawToTag(r: TagRowRaw): TrackTag {
+  return { category: r.category as TagCategory, value: r.value, source: r.source as TagSource }
+}
+
+/**
+ * Attach tags to a set of already-loaded tracks in one query. Empty-string lock
+ * markers (a user clearing a category) are filtered out of the visible list.
+ */
+export function attachTags(db: Database.Database, tracks: Track[]): void {
+  if (tracks.length === 0) return
+  const rows = db
+    .prepare("SELECT track_id, category, value, source FROM track_tags WHERE value != ''")
+    .all() as TagRowRaw[]
+  const byTrack = new Map<string, TrackTag[]>()
+  for (const r of rows) {
+    const list = byTrack.get(r.track_id) ?? []
+    list.push(rawToTag(r))
+    byTrack.set(r.track_id, list)
+  }
+  for (const t of tracks) t.tags = byTrack.get(t.id) ?? []
+}
+
+/** Tags for a single track (visible tags only — lock markers excluded). */
+export function getTagsForTrack(db: Database.Database, trackId: string): TrackTag[] {
+  const rows = db
+    .prepare(
+      "SELECT track_id, category, value, source FROM track_tags WHERE track_id = ? AND value != ''"
+    )
+    .all(trackId) as TagRowRaw[]
+  return rows.map(rawToTag)
+}
+
+/** Categories a user has manually set for a track — never overwritten by auto-tagging. */
+function lockedCategories(db: Database.Database, trackId: string): Set<string> {
+  const rows = db
+    .prepare("SELECT DISTINCT category FROM track_tags WHERE track_id = ? AND source = 'user'")
+    .all(trackId) as Array<{ category: string }>
+  return new Set(rows.map((r) => r.category))
+}
+
+/**
+ * Replace the auto tags for a track, leaving any user-locked categories intact.
+ * `autoTags` is the full freshly-inferred set; we only write categories the user
+ * hasn't taken over.
+ */
+export function upsertAutoTags(
+  db: Database.Database,
+  trackId: string,
+  autoTags: Array<{ category: TagCategory; value: string }>
+): void {
+  const now = new Date().toISOString()
+  const tx = db.transaction(() => {
+    const locked = lockedCategories(db, trackId)
+    db.prepare("DELETE FROM track_tags WHERE track_id = ? AND source = 'auto'").run(trackId)
+    const insert = db.prepare(
+      "INSERT OR REPLACE INTO track_tags (track_id, category, value, source, updated_at) VALUES (?, ?, ?, 'auto', ?)"
+    )
+    for (const t of autoTags) {
+      if (locked.has(t.category)) continue
+      insert.run(trackId, t.category, t.value, now)
+    }
+  })
+  tx()
+}
+
+/**
+ * Set a category's tags from a user override. Clears every existing row in that
+ * category and writes user rows. An empty `values` writes a single lock marker
+ * (value '') so the category stays user-owned but shows no tags.
+ */
+export function setUserTags(
+  db: Database.Database,
+  trackId: string,
+  category: TagCategory,
+  values: string[]
+): void {
+  const now = new Date().toISOString()
+  const tx = db.transaction(() => {
+    db.prepare('DELETE FROM track_tags WHERE track_id = ? AND category = ?').run(trackId, category)
+    const insert = db.prepare(
+      "INSERT OR REPLACE INTO track_tags (track_id, category, value, source, updated_at) VALUES (?, ?, ?, 'user', ?)"
+    )
+    if (values.length === 0) {
+      insert.run(trackId, category, '', now)
+    } else {
+      for (const v of values) insert.run(trackId, category, v, now)
+    }
+  })
+  tx()
+}
+
+/**
+ * Clear user ownership of a track's tags so the next retag pass re-infers them.
+ * With `category` omitted, resets every category.
+ */
+export function resetTagsToAuto(
+  db: Database.Database,
+  trackId: string,
+  category?: TagCategory
+): void {
+  if (category) {
+    db.prepare(
+      "DELETE FROM track_tags WHERE track_id = ? AND category = ? AND source = 'user'"
+    ).run(trackId, category)
+  } else {
+    db.prepare("DELETE FROM track_tags WHERE track_id = ? AND source = 'user'").run(trackId)
+  }
+}
+
+/** Aggregate counts for the Tags view. */
+export function getTagCoverage(db: Database.Database): TagCoverage {
+  const total = (
+    db.prepare('SELECT COUNT(*) as n FROM tracks WHERE phantom = 0').get() as { n: number }
+  ).n
+  const tagged = (
+    db.prepare("SELECT COUNT(DISTINCT track_id) as n FROM track_tags WHERE value != ''").get() as {
+      n: number
+    }
+  ).n
+  const counts = (
+    db
+      .prepare(
+        "SELECT category, value, COUNT(*) as count FROM track_tags WHERE value != '' GROUP BY category, value ORDER BY count DESC"
+      )
+      .all() as Array<{ category: string; value: string; count: number }>
+  ).map((r) => ({ category: r.category as TagCategory, value: r.value, count: r.count }))
+  return { totalTracks: total, taggedTracks: tagged, counts }
 }
 
 // ───────── Album artwork extraction ─────────
@@ -881,6 +1126,11 @@ function rowToPlaySession(row: Record<string, unknown>): PlaySession {
     source: row.source as PlaySession['source'],
     performedAt: (row.performed_at as string) || undefined,
     venue: (row.venue as string) || undefined,
+    venueSource: ((row.venue_source as string) || 'user') as PlaySession['venueSource'],
+    eventType: (row.event_type as PlaySession['eventType']) || undefined,
+    city: (row.city as string) || undefined,
+    country: (row.country as string) || undefined,
+    setSlot: (row.set_slot as PlaySession['setSlot']) || undefined,
     duration: (row.duration as number) || undefined,
     setId: (row.set_id as string) || undefined,
     createdAt: row.created_at as string,
@@ -1009,6 +1259,143 @@ export function deleteSession(db: Database.Database, sessionId: string): void {
 }
 
 /**
+ * Builds the WHERE fragment + bound params shared by querySessions and
+ * getTrackIdsPlayedWhere. Venue/city match case-insensitively (substring);
+ * date bounds compare on the YYYY-MM-DD prefix of performed_at. Returns a
+ * clause that always starts with " AND " (or '' when no filter is given).
+ */
+function sessionFilterClause(f: SessionFilter): { sql: string; params: unknown[] } {
+  const clauses: string[] = []
+  const params: unknown[] = []
+  if (f.venue) {
+    clauses.push('LOWER(ps.venue) LIKE ?')
+    params.push(`%${f.venue.toLowerCase().trim()}%`)
+  }
+  if (f.city) {
+    clauses.push('LOWER(ps.city) LIKE ?')
+    params.push(`%${f.city.toLowerCase().trim()}%`)
+  }
+  if (f.after) {
+    clauses.push('ps.performed_at IS NOT NULL AND SUBSTR(ps.performed_at, 1, 10) >= ?')
+    params.push(f.after.slice(0, 10))
+  }
+  if (f.before) {
+    clauses.push('ps.performed_at IS NOT NULL AND SUBSTR(ps.performed_at, 1, 10) <= ?')
+    params.push(f.before.slice(0, 10))
+  }
+  if (f.eventType) {
+    clauses.push('ps.event_type = ?')
+    params.push(f.eventType)
+  }
+  if (f.setSlot) {
+    clauses.push('ps.set_slot = ?')
+    params.push(f.setSlot)
+  }
+  return { sql: clauses.length ? ' AND ' + clauses.join(' AND ') : '', params }
+}
+
+/**
+ * Session-oriented query: returns sessions matching venue/city/date-range/
+ * event-type/slot, newest first. Powers "all sets I played in July 2025" and
+ * "my festival sets" — the result is a list of gigs, not tracks.
+ */
+export function querySessions(db: Database.Database, filter: SessionFilter = {}): PlaySession[] {
+  const { sql, params } = sessionFilterClause(filter)
+  const rows = db
+    .prepare(
+      `
+      SELECT ps.*,
+        (SELECT COUNT(*) FROM session_tracks st WHERE st.session_id = ps.id) AS track_count
+      FROM play_sessions ps
+      WHERE 1=1${sql}
+      ORDER BY ps.performed_at DESC, ps.created_at DESC
+    `
+    )
+    .all(...params) as Record<string, unknown>[]
+  return rows.map(rowToPlaySession)
+}
+
+/**
+ * Track-oriented query: the set of track ids that were PLAYED in any session
+ * matching the filter. Used to intersect into searchLibrary so questions like
+ * "tech house I played at Hi Ibiza in July" combine track filters with gig
+ * filters. Returns null when the filter is empty (no constraint to apply).
+ */
+export function getTrackIdsPlayedWhere(
+  db: Database.Database,
+  filter: SessionFilter
+): Set<string> | null {
+  const { sql, params } = sessionFilterClause(filter)
+  if (sql === '') return null
+  const rows = db
+    .prepare(
+      `
+      SELECT DISTINCT st.track_id AS track_id
+      FROM session_tracks st
+      JOIN play_sessions ps ON ps.id = st.session_id
+      WHERE 1=1${sql}
+    `
+    )
+    .all(...params) as Array<{ track_id: string }>
+  return new Set(rows.map((r) => r.track_id))
+}
+
+/**
+ * Patch a single session's gig metadata. Any field set to a value overwrites;
+ * a field set to null clears it; an omitted field is left untouched. Editing
+ * the venue promotes venue_source to 'user' so a later Rekordbox re-import
+ * won't clobber the manual value.
+ */
+export function updateSession(
+  db: Database.Database,
+  sessionId: string,
+  patch: SessionMetadataPatch
+): void {
+  const sets: string[] = []
+  const params: Record<string, unknown> = { id: sessionId }
+  if ('venue' in patch) {
+    sets.push('venue = @venue', "venue_source = 'user'")
+    params.venue = patch.venue ?? null
+  }
+  if ('eventType' in patch) {
+    sets.push('event_type = @eventType')
+    params.eventType = patch.eventType ?? null
+  }
+  if ('city' in patch) {
+    sets.push('city = @city')
+    params.city = patch.city ?? null
+  }
+  if ('country' in patch) {
+    sets.push('country = @country')
+    params.country = patch.country ?? null
+  }
+  if ('setSlot' in patch) {
+    sets.push('set_slot = @setSlot')
+    params.setSlot = patch.setSlot ?? null
+  }
+  if (sets.length === 0) return
+  db.prepare(`UPDATE play_sessions SET ${sets.join(', ')} WHERE id = @id`).run(params)
+}
+
+/**
+ * Apply a metadata patch to every session matching a filter (the date-range
+ * back-fill workflow, e.g. "everything I played 10–14 July → Hi Ibiza").
+ * Returns the number of sessions updated.
+ */
+export function bulkAssignSessions(
+  db: Database.Database,
+  filter: SessionFilter,
+  patch: SessionMetadataPatch
+): number {
+  const matches = querySessions(db, filter)
+  const tx = db.transaction(() => {
+    for (const s of matches) updateSession(db, s.id, patch)
+  })
+  tx()
+  return matches.length
+}
+
+/**
  * Reads the ordered set_tracks for a SetSense set, creates a play_sessions row
  * (source='setsense', set_id linked), and increments play_count / updates
  * last_played on each track if the performed date is newer. All in one transaction.
@@ -1016,7 +1403,14 @@ export function deleteSession(db: Database.Database, sessionId: string): void {
 export function markSetAsPerformed(
   db: Database.Database,
   setId: string,
-  opts: { performedAt?: string; venue?: string } = {}
+  opts: {
+    performedAt?: string
+    venue?: string
+    eventType?: PlaySession['eventType']
+    city?: string
+    country?: string
+    setSlot?: PlaySession['setSlot']
+  } = {}
 ): string | null {
   const setRow = db.prepare('SELECT * FROM sets WHERE id = ?').get(setId) as
     | Record<string, unknown>
@@ -1049,9 +1443,25 @@ export function markSetAsPerformed(
   const sessionId = crypto.randomUUID()
   const now = new Date().toISOString()
 
+  // Inherit gig metadata from the planned set where the caller didn't override.
+  // A set's `venue` column actually stores a VenueType (Set Architect's venueType),
+  // so it maps to the session's event_type, not the named-place venue. The set's
+  // `vibe` hints at the slot (warmup→opener, closing→closer, peak→peak).
+  const VIBE_TO_SLOT: Record<string, PlaySession['setSlot']> = {
+    warmup: 'opener',
+    closing: 'closer',
+    peak: 'peak'
+  }
+  const eventType = opts.eventType ?? ((setRow.venue as PlaySession['eventType']) || null)
+  const setSlot = opts.setSlot ?? (VIBE_TO_SLOT[(setRow.vibe as string) ?? ''] || null)
+
   const insertSession = db.prepare(`
-    INSERT INTO play_sessions (id, name, source, performed_at, venue, duration, set_id, created_at)
-    VALUES (@id, @name, @source, @performedAt, @venue, @duration, @setId, @createdAt)
+    INSERT INTO play_sessions
+      (id, name, source, performed_at, venue, duration, set_id, created_at,
+       event_type, city, country, set_slot, venue_source)
+    VALUES
+      (@id, @name, @source, @performedAt, @venue, @duration, @setId, @createdAt,
+       @eventType, @city, @country, @setSlot, 'user')
   `)
   const insertTrack = db.prepare(`
     INSERT INTO session_tracks (id, session_id, track_id, play_order, played_at)
@@ -1077,7 +1487,11 @@ export function markSetAsPerformed(
       venue: opts.venue ?? null,
       duration: null,
       setId,
-      createdAt: now
+      createdAt: now,
+      eventType,
+      city: opts.city ?? null,
+      country: opts.country ?? null,
+      setSlot
     })
     for (let i = 0; i < trackIds.length; i++) {
       insertTrack.run({
@@ -1098,6 +1512,11 @@ export function markSetAsPerformed(
  * Wipe all source='rekordbox' sessions and bulk-insert a fresh batch.
  * Never touches source='setsense' or source='manual' sessions.
  * Idempotent — safe to call on every XML re-import.
+ *
+ * User-edited gig metadata is preserved across the wipe: before deleting we
+ * snapshot every rekordbox session whose venue_source='user', keyed by
+ * (name|performed_at), then re-apply it onto the freshly inserted row with the
+ * same key. Auto-parsed venues (venue_source='auto') are recomputed each import.
  */
 export function replaceRekordboxSessions(
   db: Database.Database,
@@ -1105,12 +1524,14 @@ export function replaceRekordboxSessions(
     name: string
     performedAt: string | null
     venue: string | null
+    venueSource?: 'auto' | 'user'
     trackIds: string[]
   }>
 ): void {
   const insertSession = db.prepare(`
-    INSERT INTO play_sessions (id, name, source, performed_at, venue, duration, set_id, created_at)
-    VALUES (@id, @name, 'rekordbox', @performedAt, @venue, NULL, NULL, @createdAt)
+    INSERT INTO play_sessions
+      (id, name, source, performed_at, venue, duration, set_id, created_at, venue_source)
+    VALUES (@id, @name, 'rekordbox', @performedAt, @venue, NULL, NULL, @createdAt, @venueSource)
   `)
   const insertTrack = db.prepare(`
     INSERT INTO session_tracks (id, session_id, track_id, play_order, played_at)
@@ -1129,8 +1550,30 @@ export function replaceRekordboxSessions(
       END
     WHERE id = @trackId
   `)
+  const restoreUserMeta = db.prepare(`
+    UPDATE play_sessions
+    SET venue = @venue, event_type = @eventType, city = @city,
+        country = @country, set_slot = @setSlot, venue_source = 'user'
+    WHERE id = @id
+  `)
+
+  const sessionKey = (name: string, performedAt: string | null): string =>
+    `${name} ${performedAt ?? ''}`
 
   const tx = db.transaction(() => {
+    // Snapshot user-edited metadata before the wipe so manual venue/city/etc. survive.
+    const preservedRows = db
+      .prepare(
+        `SELECT name, performed_at, venue, event_type, city, country, set_slot
+         FROM play_sessions
+         WHERE source = 'rekordbox' AND venue_source = 'user'`
+      )
+      .all() as Array<Record<string, unknown>>
+    const preserved = new Map<string, Record<string, unknown>>()
+    for (const r of preservedRows) {
+      preserved.set(sessionKey(r.name as string, (r.performed_at as string) ?? null), r)
+    }
+
     // Delete only rekordbox-sourced sessions (cascade clears session_tracks).
     db.exec("DELETE FROM play_sessions WHERE source = 'rekordbox'")
 
@@ -1142,8 +1585,21 @@ export function replaceRekordboxSessions(
         name: s.name,
         performedAt: s.performedAt,
         venue: s.venue,
+        venueSource: s.venueSource ?? 'auto',
         createdAt: now
       })
+      // Re-apply a user's earlier edits for the same gig, if any.
+      const prev = preserved.get(sessionKey(s.name, s.performedAt))
+      if (prev) {
+        restoreUserMeta.run({
+          id: sessionId,
+          venue: (prev.venue as string) ?? null,
+          eventType: (prev.event_type as string) ?? null,
+          city: (prev.city as string) ?? null,
+          country: (prev.country as string) ?? null,
+          setSlot: (prev.set_slot as string) ?? null
+        })
+      }
       for (let i = 0; i < s.trackIds.length; i++) {
         insertTrack.run({
           id: crypto.randomUUID(),

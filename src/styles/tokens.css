@@ -2,11 +2,9 @@
    SetSense — Design Tokens
    "A 2am dancefloor rendered as software."
    Lifted verbatim from the Claude Design handoff (colors_and_type.css).
-   JetBrains Mono is loaded via @fontsource (see src/main.tsx).
    ============================================================ */
 
-/* Fonts: Space Grotesk + Instrument Serif loaded via Google Fonts in index.html.
-   JetBrains Mono via @fontsource (see globals.css @imports). */
+/* Fonts: Space Grotesk loaded via Google Fonts in index.html — single typeface system. */
 
 :root {
   /* -------- Aurora gradient anchors (background only) -------- */
@@ -45,7 +43,7 @@
   /* -------- Text -------- */
   --text-primary: rgba(255, 255, 255, 0.95);
   --text-secondary: rgba(255, 255, 255, 0.65);
-  --text-tertiary: rgba(255, 255, 255, 0.4);
+  --text-tertiary: rgba(255, 255, 255, 0.55); /* WCAG AA: ≥4.5:1 on glass-over-aurora (was 0.4 ≈ 3.6:1, failed) */
   --text-disabled: rgba(255, 255, 255, 0.25);
   --text-on-accent: #0a1f12; /* dark on chartreuse */
 
@@ -55,10 +53,11 @@
   --semantic-danger: #f87171; /* trainwreck / export error */
   --semantic-info: #60a5fa; /* library health */
 
-  /* -------- Typography -------- */
+  /* -------- Typography — single typeface system -------- */
   --font-sans: 'Space Grotesk', 'SF Pro Display', -apple-system, system-ui, sans-serif;
-  --font-display: 'Instrument Serif', Georgia, serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+  /* Aliases kept for backward compat — both resolve to the same face */
+  --font-display: var(--font-sans);
+  --font-mono: var(--font-sans);
 
   /* Type scale — size / line-height / weight via shorthand */
   --type-display: 600 32px/1.1 var(--font-sans);
@@ -68,7 +67,7 @@
   --type-body: 400 14px/1.5 var(--font-sans);
   --type-body-sm: 400 13px/1.5 var(--font-sans);
   --type-caption: 500 12px/1.4 var(--font-sans);
-  --type-mono: 400 14px/1.4 var(--font-mono);
+  --type-mono: 500 14px/1.4 var(--font-sans);
 
   --tracking-display: -0.02em;
   --tracking-h1: -0.015em;
@@ -167,7 +166,7 @@
   /* Text — ink, generous opacity for 100% readability */
   --text-primary: #0B0B10;
   --text-secondary: rgba(11, 11, 16, 0.72);
-  --text-tertiary: rgba(11, 11, 16, 0.48);
+  --text-tertiary: rgba(11, 11, 16, 0.6); /* WCAG AA: ≥4.5:1 on cream paper (was 0.48 ≈ 3.3:1, failed) */
   --text-disabled: rgba(11, 11, 16, 0.3);
 
   /* Semantic — darker variants so they pass WCAG AA on paper */

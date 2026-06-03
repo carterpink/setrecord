@@ -58,6 +58,64 @@ describe('interpretTurn — count / limit', () => {
   })
 })
 
+describe('interpretTurn — gig metadata (when / where played)', () => {
+  it('"songs I played at Hi Ibiza" → track search with performedVenue', () => {
+    const t = interpretTurn('songs I played at Hi Ibiza', {})
+    expect(t.kind).toBe('search')
+    if (t.kind !== 'search') return
+    expect(t.params.performedVenue).toBe('hi ibiza')
+  })
+
+  it('"all sets in July 2025" → session result with a July date range', () => {
+    const t = interpretTurn('all sets in July 2025', {})
+    expect(t.kind).toBe('sessions')
+    if (t.kind !== 'sessions') return
+    expect(t.filter.after).toBe('2025-07-01')
+    expect(t.filter.before).toBe('2025-07-31')
+  })
+
+  it('"my festival sets" → session result with eventType festival', () => {
+    const t = interpretTurn('my festival sets', {})
+    expect(t.kind).toBe('sessions')
+    if (t.kind !== 'sessions') return
+    expect(t.filter.eventType).toBe('festival')
+  })
+
+  it('"tech house I played in 2025" → track search with a year range', () => {
+    const t = interpretTurn('tech house I played in 2025', {})
+    expect(t.kind).toBe('search')
+    if (t.kind !== 'search') return
+    expect(t.params.genre).toBe('tech house')
+    expect(t.params.performedAfter).toBe('2025-01-01')
+    expect(t.params.performedBefore).toBe('2025-12-31')
+  })
+
+  it('AMBIGUITY: "tracks at 128 bpm" stays a BPM query, no venue', () => {
+    const t = interpretTurn('tracks at 128 bpm', {})
+    expect(t.kind).toBe('search')
+    if (t.kind !== 'search') return
+    expect(t.params.bpmMin).toBe(125)
+    expect(t.params.bpmMax).toBe(131)
+    expect(t.params.performedVenue).toBeUndefined()
+  })
+
+  it('AMBIGUITY: "deep house I played in 8A" keeps the key, no venue/date', () => {
+    const t = interpretTurn('deep house I played in 8A', {})
+    expect(t.kind).toBe('search')
+    if (t.kind !== 'search') return
+    expect(t.params.keyExact).toBe('8A')
+    expect(t.params.performedVenue).toBeUndefined()
+    expect(t.params.performedAfter).toBeUndefined()
+  })
+
+  it('does NOT parse gig constraints without performance context', () => {
+    const t = interpretTurn('house from 2024', {})
+    expect(t.kind).toBe('search')
+    if (t.kind !== 'search') return
+    expect(t.params.performedAfter).toBeUndefined()
+  })
+})
+
 describe('interpretTurn — key (Camelot + open notation)', () => {
   it('parses a Camelot key ("in 8A")', () => {
     const t = interpretTurn('deep house in 8A', {})

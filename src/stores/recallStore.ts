@@ -5,6 +5,8 @@ import type {
   CrateWithCount,
   SmartCrate,
   Track,
+  UncoverCard,
+  UncoverSource,
   IdentitySnapshot,
   HealthReport,
   LifecycleCounts,
@@ -12,7 +14,11 @@ import type {
   RecallAiStatus,
   RecallAskResult,
   RecallConversation,
-  RecallMessage
+  RecallMessage,
+  PlaySession,
+  SessionTrack,
+  SessionFilter,
+  SessionMetadataPatch
 } from '@/types'
 import { interpretTurn } from '@/utils/recallQuery'
 import { useUiStore } from '@/stores/uiStore'
@@ -24,10 +30,75 @@ const SECTION_KEY = 'setsense-recall-section'
 const CONVO_KEY = 'setsense-recall-convos'
 const MAX_CONVOS = 50
 
+const UNCOVER_DISMISSED_KEY = 'setsense-uncover-dismissed'
+const UNCOVER_DISMISSED_CAP = 4000
+const UNCOVER_DECK_CAP = 80
+
+function loadUncoverDismissed(): Set<string> {
+  if (typeof window === 'undefined') return new Set()
+  try {
+    const raw = window.localStorage.getItem(UNCOVER_DISMISSED_KEY)
+    const parsed = raw ? JSON.parse(raw) : []
+    return new Set(Array.isArray(parsed) ? (parsed as string[]) : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function saveUncoverDismissed(ids: Set<string>): void {
+  if (typeof window === 'undefined') return
+  try {
+    // Keep the most-recently-added ids; drop the oldest once over cap.
+    const arr = Array.from(ids).slice(-UNCOVER_DISMISSED_CAP)
+    window.localStorage.setItem(UNCOVER_DISMISSED_KEY, JSON.stringify(arr))
+  } catch {
+    /* quota — ignore */
+  }
+}
+
+/** Fisher–Yates, returns a new array (never mutates input). */
+function shuffle<T>(input: readonly T[]): T[] {
+  const a = input.slice()
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+/** Round-robin merge so the deck alternates sources instead of clumping. */
+function interleave<T>(lists: T[][]): T[] {
+  const out: T[] = []
+  const max = Math.max(0, ...lists.map((l) => l.length))
+  for (let i = 0; i < max; i++) {
+    for (const list of lists) {
+      if (i < list.length) out.push(list[i])
+    }
+  }
+  return out
+}
+
+function monthsSince(iso?: string): number {
+  if (!iso) return 0
+  const ms = Date.now() - new Date(iso).getTime()
+  return Math.max(0, Math.round(ms / (1000 * 60 * 60 * 24 * 30.44)))
+}
+
+function heaterReason(t: Track): string {
+  const parts = [`energy ${t.energy}`]
+  if (t.playCount > 0) parts.push(`played ${t.playCount}×`)
+  const m = monthsSince(t.lastPlayed)
+  if (m > 0) parts.push(`dormant ${m} mo`)
+  return parts.join(' · ')
+}
+
 function loadSection(): RecallSection {
-  if (typeof window === 'undefined') return 'conversations'
+  // The conversational chat moved to the Home tab; the Library workspace no
+  // longer has a 'conversations' section, so map any legacy value to 'uncover'.
+  if (typeof window === 'undefined') return 'uncover'
   const saved = window.localStorage.getItem(SECTION_KEY) as RecallSection | null
-  return saved ?? 'conversations'
+  if (!saved || saved === 'conversations') return 'uncover'
+  return saved
 }
 
 function loadConversations(): RecallConversation[] {
@@ -95,6 +166,14 @@ interface RecallState {
   gemsLoading: boolean
   loadGems: () => Promise<void>
 
+  // Uncover — swipe-deck rediscovery of the user's own library
+  uncoverDeck: UncoverCard[]
+  uncoverLoading: boolean
+  loadUncover: () => Promise<void>
+  dismissUncover: (trackId: string) => void
+  undismissUncover: (trackId: string) => void
+  resetUncover: () => Promise<void>
+
   crates: CrateWithCount[]
   cratesLoading: boolean
   selectedCrate: { crate: CrateWithCount; tracks: Track[] } | null
@@ -124,6 +203,18 @@ interface RecallState {
   loadCombosFor: (track: Track) => Promise<void>
   loadSequences: () => Promise<void>
   loadDeadEnds: () => Promise<void>
+
+  // Gigs — play-session metadata (venue / date / event-type / city / slot)
+  gigs: PlaySession[]
+  gigsLoading: boolean
+  gigFilter: SessionFilter | null
+  gigTracklist: { session: PlaySession; tracks: SessionTrack[] } | null
+  loadGigs: () => Promise<void>
+  applyGigFilter: (filter: SessionFilter | null) => Promise<void>
+  updateGig: (sessionId: string, patch: SessionMetadataPatch) => Promise<void>
+  bulkAssignGigs: (filter: SessionFilter, patch: SessionMetadataPatch) => Promise<number>
+  loadGigTracklist: (session: PlaySession) => Promise<void>
+  clearGigTracklist: () => void
 
   // Flag-for-gig loop
   flaggedTracks: Track[]
@@ -163,6 +254,68 @@ export const useRecallStore = create<RecallState>((set, get) => ({
     } finally {
       set({ gemsLoading: false })
     }
+  },
+
+  uncoverDeck: [],
+  uncoverLoading: false,
+  loadUncover: async () => {
+    const s = api()
+    if (!s) return
+    set({ uncoverLoading: true })
+    try {
+      const [heaters, gems, untested, audition, flagged] = await Promise.all([
+        s.recallEvaluateCrate('forgotten-heaters').catch(() => [] as Track[]),
+        s.recallGems().catch(() => [] as GemResult[]),
+        s.recallEvaluateCrate('never-tested-live').catch(() => [] as Track[]),
+        s.recallEvaluateCrate('downloaded-worth-auditioning').catch(() => [] as Track[]),
+        s.lifecycleGetFlagged().catch(() => [] as Track[])
+      ])
+
+      const dismissed = loadUncoverDismissed()
+      const skip = new Set<string>([...dismissed, ...flagged.map((t) => t.id)])
+      const seen = new Set<string>()
+
+      const build = (track: Track, source: UncoverSource, reason: string): UncoverCard | null => {
+        if (!track || seen.has(track.id) || skip.has(track.id)) return null
+        if (track.missingFile === true && track.phantom !== true) return null
+        seen.add(track.id)
+        return { track, source, reason }
+      }
+      const collect = (cards: (UncoverCard | null)[]): UncoverCard[] =>
+        cards.filter((c): c is UncoverCard => c !== null)
+
+      // Build each source list independently (with its own shuffle), then
+      // interleave so a deck never serves five "never tested" cards in a row.
+      const heaterCards = collect(shuffle(heaters).map((t) => build(t, 'heater', heaterReason(t))))
+      const gemCards = collect(shuffle(gems).map((g) => build(g.track, 'gem', g.reason)))
+      const untestedCards = collect(
+        shuffle(untested).map((t) => build(t, 'untested', 'Never played live — give it a shot'))
+      )
+      const auditionCards = collect(
+        shuffle(audition).map((t) => build(t, 'audition', 'Downloaded but never auditioned'))
+      )
+
+      const deck = interleave([heaterCards, gemCards, untestedCards, auditionCards]).slice(
+        0,
+        UNCOVER_DECK_CAP
+      )
+      set({ uncoverDeck: deck })
+    } finally {
+      set({ uncoverLoading: false })
+    }
+  },
+  dismissUncover: (trackId) => {
+    const dismissed = loadUncoverDismissed()
+    dismissed.add(trackId)
+    saveUncoverDismissed(dismissed)
+  },
+  undismissUncover: (trackId) => {
+    const dismissed = loadUncoverDismissed()
+    if (dismissed.delete(trackId)) saveUncoverDismissed(dismissed)
+  },
+  resetUncover: async () => {
+    saveUncoverDismissed(new Set())
+    await get().loadUncover()
   },
 
   crates: [],
@@ -310,6 +463,52 @@ export const useRecallStore = create<RecallState>((set, get) => ({
     }
   },
 
+  gigs: [],
+  gigsLoading: false,
+  gigFilter: null,
+  gigTracklist: null,
+  loadGigs: async () => {
+    const s = api()
+    if (!s) return
+    set({ gigsLoading: true })
+    try {
+      set({ gigs: await s.historyQuerySessions(get().gigFilter ?? {}) })
+    } catch {
+      set({ gigs: [] })
+    } finally {
+      set({ gigsLoading: false })
+    }
+  },
+  applyGigFilter: async (filter) => {
+    set({ gigFilter: filter, section: 'gigs', gigTracklist: null })
+    if (typeof window !== 'undefined') window.localStorage.setItem(SECTION_KEY, 'gigs')
+    await get().loadGigs()
+  },
+  updateGig: async (sessionId, patch) => {
+    const s = api()
+    if (!s) return
+    await s.historyUpdateSession(sessionId, patch)
+    await get().loadGigs()
+  },
+  bulkAssignGigs: async (filter, patch) => {
+    const s = api()
+    if (!s) return 0
+    const n = await s.historyBulkAssign(filter, patch)
+    await get().loadGigs()
+    return n
+  },
+  loadGigTracklist: async (session) => {
+    const s = api()
+    if (!s) return
+    try {
+      const tracks = await s.historySessionTracks(session.id)
+      set({ gigTracklist: { session, tracks } })
+    } catch {
+      /* ignore */
+    }
+  },
+  clearGigTracklist: () => set({ gigTracklist: null }),
+
   flaggedTracks: [],
   loadFlagged: async () => {
     const s = api()
@@ -432,6 +631,21 @@ export const useRecallStore = create<RecallState>((set, get) => ({
             : 'Nothing in your library matches that — try widening the BPM range, dropping a filter, or a different genre.',
           kind: 'tracks',
           trackIds: tracks.map((t) => t.id)
+        }
+      } else if (turn.kind === 'sessions') {
+        // Session-oriented query ("all sets in July 2025"): open the Gigs view
+        // pre-filtered. The assistant message confirms; navigation happens after.
+        const sessions = s ? await s.historyQuerySessions(turn.filter) : []
+        assistant = {
+          id: uid(),
+          role: 'assistant',
+          text: sessions.length
+            ? `${turn.narration} (${sessions.length} ${sessions.length === 1 ? 'gig' : 'gigs'})`
+            : 'No gigs match that yet — log a few sets or tag their venues in the Gigs view first.'
+        }
+        if (sessions.length) {
+          // Defer the section switch so the assistant message renders first.
+          setTimeout(() => void get().applyGigFilter(turn.filter), 0)
         }
       } else {
         const res = s ? await s.recallAiAsk(text) : null

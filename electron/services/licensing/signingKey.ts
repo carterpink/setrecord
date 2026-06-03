@@ -15,7 +15,7 @@
 
 /** Ed25519 SPKI public key. Pair lives in scripts/mint-license.mjs (issuer-only). */
 export const LICENSE_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAIaXts10rDORhwzq2F9VyNEoljpsFgxjlSIKjaiVt+9w=
+MCowBQYDK2VwAyEA7m6BexeGVjeWCobtsY1y1MYQ+HM5cPXYpJTjcV4oMGY=
 -----END PUBLIC KEY-----`
 
 /** Prefix that tags a SetSense license key and pins the payload schema version. */

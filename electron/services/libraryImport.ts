@@ -11,6 +11,7 @@ import {
   replaceAllPlaylists,
   replaceRekordboxSessions
 } from '../db/queries'
+import { parseSessionMeta } from './rekordbox/sessionMeta'
 
 /**
  * Normalised payload produced by any library source (XML, master.db, future
@@ -28,6 +29,7 @@ export interface ImportPayload {
     name: string
     performedAt: string | null
     venue: string | null
+    venueSource?: 'auto' | 'user'
     trackIds: string[]
   }>
 }
@@ -285,11 +287,18 @@ function isHistoryNode(node: XmlNode): boolean {
 function parseHistoryNode(
   historyNode: XmlNode,
   rekordboxIdToTrackId: Map<string, string>
-): Array<{ name: string; performedAt: string | null; venue: string | null; trackIds: string[] }> {
+): Array<{
+  name: string
+  performedAt: string | null
+  venue: string | null
+  venueSource?: 'auto' | 'user'
+  trackIds: string[]
+}> {
   const sessions: Array<{
     name: string
     performedAt: string | null
     venue: string | null
+    venueSource?: 'auto' | 'user'
     trackIds: string[]
   }> = []
 
@@ -318,7 +327,8 @@ function parseHistoryNode(
       // Tracks not in the collection map are silently dropped (track removed from library)
     }
 
-    sessions.push({ name, performedAt, venue: null, trackIds })
+    const meta = parseSessionMeta(name)
+    sessions.push({ name, performedAt, venue: meta.venue, venueSource: meta.source, trackIds })
   }
 
   return sessions

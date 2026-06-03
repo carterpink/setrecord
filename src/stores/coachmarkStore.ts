@@ -13,7 +13,7 @@ import { create } from 'zustand'
  *    ever visible at a time. The first eligible instance to mount claims the
  *    slot; the next one shows only after the first is dismissed.
  */
-export type CoachmarkKey = 'camelot' | 'bpm' | 'energy' | 'transition'
+export type CoachmarkKey = 'camelot' | 'bpm' | 'energy' | 'transition' | 'energyCurve'
 
 const STORAGE_KEY = 'setsense-coachmarks-seen'
 

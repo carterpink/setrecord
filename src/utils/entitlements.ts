@@ -16,6 +16,7 @@ export type ProFeature =
   | 'smartCrates'
   | 'cueEditor'
   | 'healthDrilldown'
+  | 'autoTagger'
 
 export interface ProFeatureMeta {
   /** Sentence-case feature name for the paywall headline. */
@@ -38,7 +39,7 @@ export const PRO_FEATURES: Record<ProFeature, ProFeatureMeta> = {
     blurb: 'Validate against your CDJs and export a Rekordbox XML you can trust.'
   },
   recall: {
-    label: 'Recall',
+    label: 'Library intelligence',
     blurb: 'Natural-language search, Combos, Identity and full library health drill-down.'
   },
   smartCrates: {
@@ -52,6 +53,10 @@ export const PRO_FEATURES: Record<ProFeature, ProFeatureMeta> = {
   healthDrilldown: {
     label: 'Health drill-down',
     blurb: 'Click any health number to see the exact tracks and fix them.'
+  },
+  autoTagger: {
+    label: 'Tags',
+    blurb: 'Customise your tags and send them straight to Rekordbox.'
   }
 }
 

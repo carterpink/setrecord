@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useEffect, useRef } from 'react'
-import { Disc3, History, Play, Plus, Search } from 'lucide-react'
+import { Disc3, History, Play, Plus, Search, Tag } from 'lucide-react'
 import type { Track } from '@/types'
 
 interface TrackContextMenuProps {
@@ -13,6 +13,7 @@ interface TrackContextMenuProps {
   onAddToSet: () => void
   onEditCues: () => void
   onShowCombos: () => void
+  onEditTags: () => void
 }
 
 interface MenuItem {
@@ -31,7 +32,8 @@ export function TrackContextMenu({
   onFindSimilar,
   onAddToSet,
   onEditCues,
-  onShowCombos
+  onShowCombos,
+  onEditTags
 }: TrackContextMenuProps): React.ReactPortal {
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -52,6 +54,31 @@ export function TrackContextMenu({
       document.removeEventListener('keydown', handleKeyDown)
     }
   }, [onClose])
+
+  // Move focus into the menu on open so keyboard users land on the first action.
+  useEffect(() => {
+    const first = menuRef.current?.querySelector<HTMLButtonElement>(
+      '[role="menuitem"]:not(:disabled)'
+    )
+    first?.focus()
+  }, [])
+
+  // Roving arrow-key navigation between enabled menu items (WCAG 2.1.1).
+  function onMenuKeyDown(e: React.KeyboardEvent<HTMLDivElement>): void {
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return
+    e.preventDefault()
+    const buttons = Array.from(
+      menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)') ?? []
+    )
+    if (buttons.length === 0) return
+    const idx = buttons.indexOf(document.activeElement as HTMLButtonElement)
+    let next = idx
+    if (e.key === 'ArrowDown') next = idx < buttons.length - 1 ? idx + 1 : 0
+    else if (e.key === 'ArrowUp') next = idx > 0 ? idx - 1 : buttons.length - 1
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = buttons.length - 1
+    buttons[next]?.focus()
+  }
 
   // Clamp menu position so it never overflows the viewport
   const menuW = 200
@@ -89,6 +116,11 @@ export function TrackContextMenu({
       icon: History,
       label: 'What have I played after this?',
       action: onShowCombos
+    },
+    {
+      icon: Tag,
+      label: 'Edit tags…',
+      action: onEditTags
     }
   ]
 
@@ -99,6 +131,7 @@ export function TrackContextMenu({
       role="menu"
       aria-label={`Actions for ${track.title}`}
       style={{ position: 'fixed', left: clampedX, top: clampedY, zIndex: 9999 }}
+      onKeyDown={onMenuKeyDown}
     >
       <div className="ctx-menu-header ss-caption">{track.title}</div>
       {items.map((item) => (

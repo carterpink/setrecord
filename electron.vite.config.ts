@@ -21,7 +21,12 @@ export default defineConfig({
     root: resolve(__dirname),
     build: {
       rollupOptions: {
-        input: resolve(__dirname, 'index.html')
+        input: {
+          // Main app window.
+          index: resolve(__dirname, 'index.html'),
+          // Transparent always-on-top SetSense Live overlay window.
+          overlay: resolve(__dirname, 'overlay.html')
+        }
       }
     },
     resolve: {

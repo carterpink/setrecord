@@ -1,5 +1,6 @@
 import { extname, normalize } from 'path'
 import { openMasterDb } from './cipher'
+import { parseSessionMeta } from './sessionMeta'
 import { openNotationToCamelot } from '../../utils/camelot'
 import type { AudioFormat, ImportProgress, Playlist, Track } from '../../../src/types'
 
@@ -10,6 +11,7 @@ export interface RekordboxImportPayload {
     name: string
     performedAt: string | null
     venue: string | null
+    venueSource?: 'auto' | 'user'
     trackIds: string[]
   }>
 }
@@ -451,12 +453,17 @@ export function mapSessions(
     else byHistory.set(r.HistoryID, [internalId])
   }
   return historyRows
-    .map((r) => ({
-      name: r.Name ?? 'Untitled session',
-      performedAt: parseSessionDate(r.DateCreated),
-      venue: null,
-      trackIds: byHistory.get(r.ID) ?? []
-    }))
+    .map((r) => {
+      const name = r.Name ?? 'Untitled session'
+      const meta = parseSessionMeta(name)
+      return {
+        name,
+        performedAt: parseSessionDate(r.DateCreated),
+        venue: meta.venue,
+        venueSource: meta.source,
+        trackIds: byHistory.get(r.ID) ?? []
+      }
+    })
     .filter((s) => s.trackIds.length > 0)
 }
 

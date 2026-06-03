@@ -1,7 +1,15 @@
 import { create } from 'zustand'
 import { arrayMove } from '@dnd-kit/sortable'
-import type { Set as DJSet, SetTrack, Track, ArchitectParams } from '@/types'
+import {
+  type Set as DJSet,
+  type SetTrack,
+  type Track,
+  type ArchitectParams,
+  type CDJModel,
+  ARCHITECT_ALGORITHM_VERSION
+} from '@/types'
 import { useToastStore } from '@/stores/toastStore'
+import { useProgressStore } from '@/stores/progressStore'
 
 let _saveTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -61,6 +69,31 @@ function autoSetName(): string {
   return `New set ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`
 }
 
+/**
+ * Carry the DJ's last-used BPM window + hardware into a new set so they're
+ * building within seconds instead of re-configuring every time. Scans the
+ * saved sets (roughly most-recent-first) for the first one that actually
+ * specified each value; falls back to sensible defaults otherwise.
+ */
+function lastUsedDefaults(savedSets: DJSet[]): {
+  bpmMin?: number
+  bpmMax?: number
+  hardware: CDJModel
+} {
+  let bpmMin: number | undefined
+  let bpmMax: number | undefined
+  let hardware: CDJModel | undefined
+  for (const s of savedSets) {
+    if (bpmMin === undefined && s.targetBpmMin !== undefined && s.targetBpmMax !== undefined) {
+      bpmMin = s.targetBpmMin
+      bpmMax = s.targetBpmMax
+    }
+    if (hardware === undefined && s.targetHardware) hardware = s.targetHardware
+    if (bpmMin !== undefined && hardware !== undefined) break
+  }
+  return { bpmMin, bpmMax, hardware: hardware ?? 'CDJ-2000NXS2' }
+}
+
 function reindex(tracks: SetTrack[]): SetTrack[] {
   return tracks.map((st, i) => ({ ...st, position: i }))
 }
@@ -107,19 +140,36 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
 
   createSet: (name?: string) => {
     const now = new Date().toISOString()
+    const { bpmMin, bpmMax, hardware } = lastUsedDefaults(get().savedSets)
     const newSet: DJSet = {
       id: crypto.randomUUID(),
       name: name ?? autoSetName(),
       createdAt: now,
       updatedAt: now,
       tracks: [],
-      targetHardware: 'CDJ-2000NXS2'
+      targetHardware: hardware,
+      ...(bpmMin !== undefined ? { targetBpmMin: bpmMin, targetBpmMax: bpmMax } : {})
     }
     set((s) => ({
       currentSet: newSet,
       savedSets: [newSet, ...s.savedSets],
       selectedTrackId: null
     }))
+    // Activation funnel: starting a set is the "investment" step of the loop.
+    void useProgressStore.getState().markFirst('set')
+    // Celebrate the very first set, exactly once — no pressure, just a nudge.
+    void useProgressStore
+      .getState()
+      .claimMilestone('first_set')
+      .then((claimed) => {
+        if (claimed) {
+          useToastStore
+            .getState()
+            .success(
+              'Your first set is underway — drag tracks in and watch the suggestions update.'
+            )
+        }
+      })
     _scheduleSave(get, set)
   },
 
@@ -442,7 +492,9 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
         slotTime: params.slotTime,
         energyCurveType: params.energyCurveType,
         targetBpmMin: params.bpmMin,
-        targetBpmMax: params.bpmMax
+        targetBpmMax: params.bpmMax,
+        architectSeed: params.variationSeed,
+        algorithmVersion: ARCHITECT_ALGORITHM_VERSION
       }
       set((s) => ({
         currentSet: merged,
@@ -465,7 +517,9 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
       energyCurveType: params.energyCurveType,
       targetBpmMin: params.bpmMin,
       targetBpmMax: params.bpmMax,
-      targetHardware: 'CDJ-2000NXS2'
+      targetHardware: 'CDJ-2000NXS2',
+      architectSeed: params.variationSeed,
+      algorithmVersion: ARCHITECT_ALGORITHM_VERSION
     }
     set((s) => ({
       currentSet: newSet,

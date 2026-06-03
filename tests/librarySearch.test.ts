@@ -22,6 +22,17 @@ describe('searchLibrary', () => {
     expect(r.find((t) => t.id === 'p')).toBeUndefined()
   })
 
+  it('filters by plain-language tags (substring-tolerant, any-of)', () => {
+    const tagged = [
+      makeTrack({ id: 't1', tags: [{ category: 'mood', value: 'dark', source: 'auto' }] }),
+      makeTrack({ id: 't2', tags: [{ category: 'mood', value: 'vocals', source: 'auto' }] }),
+      makeTrack({ id: 't3', tags: [{ category: 'energy', value: 'punchy', source: 'auto' }] })
+    ]
+    // "vocal" should match "vocals"; "dark" matches "dark" — t3 excluded.
+    const r = searchLibrary(tagged, { tags: ['dark', 'vocal'] })
+    expect(r.map((t) => t.id).sort()).toEqual(['t1', 't2'])
+  })
+
   it('filters by BPM range', () => {
     const r = searchLibrary(lib, { bpmMin: 125, bpmMax: 129 })
     expect(r.map((t) => t.id).sort()).toEqual(['b', 'c'])

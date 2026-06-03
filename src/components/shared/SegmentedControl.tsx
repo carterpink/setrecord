@@ -7,6 +7,12 @@ interface SegmentedControlProps<T extends string> {
   value: T
   onChange?: (next: T) => void
   className?: string
+  /** Accessible name for the control group (WCAG 4.1.2). */
+  ariaLabel?: string
+  /** id of an element labelling the control group. */
+  ariaLabelledby?: string
+  /** Optional icon per option — rendered before the label. */
+  icons?: Partial<Record<T, React.ComponentType<{ size?: number; strokeWidth?: number }>>>
 }
 
 /**
@@ -18,13 +24,22 @@ export function SegmentedControl<T extends string>({
   options,
   value,
   onChange,
-  className
+  className,
+  ariaLabel,
+  ariaLabelledby,
+  icons
 }: SegmentedControlProps<T>): React.JSX.Element {
   const layoutId = useId()
   return (
-    <div className={clsx('segmented', className)} role="tablist">
+    <div
+      className={clsx('segmented', className)}
+      role="tablist"
+      aria-label={ariaLabel}
+      aria-labelledby={ariaLabelledby}
+    >
       {options.map((opt) => {
         const isActive = value === opt
+        const Icon = icons?.[opt]
         return (
           <button
             key={opt}
@@ -42,6 +57,7 @@ export function SegmentedControl<T extends string>({
                 aria-hidden="true"
               />
             )}
+            {Icon && <Icon size={13} strokeWidth={1.6} aria-hidden />}
             <span className="seg-label">{opt}</span>
           </button>
         )

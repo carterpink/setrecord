@@ -8,6 +8,7 @@ import type {
 import { scoreTransition } from './transitionScore'
 import { getKeyCompatibility } from '../utils/camelot'
 import { getTargetAt } from './energyCurve'
+import { GENERIC_PROFILE, type MixingProfile } from './genreProfiles'
 
 // ───────── Combo scoring constants ─────────
 
@@ -25,9 +26,10 @@ const COMBO_CHIP_THRESHOLD = 3
 function buildMatchReasons(
   currentTrack: Track,
   candidate: Track,
-  comboCount: number
+  comboCount: number,
+  profile: MixingProfile
 ): MatchReason[] {
-  const score = scoreTransition(currentTrack, candidate)
+  const score = scoreTransition(currentTrack, candidate, profile)
   const camelot = getKeyCompatibility(currentTrack.key, candidate.key)
   const reasons: MatchReason[] = []
 
@@ -65,6 +67,22 @@ function buildMatchReasons(
     reasons.push({ label: energyLabel, type: 'energy', quality: energyQuality })
   }
 
+  // Shared-vibe reason — surfaces when both tracks share a Vibe tag, a soft
+  // affinity signal beyond key/BPM/energy.
+  const currentVibes = new Set(
+    (currentTrack.tags ?? []).filter((t) => t.category === 'vibe').map((t) => t.value)
+  )
+  const sharedVibe = (candidate.tags ?? []).find(
+    (t) => t.category === 'vibe' && currentVibes.has(t.value)
+  )
+  if (sharedVibe) {
+    reasons.push({
+      label: `Same vibe`,
+      type: 'tags',
+      quality: 'positive'
+    })
+  }
+
   return reasons
 }
 
@@ -81,7 +99,9 @@ export function getSuggestions(
    * after `currentTrack` in their performed sessions or saved sets. Tracks NOT
    * in the map are assumed to have 0 (no prior pairing recorded).
    */
-  comboLookup?: Map<string, number>
+  comboLookup?: Map<string, number>,
+  /** Genre mixing profile — biases scoring toward the style's conventions. */
+  profile: MixingProfile = GENERIC_PROFILE
 ): Suggestion[] {
   // Merge DB-persisted set IDs with any IDs the renderer passes directly.
   // This handles the race where a newly added track hasn't been saved to DB yet
@@ -91,7 +111,10 @@ export function getSuggestions(
   const nextPosition = set.tracks.length // 0-indexed position of the next slot
 
   const candidates = library.filter(
-    (t) => !inSetIds.has(t.id) && !t.missingFile && Math.abs(t.bpm - currentTrack.bpm) <= 16
+    (t) =>
+      !inSetIds.has(t.id) &&
+      !t.missingFile &&
+      Math.abs(t.bpm - currentTrack.bpm) <= profile.bpm.maxStep
   )
 
   interface Scored {
@@ -102,7 +125,7 @@ export function getSuggestions(
   }
 
   const scored: Scored[] = candidates.map((candidate) => {
-    const ts = scoreTransition(currentTrack, candidate)
+    const ts = scoreTransition(currentTrack, candidate, profile)
     let adjusted = ts.score
 
     // Diversity penalty: same artist as any track already in the set
@@ -130,12 +153,12 @@ export function getSuggestions(
   scored.sort((a, b) => b.adjustedScore - a.adjustedScore)
 
   return scored.slice(0, count).map((s, i) => {
-    const ts = scoreTransition(currentTrack, s.track)
+    const ts = scoreTransition(currentTrack, s.track, profile)
     return {
       track: s.track,
       transitionScore: ts,
       rank: i,
-      matchReasons: buildMatchReasons(currentTrack, s.track, s.comboCount),
+      matchReasons: buildMatchReasons(currentTrack, s.track, s.comboCount, profile),
       best: i === 0,
       comboCount: s.comboCount > 0 ? s.comboCount : undefined
     }

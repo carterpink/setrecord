@@ -1,16 +1,37 @@
 import { useEffect } from 'react'
 import { Sparkles } from 'lucide-react'
 import { useRecallStore } from '@/stores/recallStore'
+import { useLibraryStore } from '@/stores/libraryStore'
+import { NoLibraryState } from '@/components/shared/NoLibraryState'
 import { RecallTrackLine } from './RecallTrackLine'
 
 export function RediscoverSection(): React.JSX.Element {
   const gems = useRecallStore((s) => s.gems)
   const loading = useRecallStore((s) => s.gemsLoading)
   const loadGems = useRecallStore((s) => s.loadGems)
+  const trackCount = useLibraryStore((s) => s.tracks.length)
 
   useEffect(() => {
     void loadGems()
   }, [loadGems])
+
+  if (trackCount === 0) {
+    return (
+      <div className="recall-section">
+        <header className="recall-section-head">
+          <h2 className="ss-h2">Rediscover</h2>
+          <p className="recall-section-sub">
+            Tracks you used to play, gathering dust. Pull one back into rotation.
+          </p>
+        </header>
+        <NoLibraryState
+          icon={Sparkles}
+          title="Forgotten gems surface as you play"
+          body="Import your library and SetSense starts resurfacing tracks you used to love but haven't touched in a while."
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="recall-section">

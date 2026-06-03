@@ -5,10 +5,10 @@ import { useToastStore } from '@/stores/toastStore'
 
 /**
  * "DJ Wrapped" — a self-contained shareable card summarising the user's
- * library identity. Drawn directly to <canvas> so it (a) renders with the same
- * Space Grotesk / JetBrains Mono fonts the app uses, and (b) can be copied to
- * clipboard or downloaded without serializing through Image() — the SVG path
- * was failing in Electron's renderer when the blob URL hit the image loader.
+ * library identity. Drawn directly to <canvas> so it renders with the same
+ * Space Grotesk font the app uses, and can be copied to clipboard or
+ * downloaded without serializing through Image() — the SVG path was failing
+ * in Electron's renderer when the blob URL hit the image loader.
  *
  * Layout: 800×1000 portrait, IG-Story-friendly aspect, rendered at 2× for
  * retina-quality PNG output.
@@ -19,8 +19,6 @@ const CARD_H = 1000
 const SCALE = 2
 
 const FONT_SANS = "'Space Grotesk', 'SF Pro Display', -apple-system, system-ui, sans-serif"
-const FONT_MONO = "'JetBrains Mono', ui-monospace, monospace"
-const FONT_DISPLAY = "'Instrument Serif', Georgia, serif"
 
 const COLOUR_BG = '#060309'
 const COLOUR_BG_TOP = '#1a0a2e'
@@ -135,7 +133,7 @@ function drawCard(ctx: CanvasRenderingContext2D, snap: IdentitySnapshot): void {
     ctx.fillText(tile.label, x + 18, tileY + 32)
 
     ctx.fillStyle = COLOUR_ACCENT
-    ctx.font = `600 38px ${FONT_MONO}`
+    ctx.font = `600 38px ${FONT_SANS}`
     const valueX = x + 18
     const valueY = tileY + 90
     ctx.fillText(tile.value, valueX, valueY)
@@ -143,7 +141,7 @@ function drawCard(ctx: CanvasRenderingContext2D, snap: IdentitySnapshot): void {
     if (tile.valueSuffix) {
       const m = ctx.measureText(tile.value)
       ctx.fillStyle = COLOUR_DIM
-      ctx.font = `400 18px ${FONT_MONO}`
+      ctx.font = `400 18px ${FONT_SANS}`
       ctx.fillText(' ' + tile.valueSuffix, valueX + m.width + 4, valueY)
     }
   }
@@ -155,8 +153,7 @@ function drawCard(ctx: CanvasRenderingContext2D, snap: IdentitySnapshot): void {
   ctx.fillText('DEFINING SOUND', 60, 380)
 
   ctx.fillStyle = COLOUR_TEXT
-  // Use display serif for editorial feel on the hero line — matches app's `--font-display`.
-  ctx.font = `400 56px ${FONT_DISPLAY}`
+  ctx.font = `300 56px ${FONT_SANS}`
   ctx.fillText(topGenre ? topGenre.label : '—', 60, 436)
 
   ctx.fillStyle = COLOUR_DIM
@@ -181,7 +178,7 @@ function drawCard(ctx: CanvasRenderingContext2D, snap: IdentitySnapshot): void {
     ctx.fillText(`${i + 1}. ${a.label}`, 60, y)
 
     ctx.fillStyle = COLOUR_DIM
-    ctx.font = `400 18px ${FONT_MONO}`
+    ctx.font = `400 18px ${FONT_SANS}`
     ctx.textAlign = 'right'
     ctx.fillText(String(a.count), 740, y)
     ctx.font = `500 22px ${FONT_SANS}`
@@ -212,7 +209,7 @@ function drawCard(ctx: CanvasRenderingContext2D, snap: IdentitySnapshot): void {
       ctx.fill()
       ctx.globalAlpha = 1
       ctx.fillStyle = COLOUR_DIM
-      ctx.font = `400 13px ${FONT_MONO}`
+      ctx.font = `400 13px ${FONT_SANS}`
       ctx.textAlign = 'center'
       ctx.fillText(String(e.level), x + barW / 2, barsY + barsTotalH + 22)
     }

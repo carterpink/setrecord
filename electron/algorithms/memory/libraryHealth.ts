@@ -34,7 +34,13 @@ export const HEALTH_WEIGHTS = {
   duplicatesCap: 10
 } as const
 
-function normalise(s: string): string {
+/**
+ * Lowercase, strip punctuation, collapse whitespace. Exported so the backup
+ * re-linker (backupService.ts) builds match keys with the SAME normalisation
+ * the duplicate detector uses — otherwise migration matching and dedupe could
+ * disagree on what counts as "the same record".
+ */
+export function normalise(s: string): string {
   return s
     .toLowerCase()
     .replace(/[^\w\s]/g, '')

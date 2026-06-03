@@ -1,108 +1,83 @@
 /**
  * Auto energy analyser.
  *
- * Computes a 1–10 energy score per track from a single ffmpeg ebur128 pass
- * (integrated LUFS + loudness range) combined with BPM. Loudness dominates
- * because it's the strongest perceptual predictor of "club energy"; LRA pulls
- * dynamic album mixes down from purely loudness-based scores; BPM is a cheap
- * tiebreaker so two equally-loud tracks at 124 vs. 92 don't tie.
+ * Computes a DJ-calibrated 1–10 energy score per track from genuine spectral
+ * features extracted over the first ~60s: per-frame RMS energy, spectral
+ * centroid (brightness), and K-weighted loudness (LUFS, per ITU-R BS.1770),
+ * blended 40/30/30 — see {@link ./energy/spectralFeatures}. RMS dominates
+ * because sustained power is the strongest predictor of dancefloor energy.
  *
- * Runs as a background worker pool — never blocks the import path or the UI.
+ * Results are cached locally per track ({@link ./energy/energyCache}) keyed by
+ * file signature, so a track is analysed exactly once and is instant on every
+ * future set. Runs as a background worker pool — never blocks import or the UI.
  */
 
 import { existsSync } from 'fs'
+import { join } from 'path'
 import { spawn } from 'child_process'
 import { cpus } from 'os'
+import { app } from 'electron'
 import ffmpegPath from 'ffmpeg-static'
 import { getDb } from '../db/schema'
 import {
   countPendingEnergyTracks,
   getPendingEnergyTracks,
   updateTrackEnergy,
+  updateTrackAnalysisFeatures,
   type PendingEnergyRow
 } from '../db/queries'
-import type { EnergySource } from '../../src/types'
+import { tagTrack } from './tagging/tagger'
+import { ANALYSIS_SAMPLE_RATE } from './energy/spectralFeatures'
+import { getEnergyCache } from './energy/energyCache'
+import {
+  analyseTrack as analyseTrackCore,
+  type AnalyseResult as CoreAnalyseResult,
+  type PcmDecode
+} from './energy/analyse'
 
 // ───────── tunables ─────────
 
-const MIN_LUFS = -24
-const MAX_LUFS = -8
-const MAX_LRA = 15
-const MIN_LRA = 3
-const MIN_BPM = 90
-const MAX_BPM = 150
-
-const W_LOUDNESS = 0.55
-const W_DYNAMICS = 0.25
-const W_BPM = 0.2
+/** How much of each track to analyse, in seconds. */
+const ANALYSIS_SECONDS = 60
 
 // ffmpeg-static returns null at typecheck because it's `any`. Cast for safety.
 const FFMPEG_BIN: string | null = (ffmpegPath as unknown as string | null) ?? null
 
-function clamp01(x: number): number {
-  if (!Number.isFinite(x)) return 0
-  if (x < 0) return 0
-  if (x > 1) return 1
-  return x
-}
-
-function bpmTerm(bpm: number): number {
-  if (!Number.isFinite(bpm) || bpm <= 0) return 0.5
-  return clamp01((bpm - MIN_BPM) / (MAX_BPM - MIN_BPM))
-}
-
-function compositeScore(
-  lufs: number | null,
-  lra: number | null,
-  bpm: number
-): {
-  raw: number
-  score: number
-} {
-  const loudnessN = lufs == null ? 0.5 : clamp01((lufs - MIN_LUFS) / (MAX_LUFS - MIN_LUFS))
-  const dynamicsN = lra == null ? 0.5 : 1 - clamp01((lra - MIN_LRA) / (MAX_LRA - MIN_LRA))
-  const bpmN = bpmTerm(bpm)
-  const raw = W_LOUDNESS * loudnessN + W_DYNAMICS * dynamicsN + W_BPM * bpmN
-  const score = Math.max(1, Math.min(10, 1 + Math.round(raw * 9)))
-  return { raw, score }
-}
-
-// ───────── ffmpeg ebur128 single-pass ─────────
-
-export interface EbuR128Result {
-  lufs: number | null
-  lra: number | null
-}
+// ───────── ffmpeg PCM decode ─────────
 
 /**
- * Spawn ffmpeg with the ebur128 filter, parse "Integrated loudness:" and
- * "Loudness range:" from stderr. Resolves with nulls if ffmpeg or the parse
- * fails so the caller can fall back to a BPM-only score.
+ * Decode the first {@link ANALYSIS_SECONDS} of a file to mono float32 PCM at
+ * {@link ANALYSIS_SAMPLE_RATE}, streamed off ffmpeg's stdout. Resolves null on
+ * any failure so the caller can fall back gracefully.
  */
-function runEbuR128(filePath: string, timeoutMs: number): Promise<EbuR128Result> {
+export function decodePcm(filePath: string, timeoutMs = 30_000): Promise<PcmDecode | null> {
   return new Promise((resolve) => {
     if (!FFMPEG_BIN) {
-      resolve({ lufs: null, lra: null })
+      resolve(null)
       return
     }
 
     const args = [
       '-nostats',
       '-hide_banner',
+      '-t',
+      String(ANALYSIS_SECONDS),
       '-i',
       filePath,
-      '-filter_complex',
-      'ebur128=peak=true',
+      '-ac',
+      '1',
+      '-ar',
+      String(ANALYSIS_SAMPLE_RATE),
       '-f',
-      'null',
+      'f32le',
       '-'
     ]
 
-    let stderr = ''
+    const chunks: Buffer[] = []
     let settled = false
-    const child = spawn(FFMPEG_BIN, args, { stdio: ['ignore', 'ignore', 'pipe'] })
+    const child = spawn(FFMPEG_BIN, args, { stdio: ['ignore', 'pipe', 'ignore'] })
 
-    const finish = (result: EbuR128Result): void => {
+    const finish = (result: PcmDecode | null): void => {
       if (settled) return
       settled = true
       try {
@@ -113,59 +88,39 @@ function runEbuR128(filePath: string, timeoutMs: number): Promise<EbuR128Result>
       resolve(result)
     }
 
-    const timer = setTimeout(() => finish({ lufs: null, lra: null }), timeoutMs)
+    const timer = setTimeout(() => finish(null), timeoutMs)
 
-    child.stderr.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString('utf8')
-      // Cap memory: ebur128 summary fits in a few KB.
-      if (stderr.length > 200_000) stderr = stderr.slice(-100_000)
-    })
-
+    child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk))
     child.on('error', () => {
       clearTimeout(timer)
-      finish({ lufs: null, lra: null })
+      finish(null)
     })
-
     child.on('close', () => {
       clearTimeout(timer)
-      finish(parseEbuR128Stderr(stderr))
+      if (chunks.length === 0) {
+        finish(null)
+        return
+      }
+      const buf = Buffer.concat(chunks)
+      // f32le → Float32Array over the same memory (trim to whole samples).
+      const usable = buf.length - (buf.length % 4)
+      const samples = new Float32Array(buf.buffer.slice(buf.byteOffset, buf.byteOffset + usable))
+      finish({ samples, sampleRate: ANALYSIS_SAMPLE_RATE })
     })
   })
 }
 
-function parseEbuR128Stderr(stderr: string): EbuR128Result {
-  // ffmpeg writes a multi-line summary at the end:
-  //   Integrated loudness:
-  //     I:         -7.6 LUFS
-  //   Loudness range:
-  //     LRA:        4.3 LU
-  const lufsMatch = stderr.match(/I:\s+(-?\d+(?:\.\d+)?)\s+LUFS/)
-  const lraMatch = stderr.match(/LRA:\s+(-?\d+(?:\.\d+)?)\s+LU/)
-  const lufs = lufsMatch ? parseFloat(lufsMatch[1]) : null
-  const lra = lraMatch ? parseFloat(lraMatch[1]) : null
-  return {
-    lufs: lufs != null && Number.isFinite(lufs) ? lufs : null,
-    lra: lra != null && Number.isFinite(lra) ? lra : null
-  }
-}
-
 // ───────── single-file API ─────────
 
-export interface AnalyseResult {
-  trackId: string
-  energy: number
-  energyRaw: number
-  source: EnergySource
-  lufs: number | null
-  lra: number | null
+export type AnalyseResult = CoreAnalyseResult
+
+function cachePath(): string {
+  return join(app.getPath('userData'), 'energy-cache.json')
 }
 
 /**
- * Analyse one track. Always resolves (never rejects) so a single bad file
- * can't kill the queue. Sets `source` to indicate provenance:
- * - 'missing'  → file not on disk; falls back to neutral score 5
- * - 'failed'   → ffmpeg failed or no loudness data; falls back to BPM-only score
- * - 'computed' → real LUFS/LRA used
+ * Analyse one track via the spectral engine, consulting the shared local cache.
+ * Thin wrapper that wires the ffmpeg decoder + cache into the pure core.
  */
 export async function analyseTrack(
   trackId: string,
@@ -174,27 +129,11 @@ export async function analyseTrack(
   missingFile: boolean,
   timeoutMs = 30_000
 ): Promise<AnalyseResult> {
-  if (missingFile || !existsSync(filePath)) {
-    const { raw } = compositeScore(null, null, bpm)
-    return { trackId, energy: 5, energyRaw: raw, source: 'missing', lufs: null, lra: null }
-  }
-
-  const { lufs, lra } = await runEbuR128(filePath, timeoutMs)
-  if (lufs == null) {
-    // ffmpeg gave us nothing usable → BPM-only fallback (clamped to 1..10).
-    const fallbackScore = Math.max(1, Math.min(10, 1 + Math.round(bpmTerm(bpm) * 9)))
-    return {
-      trackId,
-      energy: fallbackScore,
-      energyRaw: bpmTerm(bpm),
-      source: 'failed',
-      lufs,
-      lra
-    }
-  }
-
-  const { raw, score } = compositeScore(lufs, lra, bpm)
-  return { trackId, energy: score, energyRaw: raw, source: 'computed', lufs, lra }
+  return analyseTrackCore(trackId, filePath, bpm, missingFile, {
+    decode: (p) => decodePcm(p, timeoutMs),
+    cache: getEnergyCache(cachePath()),
+    fileExists: existsSync
+  })
 }
 
 // ───────── queue runner ─────────
@@ -232,6 +171,7 @@ export async function runAnalysisQueue(cbs: EnergyQueueCallbacks = {}): Promise<
 
   try {
     const db = getDb()
+    const cache = getEnergyCache(cachePath())
     const pending = getPendingEnergyTracks(db)
     const total = pending.length
     cbs.onStart?.(total)
@@ -258,25 +198,34 @@ export async function runAnalysisQueue(cbs: EnergyQueueCallbacks = {}): Promise<
         try {
           const result = await analyseTrack(row.id, row.filePath, row.bpm, row.missingFile === 1)
           updateTrackEnergy(db, result.trackId, result.energy, result.energyRaw, result.source)
+          // Persist features + infer tags off the same analysis pass (no second decode).
+          const features = result.components
+            ? {
+                rms: result.components.rms,
+                brightness: result.components.brightness,
+                loudness: result.components.loudness,
+                vocalness: result.components.vocalness
+              }
+            : null
+          if (features) updateTrackAnalysisFeatures(db, result.trackId, features)
+          tagTrack(db, result.trackId, {
+            energy: result.energy,
+            features,
+            bpm: row.bpm,
+            key: row.key,
+            genre: row.genre,
+            durationSec: row.duration
+          })
           processed++
           cbs.onItem?.(result, processed, total)
         } catch (err) {
           // analyseTrack already swallows errors, but be defensive — never
           // leave a track as 'pending' forever.
           console.error('[energyAnalyser] unexpected error on', row.id, err)
-          const fallbackRaw = bpmTerm(row.bpm)
-          const fallbackScore = Math.max(1, Math.min(10, 1 + Math.round(fallbackRaw * 9)))
-          updateTrackEnergy(db, row.id, fallbackScore, fallbackRaw, 'failed')
+          updateTrackEnergy(db, row.id, 5, 0.5, 'failed')
           processed++
           cbs.onItem?.(
-            {
-              trackId: row.id,
-              energy: fallbackScore,
-              energyRaw: fallbackRaw,
-              source: 'failed',
-              lufs: null,
-              lra: null
-            },
+            { trackId: row.id, energy: 5, energyRaw: 0.5, source: 'failed', cached: false },
             processed,
             total
           )
@@ -286,6 +235,8 @@ export async function runAnalysisQueue(cbs: EnergyQueueCallbacks = {}): Promise<
 
     const workers = Array.from({ length: concurrency }, () => worker())
     await Promise.all(workers)
+    // Persist any freshly-computed scores so the next launch starts warm.
+    cache.flush()
     cbs.onComplete?.(processed, total)
   } finally {
     _running = false

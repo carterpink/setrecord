@@ -15,6 +15,12 @@ interface LearnTooltipProps {
   children: ReactNode
   hideIcon?: boolean
   iconLabel?: string
+  /**
+   * Lightweight, jargon-free copy shown to free self-identified beginners. The
+   * rich `explanation` (with diagram) stays Pro; this keeps beginners oriented
+   * after the trial lapses without upselling.
+   */
+  basic?: { summary: string; detail: string }
 }
 
 function DiagramRenderer({
@@ -42,9 +48,11 @@ export function LearnTooltip({
   explanation,
   children,
   hideIcon,
-  iconLabel = 'Show explanation'
+  iconLabel = 'Show explanation',
+  basic
 }: LearnTooltipProps): React.JSX.Element {
   const learnModeEnabled = useUiStore((s) => s.learnModeEnabled)
+  const isBeginner = useUiStore((s) => s.isBeginner)
   const [open, setOpen] = useState(false)
   const btnRef = useRef<HTMLButtonElement | null>(null)
   const popRef = useRef<HTMLDivElement | null>(null)
@@ -90,11 +98,18 @@ export function LearnTooltip({
     }
   }, [open])
 
-  if (!learnModeEnabled || hideIcon) {
+  // Show the info icon for Learn-Mode users and for free beginners (the latter
+  // only when there's beginner copy to show).
+  const showIcon = learnModeEnabled || (isBeginner && Boolean(basic))
+  if (!showIcon || hideIcon) {
     return <>{children}</>
   }
 
-  const proLocked = !isProUser()
+  const isPro = isProUser()
+  // A free beginner (not Pro, Learn Mode off) gets the lightweight `basic` copy.
+  const beginnerBasic = !isPro && isBeginner && basic ? basic : null
+  // Upsell only applies to Learn-Mode-on, non-Pro users with no beginner copy.
+  const proLocked = !isPro && !beginnerBasic
 
   return (
     <>
@@ -149,6 +164,15 @@ export function LearnTooltip({
                 <div className="ss-body-sm">
                   Learn Mode is a Pro feature. Upgrade to unlock explanations.
                 </div>
+              ) : beginnerBasic ? (
+                <>
+                  <div className="ss-body-sm" style={{ fontWeight: 600, marginBottom: 4 }}>
+                    {beginnerBasic.summary}
+                  </div>
+                  <div className="ss-caption" style={{ opacity: 0.85, lineHeight: 1.45 }}>
+                    {beginnerBasic.detail}
+                  </div>
+                </>
               ) : (
                 <>
                   <div className="ss-body-sm" style={{ fontWeight: 600, marginBottom: 4 }}>

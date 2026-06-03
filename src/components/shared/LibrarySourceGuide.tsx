@@ -1,4 +1,5 @@
 import { AppWindow, Download, FolderOpen } from 'lucide-react'
+import { APP_NAME } from '@/utils/constants'
 
 interface Step {
   icon: typeof AppWindow
@@ -20,7 +21,7 @@ const STEPS: Step[] = [
   {
     icon: FolderOpen,
     title: 'Choose the file below',
-    body: 'SetSense reads the export read‑only — Rekordbox stays untouched.'
+    body: `${APP_NAME} reads the export read‑only — Rekordbox stays untouched.`
   }
 ]
 

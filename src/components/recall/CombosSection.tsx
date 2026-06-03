@@ -3,6 +3,7 @@ import { Search, ArrowRight, Ban } from 'lucide-react'
 import type { Track } from '@/types'
 import { useRecallStore } from '@/stores/recallStore'
 import { useLibraryStore } from '@/stores/libraryStore'
+import { NoLibraryState } from '@/components/shared/NoLibraryState'
 import { RecallTrackLine } from './RecallTrackLine'
 
 export function CombosSection(): React.JSX.Element {
@@ -31,6 +32,20 @@ export function CombosSection(): React.JSX.Element {
   const pick = (t: Track): void => {
     setQuery('')
     void loadCombosFor(t)
+  }
+
+  if (tracks.length === 0) {
+    return (
+      <div className="recall-section">
+        <header className="recall-section-head">
+          <h2 className="ss-h2">Combos</h2>
+          <p className="recall-section-sub">
+            The transitions you actually reach for — pulled from your sets and play history.
+          </p>
+        </header>
+        <NoLibraryState body="Your go-to transitions and dead-ends appear here once you import a library and build or perform a few sets." />
+      </div>
+    )
   }
 
   return (

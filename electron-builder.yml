@@ -41,6 +41,9 @@ asarUnpack:
   - node_modules/@node-llama-cpp/**
   # @journeyapps/sqlcipher ships a native .node binary that must be loadable from disk.
   - node_modules/@journeyapps/sqlcipher/**
+  # smart-whisper (optional) ships whisper.cpp native bindings — must live outside the asar.
+  # Inert when not installed; powers on-device voice in Home when present.
+  - node_modules/smart-whisper/**
 win:
   executableName: SetSense
 nsis:
@@ -49,13 +52,20 @@ nsis:
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
 mac:
+  # dmg = the manual-download artifact for new users. zip = REQUIRED for any
+  # future electron-updater flow (the updater consumes the zip on macOS, not the
+  # dmg). Both are signed + notarized identically. Auto-install stays OFF — see
+  # the `publish` block below and README "Auto-update".
+  target:
+    - dmg
+    - zip
   hardenedRuntime: true
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
+    - NSMicrophoneUsageDescription: SetSense uses the microphone for voice input — your speech is transcribed on-device and never leaves your Mac.
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
     # License activation deep-links: setsense://activate?key=… After checkout the
@@ -83,6 +93,19 @@ linux:
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
-# No auto-update infrastructure is wired up (no electron-updater dependency or
-# code). Releases are distributed manually. If/when hosted updates are added,
-# configure a `publish` provider here and add electron-updater to the app.
+# Update feed (NFR-1001). This defines WHERE releases live; it does NOT turn on
+# auto-install. electron-builder only publishes when invoked with `--publish`
+# (CI runs `electron-vite build`, never `electron-builder`, so it never auto-
+# publishes). The app today only does a Stage-1 "you're behind" check that links
+# here — see electron/services/updateChecker.ts and README "Auto-update".
+#
+# Stage-2 (real electron-updater auto-download) is gated on decoupling the
+# ~1.9 GB Recall model from the bundle (NFR-901): while the model ships in
+# extraResources it rides inside every artifact, so a self-replacing macOS
+# update is a ~2 GB download per release. Don't enable auto-download until the
+# model loads from userData instead of the app bundle.
+publish:
+  provider: github
+  owner: carterpink
+  repo: setsensensev2
+  releaseType: release

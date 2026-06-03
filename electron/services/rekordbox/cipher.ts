@@ -42,7 +42,11 @@ export class RekordboxKeyMismatchError extends Error {
 }
 
 type Sqlite3Database = {
-  run: (sql: string, cb?: (err: Error | null) => void) => void
+  run: (
+    sql: string,
+    paramsOrCb?: unknown[] | ((err: Error | null) => void),
+    cb?: (err: Error | null) => void
+  ) => void
   all: (sql: string, params: unknown[], cb: (err: Error | null, rows: unknown[]) => void) => void
   get: (sql: string, params: unknown[], cb: (err: Error | null, row: unknown) => void) => void
   serialize: (cb: () => void) => void
@@ -56,6 +60,11 @@ export interface MasterDb {
   get<T = unknown>(sql: string, params?: unknown[]): Promise<T | null>
   /** Close the database. Always call when done. */
   close(): Promise<void>
+}
+
+/** Writable variant — adds parameterised writes for the MyTag exporter. */
+export interface MasterDbRW extends MasterDb {
+  run(sql: string, params?: unknown[]): Promise<void>
 }
 
 /**
@@ -144,6 +153,80 @@ async function openMasterDbWithKeyFormat(
         db.get(sql, params, (err, row) =>
           err ? reject(err) : resolve((row as T | undefined) ?? null)
         )
+      }),
+    close: (): Promise<void> => closeQuiet(db)
+  }
+}
+
+/**
+ * Open master.db **read-write** with the SQLCipher key. Used only by the MyTag
+ * exporter, which always takes a backup first and writes inside a transaction.
+ * Tries both key formats like {@link openMasterDb}.
+ */
+export async function openMasterDbWritable(path: string): Promise<MasterDbRW> {
+  try {
+    return await openMasterDbWritableWithFormat(path, 'raw')
+  } catch (err) {
+    if (err instanceof RekordboxKeyMismatchError) {
+      return openMasterDbWritableWithFormat(path, 'passphrase')
+    }
+    throw err
+  }
+}
+
+async function openMasterDbWritableWithFormat(
+  path: string,
+  format: 'raw' | 'passphrase'
+): Promise<MasterDbRW> {
+  const sqlite3Module = (
+    sqlcipher as {
+      verbose: () => {
+        Database: new (...args: unknown[]) => Sqlite3Database
+        OPEN_READWRITE: number
+      }
+    }
+  ).verbose()
+  const { Database, OPEN_READWRITE } = sqlite3Module
+
+  const db = await new Promise<Sqlite3Database>((resolve, reject) => {
+    const instance = new Database(path, OPEN_READWRITE, (err: Error | null) => {
+      if (err) return reject(translateOpenError(err))
+      resolve(instance)
+    })
+  })
+
+  const keyPragma =
+    format === 'raw'
+      ? `PRAGMA key = "x'${REKORDBOX_MASTER_DB_KEY}'"`
+      : `PRAGMA key = "${REKORDBOX_MASTER_DB_KEY}"`
+  await runSerialized(db, [`PRAGMA cipher_compatibility = 4`, keyPragma])
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      db.all(`SELECT name FROM sqlite_master WHERE type='table' LIMIT 1`, [], (err) => {
+        if (err) return reject(err)
+        resolve()
+      })
+    })
+  } catch (err) {
+    await closeQuiet(db)
+    throw translateOpenError(err as Error)
+  }
+
+  return {
+    all: <T>(sql: string, params: unknown[] = []): Promise<T[]> =>
+      new Promise((resolve, reject) => {
+        db.all(sql, params, (err, rows) => (err ? reject(err) : resolve((rows as T[]) ?? [])))
+      }),
+    get: <T>(sql: string, params: unknown[] = []): Promise<T | null> =>
+      new Promise((resolve, reject) => {
+        db.get(sql, params, (err, row) =>
+          err ? reject(err) : resolve((row as T | undefined) ?? null)
+        )
+      }),
+    run: (sql: string, params: unknown[] = []): Promise<void> =>
+      new Promise((resolve, reject) => {
+        db.run(sql, params, (err) => (err ? reject(err) : resolve()))
       }),
     close: (): Promise<void> => closeQuiet(db)
   }

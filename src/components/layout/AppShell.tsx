@@ -5,11 +5,13 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   type DragStartEvent,
   type DragEndEvent
 } from '@dnd-kit/core'
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import type { Track, SetTrack } from '@/types'
 import { LibraryPanel } from '@/components/library/LibraryPanel'
 import { CuePointEditor } from '@/components/modals/CuePointEditor'
@@ -23,13 +25,16 @@ import { IdentityReadyModal } from '@/components/modals/IdentityReadyModal'
 import { PostGigPromptModal } from '@/components/modals/PostGigPromptModal'
 import { UpgradeModal } from '@/components/modals/UpgradeModal'
 import { RecallPanel } from '@/components/recall/RecallPanel'
+import { HomeSurface } from '@/components/home/HomeSurface'
 import { SuggestionsPanel } from '@/components/suggestions/SuggestionsPanel'
 import { TimelinePanel } from '@/components/timeline/TimelinePanel'
 import { DragPreviewCard } from '@/components/timeline/DragPreviewCard'
 import { useLibraryStore } from '@/stores/libraryStore'
+import { useTagStore } from '@/stores/tagStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useLicenseStore } from '@/stores/licenseStore'
+import { useProgressStore } from '@/stores/progressStore'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { ToastContainer } from '@/components/shared/ToastContainer'
 import { AnimatePresence } from 'framer-motion'
@@ -83,15 +88,27 @@ export function AppShell(): React.JSX.Element {
   // Hydrate Learn Mode from persisted AppSettings on boot
   useEffect(() => {
     if (typeof window.setsense === 'undefined') return
-    void window.setsense
-      .getSettings()
-      .then((s) => hydrateFromSettings({ learnModeEnabled: s.learnModeEnabled }))
+    void window.setsense.getSettings().then((s) =>
+      hydrateFromSettings({
+        learnModeEnabled: s.learnModeEnabled,
+        isBeginner: s.isBeginner,
+        hasCompletedOnboarding: s.hasCompletedOnboarding
+      })
+    )
   }, [hydrateFromSettings])
 
   // Hydrate license entitlement from the main process (source of truth) on boot
   useEffect(() => {
     void hydrateLicense()
   }, [hydrateLicense])
+
+  // Hydrate retention progress and mark this week active (weekly streak).
+  useEffect(() => {
+    void useProgressStore
+      .getState()
+      .hydrate()
+      .then(() => useProgressStore.getState().recordActivity())
+  }, [])
 
   // License activation deep-links (setsense://activate?key=…). On mount we drain
   // any key buffered during cold start and signal the main process we're ready;
@@ -114,6 +131,12 @@ export function AppShell(): React.JSX.Element {
     if (typeof window.setsense === 'undefined') return
     const unsubProgress = window.setsense.onEnergyProgress((p) => {
       setEnergyAnalysis(p.phase === 'done' ? null : { processed: p.processed, total: p.total })
+      // The analyser writes auto-tags alongside energy; pull them in once the
+      // background pass finishes so chips appear without a manual reload.
+      if (p.phase === 'done' && p.total > 0) {
+        void loadLibrary()
+        void useTagStore.getState().loadCoverage()
+      }
     })
     const unsubUpdate = window.setsense.onEnergyUpdate((u) => {
       patchTrackEnergy(u.trackId, u.energy, u.source)
@@ -121,18 +144,37 @@ export function AppShell(): React.JSX.Element {
     const unsubArtwork = window.setsense.onArtworkUpdate((u) => {
       patchTrackArtwork(u.trackId, u.albumArtPath)
     })
+    // Re-tag progress (manual "Re-tag library") → drive the Tags view + reload.
+    const unsubTags = window.setsense.onTagsProgress((p) => {
+      useTagStore.getState().handleProgress(p)
+    })
     return () => {
       unsubProgress()
       unsubUpdate()
       unsubArtwork()
+      unsubTags()
     }
-  }, [patchTrackEnergy, patchTrackArtwork, setEnergyAnalysis])
+  }, [patchTrackEnergy, patchTrackArtwork, setEnergyAnalysis, loadLibrary])
   const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null)
 
   useEffect(() => {
     loadLibrary().then(() => {
       const { hasLibrary } = useLibraryStore.getState()
-      if (!hasLibrary) showOnboarding()
+      // Browser-only preview (no IPC): fall back to the library-presence check.
+      if (typeof window.setsense === 'undefined') {
+        if (!hasLibrary) showOnboarding()
+        return
+      }
+      void window.setsense.getSettings().then((s) => {
+        if (s.hasCompletedOnboarding) return
+        // Existing user from before this flag existed: they already imported a
+        // library, so treat them as onboarded silently rather than re-nagging.
+        if (hasLibrary) {
+          useUiStore.getState().completeOnboarding()
+          return
+        }
+        showOnboarding()
+      })
     })
     loadSets()
   }, [loadLibrary, loadSets, showOnboarding])
@@ -140,6 +182,11 @@ export function AppShell(): React.JSX.Element {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 }
+    }),
+    // WCAG 2.1.1 — keyboard drag: Space/Enter to pick up, arrows to move,
+    // Space/Enter to drop, Escape to cancel. Paired with dndAnnouncements below.
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates
     })
   )
 
@@ -230,41 +277,52 @@ export function AppShell(): React.JSX.Element {
     <>
       <div className="aurora" aria-hidden="true" />
       <div className="app">
-        <TopBar />
-        {mode === 'Prepare' ? (
-          <DndContext
-            sensors={sensors}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-            accessibility={{ announcements: dndAnnouncements }}
-          >
-            <div className="app-grid">
-              <ErrorBoundary label="library">
-                <LibraryPanel />
-              </ErrorBoundary>
-              <ErrorBoundary label="timeline">
-                <TimelinePanel />
-              </ErrorBoundary>
-              <ErrorBoundary label="suggestions">
-                <SuggestionsPanel />
-              </ErrorBoundary>
-            </div>
-            <DragOverlay dropAnimation={null}>
-              {activeDrag ? (
-                activeDrag.source === 'library' ? (
-                  <DragPreviewCard source="library" track={activeDrag.track} />
-                ) : (
-                  <DragPreviewCard source="timeline" setTrack={activeDrag.setTrack} />
-                )
-              ) : null}
-            </DragOverlay>
-          </DndContext>
-        ) : (
-          <ErrorBoundary label="Recall">
+        <ErrorBoundary label="Toolbar" variant="chrome">
+          <TopBar />
+        </ErrorBoundary>
+        {mode === 'Build' ? (
+          <>
+            <DndContext
+              sensors={sensors}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              accessibility={{ announcements: dndAnnouncements }}
+            >
+              <div className="app-grid">
+                <ErrorBoundary label="Library">
+                  <LibraryPanel />
+                </ErrorBoundary>
+                <ErrorBoundary label="Timeline">
+                  <TimelinePanel />
+                </ErrorBoundary>
+                <ErrorBoundary label="Suggestions">
+                  <SuggestionsPanel />
+                </ErrorBoundary>
+              </div>
+              <DragOverlay dropAnimation={null}>
+                {activeDrag ? (
+                  activeDrag.source === 'library' ? (
+                    <DragPreviewCard source="library" track={activeDrag.track} />
+                  ) : (
+                    <DragPreviewCard source="timeline" setTrack={activeDrag.setTrack} />
+                  )
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+            {/* Set-building tools — only meaningful while composing a set. */}
+            <ErrorBoundary label="Set tools" variant="chrome">
+              <BottomDock />
+            </ErrorBoundary>
+          </>
+        ) : mode === 'Library' ? (
+          <ErrorBoundary label="Library">
             <RecallPanel />
           </ErrorBoundary>
+        ) : (
+          <ErrorBoundary label="Home">
+            <HomeSurface />
+          </ErrorBoundary>
         )}
-        <BottomDock visible />
       </div>
       <AnimatePresence mode="wait">
         {openModal === 'import' && (

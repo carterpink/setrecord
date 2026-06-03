@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import FocusLock from 'react-focus-lock'
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,7 +15,7 @@ import type { CuePoint, HotCue, Loop, Track } from '@/types'
 import { ProWaveform, type ProWaveformHandle } from '@/components/waveform/ProWaveform'
 import { CueTimeReadout } from '@/components/modals/cue-editor/CueTimeReadout'
 import { HotCueGrid } from '@/components/modals/cue-editor/HotCueGrid'
-import { motion, modalBackdrop, modalPanel } from '@/components/shared/Motion'
+import { Modal } from '@/components/shared/Modal'
 import { toMediaUrl } from '@/utils/mediaUrl'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { useSetStore } from '@/stores/setStore'
@@ -373,378 +372,344 @@ export function CuePointEditor(): React.JSX.Element {
       : (activeLoop ?? null)
 
   return (
-    <motion.div
-      className="modal-overlay"
-      variants={modalBackdrop}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      onClick={handleClose}
+    <Modal
+      onClose={handleClose}
+      ariaLabel="Cue point editor"
+      style={{ maxWidth: 880, width: '94vw' }}
+      closeOnEscape={false}
     >
-      <FocusLock returnFocus>
-        <motion.div
-          className="modal glass-3"
-          variants={modalPanel}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          style={{ maxWidth: 880, width: '94vw' }}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Cue point editor"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {track && (
-            <audio
-              ref={setAudio}
-              src={toMediaUrl(track.filePath)}
-              preload="auto"
-              style={{ display: 'none' }}
-            />
-          )}
+      {track && (
+        <audio
+          ref={setAudio}
+          src={toMediaUrl(track.filePath)}
+          preload="auto"
+          style={{ display: 'none' }}
+        />
+      )}
 
-          <div className="modal-header">
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {track ? (
-                <>
-                  <div className="ss-h3" style={{ marginBottom: 2 }}>
-                    {track.title}
-                  </div>
-                  <div className="ss-body-sm" style={{ color: 'var(--text-secondary)' }}>
-                    {track.artist}
-                  </div>
-                </>
-              ) : (
-                <div className="ss-h3">Cue point editor</div>
+      <div className="modal-header">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {track ? (
+            <>
+              <div className="ss-h3" style={{ marginBottom: 2 }}>
+                {track.title}
+              </div>
+              <div className="ss-body-sm" style={{ color: 'var(--text-secondary)' }}>
+                {track.artist}
+              </div>
+            </>
+          ) : (
+            <div className="ss-h3">Cue point editor</div>
+          )}
+        </div>
+        <button className="icon-btn" onClick={handleClose} aria-label="Close">
+          <X size={16} strokeWidth={1.5} />
+        </button>
+      </div>
+
+      <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {!track ? (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)' }}>
+            <div className="ss-body-sm">
+              Select a track in the set timeline, then open the cue editor.
+            </div>
+          </div>
+        ) : (
+          <>
+            <ProWaveform
+              ref={wfRef}
+              peaks={peaks}
+              status={status}
+              durationMs={durationMs}
+              grid={grid}
+              cuePoints={cuePoints}
+              hotCues={hotCues}
+              loops={loops}
+              phrases={phrases}
+              showGrid={showGrid}
+              showPhrases={showPhrases}
+              audio={audioEl}
+              onSeek={seek}
+              onZoomChange={setZoomPx}
+              draftLoop={draftLoop}
+            />
+
+            {status === 'error' && (
+              <div className="ss-caption" style={{ color: 'var(--semantic-danger)' }}>
+                Can’t decode this audio file.
+              </div>
+            )}
+            {status === 'missing' && (
+              <div className="ss-caption" style={{ color: 'var(--semantic-warning)' }}>
+                Audio file not found.
+              </div>
+            )}
+
+            {/* Transport */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                className="icon-btn"
+                onClick={() => seek(0)}
+                aria-label="Jump to start"
+                title="Jump to start"
+              >
+                <SkipBack size={16} strokeWidth={1.5} />
+              </button>
+              <button
+                className="icon-btn"
+                onClick={() => nudge(-100)}
+                aria-label="Back 100ms"
+                title="Back 100ms (←)"
+              >
+                <ChevronLeft size={16} strokeWidth={1.5} />
+              </button>
+              <button
+                type="button"
+                onClick={togglePlay}
+                aria-label={playing ? 'Pause' : 'Play'}
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '50%',
+                  border: 'none',
+                  background: 'var(--accent)',
+                  color: 'var(--text-on-accent)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  flexShrink: 0
+                }}
+              >
+                {playing ? (
+                  <Pause size={20} strokeWidth={1.5} />
+                ) : (
+                  <Play size={20} strokeWidth={1.5} />
+                )}
+              </button>
+              <button
+                className="icon-btn"
+                onClick={() => nudge(100)}
+                aria-label="Forward 100ms"
+                title="Forward 100ms (→)"
+              >
+                <ChevronRight size={16} strokeWidth={1.5} />
+              </button>
+
+              <div style={{ marginLeft: 6 }}>
+                <CueTimeReadout audio={audioEl} durationMs={durationMs} grid={grid} />
+              </div>
+
+              <div style={{ flex: 1 }} />
+              <Volume2
+                size={16}
+                strokeWidth={1.5}
+                aria-hidden="true"
+                style={{ color: 'var(--text-tertiary)' }}
+              />
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={volume}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  setVolume(v)
+                  if (audioRef.current) audioRef.current.volume = v
+                }}
+                aria-label="Volume"
+                style={{ width: 84, accentColor: 'var(--accent)' }}
+              />
+            </div>
+
+            {/* View controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <Toggle label="Snap" icon={Magnet} active={snap} onClick={() => setSnap((v) => !v)} />
+              <Toggle label="Grid" active={showGrid} onClick={() => setShowGrid((v) => !v)} />
+              <Toggle
+                label="Phrases"
+                active={showPhrases}
+                onClick={() => setShowPhrases((v) => !v)}
+              />
+              <Toggle
+                label="Follow"
+                icon={Crosshair}
+                active={follow}
+                onClick={() => {
+                  const next = !follow
+                  setFollow(next)
+                  wfRef.current?.setFollow(next)
+                }}
+              />
+              <div style={{ flex: 1 }} />
+              <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
+                Zoom
+              </span>
+              <button className="pill-btn" onClick={() => wfRef.current?.zoomFit()}>
+                Fit
+              </button>
+              <button className="pill-btn" onClick={() => wfRef.current?.zoomBy(0.5)}>
+                –
+              </button>
+              <input
+                type="range"
+                min={1}
+                max={600}
+                step={1}
+                value={Math.round(zoomPx) || 1}
+                onChange={(e) => wfRef.current?.zoomTo(Number(e.target.value))}
+                aria-label="Zoom"
+                style={{ width: 110, accentColor: 'var(--accent)' }}
+              />
+              <button className="pill-btn" onClick={() => wfRef.current?.zoomBy(2)}>
+                +
+              </button>
+            </div>
+
+            {/* Beatgrid */}
+            <div className="cue-row">
+              <span className="cue-row-label">Beatgrid</span>
+              <span
+                className="ss-mono"
+                style={{ fontSize: 13, color: 'var(--accent)', minWidth: 64 }}
+              >
+                {bpm > 0 ? bpm.toFixed(2) : '—'} <span style={{ opacity: 0.5 }}>BPM</span>
+              </span>
+              <button className="pill-btn" onClick={halveBpm} title="Halve BPM">
+                ½×
+              </button>
+              <button className="pill-btn" onClick={doubleBpm} title="Double BPM">
+                2×
+              </button>
+              <button
+                className="pill-btn"
+                onClick={setDownbeatHere}
+                title="Set first downbeat at playhead"
+              >
+                Set downbeat
+              </button>
+              <button className="pill-btn" onClick={() => nudgeGrid(-5)} title="Shift grid earlier">
+                ◂ 5ms
+              </button>
+              <button className="pill-btn" onClick={() => nudgeGrid(5)} title="Shift grid later">
+                5ms ▸
+              </button>
+            </div>
+
+            {/* Loops */}
+            <div className="cue-row">
+              <span className="cue-row-label">
+                <Repeat size={12} strokeWidth={1.5} style={{ verticalAlign: '-2px' }} /> Loops
+              </span>
+              {BEAT_LOOP_OPTIONS.map((b) => (
+                <button
+                  key={b}
+                  className="pill-btn"
+                  disabled={!grid}
+                  onClick={() => beatLoop(b)}
+                  title={`${b}-bar beat loop`}
+                >
+                  {b < 1 ? '½' : b}
+                </button>
+              ))}
+              <button
+                className="pill-btn"
+                data-active={draftLoopStart !== null}
+                onClick={handleLoopInOut}
+              >
+                {draftLoopStart !== null ? 'Set out' : 'Loop in'}
+              </button>
+              <button
+                className="pill-btn"
+                disabled={!activeLoop && draftLoopStart === null}
+                onClick={exitLoop}
+              >
+                Exit
+              </button>
+              {loops.length > 0 && (
+                <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
+                  {loops.length} saved
+                </span>
               )}
             </div>
-            <button className="icon-btn" onClick={handleClose} aria-label="Close">
-              <X size={16} strokeWidth={1.5} />
-            </button>
-          </div>
 
-          <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {!track ? (
-              <div
-                style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)' }}
-              >
-                <div className="ss-body-sm">
-                  Select a track in the set timeline, then open the cue editor.
-                </div>
-              </div>
-            ) : (
-              <>
-                <ProWaveform
-                  ref={wfRef}
-                  peaks={peaks}
-                  status={status}
-                  durationMs={durationMs}
-                  grid={grid}
-                  cuePoints={cuePoints}
-                  hotCues={hotCues}
-                  loops={loops}
-                  phrases={phrases}
-                  showGrid={showGrid}
-                  showPhrases={showPhrases}
-                  audio={audioEl}
-                  onSeek={seek}
-                  onZoomChange={setZoomPx}
-                  draftLoop={draftLoop}
-                />
-
-                {status === 'error' && (
-                  <div className="ss-caption" style={{ color: 'var(--semantic-danger)' }}>
-                    Can’t decode this audio file.
-                  </div>
-                )}
-                {status === 'missing' && (
-                  <div className="ss-caption" style={{ color: 'var(--semantic-warning)' }}>
-                    Audio file not found.
-                  </div>
-                )}
-
-                {/* Transport */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <button
-                    className="icon-btn"
-                    onClick={() => seek(0)}
-                    aria-label="Jump to start"
-                    title="Jump to start"
-                  >
-                    <SkipBack size={16} strokeWidth={1.5} />
-                  </button>
-                  <button
-                    className="icon-btn"
-                    onClick={() => nudge(-100)}
-                    aria-label="Back 100ms"
-                    title="Back 100ms (←)"
-                  >
-                    <ChevronLeft size={16} strokeWidth={1.5} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={togglePlay}
-                    aria-label={playing ? 'Pause' : 'Play'}
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: '50%',
-                      border: 'none',
-                      background: 'var(--accent)',
-                      color: 'var(--text-on-accent)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      flexShrink: 0
-                    }}
-                  >
-                    {playing ? (
-                      <Pause size={20} strokeWidth={1.5} />
-                    ) : (
-                      <Play size={20} strokeWidth={1.5} />
-                    )}
-                  </button>
-                  <button
-                    className="icon-btn"
-                    onClick={() => nudge(100)}
-                    aria-label="Forward 100ms"
-                    title="Forward 100ms (→)"
-                  >
-                    <ChevronRight size={16} strokeWidth={1.5} />
-                  </button>
-
-                  <div style={{ marginLeft: 6 }}>
-                    <CueTimeReadout audio={audioEl} durationMs={durationMs} grid={grid} />
-                  </div>
-
-                  <div style={{ flex: 1 }} />
-                  <Volume2
-                    size={16}
-                    strokeWidth={1.5}
-                    aria-hidden="true"
-                    style={{ color: 'var(--text-tertiary)' }}
-                  />
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={volume}
-                    onChange={(e) => {
-                      const v = Number(e.target.value)
-                      setVolume(v)
-                      if (audioRef.current) audioRef.current.volume = v
-                    }}
-                    aria-label="Volume"
-                    style={{ width: 84, accentColor: 'var(--accent)' }}
-                  />
-                </div>
-
-                {/* View controls */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <Toggle
-                    label="Snap"
-                    icon={Magnet}
-                    active={snap}
-                    onClick={() => setSnap((v) => !v)}
-                  />
-                  <Toggle label="Grid" active={showGrid} onClick={() => setShowGrid((v) => !v)} />
-                  <Toggle
-                    label="Phrases"
-                    active={showPhrases}
-                    onClick={() => setShowPhrases((v) => !v)}
-                  />
-                  <Toggle
-                    label="Follow"
-                    icon={Crosshair}
-                    active={follow}
-                    onClick={() => {
-                      const next = !follow
-                      setFollow(next)
-                      wfRef.current?.setFollow(next)
-                    }}
-                  />
-                  <div style={{ flex: 1 }} />
-                  <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                    Zoom
-                  </span>
-                  <button className="pill-btn" onClick={() => wfRef.current?.zoomFit()}>
-                    Fit
-                  </button>
-                  <button className="pill-btn" onClick={() => wfRef.current?.zoomBy(0.5)}>
-                    –
-                  </button>
-                  <input
-                    type="range"
-                    min={1}
-                    max={600}
-                    step={1}
-                    value={Math.round(zoomPx) || 1}
-                    onChange={(e) => wfRef.current?.zoomTo(Number(e.target.value))}
-                    aria-label="Zoom"
-                    style={{ width: 110, accentColor: 'var(--accent)' }}
-                  />
-                  <button className="pill-btn" onClick={() => wfRef.current?.zoomBy(2)}>
-                    +
-                  </button>
-                </div>
-
-                {/* Beatgrid */}
-                <div className="cue-row">
-                  <span className="cue-row-label">Beatgrid</span>
+            {/* Saved loops chips */}
+            {loops.length > 0 && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {loops.map((lp, i) => (
                   <span
-                    className="ss-mono"
-                    style={{ fontSize: 13, color: 'var(--accent)', minWidth: 64 }}
+                    key={i}
+                    className="loop-chip"
+                    data-active={activeLoop ? sameLoop(activeLoop, lp) : false}
                   >
-                    {bpm > 0 ? bpm.toFixed(2) : '—'} <span style={{ opacity: 0.5 }}>BPM</span>
-                  </span>
-                  <button className="pill-btn" onClick={halveBpm} title="Halve BPM">
-                    ½×
-                  </button>
-                  <button className="pill-btn" onClick={doubleBpm} title="Double BPM">
-                    2×
-                  </button>
-                  <button
-                    className="pill-btn"
-                    onClick={setDownbeatHere}
-                    title="Set first downbeat at playhead"
-                  >
-                    Set downbeat
-                  </button>
-                  <button
-                    className="pill-btn"
-                    onClick={() => nudgeGrid(-5)}
-                    title="Shift grid earlier"
-                  >
-                    ◂ 5ms
-                  </button>
-                  <button
-                    className="pill-btn"
-                    onClick={() => nudgeGrid(5)}
-                    title="Shift grid later"
-                  >
-                    5ms ▸
-                  </button>
-                </div>
-
-                {/* Loops */}
-                <div className="cue-row">
-                  <span className="cue-row-label">
-                    <Repeat size={12} strokeWidth={1.5} style={{ verticalAlign: '-2px' }} /> Loops
-                  </span>
-                  {BEAT_LOOP_OPTIONS.map((b) => (
                     <button
-                      key={b}
-                      className="pill-btn"
-                      disabled={!grid}
-                      onClick={() => beatLoop(b)}
-                      title={`${b}-bar beat loop`}
+                      onClick={() => {
+                        setActiveLoop(lp)
+                        seek(lp.startMs)
+                      }}
+                      title="Jump to loop"
                     >
-                      {b < 1 ? '½' : b}
+                      {formatMs(lp.startMs)}
+                      {lp.beats ? ` · ${lp.beats < 1 ? '½' : lp.beats}b` : ''}
                     </button>
-                  ))}
-                  <button
-                    className="pill-btn"
-                    data-active={draftLoopStart !== null}
-                    onClick={handleLoopInOut}
-                  >
-                    {draftLoopStart !== null ? 'Set out' : 'Loop in'}
-                  </button>
-                  <button
-                    className="pill-btn"
-                    disabled={!activeLoop && draftLoopStart === null}
-                    onClick={exitLoop}
-                  >
-                    Exit
-                  </button>
-                  {loops.length > 0 && (
-                    <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                      {loops.length} saved
-                    </span>
-                  )}
-                </div>
+                    <button
+                      onClick={() => deleteLoop(lp)}
+                      aria-label="Delete loop"
+                      className="loop-chip-x"
+                    >
+                      <X size={11} strokeWidth={2} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
 
-                {/* Saved loops chips */}
-                {loops.length > 0 && (
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {loops.map((lp, i) => (
-                      <span
-                        key={i}
-                        className="loop-chip"
-                        data-active={activeLoop ? sameLoop(activeLoop, lp) : false}
-                      >
-                        <button
-                          onClick={() => {
-                            setActiveLoop(lp)
-                            seek(lp.startMs)
-                          }}
-                          title="Jump to loop"
-                        >
-                          {formatMs(lp.startMs)}
-                          {lp.beats ? ` · ${lp.beats < 1 ? '½' : lp.beats}b` : ''}
-                        </button>
-                        <button
-                          onClick={() => deleteLoop(lp)}
-                          aria-label="Delete loop"
-                          className="loop-chip-x"
-                        >
-                          <X size={11} strokeWidth={2} />
-                        </button>
-                      </span>
-                    ))}
+            <div style={{ height: 1, background: 'var(--border-subtle)' }} />
+
+            {/* Default cue */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div className="ss-body-sm">Default cue</div>
+                {defaultCue && (
+                  <div
+                    className="ss-caption"
+                    style={{ color: 'var(--semantic-success)', marginTop: 2 }}
+                  >
+                    {formatMs(defaultCue.position)}
                   </div>
                 )}
+              </div>
+              <button
+                type="button"
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 6,
+                  border: '1px solid #22C55E',
+                  background: 'transparent',
+                  color: '#22C55E',
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  fontWeight: 500
+                }}
+                onClick={handleSetDefaultCue}
+              >
+                Set cue
+              </button>
+            </div>
 
-                <div style={{ height: 1, background: 'var(--border-subtle)' }} />
+            <div style={{ height: 1, background: 'var(--border-subtle)' }} />
 
-                {/* Default cue */}
-                <div
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-                >
-                  <div>
-                    <div className="ss-body-sm">Default cue</div>
-                    {defaultCue && (
-                      <div
-                        className="ss-caption"
-                        style={{ color: 'var(--semantic-success)', marginTop: 2 }}
-                      >
-                        {formatMs(defaultCue.position)}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    style={{
-                      padding: '6px 14px',
-                      borderRadius: 6,
-                      border: '1px solid #22C55E',
-                      background: 'transparent',
-                      color: '#22C55E',
-                      cursor: 'pointer',
-                      fontSize: 12,
-                      fontWeight: 500
-                    }}
-                    onClick={handleSetDefaultCue}
-                  >
-                    Set cue
-                  </button>
-                </div>
-
-                <div style={{ height: 1, background: 'var(--border-subtle)' }} />
-
-                <div>
-                  <div className="ss-body-sm" style={{ marginBottom: 12 }}>
-                    Hot cues
-                  </div>
-                  <HotCueGrid hotCues={hotCues} onToggle={handleHotCue} />
-                </div>
-              </>
-            )}
-          </div>
-        </motion.div>
-      </FocusLock>
-    </motion.div>
+            <div>
+              <div className="ss-body-sm" style={{ marginBottom: 12 }}>
+                Hot cues
+              </div>
+              <HotCueGrid hotCues={hotCues} onToggle={handleHotCue} />
+            </div>
+          </>
+        )}
+      </div>
+    </Modal>
   )
 }
 

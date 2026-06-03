@@ -22,6 +22,7 @@ export function KeyChip({ children, className }: KeyChipProps): React.JSX.Elemen
         <span
           className={clsx('camelot', className)}
           style={{ color, background, borderColor: border }}
+          aria-label={`Key ${label}`}
         >
           {label}
         </span>

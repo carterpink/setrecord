@@ -9,9 +9,10 @@ import {
   LineChart,
   Line
 } from 'recharts'
-import { Share2 } from 'lucide-react'
+import { Share2, Fingerprint } from 'lucide-react'
 import { useRecallStore } from '@/stores/recallStore'
 import { getCamelotColor } from '@/utils/camelotColors'
+import { NoLibraryState } from '@/components/shared/NoLibraryState'
 import { IdentityShareCard } from './IdentityShareCard'
 import type { IdentitySnapshot } from '@/types'
 
@@ -47,7 +48,7 @@ function StatList({
             <span className="recall-stat-count">{r.count}</span>
           </li>
         ))}
-        {rows.length === 0 && <li className="recall-stat-empty">No data</li>}
+        {rows.length === 0 && <li className="recall-stat-empty">Fills in as you play</li>}
       </ol>
     </div>
   )
@@ -91,7 +92,7 @@ function KeyByBpmChart({ data }: { data: IdentitySnapshot['keyByBpmZone'] }): Re
           textAnchor="end"
           fontSize={10}
           fill="var(--text-tertiary)"
-          fontFamily="JetBrains Mono, monospace"
+          fontFamily="var(--font-sans)"
         >
           {maxTotal}
         </text>
@@ -101,7 +102,7 @@ function KeyByBpmChart({ data }: { data: IdentitySnapshot['keyByBpmZone'] }): Re
           textAnchor="end"
           fontSize={10}
           fill="var(--text-tertiary)"
-          fontFamily="JetBrains Mono, monospace"
+          fontFamily="var(--font-sans)"
         >
           0
         </text>
@@ -147,7 +148,7 @@ function KeyByBpmChart({ data }: { data: IdentitySnapshot['keyByBpmZone'] }): Re
                   textAnchor="middle"
                   fontSize={10}
                   fill="var(--text-secondary)"
-                  fontFamily="JetBrains Mono, monospace"
+                  fontFamily="var(--font-sans)"
                 >
                   {topKey}
                 </text>
@@ -158,7 +159,7 @@ function KeyByBpmChart({ data }: { data: IdentitySnapshot['keyByBpmZone'] }): Re
                 textAnchor="middle"
                 fontSize={10}
                 fill="var(--text-tertiary)"
-                fontFamily="JetBrains Mono, monospace"
+                fontFamily="var(--font-sans)"
               >
                 {zone.range}
               </text>
@@ -192,7 +193,11 @@ export function IdentitySection(): React.JSX.Element {
   if (!identity) {
     return (
       <div className="recall-section">
-        <div className="recall-empty">No library data yet.</div>
+        <NoLibraryState
+          icon={Fingerprint}
+          title="Your DJ fingerprint fills in as you play"
+          body="Your top genres, keys, BPM range and energy spread appear here the moment you import your library."
+        />
       </div>
     )
   }

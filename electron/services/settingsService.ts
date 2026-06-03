@@ -8,6 +8,17 @@ export interface AppSettings {
   harmonicMixingDefault: boolean
   learnModeEnabled: boolean
   hasSeenProficiencyAsk: boolean
+  /**
+   * The user self-identified as new to DJing during onboarding. Distinct from
+   * `learnModeEnabled` (the Pro educational overlay): this gates the *free*
+   * basic jargon explainers so beginners keep them after the trial lapses.
+   */
+  isBeginner: boolean
+  /**
+   * Set once the user finishes OR skips onboarding. Decouples "show onboarding"
+   * from whether a library exists, so we never re-nag a returning user.
+   */
+  hasCompletedOnboarding: boolean
   /** Opt-in to the bundled local LLM that powers natural-language Recall search. */
   memoryAiEnabled: boolean
   // ── Library source (Rekordbox auto-detect) ─────────────────────────────────
@@ -38,6 +49,8 @@ const DEFAULTS: AppSettings = {
   harmonicMixingDefault: true,
   learnModeEnabled: false,
   hasSeenProficiencyAsk: false,
+  isBeginner: false,
+  hasCompletedOnboarding: false,
   // The language model ships in the app bundle, so extended understanding is on
   // by default — there's no download to gate it behind. Users can still turn it
   // off to skip loading the model into memory.
@@ -64,6 +77,8 @@ export function getSettings(): AppSettings {
     harmonicMixingDefault: store.get('harmonicMixingDefault'),
     learnModeEnabled: store.get('learnModeEnabled') ?? false,
     hasSeenProficiencyAsk: store.get('hasSeenProficiencyAsk') ?? false,
+    isBeginner: store.get('isBeginner') ?? false,
+    hasCompletedOnboarding: store.get('hasCompletedOnboarding') ?? false,
     memoryAiEnabled: store.get('memoryAiEnabled') ?? true,
     lastImportSource: store.get('lastImportSource') ?? null,
     lastImportPath: store.get('lastImportPath') ?? null,
@@ -72,6 +87,48 @@ export function getSettings(): AppSettings {
     rekordboxDbConsent: store.get('rekordboxDbConsent') ?? false,
     autoDetectRekordbox: store.get('autoDetectRekordbox') ?? true,
     crashReportingEnabled: store.get('crashReportingEnabled') ?? false
+  }
+}
+
+/**
+ * Settings that are machine-agnostic and safe to carry in a backup bundle.
+ * Deliberately EXCLUDES path/import state (`lastImport*`), consent
+ * (`rekordboxDbConsent`, `crashReportingEnabled`), and anything keychain-backed
+ * (license/YouTube keys are per-machine credentials, never exported).
+ */
+export const PORTABLE_SETTINGS_KEYS = [
+  'targetHardware',
+  'defaultBpmMin',
+  'defaultBpmMax',
+  'harmonicMixingDefault',
+  'learnModeEnabled',
+  'isBeginner',
+  'memoryAiEnabled',
+  'autoDetectRekordbox'
+] as const satisfies readonly (keyof AppSettings)[]
+
+/** The whitelisted subset of settings for a backup bundle. */
+export function getPortableSettings(): Partial<AppSettings> {
+  const all = getSettings()
+  const out: Partial<AppSettings> = {}
+  for (const key of PORTABLE_SETTINGS_KEYS) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(out as any)[key] = all[key]
+  }
+  return out
+}
+
+/**
+ * Apply portable settings from a backup, FILL-ONLY: a value is written only if
+ * the user hasn't explicitly set it on this machine. Never clobbers local config.
+ */
+export function applyPortableSettings(incoming: Partial<AppSettings> | undefined): void {
+  if (!incoming) return
+  for (const key of PORTABLE_SETTINGS_KEYS) {
+    if (incoming[key] === undefined) continue
+    if (store.has(key)) continue // respect the local choice
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    store.set(key, incoming[key] as any)
   }
 }
 
@@ -85,6 +142,9 @@ export async function setSettings(partial: Partial<AppSettings>): Promise<AppSet
     store.set('learnModeEnabled', partial.learnModeEnabled)
   if (partial.hasSeenProficiencyAsk !== undefined)
     store.set('hasSeenProficiencyAsk', partial.hasSeenProficiencyAsk)
+  if (partial.isBeginner !== undefined) store.set('isBeginner', partial.isBeginner)
+  if (partial.hasCompletedOnboarding !== undefined)
+    store.set('hasCompletedOnboarding', partial.hasCompletedOnboarding)
   if (partial.memoryAiEnabled !== undefined) store.set('memoryAiEnabled', partial.memoryAiEnabled)
   if (partial.lastImportSource !== undefined)
     store.set('lastImportSource', partial.lastImportSource)

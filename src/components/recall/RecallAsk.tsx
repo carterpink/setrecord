@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ArrowRight, Search, Sparkles, Lock } from 'lucide-react'
 import { useRecallStore } from '@/stores/recallStore'
 import { useLibraryStore } from '@/stores/libraryStore'
+import { useUiStore } from '@/stores/uiStore'
 
 // Rotating example prompts — cycle while the box is idle to hint at what's
 // possible and make the feature feel deep.
@@ -25,13 +26,18 @@ const EXAMPLES = [
   'overplayed tracks to retire',
   'newest deep house I added',
   'uk garage 130 bpm',
-  'what I open sets with'
+  'what I open sets with',
+  'songs I played at Hi Ibiza',
+  'all sets in July 2025',
+  'tech house I played in 2025',
+  'my festival sets'
 ]
 
 export function RecallAsk(): React.JSX.Element {
   const ask = useRecallStore((s) => s.ask)
   const asking = useRecallStore((s) => s.asking)
   const libraryCount = useLibraryStore((s) => s.tracks.length)
+  const showModal = useUiStore((s) => s.showModal)
 
   const [q, setQ] = useState('')
   const [focused, setFocused] = useState(false)
@@ -80,21 +86,43 @@ export function RecallAsk(): React.JSX.Element {
         {asking && <div className="recall-ask-beam" aria-hidden="true" />}
       </form>
 
-      <div className="recall-ask-statusline">
+      <div className="recall-ask-statusline" role="status" aria-live="polite" aria-atomic="true">
         {asking ? (
           <span className="recall-ask-searching">Searching your library…</span>
         ) : (
           <span className="recall-ask-ready">
-            <Sparkles size={12} strokeWidth={1.5} /> SetSense Intelligence · ask in plain English,
-            then keep refining
+            <Sparkles size={12} strokeWidth={1.5} /> Ask your library in plain English, then keep
+            refining
           </span>
         )}
       </div>
 
-      <div className="recall-ask-privacy" title="All Recall search runs locally — no API calls.">
-        <Lock size={11} strokeWidth={1.7} />
-        Searching your library of {libraryCount.toLocaleString()} tracks — nothing leaves your Mac.
-      </div>
+      {libraryCount === 0 ? (
+        <div className="recall-ask-privacy">
+          <Lock size={11} strokeWidth={1.7} />
+          <button
+            type="button"
+            onClick={() => showModal('import')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--accent)',
+              cursor: 'pointer',
+              padding: 0,
+              font: 'inherit'
+            }}
+          >
+            Import your library
+          </button>
+          &nbsp;to start asking — nothing ever leaves your Mac.
+        </div>
+      ) : (
+        <div className="recall-ask-privacy" title="All Recall search runs locally — no API calls.">
+          <Lock size={11} strokeWidth={1.7} />
+          Searching your library of {libraryCount.toLocaleString()} tracks — nothing leaves your
+          Mac.
+        </div>
+      )}
     </div>
   )
 }

@@ -1,9 +1,18 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import type { LiveDataPayload } from './services/live/liveEngine'
+import type {
+  ExportResult as BackupExportResult,
+  InspectResult as BackupInspectResult,
+  ImportResult as BackupImportResult
+} from './services/backupService'
 import type {
   ArchitectParams,
+  BeatportRow,
   CDJModel,
   ComboResult,
+  Ecosystem,
+  ExportResult,
   CrateWithCount,
   CuePoint,
   EnergySource,
@@ -21,15 +30,29 @@ import type {
   LibraryFilters,
   LibrarySearchParams,
   PlaySession,
+  SessionFilter,
+  SessionMetadataPatch,
+  SetSlot,
+  VenueType,
   RecallAiStatus,
   RecallAskResult,
+  RecallRoute,
+  VoiceStatus,
+  MicAccess,
+  LibrarySourceId,
+  PostImportProgress,
   RekordboxDetection,
   RekordboxStaleStatus,
+  SourceDetection,
   RememberedUSBDevice,
   SessionTrack,
   Set as DJSet,
   SmartCrate,
+  TagCategory,
+  TagCoverage,
+  RekordboxTagWriteResult,
   Track,
+  TrackTag,
   USBCopyResult,
   USBDevice
 } from '../src/types'
@@ -38,6 +61,12 @@ export interface EnergyProgress {
   processed: number
   total: number
   phase: 'analysing' | 'done'
+}
+
+export interface TagsProgress {
+  processed: number
+  total: number
+  phase: 'tagging' | 'done'
 }
 
 export interface EnergyUpdate {
@@ -56,7 +85,14 @@ export interface ArtworkUpdate {
   trackId: string
   albumArtPath: string
 }
+
+export interface EngineExportProgress {
+  processed: number
+  total: number
+  phase: 'copying' | 'writing' | 'done'
+}
 import type { AppSettings } from './services/settingsService'
+import type { ProgressState, FirstEvent } from './services/progressService'
 
 const setsense = {
   // ── Library ──────────────────────────────────────────────────────────────
@@ -120,6 +156,20 @@ const setsense = {
   checkRekordboxStale: (): Promise<RekordboxStaleStatus> =>
     ipcRenderer.invoke('rekordbox:check-stale'),
 
+  // ── Cross-platform import sources (Rekordbox / Serato / Engine DJ) ─────────
+  detectImportSources: (): Promise<SourceDetection[]> =>
+    ipcRenderer.invoke('import:detect-sources'),
+
+  /** Import any `payload`-routed source (Serato, Engine DJ). Rekordbox uses its own flow. */
+  runImport: (sourceId: LibrarySourceId, libraryPath: string): Promise<ImportResult> =>
+    ipcRenderer.invoke('import:run', sourceId, libraryPath),
+
+  onPostImportProgress: (cb: (p: PostImportProgress) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, p: PostImportProgress): void => cb(p)
+    ipcRenderer.on('library:post-import-progress', handler)
+    return () => ipcRenderer.removeListener('library:post-import-progress', handler)
+  },
+
   // ── Sets (Phase 3) ────────────────────────────────────────────────────────
   getSets: (): Promise<DJSet[]> => ipcRenderer.invoke('sets:get-all'),
 
@@ -143,8 +193,21 @@ const setsense = {
 
   buildSet: (params: ArchitectParams) => ipcRenderer.invoke('algo:build-set', params),
 
-  validateForExport: (setId: string, hardware: CDJModel) =>
-    ipcRenderer.invoke('algo:validate', setId, hardware),
+  genreProfiles: (sourcePlaylistIds: string[] = []) =>
+    ipcRenderer.invoke('algo:genre-profiles', sourcePlaylistIds),
+
+  validateForExport: (setId: string, hardware: CDJModel, ecosystem: Ecosystem = 'pioneer') =>
+    ipcRenderer.invoke('algo:validate', setId, hardware, ecosystem),
+
+  // Gig-ready Engine DJ (Denon) USB export — copies audio + writes the Engine Library.
+  exportSetToEngineUsb: (setId: string, mountPath: string): Promise<ExportResult> =>
+    ipcRenderer.invoke('export:engine-usb', setId, mountPath),
+
+  onEngineExportProgress: (cb: (p: EngineExportProgress) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, p: EngineExportProgress): void => cb(p)
+    ipcRenderer.on('library:engine-export-progress', handler)
+    return () => ipcRenderer.removeListener('library:engine-export-progress', handler)
+  },
 
   // ── File health (Phase 6) ─────────────────────────────────────────────────
   triggerHealthCheck: (): Promise<void> => ipcRenderer.invoke('library:health-check'),
@@ -183,6 +246,39 @@ const setsense = {
   relinkTrackFile: (trackId: string): Promise<string | null> =>
     ipcRenderer.invoke('library:relink-file', trackId),
 
+  // ── Auto-tags ─────────────────────────────────────────────────────────────
+  tagsCoverage: (): Promise<TagCoverage> => ipcRenderer.invoke('tags:coverage'),
+
+  tagsForTrack: (trackId: string): Promise<TrackTag[]> =>
+    ipcRenderer.invoke('tags:for-track', trackId),
+
+  tagsRetag: (): Promise<{ running: boolean }> => ipcRenderer.invoke('tags:retag'),
+
+  tagsSetOverride: (
+    trackId: string,
+    category: TagCategory,
+    values: string[]
+  ): Promise<TrackTag[] | null> =>
+    ipcRenderer.invoke('tags:set-override', trackId, category, values),
+
+  tagsResetToAuto: (trackId: string, category?: TagCategory): Promise<TrackTag[] | null> =>
+    ipcRenderer.invoke('tags:reset', trackId, category),
+
+  tagsExportXml: (): Promise<{
+    success: boolean
+    filePath?: string
+    trackCount?: number
+    error?: string
+  }> => ipcRenderer.invoke('tags:export-xml'),
+
+  tagsWriteMyTags: (): Promise<RekordboxTagWriteResult> => ipcRenderer.invoke('tags:write-mytags'),
+
+  onTagsProgress: (cb: (p: TagsProgress) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, p: TagsProgress): void => cb(p)
+    ipcRenderer.on('library:tags-progress', handler)
+    return () => ipcRenderer.removeListener('library:tags-progress', handler)
+  },
+
   // ── Audio raw bytes for waveform decoding ────────────────────────────────
   readAudioFile: (filePath: string): Promise<ArrayBuffer | null> =>
     ipcRenderer.invoke('audio:read-file', filePath),
@@ -191,11 +287,37 @@ const setsense = {
   exportSet: (setId: string, hardware: CDJModel) =>
     ipcRenderer.invoke('export:set', setId, hardware),
 
+  exportBeatportCsv: (setName: string, rows: BeatportRow[]): Promise<ExportResult | null> =>
+    ipcRenderer.invoke('beatport:export-csv', setName, rows),
+
   // ── Settings (Phase 8) ────────────────────────────────────────────────────
   getSettings: () => ipcRenderer.invoke('settings:get') as Promise<AppSettings>,
 
   setSettings: (partial: Partial<AppSettings>) =>
     ipcRenderer.invoke('settings:set', partial) as Promise<AppSettings>,
+
+  // ── Backup & migration ─────────────────────────────────────────────────────
+  backupExport: (passphrase?: string): Promise<BackupExportResult> =>
+    ipcRenderer.invoke('backup:export', passphrase),
+  backupPick: (): Promise<string | null> => ipcRenderer.invoke('backup:pick'),
+  backupInspect: (filePath: string, passphrase?: string): Promise<BackupInspectResult> =>
+    ipcRenderer.invoke('backup:inspect', filePath, passphrase),
+  backupImport: (
+    filePath: string,
+    mode: 'restore' | 'merge',
+    passphrase?: string
+  ): Promise<BackupImportResult> => ipcRenderer.invoke('backup:import', filePath, mode, passphrase),
+
+  // ── Retention / activation progress (brief #22, Phase B) ───────────────────
+  progressGet: () => ipcRenderer.invoke('progress:get') as Promise<ProgressState>,
+  progressSet: (partial: Partial<ProgressState>) =>
+    ipcRenderer.invoke('progress:set', partial) as Promise<ProgressState>,
+  progressMarkFirst: (event: FirstEvent) =>
+    ipcRenderer.invoke('progress:markFirst', event) as Promise<ProgressState>,
+  progressClaimMilestone: (id: string) =>
+    ipcRenderer.invoke('progress:claimMilestone', id) as Promise<boolean>,
+  progressRecordActivity: () =>
+    ipcRenderer.invoke('progress:recordActivity') as Promise<ProgressState>,
 
   // ── Licensing / SetSense Pro (Section 16) ──────────────────────────────────
   licenseGet: (): Promise<LicenseState> => ipcRenderer.invoke('license:get'),
@@ -273,9 +395,25 @@ const setsense = {
   historyForTrack: (trackId: string): Promise<PlaySession[]> =>
     ipcRenderer.invoke('history:get-for-track', trackId),
 
+  historyQuerySessions: (filter: SessionFilter = {}): Promise<PlaySession[]> =>
+    ipcRenderer.invoke('history:query-sessions', filter),
+
+  historyUpdateSession: (sessionId: string, patch: SessionMetadataPatch): Promise<void> =>
+    ipcRenderer.invoke('history:update-session', sessionId, patch),
+
+  historyBulkAssign: (filter: SessionFilter, patch: SessionMetadataPatch): Promise<number> =>
+    ipcRenderer.invoke('history:bulk-assign', filter, patch),
+
   historyMarkPerformed: (
     setId: string,
-    opts?: { performedAt?: string; venue?: string }
+    opts?: {
+      performedAt?: string
+      venue?: string
+      eventType?: VenueType
+      city?: string
+      country?: string
+      setSlot?: SetSlot
+    }
   ): Promise<string | null> => ipcRenderer.invoke('history:mark-performed', setId, opts ?? {}),
 
   historyDelete: (sessionId: string): Promise<void> =>
@@ -349,10 +487,70 @@ const setsense = {
   recallAiAsk: (question: string): Promise<RecallAskResult> =>
     ipcRenderer.invoke('recall:ai-ask', question),
 
+  recallAiRoute: (question: string, contextJson?: string): Promise<RecallRoute> =>
+    ipcRenderer.invoke('recall:ai-route', question, contextJson),
+
+  recallSimilar: (trackId: string, count?: number): Promise<Track[]> =>
+    ipcRenderer.invoke('recall:similar', trackId, count),
+
+  recallEnds: (): Promise<{ openers: ComboResult[]; closers: ComboResult[] }> =>
+    ipcRenderer.invoke('recall:ends'),
+
   onRecallAiProgress: (cb: (s: RecallAiStatus) => void): (() => void) => {
     const handler = (_: Electron.IpcRendererEvent, s: RecallAiStatus): void => cb(s)
     ipcRenderer.on('recall:ai-progress', handler)
     return () => ipcRenderer.removeListener('recall:ai-progress', handler)
+  },
+
+  // ── On-device voice ────────────────────────────────────────────────────────
+  speechVoiceStatus: (): Promise<VoiceStatus> => ipcRenderer.invoke('speech:voice-status'),
+
+  speechTranscribe: (pcm: Float32Array): Promise<string> =>
+    ipcRenderer.invoke('speech:transcribe', pcm),
+
+  speechEnsureMicAccess: (): Promise<MicAccess> => ipcRenderer.invoke('speech:ensure-mic-access'),
+
+  speechPrepareVoice: (): Promise<VoiceStatus> => ipcRenderer.invoke('speech:prepare'),
+
+  onVoiceProgress: (cb: (s: VoiceStatus) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, s: VoiceStatus): void => cb(s)
+    ipcRenderer.on('speech:voice-progress', handler)
+    return () => ipcRenderer.removeListener('speech:voice-progress', handler)
+  },
+
+  // ── SetSense Live overlay ────────────────────────────────────────────────
+  liveStart: (): Promise<void> => ipcRenderer.invoke('live:start'),
+  liveStop: (): Promise<void> => ipcRenderer.invoke('live:stop'),
+  /** Toggle overlay click-through (false = capture clicks over glass chrome). */
+  liveSetIgnoreMouse: (ignore: boolean): void => ipcRenderer.send('live:set-ignore-mouse', ignore),
+  /** Fires when the overlay window closes (e.g. its own End button). */
+  onLiveOverlayClosed: (cb: () => void): (() => void) => {
+    const handler = (): void => cb()
+    ipcRenderer.on('live:overlay-closed', handler)
+    return () => ipcRenderer.removeListener('live:overlay-closed', handler)
+  },
+  /** Captured probe window (mono f32 @ 22.05k) → main for identification. */
+  liveAudioWindow: (samples: Float32Array): void => ipcRenderer.send('live:audio-window', samples),
+  /** OCR'd text lines from the screen → main matches them to the library. */
+  liveScreenText: (lines: string[]): void => ipcRenderer.send('live:screen-text', lines),
+  /** Overlay subscribes to live deck data pushed by the engine. */
+  onLiveData: (cb: (data: LiveDataPayload) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, d: LiveDataPayload): void => cb(d)
+    ipcRenderer.on('live:data', handler)
+    return () => ipcRenderer.removeListener('live:data', handler)
+  },
+  /** Index-build progress (main window + overlay). */
+  onLiveIndexProgress: (cb: (p: { done: number; total: number }) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, p: { done: number; total: number }): void =>
+      cb(p)
+    ipcRenderer.on('live:index-progress', handler)
+    return () => ipcRenderer.removeListener('live:index-progress', handler)
+  },
+  /** Overlay subscribes: index ready → start listening. */
+  onLiveReady: (cb: (s: { indexedTracks: number }) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, s: { indexedTracks: number }): void => cb(s)
+    ipcRenderer.on('live:ready', handler)
+    return () => ipcRenderer.removeListener('live:ready', handler)
   }
 }
 

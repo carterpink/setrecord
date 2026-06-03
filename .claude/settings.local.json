@@ -28,7 +28,19 @@
       "Bash(awk '/^\\\\/Users/{f=$0} /error/{print f\": \"$0}')",
       "Bash(npx tsc *)",
       "Bash(npx vitest *)",
-      "Bash(xargs ls -la)"
+      "Bash(xargs ls -la)",
+      "Bash(git fetch *)",
+      "Bash(git push *)",
+      "Bash(git worktree *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git branch *)",
+      "Bash(git log *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(gh pr *)",
+      "Bash(gh run *)",
+      "Bash(gh auth *)"
     ]
   }
 }

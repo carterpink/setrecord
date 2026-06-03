@@ -19,7 +19,9 @@ Core capabilities:
 - **Recall & memory** — a searchable record of past sessions and decisions.
 
 SetSense runs entirely on your machine. Audio is never uploaded; analysis is
-performed locally.
+performed locally. The only thing that can ever leave your machine is an
+anonymous crash report, and only if you opt in — see [TELEMETRY.md](TELEMETRY.md)
+for exactly what it collects (and never collects) and how to turn it off.
 
 ## Requirements
 
@@ -176,10 +178,26 @@ that is unsigned/un-notarized (or fail at the notarization step). Local
 development (`npm run dev`) and unpacked builds (`npm run build:unpack`) do not
 require any of these credentials.
 
-> **Auto-update:** SetSense currently has **no auto-update infrastructure**
-> wired up (no `electron-updater` dependency or code). Releases are distributed
-> manually. To add hosted updates later, configure a `publish` provider in
-> `electron-builder.yml` and integrate `electron-updater` in the app.
+> **Auto-update (NFR-1001):** SetSense has **no in-app installer** —
+> `electron-updater` is intentionally not wired. Releases are distributed
+> **manually** (download a new DMG). What *is* in place:
+>
+> - **Stage 1 — update check (live).** On launch, packaged builds ask GitHub for
+>   the latest published release ([`electron/services/updateChecker.ts`](electron/services/updateChecker.ts)).
+>   If a newer version exists, a native dialog offers **Download / Remind Me
+>   Later / Skip This Version** and opens the releases page — the app never
+>   downloads or installs anything itself. Best-effort: throttled to once a day,
+>   silent offline, skipped in dev. The `publish` provider in
+>   [`electron-builder.yml`](electron-builder.yml) defines the feed and the mac
+>   `zip` target is built, but nothing auto-publishes (CI never runs
+>   `electron-builder`).
+> - **Stage 2 — auto-download (gated, not built).** Full `electron-updater`
+>   self-replacing updates are **blocked on NFR-901**: the ~1.9 GB Recall model
+>   ships in `extraResources`, so it rides inside every artifact and a macOS
+>   auto-update would re-download ~2 GB per release. The model must first be
+>   decoupled from the bundle (load from `userData`, download once on first run)
+>   — and that trades away today's "works offline from first launch" promise, so
+>   it needs a product decision before it's turned on.
 
 ## Support & contact
 

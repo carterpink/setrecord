@@ -112,7 +112,8 @@ function createSchema(db: Database.Database): void {
       discover_meta TEXT,
       lifecycle_state TEXT,
       lifecycle_source TEXT DEFAULT 'computed',
-      flagged_for_gig_at TEXT
+      flagged_for_gig_at TEXT,
+      analysis_features TEXT
     );
 
     CREATE TABLE IF NOT EXISTS sets (
@@ -127,7 +128,9 @@ function createSchema(db: Database.Database): void {
       venue TEXT,
       slot_time TEXT,
       energy_curve_type TEXT,
-      target_hardware TEXT DEFAULT 'CDJ-2000NXS2'
+      target_hardware TEXT DEFAULT 'CDJ-2000NXS2',
+      architect_seed INTEGER,
+      algorithm_version INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS set_tracks (
@@ -178,7 +181,12 @@ function createSchema(db: Database.Database): void {
       venue TEXT,
       duration REAL,
       set_id TEXT,
-      created_at TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      event_type TEXT,
+      city TEXT,
+      country TEXT,
+      set_slot TEXT,
+      venue_source TEXT NOT NULL DEFAULT 'user'
     );
 
     CREATE TABLE IF NOT EXISTS session_tracks (
@@ -193,6 +201,7 @@ function createSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_session_tracks_session ON session_tracks(session_id);
     CREATE INDEX IF NOT EXISTS idx_session_tracks_track ON session_tracks(track_id);
     CREATE INDEX IF NOT EXISTS idx_play_sessions_performed ON play_sessions(performed_at);
+    CREATE INDEX IF NOT EXISTS idx_play_sessions_venue ON play_sessions(venue);
 
     CREATE TABLE IF NOT EXISTS smart_crates (
       id TEXT PRIMARY KEY,
@@ -201,6 +210,18 @@ function createSchema(db: Database.Database): void {
       match_mode TEXT NOT NULL DEFAULT 'all',
       created_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS track_tags (
+      track_id TEXT NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
+      category TEXT NOT NULL,
+      value TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'auto',
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (track_id, category, value)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_track_tags_value ON track_tags(value);
+    CREATE INDEX IF NOT EXISTS idx_track_tags_track ON track_tags(track_id);
 
     CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY);
     INSERT OR IGNORE INTO schema_version VALUES (1);

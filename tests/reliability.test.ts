@@ -216,13 +216,17 @@ describe('ErrorBoundary', () => {
 // ─── 4. Crash reporter — opt-in, no-op without DSN ───────────────────────────
 
 const mockSentryInit = vi.fn()
+const mockSentryClose = vi.fn(() => Promise.resolve(true))
 vi.mock('@sentry/electron/main', () => ({
-  init: mockSentryInit
+  init: mockSentryInit,
+  close: mockSentryClose
 }))
 
 describe('crashReporter', () => {
   beforeEach(() => {
     mockSentryInit.mockReset()
+    mockSentryClose.mockReset()
+    mockSentryClose.mockImplementation(() => Promise.resolve(true))
     // Ensure the module picks up our env override on each test
     vi.resetModules()
   })
@@ -287,6 +291,44 @@ describe('crashReporter', () => {
     const frame = result.exception.values[0].stacktrace.frames[0]
     expect(frame.filename).toBe('main.ts')
     expect(frame.abs_path).toBeUndefined()
+    delete process.env.SENTRY_DSN
+  })
+
+  it('beforeSend scrubs hostname (server_name) and device context', async () => {
+    process.env.SENTRY_DSN = 'https://fake@o0.ingest.sentry.io/0'
+    const { initCrashReporter } = await import('../electron/services/crashReporter')
+    initCrashReporter()
+    const [cfg] = mockSentryInit.mock.calls[0]
+    expect(cfg.sendDefaultPii).toBe(false)
+
+    const event = {
+      server_name: 'Sams-MacBook-Pro.local',
+      contexts: {
+        device: { name: 'Sams-MacBook-Pro', model: 'MacBookPro18,1' },
+        os: { name: 'macOS', version: '15.3' }
+      }
+    }
+    // @ts-expect-error -- partial event is enough for the filter
+    const result = cfg.beforeSend(event)
+    expect(result.server_name).toBeUndefined()
+    expect(result.contexts.device).toBeUndefined()
+    // os context is just version strings — kept for triage
+    expect(result.contexts.os).toBeDefined()
+    delete process.env.SENTRY_DSN
+  })
+
+  it('closeCrashReporter flushes Sentry only after init', async () => {
+    process.env.SENTRY_DSN = 'https://fake@o0.ingest.sentry.io/0'
+    const mod = await import('../electron/services/crashReporter')
+
+    // Never initialised → close is a no-op
+    await mod.closeCrashReporter()
+    expect(mockSentryClose).not.toHaveBeenCalled()
+
+    // After init, close tears down
+    mod.initCrashReporter()
+    await mod.closeCrashReporter()
+    expect(mockSentryClose).toHaveBeenCalledOnce()
     delete process.env.SENTRY_DSN
   })
 })

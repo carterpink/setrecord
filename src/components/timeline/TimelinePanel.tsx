@@ -1,7 +1,15 @@
 import { useState, useRef } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { Sparkles, ListMusic, AlertTriangle, RefreshCw, CheckCircle2 } from 'lucide-react'
+import {
+  Sparkles,
+  ListMusic,
+  AlertTriangle,
+  RefreshCw,
+  CheckCircle2,
+  Search,
+  Layers
+} from 'lucide-react'
 import clsx from 'clsx'
 import type { TimelineCurveView } from '@/types'
 import { useToastStore } from '@/stores/toastStore'
@@ -9,11 +17,14 @@ import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { Button } from '@/components/shared/Button'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
+import { useRecallStore } from '@/stores/recallStore'
 import { useSuggestions } from '@/hooks/useSuggestions'
 import { formatDuration } from '@/utils/format'
 import { EnergyCurveGraph } from './EnergyCurveGraph'
 import { LearnTooltip } from '@/components/learn/LearnTooltip'
+import { Coachmark } from '@/components/learn/Coachmark'
 import { explainEnergyCurveView } from '@/utils/learnMode/explanations'
+import { BEGINNER_TOOLTIP_COPY } from '@/utils/learnMode/coachmarks'
 import { GhostTrackCard } from './GhostTrackCard'
 import { TimelineTrackCard } from './TimelineTrackCard'
 
@@ -139,6 +150,21 @@ export function TimelinePanel(): React.JSX.Element {
 
   const isEmpty = !currentSet || tracks.length === 0
 
+  // Empty-state paths. Each ensures there's a set to build into (without
+  // duplicating an existing empty one) before routing to the chosen tool.
+  function ensureSet(): void {
+    if (!currentSet) createSet()
+  }
+  function browseLibrary(): void {
+    ensureSet()
+    requestSearchFocus()
+  }
+  function discoverInLibrary(): void {
+    ensureSet()
+    useRecallStore.getState().setSection('uncover')
+    useUiStore.getState().setMode('Library')
+  }
+
   function handleNameBlur(e: React.FocusEvent<HTMLInputElement>): void {
     const v = e.currentTarget.value.trim()
     if (v) renameCurrentSet(v)
@@ -196,9 +222,15 @@ export function TimelinePanel(): React.JSX.Element {
             {marking ? 'Logging…' : 'Mark as performed'}
           </Button>
         )}
-        <LearnTooltip explanation={explainEnergyCurveView()} iconLabel="What does this graph show?">
-          <SegmentedControl options={VIEWS} value={view} onChange={setView} />
-        </LearnTooltip>
+        <Coachmark concept="energyCurve">
+          <LearnTooltip
+            explanation={explainEnergyCurveView()}
+            basic={BEGINNER_TOOLTIP_COPY.energyCurve}
+            iconLabel="What does this graph show?"
+          >
+            <SegmentedControl options={VIEWS} value={view} onChange={setView} />
+          </LearnTooltip>
+        </Coachmark>
       </div>
 
       <EnergyCurveGraph
@@ -213,26 +245,25 @@ export function TimelinePanel(): React.JSX.Element {
           <div className="tl-empty">
             <ListMusic size={32} strokeWidth={1} style={{ color: 'var(--text-tertiary)' }} />
             <div>
-              <div
-                className="ss-body-sm"
-                style={{ color: 'var(--text-secondary)', marginBottom: 4 }}
-              >
-                Your set is empty. Add tracks from your library or let Set Architect build your set.
+              <div className="ss-body" style={{ color: 'var(--text-primary)', marginBottom: 4 }}>
+                {currentSet ? `“${currentSet.name}” — ready when you are.` : 'A fresh, blank set.'}
+              </div>
+              <div className="ss-body-sm" style={{ color: 'var(--text-secondary)' }}>
+                Drag tracks in, swipe to discover, or ask me to build it.
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  createSet()
-                  requestSearchFocus()
-                }}
-              >
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <Button variant="primary" onClick={browseLibrary}>
+                <Search size={13} strokeWidth={1.7} style={{ marginRight: 4 }} />
                 Browse library
+              </Button>
+              <Button variant="ghost" onClick={discoverInLibrary}>
+                <Layers size={13} strokeWidth={1.5} style={{ marginRight: 4 }} />
+                Swipe to discover
               </Button>
               <Button variant="ghost" onClick={() => showModal('architect')}>
                 <Sparkles size={13} strokeWidth={1.5} style={{ marginRight: 4 }} />
-                Build with Set Architect
+                Build it for me
               </Button>
             </div>
           </div>

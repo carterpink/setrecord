@@ -9,9 +9,13 @@
  *
  * Runs as a background worker pool — never blocks the import path or the UI.
  * Mirrors the energy analyser (energyAnalyser.ts) in structure and lifecycle.
+ *
+ * Cache size is bounded by the library: one ~10 KB JPEG per track. Orphaned art
+ * from deleted/re-imported tracks is reclaimed by pruneArtworkCache() on startup
+ * (NFR-901 cleanup policy).
  */
 
-import { existsSync, mkdirSync, statSync, unlinkSync } from 'fs'
+import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from 'fs'
 import { spawn } from 'child_process'
 import { cpus } from 'os'
 import { join } from 'path'
@@ -48,6 +52,62 @@ export function getArtworkCacheDir(): string {
     mkdirSync(_cacheDir, { recursive: true })
   }
   return _cacheDir
+}
+
+// ───────── cache cleanup (NFR-901) ─────────
+
+export interface ArtworkPruneResult {
+  /** Number of orphaned cache files removed. */
+  removed: number
+  /** Bytes reclaimed. */
+  bytesFreed: number
+}
+
+/**
+ * Reclaim orphaned cover art — cache files whose track no longer exists in the
+ * library (tracks deleted, or re-imported under a new id). Each cache file is
+ * named `<trackId>.jpg`, so the live set of track ids is the size bound: without
+ * this prune the cache grows without limit as a library churns, even though a
+ * healthy cache is ~one small JPEG per track (~10 KB; a 4k-track library ≈ 30 MB).
+ *
+ * Synchronous and cheap (one indexed `id` scan + a single directory listing),
+ * safe to call once on startup. No-op while the extraction queue is running so
+ * we never race a worker that's mid-write. Best-effort: a file we can't stat or
+ * unlink is skipped rather than throwing.
+ */
+export function pruneArtworkCache(): ArtworkPruneResult {
+  const empty: ArtworkPruneResult = { removed: 0, bytesFreed: 0 }
+  if (_running) return empty
+
+  const dir = getArtworkCacheDir()
+  let entries: string[]
+  try {
+    entries = readdirSync(dir)
+  } catch {
+    return empty
+  }
+
+  const rows = getDb().prepare('SELECT id FROM tracks').all() as Array<{ id: string }>
+  const live = new Set(rows.map((r) => r.id))
+
+  let removed = 0
+  let bytesFreed = 0
+  for (const name of entries) {
+    // Only our own `<trackId>.jpg` cache files; leave anything else untouched.
+    if (!name.endsWith('.jpg')) continue
+    const trackId = name.slice(0, -'.jpg'.length)
+    if (live.has(trackId)) continue
+    const full = join(dir, name)
+    try {
+      const size = statSync(full).size
+      unlinkSync(full)
+      removed++
+      bytesFreed += size
+    } catch {
+      // best effort — skip files we can't remove (locked, already gone, …)
+    }
+  }
+  return { removed, bytesFreed }
 }
 
 // ───────── single-file extraction ─────────

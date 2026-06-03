@@ -24,7 +24,7 @@ import type {
   LlamaContext,
   LlamaChatSession as LlamaChatSessionType
 } from 'node-llama-cpp'
-import type { RecallAiStatus, RecallAskResult, Track } from '../../src/types'
+import type { RecallAiStatus, RecallAskResult, RecallRoute, Track } from '../../src/types'
 import * as memory from './memoryService'
 import { parseQuery } from '../algorithms/memory/queryParser'
 
@@ -192,120 +192,180 @@ function friendlyLoadError(err: unknown): string {
 // ─── Intent routing schema ───────────────────────────────────────────────────
 
 const INTENTS = [
+  'smart_filter',
+  'similar_to',
+  'build_set',
   'forgotten_gems',
   'tracks_after',
   'best_closers',
   'best_openers',
   'top_sequences',
-  'smart_filter',
+  'dead_ends',
   'lifecycle',
   'health',
   'identity',
+  'duplicates',
+  'count',
   'unknown'
 ] as const
-type Intent = (typeof INTENTS)[number]
 
+const SORTS = [
+  'mostPlayed',
+  'leastPlayed',
+  'recent',
+  'oldest',
+  'rating',
+  'bpmAsc',
+  'bpmDesc',
+  'energyAsc',
+  'energyDesc',
+  'random'
+] as const
+
+// Wide slot vocabulary — the model may fill any subset. The renderer maps the
+// routed object onto the deterministic engines, so this carries data only.
 const INTENT_SCHEMA = {
   type: 'object',
   properties: {
     intent: { enum: INTENTS as unknown as string[] },
     trackQuery: { type: 'string' },
+    text: { type: 'string' },
+    artist: { type: 'string' },
+    genre: { type: 'string' },
     bpmMin: { type: 'number' },
     bpmMax: { type: 'number' },
     energyMin: { type: 'number' },
     energyMax: { type: 'number' },
-    genre: { type: 'string' },
+    keyExact: { type: 'string' },
+    minRating: { type: 'number' },
+    maxRating: { type: 'number' },
     neverPlayed: { type: 'boolean' },
     dormantMonths: { type: 'number' },
-    minRating: { type: 'number' }
+    durationMinSec: { type: 'number' },
+    durationMaxSec: { type: 'number' },
+    addedWithinDays: { type: 'number' },
+    tags: { type: 'array', items: { type: 'string' } },
+    performedVenue: { type: 'string' },
+    performedCity: { type: 'string' },
+    performedAfter: { type: 'string' },
+    performedBefore: { type: 'string' },
+    performedEventType: { enum: ['club', 'festival', 'bar', 'private', 'outdoor'] },
+    sort: { enum: SORTS as unknown as string[] },
+    limit: { type: 'number' },
+    targetBpm: { type: 'number' },
+    lengthMinutes: { type: 'number' },
+    shape: { enum: ['slow burn', 'steady'] },
+    genreBlend: { type: 'array', items: { type: 'string' } }
   },
   required: ['intent']
 } as const
 
-interface RoutedIntent {
-  intent: Intent
-  trackQuery?: string
-  bpmMin?: number
-  bpmMax?: number
-  energyMin?: number
-  energyMax?: number
-  genre?: string
-  neverPlayed?: boolean
-  dormantMonths?: number
-  minRating?: number
+type RoutedIntent = RecallRoute
+
+const SYSTEM_PROMPT = `You translate a DJ's plain-English request about THEIR OWN music library into ONE intent plus slots. Output JSON only — never prose.
+
+INTENTS
+- smart_filter: find/list/show tracks by any constraints. The default for most requests.
+- similar_to: "tracks like X", "more like that", "similar vibe" → put the track in trackQuery.
+- build_set: "build/make a set/mix/warm-up" → targetBpm, lengthMinutes, shape ("slow burn"|"steady"), genreBlend[].
+- forgotten_gems: tracks they used to play but have neglected.
+- tracks_after: what they play AFTER a track → trackQuery.
+- best_closers / best_openers: their habitual set-closing / opening tracks.
+- top_sequences: their most-used multi-track runs.
+- dead_ends: tracks they rarely mix OUT of.
+- lifecycle: library breakdown by lifecycle state.
+- health: missing files/keys/bpm, library health.
+- identity: overall taste / signature sound.
+- duplicates: duplicate files to clean up.
+- count: "how many…", "what % …" → fill the same filter slots; the app counts the matches.
+- unknown: only if truly unrelated to their library.
+
+SLOTS (fill any that apply, omit the rest)
+- text: title/artist/album words to contain. artist: an artist name.
+- genre: one genre (e.g. "tech house", "dnb", "afro house").
+- bpmMin/bpmMax: a BPM range. For "around 128" use 125–131.
+- energyMin/energyMax (1-10): chill≈1-3, groovy/rolling≈4-6, peak/banger/hard≈8-10. warmup≈low, peak hour≈high.
+- keyExact: Camelot like "8A". minRating/maxRating (1-5). neverPlayed: true for never-played/untested.
+- dormantMonths: "not played in N months/years" (years×12). durationMinSec/durationMaxSec from minutes×60.
+- addedWithinDays: "added recently/this week/last month".
+- tags: plain-language descriptors (dark, punchy, rolling, vocal, dreamy, raw, hypnotic, groovy, peak).
+- performedVenue: a venue the tracks were PLAYED at, e.g. "Hi Ibiza", "Fabric". performedCity: a city/place they were played in, e.g. "Ibiza", "Berlin".
+- performedAfter/performedBefore: ISO dates (YYYY-MM-DD) bounding when tracks were played live. For "in July 2025" use performedAfter 2025-07-01 and performedBefore 2025-07-31.
+- performedEventType: club | festival | bar | private | outdoor — when they ask about a kind of gig ("my festival sets").
+- sort: ${SORTS.join(', ')}. "most played"=mostPlayed, "newest"=recent, "rarest"=leastPlayed, "best/top rated"=rating, "surprise/random"=random.
+- limit: a requested count (e.g. "10 tracks" → 10).
+
+If a PREVIOUS request JSON is given and the new message refines it ("make it slower", "only in 8A", "more of those"), MERGE: keep prior slots and change only what's mentioned.`
+
+// ─── Routing ──────────────────────────────────────────────────────────────────
+
+/** Run one grammar-constrained routing pass. Assumes the model is loaded. */
+async function routeOnce(question: string, contextJson?: string): Promise<RecallRoute> {
+  if (!_session || !_grammar) return { intent: 'unknown' }
+  _session.resetChatHistory()
+  const prompt =
+    contextJson && contextJson !== '{}'
+      ? `PREVIOUS request JSON: ${contextJson}\nNEW message: ${question}`
+      : question
+  const raw = await _session.prompt(prompt, { grammar: _grammar as never, maxTokens: 240 })
+  try {
+    return _grammar.parse(raw) as RecallRoute
+  } catch {
+    return { intent: 'unknown' }
+  }
 }
 
-const SYSTEM_PROMPT = `You route a DJ's plain-English question about their music library to ONE intent and extract any slots. Output JSON only.
-Intents:
-- forgotten_gems: tracks they used to play but haven't in a while.
-- tracks_after: what they tend to play AFTER a specific track (put the track name in trackQuery).
-- best_closers / best_openers: their habitual set-closing / set-opening tracks.
-- top_sequences: their most-used multi-track runs.
-- smart_filter: find tracks matching constraints (bpmMin/bpmMax, energyMin/energyMax 1-10, genre, neverPlayed, dormantMonths, minRating).
-- lifecycle: how their library breaks down by lifecycle (new/active/peak/forgotten/etc).
-- health: library health (missing files/keys/bpm, duplicates).
-- identity: their overall taste / signature sound.
-- unknown: anything that doesn't fit.
-Energy words map to 1-10: chill≈1-3, groovy≈4-6, peak/banger≈8-10. "warmup"≈low energy, "peak hour"≈high energy.`
+/**
+ * Translate a plain-English request into a structured {intent, slots}. Pure
+ * routing — the renderer executes the result against the deterministic engines.
+ * `contextJson` is the previous turn's route (for refinements). Returns
+ * { intent: 'unknown' } when the model is disabled/unavailable so the caller can
+ * fall back to a text search. Serialized via _askLock (single context sequence).
+ */
+export async function route(question: string, contextJson?: string): Promise<RecallRoute> {
+  if (!_enabled) return { intent: 'unknown' }
+  try {
+    await ensureModel()
+  } catch {
+    return { intent: 'unknown' }
+  }
+  const run = _askLock.then(() => routeOnce(question, contextJson))
+  _askLock = run.catch(() => ({ intent: 'unknown' as const }))
+  return run
+}
 
-// ─── Public ask() ────────────────────────────────────────────────────────────
+// ─── Public ask() (legacy one-shot; kept for back-compat) ─────────────────────
 
 /**
- * Answer a free-text question. The deterministic parser runs FIRST — it handles
- * the bulk of real queries instantly with no model and no network. Only when it
- * can't parse the phrasing do we fall back to the local LLM (and only if the
- * user has enabled it). Model calls are serialized via _askLock so concurrent
- * asks don't collide on the single context sequence.
+ * Answer a free-text question end-to-end. Deterministic parser first, model
+ * fallback second. Retained for any caller that wants a finished RecallAskResult;
+ * the Home surface now uses route() + its own renderers instead.
  */
 export async function ask(question: string): Promise<RecallAskResult> {
   const parsed = parseQuery(question)
   if (parsed) return execIntent(parsed)
-
-  // Nothing matched the keyword parser → need the model for free-form phrasing.
   if (!_enabled) {
     return {
       intent: 'unknown',
       kind: 'tracks',
       tracks: [],
       narration:
-        'I couldn’t pin that down. Try something like "128 bpm tech house", "forgotten gems", or "my best closers" — or enable Extended understanding in Settings for unusual phrasing.'
+        'I couldn’t pin that down. Try "128 bpm tech house", "forgotten gems", or "my best closers".'
     }
   }
-
   try {
     await ensureModel()
   } catch {
-    // Download/native-load failed. _error already holds a friendly explanation
-    // for the Settings panel; here we return a graceful answer instead of
-    // throwing into the renderer's generic "something went wrong" catch.
     return {
       intent: 'unknown',
       kind: 'tracks',
       tracks: [],
-      narration:
-        _error ??
-        'Extended understanding isn’t available right now. Try a phrasing like "128 bpm tech house", "forgotten gems", or "my best closers".'
+      narration: _error ?? 'Extended understanding isn’t available right now.'
     }
   }
-  const run = _askLock.then(() => routeAndRun(question))
+  const run = _askLock.then(() => routeOnce(question).then(execIntent))
   _askLock = run.catch(() => undefined)
   return run
-}
-
-async function routeAndRun(question: string): Promise<RecallAskResult> {
-  if (!_session || !_grammar) throw new Error('Model not ready')
-
-  _session.resetChatHistory()
-  const raw = await _session.prompt(question, { grammar: _grammar as never, maxTokens: 200 })
-
-  let routed: RoutedIntent
-  try {
-    routed = _grammar.parse(raw) as RoutedIntent
-  } catch {
-    routed = { intent: 'unknown' }
-  }
-
-  return execIntent(routed)
 }
 
 async function execIntent(r: RoutedIntent): Promise<RecallAskResult> {
@@ -366,6 +426,47 @@ async function execIntent(r: RoutedIntent): Promise<RecallAskResult> {
       }
     }
     case 'smart_filter': {
+      // Gig constraints (venue/city/date-played/event-type) need the session join,
+      // which lives in memory.search via LibrarySearchParams — the crate engine
+      // can't see play sessions. Route there when any performed slot is filled.
+      const hasGig = !!(
+        r.performedVenue ||
+        r.performedCity ||
+        r.performedAfter ||
+        r.performedBefore ||
+        r.performedEventType
+      )
+      if (hasGig) {
+        const tracks = await memory.search({
+          text: r.text,
+          genre: r.genre,
+          bpmMin: r.bpmMin,
+          bpmMax: r.bpmMax,
+          energyMin: r.energyMin,
+          energyMax: r.energyMax,
+          keyExact: r.keyExact,
+          minRating: r.minRating,
+          neverPlayed: r.neverPlayed,
+          dormantMonths: r.dormantMonths,
+          tags: r.tags,
+          performedVenue: r.performedVenue,
+          performedCity: r.performedCity,
+          performedAfter: r.performedAfter,
+          performedBefore: r.performedBefore,
+          performedEventType: r.performedEventType,
+          sort: r.sort,
+          limit: r.limit
+        })
+        return {
+          intent: r.intent,
+          kind: 'tracks',
+          tracks,
+          narration: tracks.length
+            ? `${tracks.length} tracks match.`
+            : 'No tracks match — you may not have logged any gigs that fit, or the venue name differs.'
+        }
+      }
+
       const rule = {
         bpmMin: r.bpmMin,
         bpmMax: r.bpmMax,

@@ -6,29 +6,37 @@ import type {
   TransitionDotKind
 } from '../../src/types'
 import { getKeyCompatibility } from '../utils/camelot'
+import { GENERIC_PROFILE, bpmScale, type MixingProfile } from './genreProfiles'
 
 // ───────── BPM scoring (35 pts) ─────────
 
-function bpmPoints(delta: number): number {
-  if (delta === 0) return 35
-  if (delta <= 1) return 32
-  if (delta <= 2) return 28
-  if (delta <= 4) return 22
-  if (delta <= 8) return 14
-  if (delta <= 16) return 8
+// `scale` (generic = 1) stretches/squeezes the ladder by the style's tolerance
+// for tempo moves: a genre with a wider maxStep scales deltas down so the same
+// absolute gap scores higher, and vice-versa. generic's scale of 1 leaves the
+// original ladder untouched.
+function bpmPoints(delta: number, scale: number): number {
+  const d = delta / scale
+  if (d === 0) return 35
+  if (d <= 1) return 32
+  if (d <= 2) return 28
+  if (d <= 4) return 22
+  if (d <= 8) return 14
+  if (d <= 16) return 8
   return 0
 }
 
 // ───────── Key scoring (35 pts max) ─────────
 
-function keyPoints(scoreModifier: number): number {
-  // Camelot modifier max is +30; scale to 35pt max, clamp negatives to 0
-  return Math.max(0, Math.round((scoreModifier / 30) * 35))
+function keyPoints(scoreModifier: number, harmonicWeight: number): number {
+  // Camelot modifier max is +30; scale to 35pt max, clamp negatives to 0.
+  // harmonicWeight (generic = 1) lets harmony-led styles (trance, melodic) lean
+  // on key compatibility and groove-led styles (techno, bass) discount it.
+  return Math.max(0, Math.round((scoreModifier / 30) * 35 * harmonicWeight))
 }
 
 // ───────── Energy scoring (20 pts) ─────────
 
-function energyPoints(from: Track, to: Track): number {
+function energyPoints(from: Track, to: Track, profile: MixingProfile): number {
   const delta = to.energy - from.energy
   const abs = Math.abs(delta)
 
@@ -39,10 +47,12 @@ function energyPoints(from: Track, to: Track): number {
   else if (abs === 3) pts = 8
   else pts = 2
 
-  if (delta === 1) pts += 2 // +1 energy going up = crowd building bonus
-  if (delta <= -2) pts -= 5 // sharp drop penalty
+  // +1 energy going up = crowd building bonus, amplified for build-led styles.
+  if (delta === 1) pts += 2 * profile.energy.buildBias
+  // Sharp drop penalty, softened for styles that mix moodier (techno, bass).
+  if (delta <= -2) pts -= 5 * profile.energy.dropTolerance
 
-  return Math.max(0, pts)
+  return Math.max(0, Math.round(pts))
 }
 
 // ───────── Technical scoring (10 pts) ─────────
@@ -93,14 +103,18 @@ function makeDotKind(overall: TransitionQuality): TransitionDotKind {
 
 // ───────── Main export ─────────
 
-export function scoreTransition(from: Track, to: Track): TransitionScore {
+export function scoreTransition(
+  from: Track,
+  to: Track,
+  profile: MixingProfile = GENERIC_PROFILE
+): TransitionScore {
   const bpmDelta = Math.abs(from.bpm - to.bpm)
   const camelot = getKeyCompatibility(from.key, to.key)
   const energyDelta = to.energy - from.energy
 
-  const bpmPts = bpmPoints(bpmDelta)
-  const keyPts = keyPoints(camelot.scoreModifier)
-  const ePts = energyPoints(from, to)
+  const bpmPts = bpmPoints(bpmDelta, bpmScale(profile))
+  const keyPts = keyPoints(camelot.scoreModifier, profile.flow.harmonicWeight)
+  const ePts = energyPoints(from, to, profile)
   const techPts = technicalPoints(from, to)
 
   const total = Math.min(100, Math.max(0, bpmPts + keyPts + ePts + techPts))

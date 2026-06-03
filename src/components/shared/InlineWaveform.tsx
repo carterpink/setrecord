@@ -45,12 +45,20 @@ export function InlineWaveform({
   const currentTimeRef = useRef(currentTime)
   const onSeekRef = useRef(onSeek)
   const draggingRef = useRef(false)
+  // Redraw only when the playhead actually moves (or something forces it, e.g.
+  // peaks arriving / a resize). A paused row's playhead is static, so this turns
+  // the 60fps canvas repaint into a cheap no-op until playback advances again —
+  // identical pixels, far less work.
+  const forceDrawRef = useRef(true)
+  const lastDrawnTimeRef = useRef(Number.NaN)
 
   // Keep latest props in refs (effect, not during render) so the rAF loop and
   // pointer handlers always see fresh values without restarting.
   useEffect(() => {
     currentTimeRef.current = currentTime
     onSeekRef.current = onSeek
+    // A prop-driven time change (external seek) must repaint even while paused.
+    forceDrawRef.current = true
   })
 
   // Load peaks for this file path.
@@ -64,6 +72,7 @@ export function InlineWaveform({
     }
     peaksRef.current = null
     statusRef.current = 'loading'
+    forceDrawRef.current = true
     void loadPeaks(filePath).then((state) => {
       if (cancelled) return
       if (state.status === 'ready') {
@@ -73,6 +82,8 @@ export function InlineWaveform({
         peaksRef.current = null
         statusRef.current = state.status
       }
+      // Peaks/status changed — force one repaint to show the result.
+      forceDrawRef.current = true
     })
     return () => {
       cancelled = true
@@ -95,13 +106,27 @@ export function InlineWaveform({
       const ctx = canvas.getContext('2d')
       if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     }
+    const resizeAndFlag = (): void => {
+      resize()
+      // The canvas is cleared by a resize — always repaint after one.
+      forceDrawRef.current = true
+    }
     resize()
-    const ro = new ResizeObserver(resize)
+    const ro = new ResizeObserver(resizeAndFlag)
     ro.observe(wrap)
 
     let raf = 0
     const loop = (): void => {
-      draw(canvas, wrap, height, peaksRef.current, statusRef.current, currentTimeRef.current)
+      // The playhead prefers the live audio clock (see draw()); mirror that here
+      // so we can tell whether anything actually moved since the last frame.
+      const el = getPreviewAudioElement()
+      const timeSec =
+        el && isFinite(el.currentTime) ? el.currentTime : currentTimeRef.current / 1000
+      if (forceDrawRef.current || timeSec !== lastDrawnTimeRef.current) {
+        draw(canvas, wrap, height, peaksRef.current, statusRef.current, currentTimeRef.current)
+        lastDrawnTimeRef.current = timeSec
+        forceDrawRef.current = false
+      }
       raf = requestAnimationFrame(loop)
     }
     raf = requestAnimationFrame(loop)
@@ -152,7 +177,12 @@ export function InlineWaveform({
         draggingRef.current = false
       }}
     >
-      <canvas ref={canvasRef} style={{ display: 'block' }} />
+      <canvas
+        ref={canvasRef}
+        role="img"
+        aria-label="Audio waveform preview"
+        style={{ display: 'block' }}
+      />
     </div>
   )
 }
