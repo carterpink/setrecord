@@ -141,6 +141,7 @@ import {
   applyPortableSettings
 } from './services/settingsService'
 import type { AppSettings } from './services/settingsService'
+import { freshStart } from './services/resetService'
 import { initCrashReporter, closeCrashReporter } from './services/crashReporter'
 import { checkForUpdatesAndNotify } from './services/updateChecker'
 import { loadSecretsFromKeychain } from './services/secretStore'
@@ -1367,6 +1368,24 @@ function registerIpcHandlers(): void {
       await closeCrashReporter()
     }
     return next
+  })
+
+  // ── Fresh Start — wipe to first-launch and relaunch ───────────────────────
+  // Clears the library, settings, history and on-disk caches, then restarts the
+  // app so it boots clean into onboarding. The keychain license is preserved
+  // (see resetService), so Pro survives the wipe. The renderer plays its
+  // deletion animation and clears localStorage before invoking this.
+  ipcMain.handle('app:fresh-start', async () => {
+    // Belt-and-braces: the renderer clears its own localStorage, but wipe the
+    // session storage from the main side too so nothing survives the relaunch.
+    try {
+      await session.defaultSession.clearStorageData({ storages: ['localstorage'] })
+    } catch (err) {
+      console.error('[fresh-start] clearStorageData failed', err)
+    }
+    freshStart()
+    app.relaunch()
+    app.exit(0)
   })
 
   // ── Retention / activation progress (brief #22, Phase B) ──────────────────

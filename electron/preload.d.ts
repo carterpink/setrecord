@@ -192,6 +192,8 @@ declare global {
       // Settings (Phase 8)
       getSettings: () => Promise<AppSettings>
       setSettings: (partial: Partial<AppSettings>) => Promise<AppSettings>
+      // Fresh Start — wipe to first-launch and relaunch
+      freshStart: () => Promise<void>
       // Backup & migration (backendless export/import)
       backupExport: (passphrase?: string) => Promise<BackupExportResult>
       backupPick: () => Promise<string | null>

@@ -65,4 +65,13 @@ export function clearOnlineCheck(): void {
   store.set('onlineCheck', null)
 }
 
+/**
+ * Wipe all local license bookkeeping — clock high-water mark AND online-check
+ * cache — back to DEFAULTS (Fresh Start). The signed key itself lives in the
+ * keychain and is deliberately NOT touched here, so Pro stays activated.
+ */
+export function clearLicenseLocalState(): void {
+  store.clear()
+}
+
 export type { OnlineCheck }

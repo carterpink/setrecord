@@ -7,7 +7,8 @@ import {
   X,
   Crown,
   Download,
-  Upload
+  Upload,
+  Trash2
 } from 'lucide-react'
 import { APP_NAME } from '@/utils/constants'
 import type { CDJModel, ImportSource } from '@/types'
@@ -28,6 +29,7 @@ import { useLicenseStore } from '@/stores/licenseStore'
 import { useCoachmarkStore } from '@/stores/coachmarkStore'
 import { useToastStore } from '@/stores/toastStore'
 import { LearnTooltip } from '@/components/learn/LearnTooltip'
+import { FreshStartOverlay } from '@/components/FreshStartOverlay'
 
 const HARDWARE_OPTIONS: CDJModel[] = ['CDJ-2000NXS2', 'CDJ-3000', 'XDJ-RX3', 'XDJ-XZ', 'CDJ-2000']
 
@@ -429,6 +431,90 @@ function BackupSection(): React.JSX.Element {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+/**
+ * Fresh Start — wipe the app back to first-launch. Two-step inline confirm (no
+ * nested modal, matching BackupSection), then a full-screen deletion animation
+ * that triggers the main-process wipe + relaunch. The license stays in the
+ * keychain, so Pro survives; only library/settings/history/caches are cleared.
+ */
+function DangerZoneSection(): React.JSX.Element {
+  const [confirming, setConfirming] = useState(false)
+  const [wiping, setWiping] = useState(false)
+  const hasBridge = typeof window.setsense !== 'undefined'
+
+  function handleConfirm(): void {
+    // Drop renderer-persisted UI state up front; the main process wipes the rest
+    // and relaunches once the animation completes.
+    try {
+      localStorage.clear()
+    } catch {
+      /* best effort — main process also clears storage before relaunch */
+    }
+    setWiping(true)
+  }
+
+  return (
+    <div className="field-group">
+      <div className="ss-label">Reset SetSense</div>
+      <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.45 }}>
+        Erase your library, settings and play history and return SetSense to how it looked the very
+        first time you opened it. Your music files and your Pro licence stay put.
+      </div>
+
+      <div style={{ marginTop: 12 }}>
+        {!confirming ? (
+          <Button
+            variant="secondary"
+            icon={Trash2}
+            onClick={() => setConfirming(true)}
+            disabled={!hasBridge || wiping}
+            style={{ color: 'var(--semantic-danger)' }}
+          >
+            Erase everything…
+          </Button>
+        ) : (
+          <div
+            className="ss-caption"
+            style={{
+              padding: 12,
+              borderRadius: 8,
+              background: 'var(--surface-2, rgba(255,255,255,0.04))',
+              lineHeight: 1.6
+            }}
+          >
+            <div style={{ color: 'var(--semantic-danger)', fontWeight: 600 }}>
+              This can’t be undone.
+            </div>
+            <div style={{ opacity: 0.75, marginTop: 4 }}>
+              Permanently deletes your library, settings and play history, and restarts SetSense at
+              first launch. Your audio files and Pro licence are untouched.
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <Button variant="secondary" onClick={() => setConfirming(false)} disabled={wiping}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleConfirm}
+                disabled={wiping || !hasBridge}
+                style={{
+                  background: 'var(--semantic-danger)',
+                  borderColor: 'var(--semantic-danger)',
+                  color: '#fff'
+                }}
+              >
+                Erase everything &amp; restart
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {wiping && <FreshStartOverlay onComplete={() => void window.setsense.freshStart()} />}
     </div>
   )
 }
@@ -886,6 +972,21 @@ export function SettingsModal(): React.JSX.Element {
               Backup &amp; migration
             </div>
             <BackupSection />
+
+            {/* Danger zone — wipe to first-launch */}
+            <div
+              className="settings-section-header ss-caption"
+              style={{
+                opacity: 0.6,
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+                marginTop: 8,
+                color: 'var(--semantic-danger)'
+              }}
+            >
+              Danger zone
+            </div>
+            <DangerZoneSection />
           </div>
         )}
       </div>
