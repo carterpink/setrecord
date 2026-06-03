@@ -142,6 +142,7 @@ import {
 } from './services/settingsService'
 import type { AppSettings } from './services/settingsService'
 import { initCrashReporter, closeCrashReporter } from './services/crashReporter'
+import { initLogger } from './services/logging/logger'
 import { checkForUpdatesAndNotify } from './services/updateChecker'
 import { loadSecretsFromKeychain } from './services/secretStore'
 import {
@@ -1727,6 +1728,11 @@ app.whenReady().then(async () => {
   if (!gotSingleInstanceLock) return
 
   electronApp.setAppUserModelId('com.setsense.app')
+
+  // Init structured logging first so the rest of startup (DB init, window
+  // creation) is captured. Routes main-process console.* to a redacted NDJSON
+  // file under userData/logs. Safe before crash reporting / DB init.
+  initLogger()
 
   // Init crash reporting before anything else so errors during startup are captured.
   // Only runs when the user has explicitly opted in; default is off.

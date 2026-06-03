@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/electron/main'
 import type { ErrorEvent } from '@sentry/electron/main'
+import { frameBasename } from './logging/redact'
 
 // Populated at build/launch time via the SENTRY_DSN environment variable.
 // Never hard-coded here — see .env.example for how to configure it.
@@ -54,8 +55,7 @@ export function initCrashReporter(): void {
           if (ex.stacktrace?.frames) {
             for (const frame of ex.stacktrace.frames) {
               if (frame.filename) {
-                const parts = frame.filename.replace(/\\/g, '/').split('/')
-                frame.filename = parts[parts.length - 1]
+                frame.filename = frameBasename(frame.filename)
               }
               // abs_path is the raw OS path — always drop it
               if ('abs_path' in frame) delete (frame as Record<string, unknown>).abs_path
