@@ -143,6 +143,7 @@ import {
 import type { AppSettings } from './services/settingsService'
 import { initCrashReporter, closeCrashReporter } from './services/crashReporter'
 import { initLogger } from './services/logging/logger'
+import { buildLogBundle } from './services/logging/exportBundle'
 import { checkForUpdatesAndNotify } from './services/updateChecker'
 import { loadSecretsFromKeychain } from './services/secretStore'
 import {
@@ -1368,6 +1369,21 @@ function registerIpcHandlers(): void {
       await closeCrashReporter()
     }
     return next
+  })
+
+  // ── Diagnostic log export (NFR-801 Phase 2) ───────────────────────────────
+  ipcMain.handle('logs:export', async () => {
+    try {
+      const path = await buildLogBundle()
+      return { success: true, path }
+    } catch (e) {
+      return { success: false, error: String(e) }
+    }
+  })
+
+  // Reveal an exported bundle in Finder so the user can attach it to a report.
+  ipcMain.handle('logs:reveal', (_e, path: string) => {
+    shell.showItemInFolder(path)
   })
 
   // ── Retention / activation progress (brief #22, Phase B) ──────────────────

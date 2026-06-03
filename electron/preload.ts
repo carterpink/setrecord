@@ -308,6 +308,11 @@ const setsense = {
     passphrase?: string
   ): Promise<BackupImportResult> => ipcRenderer.invoke('backup:import', filePath, mode, passphrase),
 
+  // ── Diagnostic log export (NFR-801 Phase 2) ────────────────────────────────
+  exportLogs: (): Promise<{ success: boolean; path?: string; error?: string }> =>
+    ipcRenderer.invoke('logs:export'),
+  revealLogBundle: (path: string): Promise<void> => ipcRenderer.invoke('logs:reveal', path),
+
   // ── Retention / activation progress (brief #22, Phase B) ───────────────────
   progressGet: () => ipcRenderer.invoke('progress:get') as Promise<ProgressState>,
   progressSet: (partial: Partial<ProgressState>) =>

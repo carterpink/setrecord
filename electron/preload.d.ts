@@ -201,6 +201,9 @@ declare global {
         mode: 'restore' | 'merge',
         passphrase?: string
       ) => Promise<BackupImportResult>
+      // Diagnostic log export (NFR-801 Phase 2)
+      exportLogs: () => Promise<{ success: boolean; path?: string; error?: string }>
+      revealLogBundle: (path: string) => Promise<void>
       // Retention / activation progress (brief #22, Phase B)
       progressGet: () => Promise<ProgressState>
       progressSet: (partial: Partial<ProgressState>) => Promise<ProgressState>

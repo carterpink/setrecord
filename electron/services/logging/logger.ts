@@ -158,6 +158,21 @@ function pruneOldLogs(dir: string): void {
 }
 
 /**
+ * Remove stale contents of logs/export/ on startup. Exported bundles are
+ * one-shot artefacts the user is expected to attach to a bug report immediately;
+ * we never want old zips (or interrupted staging dirs) lingering across runs.
+ * Mirrors the 30-day prune above but clears the export dir wholesale.
+ */
+function cleanExportStaging(dir: string): void {
+  const exportDir = join(dir, 'export')
+  try {
+    rmSync(exportDir, { recursive: true, force: true })
+  } catch {
+    // best-effort — a leftover bundle is harmless
+  }
+}
+
+/**
  * Size-based rotation keeping 5 archives: main.5.log is discarded, each
  * main.N.log shifts to main.(N+1).log, and the live main.log becomes main.1.log.
  * electron-log invokes this when the live file exceeds maxSize, then resets it.
@@ -235,6 +250,7 @@ export function initLogger(): void {
 
   const dir = logsDir()
   pruneOldLogs(dir)
+  cleanExportStaging(dir)
 
   const diskLevel = readDiskLevel()
 
@@ -292,4 +308,31 @@ export function initLogger(): void {
 export function createLogger(scope: string): ReturnType<typeof log.scope> {
   if (!initialised) initLogger()
   return log.scope(scope)
+}
+
+// ── Export accessors (Phase 2) ───────────────────────────────────────────────
+
+/**
+ * The absolute userData/logs directory (created if missing). Used by the log
+ * bundle exporter to locate the live log + archives and to stage the zip.
+ */
+export function getLogDir(): string {
+  return logsDir()
+}
+
+/**
+ * Absolute paths of the live log (main.log) plus any existing rotated archives
+ * (main.1.log … main.5.log), in order, skipping ones that don't exist. These
+ * files are already redacted (safe by construction) so they can be bundled as-is.
+ */
+export function listLogFiles(): string[] {
+  const dir = logsDir()
+  const out: string[] = []
+  const live = join(dir, 'main.log')
+  if (existsSync(live)) out.push(live)
+  for (let i = 1; i <= 5; i++) {
+    const archive = join(dir, `main.${i}.log`)
+    if (existsSync(archive)) out.push(archive)
+  }
+  return out
 }
