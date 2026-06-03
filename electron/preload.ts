@@ -296,6 +296,10 @@ const setsense = {
   setSettings: (partial: Partial<AppSettings>) =>
     ipcRenderer.invoke('settings:set', partial) as Promise<AppSettings>,
 
+  // Fresh Start — wipe to first-launch and relaunch the app. Never resolves in
+  // practice: the app exits before the promise settles.
+  freshStart: (): Promise<void> => ipcRenderer.invoke('app:fresh-start'),
+
   // ── Backup & migration ─────────────────────────────────────────────────────
   backupExport: (passphrase?: string): Promise<BackupExportResult> =>
     ipcRenderer.invoke('backup:export', passphrase),

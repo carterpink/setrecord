@@ -7585,4 +7585,86 @@
   .loop-chip-x:hover {
     color: var(--semantic-danger);
   }
+
+  /* ── Fresh Start overlay (Settings → Danger zone) ───────────────────────── */
+  .fresh-start-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--aurora-black) 92%, transparent);
+    backdrop-filter: blur(14px) saturate(120%);
+    -webkit-backdrop-filter: blur(14px) saturate(120%);
+  }
+  .fresh-start-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 32px 40px;
+    text-align: center;
+  }
+  .fresh-start-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    color: var(--accent);
+    background: var(--accent-dim-12);
+    border: 0.5px solid var(--accent-dim-30);
+  }
+  .fresh-start-title {
+    color: var(--text-primary);
+  }
+  .fresh-start-list {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 180px;
+  }
+  .fresh-start-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font: 500 14px/1 var(--font-sans);
+    color: var(--text-secondary);
+    transition:
+      color 200ms var(--ease-snappy),
+      opacity 200ms var(--ease-snappy);
+  }
+  .fresh-start-item.is-pending {
+    opacity: 0.4;
+  }
+  .fresh-start-item.is-active .fresh-start-label {
+    color: var(--text-primary);
+  }
+  .fresh-start-item.is-done {
+    color: var(--text-tertiary);
+  }
+  .fresh-start-item.is-done .fresh-start-label {
+    text-decoration: line-through;
+    text-decoration-color: var(--text-tertiary);
+  }
+  .fresh-start-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    color: var(--accent);
+  }
+  .fresh-start-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
 }

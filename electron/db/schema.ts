@@ -30,12 +30,15 @@ export function initDb(): void {
 }
 
 /**
- * Quarantine the existing library so a fresh DB can be created. We rename
- * rather than delete so the user can email us their broken DB if they want a
- * diagnosis — and so accidental clicks don't nuke a still-recoverable file.
- * WAL companion files have to go too or the new DB will pick them up.
+ * Quarantine (or delete) the existing library so a fresh DB can be created.
+ *
+ * On crash-recovery we *rename* rather than delete (`quarantine: true`, the
+ * default) so the user can email us their broken DB for a diagnosis, and so an
+ * accidental click doesn't nuke a still-recoverable file. On an intentional
+ * Fresh Start (`quarantine: false`) we hard-delete — the user asked to wipe it.
+ * WAL companion files have to go too either way, or the new DB picks them up.
  */
-export function resetDb(): void {
+export function resetDb({ quarantine = true }: { quarantine?: boolean } = {}): void {
   if (_db) {
     try {
       _db.close()
@@ -45,18 +48,26 @@ export function resetDb(): void {
     _db = null
   }
   const dbPath = getDbPath()
-  const ts = new Date().toISOString().replace(/[:.]/g, '-')
-  const quarantine = `${dbPath}.corrupt-${ts}`
   if (existsSync(dbPath)) {
-    try {
-      renameSync(dbPath, quarantine)
-    } catch (err) {
-      console.error('[resetDb] rename failed', err)
-      // Best-effort: if rename fails, fall back to delete so init can proceed
+    if (quarantine) {
+      const ts = new Date().toISOString().replace(/[:.]/g, '-')
+      const quarantinePath = `${dbPath}.corrupt-${ts}`
+      try {
+        renameSync(dbPath, quarantinePath)
+      } catch (err) {
+        console.error('[resetDb] rename failed', err)
+        // Best-effort: if rename fails, fall back to delete so init can proceed
+        try {
+          unlinkSync(dbPath)
+        } catch {
+          /* nothing more we can do */
+        }
+      }
+    } else {
       try {
         unlinkSync(dbPath)
-      } catch {
-        /* nothing more we can do */
+      } catch (err) {
+        console.error('[resetDb] delete failed', err)
       }
     }
   }

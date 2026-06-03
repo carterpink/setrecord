@@ -159,3 +159,13 @@ export async function setSettings(partial: Partial<AppSettings>): Promise<AppSet
     store.set('crashReportingEnabled', partial.crashReportingEnabled)
   return getSettings()
 }
+
+/**
+ * Wipe all settings back to DEFAULTS (Fresh Start). Uses the store's in-place
+ * clear rather than deleting preferences.json, so the live process doesn't
+ * rewrite a stale file before the app relaunches. Resetting `hasCompletedOnboarding`
+ * to its default (false) is what re-arms the first-run onboarding flow.
+ */
+export function clearSettings(): void {
+  store.clear()
+}
