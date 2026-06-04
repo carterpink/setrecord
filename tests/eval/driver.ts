@@ -29,6 +29,8 @@ import { computeGig } from '../../electron/algorithms/memory/gigHistory'
 import { detectKnowledge } from '../../src/utils/knowledge'
 import { detectMaintenance } from '../../src/utils/maintenanceIntent'
 import { computeMaintenance } from '../../electron/algorithms/memory/maintenance'
+import { detectSetBuild } from '../../src/utils/setBuildIntent'
+import { buildSet as buildSetEngine } from '../../electron/algorithms/memory/setBuilder'
 import { searchLibrary } from '../../electron/algorithms/memory/librarySearch'
 import { parseQuery, type ParsedQuery } from '../../electron/algorithms/memory/queryParser'
 import { findForgottenGems } from '../../electron/algorithms/memory/forgottenGems'
@@ -242,6 +244,19 @@ export function resolveQuery(query: string, ctx: EvalCtx): EngineResult {
       tracks: a.tracks,
       stats: a.stats,
       count: a.count,
+      narration: a.narration
+    }
+  }
+
+  const setHit = detectSetBuild(query)
+  if (setHit) {
+    const a = buildSetEngine(setHit, ctx.tracks, ctx.sessions, ctx.now)
+    return {
+      intent: 'set_build',
+      kind: a.kind,
+      set: a.set,
+      tracks: a.tracks,
+      stats: a.stats,
       narration: a.narration
     }
   }
