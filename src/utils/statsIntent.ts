@@ -96,7 +96,10 @@ export function detectStats(raw: string): StatsHit | null {
     return { metric: 'electronic_split' }
 
   // ── keys / labels / genres breakdowns ────────────────────────────────────
-  if (/\b(breakdown|distribution|how many).{0,16}\bkeys?\b/.test(q) || /\bkeys?\b.{0,16}\bbreakdown/.test(q))
+  if (
+    /\b(breakdown|distribution|how many).{0,16}\bkeys?\b/.test(q) ||
+    /\bkeys?\b.{0,16}\bbreakdown/.test(q)
+  )
     return { metric: 'key_breakdown' }
   if (/\b(most common|commonest|top) key/.test(q) || /\bkey.{0,12}most common/.test(q))
     return { metric: 'most_common_key' }
@@ -111,7 +114,9 @@ export function detectStats(raw: string): StatsHit | null {
   }
 
   // ── library size / duration / bpm ────────────────────────────────────────
-  if (/\bhow big is my (library|collection)|library size|how many tracks (do i have|are in)/.test(q))
+  if (
+    /\bhow big is my (library|collection)|library size|how many tracks (do i have|are in)/.test(q)
+  )
     return { metric: 'library_size' }
   if (/\bwhat'?s in my (library|collection)|summar(y|ise|ize) my (library|collection)/.test(q))
     return { metric: 'library_size' }
@@ -126,8 +131,9 @@ export function detectStats(raw: string): StatsHit | null {
     return { metric: 'added_recently_count' }
   if (/\b(most productive|busiest).{0,16}(import|month)|productive importing month/.test(q))
     return { metric: 'productive_month' }
-  if (/how many gigs.*(year)|gigs.*(this|last) year|gigs (i'?ve )?played this year/.test(q))
-    return { metric: 'gigs_this_year' }
+  // Only the COUNT form ("how many gigs") — the LIST form ("show me my gigs")
+  // is handled by the gig-history detector.
+  if (/how many gigs/.test(q)) return { metric: 'gigs_this_year' }
 
   // ── trends (honest about limited range) ──────────────────────────────────
   if (/\bbpm\b.*(over time|changed|trend|history)/.test(q)) return { metric: 'bpm_over_time' }

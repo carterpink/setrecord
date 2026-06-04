@@ -24,6 +24,8 @@ import type { EngineResult, EvalCtx, FixtureSession } from './types'
 import { interpretHome } from '../../src/utils/homeQuery'
 import { detectStats } from '../../src/utils/statsIntent'
 import { computeStats } from '../../electron/algorithms/memory/stats'
+import { detectGig } from '../../src/utils/gigIntent'
+import { computeGig } from '../../electron/algorithms/memory/gigHistory'
 import { searchLibrary } from '../../electron/algorithms/memory/librarySearch'
 import { parseQuery, type ParsedQuery } from '../../electron/algorithms/memory/queryParser'
 import { findForgottenGems } from '../../electron/algorithms/memory/forgottenGems'
@@ -193,6 +195,20 @@ export function resolveQuery(query: string, ctx: EvalCtx): EngineResult {
     return {
       intent: `stats:${statHit.metric}`,
       kind: a.kind,
+      stats: a.stats,
+      count: a.count,
+      narration: a.narration
+    }
+  }
+
+  const gigHit = detectGig(query)
+  if (gigHit) {
+    const a = computeGig(gigHit, ctx.tracks, ctx.sessions, ctx.now)
+    return {
+      intent: `gig:${gigHit.metric}`,
+      kind: a.kind,
+      sessions: a.sessions,
+      tracks: a.tracks,
       stats: a.stats,
       count: a.count,
       narration: a.narration

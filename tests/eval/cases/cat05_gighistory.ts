@@ -165,11 +165,12 @@ export const cat05: EvalCase[] = [
     passWhen:
       'Filters play events within the last 12 months. Groups by track. Returns only tracks with count > 3. Shows count per track.',
     check: (r, ctx) => {
-      // Count plays across this-year sessions (the "last 12 months"), per the matrix target.
-      const cutoffYear = ctx.now.getFullYear()
+      // "last 12 months" = a rolling window (matrix wording), not the calendar year.
+      const cutoff = new Date(ctx.now)
+      cutoff.setFullYear(cutoff.getFullYear() - 1)
       const counts = new Map<string, number>()
       for (const s of ctx.sessions) {
-        if (new Date(s.performedAt).getFullYear() !== cutoffYear) continue
+        if (new Date(s.performedAt).getTime() < cutoff.getTime()) continue
         for (const id of s.trackIds) counts.set(id, (counts.get(id) ?? 0) + 1)
       }
       const want = [...counts.entries()].filter(([, c]) => c > 3).map(([id]) => id)
@@ -275,7 +276,7 @@ export const cat05: EvalCase[] = [
         const roundedH = Math.round(meanHours)
         return (
           new RegExp(`\\b${roundedH}\\b`).test(blob) ||
-          /\bh\b|hour|min/i.test(blob) ||
+          /\d\s*h(?:rs?|ours?)?\b|\d\s*m(?:in)?\b|hour|min/i.test(blob) ||
           'should report a mean set duration and the session count'
         )
       }

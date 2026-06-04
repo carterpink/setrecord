@@ -218,8 +218,15 @@ Surface **all** real-world data that helps the user:
     compute, both pure/shared). 21 metrics. Wired into the harness; **app wiring next**.
     **47 → 67/210**: Stats 0→**12/12**, and it cleared analytics cases across Basic
     Search (65%), Genre (75%), BPM/Key (44%), Library Mgmt.
-  - ⏭ Next: wire stats into the app (memoryService + IPC + Home result), then
-    gig-history engine, set-building arcs, transitions, harmonic search,
+  - ✅ **Gig-history engine** (`src/utils/gigIntent.ts` + `electron/algorithms/memory/gigHistory.ts`,
+    pure/shared; also the data layer for the P6 Gigs timeline). Last session,
+    gigs list, venues, longest/avg set, last-played & play-count per track,
+    setlist-by-month, most-recent import, played-over-N, never-repeated-venue.
+    Also fixed a real venue-parse bug (trailing "?" broke "...at Hi Ibiza?").
+    **67 → 80/210**: Gig History 1→**12/12**.
+  - ⏭ Next: APP-INTEGRATION PASS — wire stats + gig detectors/compute into
+    homeStore + memoryService + IPC + Home result renderers (one pass for all
+    engines). Then set-building arcs, transitions, harmonic search,
     actions-with-confirmation, clarify.
 - **P3 — Knowledge base.** Author + wire `[KNOW]`/`[BOTH]` topics. Re-score
   categories 3, 13, 14, parts of 6/7.

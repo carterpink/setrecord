@@ -433,10 +433,13 @@ export function interpretTurn(raw: string, prev: LibrarySearchParams): ConvTurn 
     }
     // Venue: "at <name>" up to a trailing time/stopword or end of string.
     const atVenue = work.match(
-      /\bat\s+([a-z0-9][a-z0-9'&.\s]{1,38}?)(?=\s+(?:in|on|during|last|this|back|when|while)\b|[,.]|$)/
+      /\bat\s+([a-z0-9][a-z0-9'&.\s]{1,38}?)(?=\s+(?:in|on|during|last|this|back|when|while)\b|[?!,.]|$)/
     )
     if (atVenue) {
-      const cand = atVenue[1].replace(/\s+/g, ' ').trim()
+      const cand = atVenue[1]
+        .replace(/[?!.,]+$/, '') // drop trailing punctuation ("Hi Ibiza?" → "Hi Ibiza")
+        .replace(/\s+/g, ' ')
+        .trim()
       if (cand && !NON_VENUE.has(cand)) {
         performedVenue = cand
         work = work.replace(atVenue[0], ' ')
