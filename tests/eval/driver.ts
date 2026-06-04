@@ -26,6 +26,7 @@ import { detectStats } from '../../src/utils/statsIntent'
 import { computeStats } from '../../electron/algorithms/memory/stats'
 import { detectGig } from '../../src/utils/gigIntent'
 import { computeGig } from '../../electron/algorithms/memory/gigHistory'
+import { detectKnowledge } from '../../src/utils/knowledge'
 import { searchLibrary } from '../../electron/algorithms/memory/librarySearch'
 import { parseQuery, type ParsedQuery } from '../../electron/algorithms/memory/queryParser'
 import { findForgottenGems } from '../../electron/algorithms/memory/forgottenGems'
@@ -187,6 +188,18 @@ function dedupeGroups(ctx: EvalCtx): Track[] {
 // ── public entry ─────────────────────────────────────────────────────────────
 
 export function resolveQuery(query: string, ctx: EvalCtx): EngineResult {
+  // DJ-theory questions answered from the curated KB (before data intents, since
+  // definitional phrasings like "how long should my sets be" overlap with them).
+  const know = detectKnowledge(query)
+  if (know) {
+    return {
+      intent: `knowledge:${know.topic}`,
+      kind: 'knowledge',
+      knowledgeTopic: know.topic,
+      narration: know.answer
+    }
+  }
+
   // Analytics questions are intercepted before the generic search path would
   // otherwise swallow them as a text search.
   const statHit = detectStats(query)
@@ -207,7 +220,9 @@ export function resolveQuery(query: string, ctx: EvalCtx): EngineResult {
     return {
       intent: `gig:${gigHit.metric}`,
       kind: a.kind,
-      sessions: a.sessions,
+      // computeGig returns the very sessions we passed in (FixtureSession at runtime);
+      // GigSession is a structural subset, so this widen-back is safe.
+      sessions: a.sessions as unknown as FixtureSession[] | undefined,
       tracks: a.tracks,
       stats: a.stats,
       count: a.count,

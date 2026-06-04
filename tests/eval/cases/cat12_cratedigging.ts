@@ -73,7 +73,7 @@ export const cat12: EvalCase[] = [
       'If source tracking exists: source=beatport AND play_count=0; else state the limitation.',
     check: (r) =>
       isHonestEmpty(r) ||
-      everyTrack(r, (t) => t.source === 'beatport' && t.playCount === 0) ||
+      everyTrack(r, (t) => (t.source as string) === 'beatport' && t.playCount === 0) ||
       'should filter by source or state limitation'
   },
   {

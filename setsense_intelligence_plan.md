@@ -228,8 +228,11 @@ Surface **all** real-world data that helps the user:
     homeStore + memoryService + IPC + Home result renderers (one pass for all
     engines). Then set-building arcs, transitions, harmonic search,
     actions-with-confirmation, clarify.
-- **P3 — Knowledge base.** Author + wire `[KNOW]`/`[BOTH]` topics. Re-score
-  categories 3, 13, 14, parts of 6/7.
+- **P3 — Knowledge base. ✅ CORE DONE.** `src/utils/knowledge.ts` — curated,
+  offline, vetted DJ-theory answers (~35 topics) + a dynamic Camelot
+  "can I mix X into Y" compatibility solver. Detection is keyword-precise and
+  runs before data intents. Wired into the harness. **80 → 111/210**: DJ Knowledge
+  0→**15/15**, Import/Export 0→5/8, Transitions →5/16, Venue/Crowd →5/10, Edge →9/16.
 - **P4 — Conversation context.** Full in-thread history + user-memory preamble.
   Add multi-turn refinement tests to the harness.
 - **P5 — Tier decision.** Read the 3B scorecard; if needed, wire the 7–8B tier +
