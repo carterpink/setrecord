@@ -115,7 +115,8 @@ export function detectStats(raw: string): StatsHit | null {
 
   // ── library size / duration / bpm ────────────────────────────────────────
   if (
-    /\bhow big is my (library|collection)|library size|how many tracks (do i have|are in)/.test(q)
+    /\bhow big is my (library|collection)|library size/.test(q) ||
+    (/how many tracks (do i have|are in)/.test(q) && !/playlist/.test(q))
   )
     return { metric: 'library_size' }
   // "what's in my library?" (summary) — but NOT "...that sounds like X" (similarity).

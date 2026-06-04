@@ -160,6 +160,29 @@ export function computeTransition(
         narration: `Tracks touching ${hit.genreA} or ${hit.genreB} — the crossover between the two.`
       }
     }
+    case 'genre_crossover': {
+      const a = (hit.genreA ?? '').toLowerCase()
+      const b = (hit.genreB ?? '').toLowerCase()
+      const GENERIC = new Set(['house', 'techno', 'music', 'dj'])
+      const headA = a.split(/\s+/).filter((w) => w.length > 2)
+      const headB = b.split(/\s+/).filter((w) => w.length > 2)
+      const both = tracks.filter((t) => {
+        const g = (t.genre ?? '').toLowerCase()
+        return headA.some((w) => g.includes(w)) && headB.some((w) => g.includes(w))
+      })
+      if (both.length > 0)
+        return {
+          kind: 'tracks',
+          tracks: both.slice(0, 15),
+          narration: `Tracks that genuinely blend ${hit.genreA} and ${hit.genreB}.`
+        }
+      // No true crossover in the library — be honest rather than dump one side.
+      void GENERIC
+      return {
+        kind: 'empty',
+        narration: `No tracks in your library blend both ${hit.genreA} and ${hit.genreB}. Tag crossover tracks (e.g. "${hit.genreA}/${hit.genreB}") and I can list them precisely.`
+      }
+    }
     case 'pairs': {
       const edges = new Map<string, number>()
       for (const s of sessions)

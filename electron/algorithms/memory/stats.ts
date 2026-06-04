@@ -17,13 +17,28 @@ export interface StatsSession {
 }
 
 export interface StatsAnswer {
-  kind: 'stats' | 'count' | 'empty'
+  kind: 'stats' | 'count' | 'tracks' | 'empty'
   stats?: { label: string; value: string }[]
   count?: number
+  tracks?: Track[]
   narration: string
 }
 
-const NON_ELECTRONIC = ['rock', 'jazz', 'folk', 'classical', 'hip hop', 'hip-hop', 'rap', 'soul', 'country', 'pop ', 'metal', 'blues', 'reggae']
+const NON_ELECTRONIC = [
+  'rock',
+  'jazz',
+  'folk',
+  'classical',
+  'hip hop',
+  'hip-hop',
+  'rap',
+  'soul',
+  'country',
+  'pop ',
+  'metal',
+  'blues',
+  'reggae'
+]
 
 function real(tracks: Track[]): Track[] {
   return tracks.filter((t) => t.phantom !== true)
@@ -172,7 +187,9 @@ export function computeStats(
       return {
         kind: 'stats',
         stats: rows,
-        narration: top ? `Your most common key is ${top.label} (${top.value} tracks).` : 'No keys analyzed.'
+        narration: top
+          ? `Your most common key is ${top.label} (${top.value} tracks).`
+          : 'No keys analyzed.'
       }
     }
     case 'most_common_key': {
@@ -212,8 +229,10 @@ export function computeStats(
         .sort((a, b) => a[1] - b[1])
       const niche = eligible[0]
       if (!niche) return { kind: 'empty', narration: 'No genre has enough tracks to call niche.' }
+      const nicheTracks = tracks.filter((t) => (t.genre ?? '') === niche[0])
       return {
-        kind: 'stats',
+        kind: 'tracks',
+        tracks: nicheTracks,
         stats: [{ label: niche[0], value: String(niche[1]) }],
         narration: `${niche[0]} is your most niche genre (${niche[1]} tracks).`
       }
@@ -261,7 +280,8 @@ export function computeStats(
     }
     case 'productive_month': {
       const m = new Map<string, number>()
-      for (const t of tracks) if (t.dateAdded) m.set(monthKey(t.dateAdded), (m.get(monthKey(t.dateAdded)) ?? 0) + 1)
+      for (const t of tracks)
+        if (t.dateAdded) m.set(monthKey(t.dateAdded), (m.get(monthKey(t.dateAdded)) ?? 0) + 1)
       const top = topEntries(m)[0]
       if (!top) return { kind: 'empty', narration: 'No import dates recorded.' }
       return {
@@ -301,7 +321,11 @@ export function computeStats(
         const bpms = s.trackIds
           .map((id) => tracks.find((t) => t.id === id)?.bpm ?? 0)
           .filter((b) => b > 0)
-        if (bpms.length) byMonth.set(monthKey(s.performedAt), [...(byMonth.get(monthKey(s.performedAt)) ?? []), ...bpms])
+        if (bpms.length)
+          byMonth.set(monthKey(s.performedAt), [
+            ...(byMonth.get(monthKey(s.performedAt)) ?? []),
+            ...bpms
+          ])
       }
       const rows = Array.from(byMonth.entries())
         .sort((a, b) => a[0].localeCompare(b[0]))

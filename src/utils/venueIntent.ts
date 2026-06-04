@@ -32,10 +32,10 @@ export function detectVenue(raw: string): VenueHit | null {
     return { metric: 'bar' }
   if (/\bcorporate (event|gig|party|do|function)|keep it safe|safe (set|selection)/.test(q))
     return { metric: 'corporate' }
+  // Require an explicit outdoor cue so "uplifting for a daytime crowd" stays a mood.
   if (
-    /\boutdoors?\b.*\bday(time)?\b|day(time)?\b.*\boutdoors?\b|daytime (festival|crowd|party)|in the sun/.test(
-      q
-    )
+    /\boutdoors?\b|\boutside\b|open[- ]air/.test(q) &&
+    /\bday(time|light)?\b|afternoon|sun/.test(q)
   )
     return { metric: 'daytime_outdoor' }
 

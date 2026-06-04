@@ -10,6 +10,7 @@ export type TransitionMetric =
   | 'closer' // 048
   | 'bridge_two' // 041
   | 'bridge_genres' // 050
+  | 'genre_crossover' // 116/122 (strict: both genres, else honest)
   | 'pairs' // 051
   | 'warmup_history' // 052
   | 'breakdown' // 044
@@ -62,10 +63,14 @@ export function detectTransition(raw: string): TransitionHit | null {
     q.match(/\bbefore\s+(.+?)\s+in my set history$/)
   if (m) return { metric: 'before', seed: clean(m[1]) }
 
-  // bridge between two genres
+  // "cross between X and Y" / "blend X and Y" → strict crossover (both genres).
   m =
-    q.match(/\bbridge\s+(.+?)\s+and\s+(.+?)(?:\s+in my|$)/) ||
-    q.match(/\bcross between\s+(.+?)\s+and\s+(.+?)(?:\s+in my|$)/)
+    q.match(/\bcross between\s+(.+?)\s+and\s+(.+?)(?:\s+in my|$)/) ||
+    q.match(/\b(?:blend|fuse|mix)\s+(.+?)\s+and\s+(.+?)(?:\s+in my|$)/)
+  if (m) return { metric: 'genre_crossover', genreA: clean(m[1]), genreB: clean(m[2]) }
+
+  // "bridge X and Y" → lenient candidates touching either.
+  m = q.match(/\bbridge\s+(.+?)\s+and\s+(.+?)(?:\s+in my|$)/)
   if (m) return { metric: 'bridge_genres', genreA: clean(m[1]), genreB: clean(m[2]) }
 
   if (/\b(between (these )?two tracks|something to play between|play between)\b/.test(q))

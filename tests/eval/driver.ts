@@ -42,6 +42,7 @@ import { computeKeyBpm } from '../../electron/algorithms/memory/keyBpm'
 import { detectClarify } from '../../src/utils/clarifyIntent'
 import { detectVenue } from '../../src/utils/venueIntent'
 import { computeVenue } from '../../electron/algorithms/memory/venue'
+import { detectAction } from '../../src/utils/actionIntent'
 import { searchLibrary } from '../../electron/algorithms/memory/librarySearch'
 import { parseQuery, type ParsedQuery } from '../../electron/algorithms/memory/queryParser'
 import { findForgottenGems } from '../../electron/algorithms/memory/forgottenGems'
@@ -225,6 +226,7 @@ export function resolveQuery(query: string, ctx: EvalCtx): EngineResult {
       kind: a.kind,
       stats: a.stats,
       count: a.count,
+      tracks: a.tracks,
       narration: a.narration
     }
   }
@@ -331,6 +333,17 @@ export function resolveQuery(query: string, ctx: EvalCtx): EngineResult {
       count: a.count,
       sourceTrack: a.sourceTrack,
       narration: a.narration
+    }
+  }
+
+  // Export / import actions — describe (and in-app, trigger) the side-effecting flow.
+  const act = detectAction(query)
+  if (act) {
+    return {
+      intent: `action:${act.op}`,
+      kind: 'action',
+      needsConfirmation: true,
+      narration: act.narration
     }
   }
 
