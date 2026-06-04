@@ -1,6 +1,14 @@
 # SetSense Intelligence & Play-History Plan
 
-Status: **DRAFT FOR APPROVAL** · Date: 2026-06-04 · Branch base: `main`
+Status: **ENGINE LAYER COMPLETE — eval 210/210 (100%)** · Updated: 2026-06-05 · Branch: `feat/ai-eval-harness`
+
+> ## TL;DR for when you're back
+> - The deterministic intelligence engine now passes **all 210 eval prompts (100%)**, up from a 27/210 (13%) baseline — fully offline, no APIs. Run: `npx vitest run tests/eval/eval.test.ts` (scorecard → `tests/eval/scorecard.md`).
+> - All work is on branch **`feat/ai-eval-harness`** (≈20 commits), isolated from your `feat/fresh-start` WIP. Your uncommitted WIP was never touched.
+> - **Architecture:** a cascade of small, pure, renderer-safe **intent detectors** (`src/utils/*Intent.ts`, `knowledge.ts`) + pure **compute engines** (`electron/algorithms/memory/*.ts`). The same modules power both the harness and (next step) the app.
+> - **NOT yet done — the live-app wiring.** The engines are proven by the harness but not yet called by the running chat. This needs either (a) importing the compute modules into the renderer, or (b) an IPC bridge in `electron/main.ts`/`preload.ts` — which are full of your WIP. I didn't wire it blind because I can't run Electron against your in-progress tree without risking your build. See "Integration runbook" at the bottom.
+> - **Also pending (not started):** the Gigs per-track play-history timeline (P6) and cross-conversation user-memory (P4). The gig-history *engine* exists (`gigHistory.ts`) as the data layer for the timeline.
+> - **Logged data gap:** `Track.releaseYear` was added + is searchable, but the Rekordbox importer doesn't populate it yet (follow-up).
 
 Goal: make the in-app assistant reliably answer the 210 prompts in
 [`setsense_ai_eval_matrix.md`](setsense_ai_eval_matrix.md), regardless of wording,
@@ -260,3 +268,67 @@ Each phase ends with a re-run scorecard and no regressions vs the prior phase.
 5. **Matrix realism**: a handful of prompts (e.g. 112 "5 years ago", 168
    "SoundCloud years ago") are explicitly limitation-tests — "pass" = honest
    limitation message, encoded as such in the harness.
+
+---
+
+## 8 · Final status (2026-06-05) — eval 210/210
+
+Every category 100%: Basic Search, BPM/Key, Transitions, Set Building, Gig
+History, Energy/Mood, Similarity/Discovery, Genre, Library Mgmt, Import/Export,
+Stats, Crate Digging, Venue/Crowd, DJ Knowledge, Edge/Adversarial.
+
+**How it works — the resolution cascade** (most-specific first; each is a pure
+`detectX(query)` → `computeX(hit, tracks, sessions, …)` pair):
+knowledge KB → stats → maintenance → venue → gig-history → transitions →
+discovery/similarity → set-building → mood/vibe → key/BPM → export-actions →
+clarify/confirm/reframe → (fallback) deterministic library search.
+
+Modules added (all pure, offline, unit-covered by the harness):
+- Detectors (renderer-safe, `src/utils/`): `statsIntent`, `gigIntent`,
+  `maintenanceIntent`, `setBuildIntent`, `discoveryIntent`, `transitionIntent`,
+  `moodIntent`, `keyBpmIntent`, `clarifyIntent`, `venueIntent`, `actionIntent`,
+  `knowledge` (curated KB), plus upgrades to `recallQuery`/`homeQuery`.
+- Compute (`electron/algorithms/memory/`): `stats`, `gigHistory`, `maintenance`,
+  `setBuilder`, `discovery`, `transitionsEngine`, `mood`, `keyBpm`, `venue` +
+  `librarySearch` (label search, year filter).
+
+Grounding guarantee preserved throughout: engines only ever return REAL rows
+from the library/sessions; narration describes real results; honest "can't /
+not tracked" answers where data is genuinely absent (acapella detection, vinyl
+flag, release-year import, 5-years-ago history, source tracking).
+
+## 9 · Integration runbook (the remaining work)
+
+**A. Wire engines into the live chat (renderer-only, avoids main.ts/preload.ts).**
+1. Move (or re-export) the `electron/algorithms/memory/*` compute modules to a
+   shared location the renderer bundles cleanly (e.g. `src/intelligence/`), OR
+   confirm `electron.vite.config.ts` resolves them in the renderer. (They're
+   pure TS — no electron/node deps — so this is a path/bundling question only.)
+2. Add `src/intelligence/resolve.ts` exporting the cascade (lift it verbatim
+   from `tests/eval/driver.ts::resolveQuery`). The harness should then import
+   THIS instead of duplicating the cascade — single source of truth.
+3. In `homeStore.run`, before the model path, call `resolve(query, {tracks:
+   useLibraryStore.getState().tracks, sessions, playlists, now})`; map its
+   result to a `HomeResult`. Sessions/playlists: read from `recallStore` (it
+   already loads them) or add a tiny read-only IPC.
+4. Add `HomeResult` kinds for `knowledge` / `gig` / `clarify` / `action` (or map
+   them onto existing `stats`/`tracks` kinds) and render them.
+5. **Smoke-test in the running app** (you'll need to do this — I can't run
+   Electron against the WIP): "give me 10 Fisher songs", "what's my most played
+   genre", "what did I play last Saturday", "what is harmonic mixing", "build me
+   a 2-hour peak techno set", "delete everything".
+
+**B. Populate `Track.releaseYear`** from the Rekordbox importer
+(`electron/services/rekordbox/dbReader.ts` — `ReleaseDate`/`ReleaseYear`), so
+year prompts work on real libraries (the field + search already exist).
+
+**C. Gigs play-history timeline (P6)** — build the per-track "last.fm for CDJs"
+view on top of `gigHistory.ts` + `session_tracks`; surface the two honest
+play-count streams (flat CDJ `DJPlayCount` vs dated session appearances).
+
+**D. Cross-conversation user-memory (P4)** — compact taste summary preamble.
+
+**E. Local-model tier decision (P5)** — the deterministic engine alone now
+passes 100% of the matrix, so the model is needed mainly for phrasings outside
+these patterns. Measure 3B's incremental value as a fallback before investing
+in the 7–8B tier.
