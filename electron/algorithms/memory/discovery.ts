@@ -62,8 +62,10 @@ function creativeMapping(seed: string, tracks: Track[]): DiscoveryAnswer {
     pool = pool.filter((t) => minorKey(t) || t.energy <= 5)
     why = `mapped Joy Division to dark, minor-key, post-punk-adjacent tracks (subjective)`
   } else if (/radiohead|art rock|experimental/.test(s)) {
-    pool = pool.filter((t) => minorKey(t) || t.energy <= 6)
-    why = `mapped Radiohead to melancholic / experimental, minor-key tracks (subjective)`
+    pool = pool.filter(
+      (t) => /idm|ambient|electronica|experimental|electro|downtempo/i.test(t.genre ?? '') || t.energy <= 6
+    )
+    why = `mapped Radiohead to melancholic / experimental, art-rock-adjacent tracks (subjective)`
   } else if (/summer|beach|balearic|tropical|sun/.test(s)) {
     pool = pool.filter((t) => bpmBand(118, 130)(t))
     why = `mapped "summer" to warm, melodic 118–128 BPM tracks`
