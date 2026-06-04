@@ -7,7 +7,8 @@ import {
   X,
   Crown,
   Download,
-  Upload
+  Upload,
+  FileText
 } from 'lucide-react'
 import { APP_NAME } from '@/utils/constants'
 import type { CDJModel, ImportSource } from '@/types'
@@ -428,6 +429,72 @@ function BackupSection(): React.JSX.Element {
             )}
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Advanced → diagnostic log export. Bundles the app's redacted logs into a zip
+ * the user can attach to a bug report, then reveals it in Finder. Personal
+ * details (paths, titles, venues, emails) are stripped before anything is
+ * written, so the bundle is safe to share.
+ */
+function AdvancedSection(): React.JSX.Element {
+  const toast = useToastStore()
+  const hasBridge = typeof window.setsense !== 'undefined'
+  const [exporting, setExporting] = useState(false)
+
+  async function handleExportLogs(): Promise<void> {
+    if (!hasBridge) return
+    setExporting(true)
+    try {
+      const r = await window.setsense.exportLogs()
+      if (r.success && r.path) {
+        toast.success('Diagnostic logs exported.')
+        void window.setsense.revealLogBundle(r.path)
+      } else {
+        toast.error(r.error ?? 'Could not export logs.')
+      }
+    } catch {
+      toast.error('Could not export logs.')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  return (
+    <div className="field-group">
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: 16
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <FileText
+            size={18}
+            strokeWidth={1.6}
+            style={{ marginTop: 2, opacity: 0.8, flexShrink: 0 }}
+            aria-hidden="true"
+          />
+          <div>
+            <div className="ss-label">Export diagnostic logs</div>
+            <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.5 }}>
+              Bundles app logs with personal details removed — attach when reporting a bug.
+            </div>
+          </div>
+        </div>
+        <Button
+          variant="secondary"
+          icon={Download}
+          onClick={handleExportLogs}
+          disabled={exporting || !hasBridge}
+        >
+          {exporting ? 'Exporting…' : 'Export logs'}
+        </Button>
       </div>
     </div>
   )
@@ -886,6 +953,20 @@ export function SettingsModal(): React.JSX.Element {
               Backup &amp; migration
             </div>
             <BackupSection />
+
+            {/* Advanced — diagnostic log export */}
+            <div
+              className="settings-section-header ss-caption"
+              style={{
+                opacity: 0.6,
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+                marginTop: 8
+              }}
+            >
+              Advanced
+            </div>
+            <AdvancedSection />
           </div>
         )}
       </div>

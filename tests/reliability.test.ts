@@ -217,9 +217,13 @@ describe('ErrorBoundary', () => {
 
 const mockSentryInit = vi.fn()
 const mockSentryClose = vi.fn(() => Promise.resolve(true))
+const mockSetTag = vi.fn()
+const mockGetCurrentScope = vi.fn(() => ({ setTag: mockSetTag }))
 vi.mock('@sentry/electron/main', () => ({
   init: mockSentryInit,
-  close: mockSentryClose
+  close: mockSentryClose,
+  getCurrentScope: mockGetCurrentScope,
+  addBreadcrumb: vi.fn()
 }))
 
 describe('crashReporter', () => {
@@ -249,7 +253,7 @@ describe('crashReporter', () => {
     delete process.env.SENTRY_DSN
   })
 
-  it('beforeSend strips user identity and breadcrumbs', async () => {
+  it('beforeSend strips user identity + extra but KEEPS breadcrumbs (NFR-801 Phase 4)', async () => {
     process.env.SENTRY_DSN = 'https://fake@o0.ingest.sentry.io/0'
     const { initCrashReporter } = await import('../electron/services/crashReporter')
     initCrashReporter()
@@ -257,15 +261,26 @@ describe('crashReporter', () => {
 
     const event = {
       user: { id: 'u1', email: 'dj@example.com' },
-      breadcrumbs: { values: [{ message: '/home/user/music' }] },
+      // Breadcrumbs now arrive PRE-REDACTED from the logger, so beforeSend must
+      // no longer strip them — they are the leading context for the crash.
+      breadcrumbs: { values: [{ message: 'indexed ~/Music' }] },
       extra: { localPath: '/home/user' }
     }
     // @ts-expect-error -- partial event is enough for the filter
     const result = cfg.beforeSend(event)
     expect(result).not.toBeNull()
     expect(result.user).toBeUndefined()
-    expect(result.breadcrumbs).toBeUndefined()
+    expect(result.breadcrumbs).toBeDefined()
     expect(result.extra).toBeUndefined()
+    delete process.env.SENTRY_DSN
+  })
+
+  it('tags the issue with the per-launch session id at init (sid-correlated)', async () => {
+    process.env.SENTRY_DSN = 'https://fake@o0.ingest.sentry.io/0'
+    mockSetTag.mockClear()
+    const { initCrashReporter } = await import('../electron/services/crashReporter')
+    initCrashReporter()
+    expect(mockSetTag).toHaveBeenCalledWith('sid', expect.any(String))
     delete process.env.SENTRY_DSN
   })
 

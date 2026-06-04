@@ -27,6 +27,9 @@ import {
   type PendingEnergyRow
 } from '../db/queries'
 import { tagTrack } from './tagging/tagger'
+import { lazyLogger } from './logging/lazyLogger'
+
+const log = lazyLogger('energy')
 import { ANALYSIS_SAMPLE_RATE } from './energy/spectralFeatures'
 import { getEnergyCache } from './energy/energyCache'
 import {
@@ -221,7 +224,7 @@ export async function runAnalysisQueue(cbs: EnergyQueueCallbacks = {}): Promise<
         } catch (err) {
           // analyseTrack already swallows errors, but be defensive — never
           // leave a track as 'pending' forever.
-          console.error('[energyAnalyser] unexpected error on', row.id, err)
+          log.error('unexpected error analysing track', err, { trackId: row.id })
           updateTrackEnergy(db, row.id, 5, 0.5, 'failed')
           processed++
           cbs.onItem?.(

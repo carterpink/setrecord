@@ -27,18 +27,58 @@ export function FeedbackModal(): React.JSX.Element {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [copied, setCopied] = useState(false)
+  // Bug reports default to attaching diagnostic logs; other categories never do.
+  const [attachLogs, setAttachLogs] = useState(true)
+  const [showWhatsIncluded, setShowWhatsIncluded] = useState(false)
+  // Set after submit to drive the "logs opened in Finder" instruction.
+  const [logsRevealed, setLogsRevealed] = useState(false)
+  const [logsUnavailable, setLogsUnavailable] = useState(false)
 
   const submit = async (): Promise<void> => {
     if (!message.trim()) return
+    const isBug = category === 'Bug'
     const meta =
       typeof navigator !== 'undefined' ? `Sent from ${APP_NAME} · ${navigator.platform}` : APP_NAME
+
     if (typeof window.setsense !== 'undefined') {
+      // For Bug reports we always attach the session id + version (so even an
+      // un-attached report is correlatable to its Sentry issue).
+      let diagnostics: { sid: string; version: string } | undefined
+      if (isBug) {
+        try {
+          diagnostics = await window.setsense.logSessionInfo()
+        } catch {
+          /* sid accessor unavailable — proceed without it */
+        }
+      }
+
+      // If the user opted to attach logs (Bug only), build + reveal the bundle.
+      // Failure here must NOT block sending the report.
+      let revealed = false
+      let unavailable = false
+      if (isBug && attachLogs) {
+        try {
+          const res = await window.setsense.exportLogs()
+          if (res.success && res.path) {
+            await window.setsense.revealLogBundle(res.path)
+            revealed = true
+          } else {
+            unavailable = true
+          }
+        } catch {
+          unavailable = true
+        }
+      }
+      setLogsRevealed(revealed)
+      setLogsUnavailable(isBug && attachLogs && unavailable)
+
       await window.setsense.submitFeedback({
         category,
         rating,
         message: message.trim(),
         email: email.trim() || undefined,
-        meta
+        meta,
+        diagnostics
       })
     }
     setSent(true)
@@ -82,6 +122,22 @@ export function FeedbackModal(): React.JSX.Element {
               A pre-filled email just opened — hit send and it lands with us. If nothing opened,
               email <strong>{SUPPORT_EMAIL}</strong> directly.
             </p>
+            {logsRevealed && (
+              <p
+                className="ss-body-sm"
+                style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: 6 }}
+              >
+                Your logs opened in Finder — drag the file into the email.
+              </p>
+            )}
+            {logsUnavailable && (
+              <p
+                className="ss-caption"
+                style={{ color: 'var(--text-tertiary)', textAlign: 'center', marginTop: 6 }}
+              >
+                Logs couldn’t be attached this time — your report still sent.
+              </p>
+            )}
             <div className="feedback-sent-actions">
               <button type="button" className="health-fix-btn" onClick={() => void copyMessage()}>
                 {copied ? (
@@ -178,6 +234,55 @@ export function FeedbackModal(): React.JSX.Element {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
+
+            {category === 'Bug' && (
+              <div className="feedback-field">
+                <label
+                  className="ss-body-sm"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 8,
+                    cursor: 'pointer',
+                    color: 'var(--text-secondary)'
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={attachLogs}
+                    onChange={(e) => setAttachLogs(e.target.checked)}
+                    style={{ marginTop: 2 }}
+                  />
+                  <span>Attach diagnostic logs (helps me fix it faster)</span>
+                </label>
+                <button
+                  type="button"
+                  className="btn-link"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '2px 0 0 24px',
+                    color: 'var(--text-tertiary)',
+                    cursor: 'pointer',
+                    font: 'inherit',
+                    fontSize: '0.8em',
+                    textAlign: 'left'
+                  }}
+                  aria-expanded={showWhatsIncluded}
+                  onClick={() => setShowWhatsIncluded((v) => !v)}
+                >
+                  {showWhatsIncluded ? "What's included? ▲" : "What's included? ▼"}
+                </button>
+                {showWhatsIncluded && (
+                  <p
+                    className="ss-caption"
+                    style={{ margin: '4px 0 0 24px', color: 'var(--text-tertiary)' }}
+                  >
+                    App logs with file paths and personal details removed.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="arch-actions" style={{ marginTop: 4 }}>
               <button type="button" className="btn btn-ghost" onClick={closeModal}>

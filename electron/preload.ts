@@ -308,6 +308,13 @@ const setsense = {
     passphrase?: string
   ): Promise<BackupImportResult> => ipcRenderer.invoke('backup:import', filePath, mode, passphrase),
 
+  // ── Diagnostic log export (NFR-801 Phase 2) ────────────────────────────────
+  exportLogs: (): Promise<{ success: boolean; path?: string; error?: string }> =>
+    ipcRenderer.invoke('logs:export'),
+  revealLogBundle: (path: string): Promise<void> => ipcRenderer.invoke('logs:reveal', path),
+  // Per-launch session id + app version, for correlating bug reports to Sentry.
+  logSessionInfo: (): Promise<{ sid: string; version: string }> => ipcRenderer.invoke('logs:sid'),
+
   // ── Retention / activation progress (brief #22, Phase B) ───────────────────
   progressGet: () => ipcRenderer.invoke('progress:get') as Promise<ProgressState>,
   progressSet: (partial: Partial<ProgressState>) =>
@@ -351,6 +358,7 @@ const setsense = {
     message: string
     email?: string
     meta?: string
+    diagnostics?: { sid: string; version: string }
   }): Promise<boolean> => ipcRenderer.invoke('feedback:submit', payload),
 
   // ── USB Detection (Phase 9) ───────────────────────────────────────────────

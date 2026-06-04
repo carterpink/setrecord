@@ -17,6 +17,10 @@ import { homedir } from 'os'
 import { join } from 'path'
 import Database from 'better-sqlite3'
 import type { SourceDetection } from '../import/types'
+import { lazyLogger } from '../logging/lazyLogger'
+import { redactPath } from '../logging/redact'
+
+const log = lazyLogger('engine')
 
 export const ENGINE_LABEL = 'Engine DJ'
 
@@ -98,7 +102,7 @@ export async function detectEngine(): Promise<SourceDetection> {
       }
     }
   } catch (err) {
-    console.error('[engine] detect failed reading', dbPath, err)
+    log.error('detect failed reading library', err, { dbPath: redactPath(dbPath) })
     return { ...base, installed: true, libraryPath: dbPath, readError: 'unknown' }
   } finally {
     db?.close()
