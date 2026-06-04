@@ -243,6 +243,8 @@ function hasParams(p: LibrarySearchParams): boolean {
 function textQuery(q: string): string {
   return q
     .replace(/['"?!.]/g, ' ')
+    .replace(/\bremix(?:es)? of\b|\bremix of\b/g, ' ') // "remixes of X - Y" → "X Y"
+    .replace(/\s*[-–—]\s*/g, ' ') // "Leftfield - Leftism" → "Leftfield Leftism"
     .replace(/\b\d{1,3}\b/g, ' ') // counts are handled separately
     .replace(
       /\b(give me|show me|find me|gimme|get me|pull up|pull|grab|play me|play|i ?want|i ?need|i'?d like|can you|could you|do i (?:have|own)|have i got|got any|search for|search|look for|find|list|all of my|all my|all|some|any|a few|a couple|me|my|tracks? by|songs? by|releases?|tracks?|songs?|tunes?|cuts?|records?|stuff|music|please|by|from|on|with|in (?:the )?(?:title|name)|called|named|that (?:contain|have)|containing|contains|anything|something|most[\s-]?played|least[\s-]?played|play(?:ed)? the most|fastest|slowest|quickest|newest|latest|recently added|oldest|highest[\s-]?rated|best[\s-]?rated|top[\s-]?rated|favou?rites?|random|surprise me|popular|trending|biggest)\b/g,
@@ -325,6 +327,16 @@ export function interpretTurn(raw: string, prev: LibrarySearchParams): ConvTurn 
           : 365.25 * 86400
     addedAfter = new Date(Date.now() - n * mult * 1000).toISOString()
     work = work.replace(dateLast[0], ' ')
+  }
+  // Relative windows: "added this week / today / this month".
+  if (!addedAfter) {
+    const rel = work.match(/\badded\b[^.]*\b(today|this week|this month|recently|lately)\b/)
+    if (rel) {
+      const days =
+        rel[1] === 'today' ? 1 : rel[1] === 'this month' ? 31 : 7 // week / recently / lately
+      addedAfter = new Date(Date.now() - days * 86400 * 1000).toISOString()
+      work = work.replace(rel[0], ' ')
+    }
   }
   const dateYear = work.match(/\badded (?:in )?(\d{4})\b/)
   if (dateYear) {
@@ -623,6 +635,12 @@ export function interpretTurn(raw: string, prev: LibrarySearchParams): ConvTurn 
     params = { ...prev, sort: 'random' }
   }
   if (fresh && !params.sort) params.sort = 'mostPlayed'
+  // "show me all my tracks / everything / my whole library" → no 25-row cap.
+  const wantsAll =
+    /\b(all (?:of )?my|everything|entire|whole|full)\b.*\b(tracks?|library|collection|songs?|music)\b/.test(
+      q
+    ) || /^\s*(?:show|list)(?: me)?\s+(?:all|everything)\b/.test(q)
+  if (wantsAll && params.limit == null) params.limit = 100000
   if (params.limit == null) params.limit = 25
 
   return { kind: 'search', params, narration: describe(params, popularityNote, reshuffle) }
