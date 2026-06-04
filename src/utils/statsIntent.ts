@@ -137,7 +137,8 @@ export function detectStats(raw: string): StatsHit | null {
 
   // ── trends (honest about limited range) ──────────────────────────────────
   if (/\bbpm\b.*(over time|changed|trend|history)/.test(q)) return { metric: 'bpm_over_time' }
-  if (/\bpeak hour|what time.*(play|biggest)|time of day/.test(q)) return { metric: 'peak_hour' }
+  if (/\bmy peak hour|what time.*(play|biggest)|time of day.*play/.test(q))
+    return { metric: 'peak_hour' }
   if (/genre (preferences|tastes?).*(shift|chang|over)|how.*genre.*(shift|chang)/.test(q))
     return { metric: 'genre_shift' }
 

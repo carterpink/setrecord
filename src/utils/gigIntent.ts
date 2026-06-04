@@ -125,7 +125,7 @@ export function detectGig(raw: string): GigHit | null {
   )
     return { metric: 'gigs_list' }
 
-  if (/\bwhat (did|do) i play\b/.test(q) || /\blast (night|gig|set|time i played)\b/.test(q)) {
+  if (/\bwhat did i play\b/.test(q) || /\blast (night|gig|set|time i played)\b/.test(q)) {
     const wd = Object.keys(WEEKDAYS).find((name) => new RegExp(`\\b${name}\\b`).test(q))
     const mm = Object.keys(MONTHS).find((name) => new RegExp(`\\b${name}\\b`).test(q))
     if (mm) return { metric: 'setlist_for', month: MONTHS[mm] }

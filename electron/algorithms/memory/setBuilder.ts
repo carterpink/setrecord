@@ -90,7 +90,10 @@ export function buildSet(
   }
 
   let pool = real(tracksIn)
-  if (hit.genre) pool = pool.filter((t) => (t.genre ?? '').toLowerCase().includes(hit.genre!))
+  if (hit.genre) {
+    const g = pool.filter((t) => (t.genre ?? '').toLowerCase().includes(hit.genre!))
+    if (g.length > 0) pool = g // keep the broader pool if the genre matches nothing
+  }
   if (hit.neverPlayed) pool = pool.filter((t) => t.playCount === 0 && !t.lastPlayed)
   if (hit.durationMinSec != null) pool = pool.filter((t) => t.duration >= hit.durationMinSec!)
   if (hit.venue) {
@@ -108,6 +111,8 @@ export function buildSet(
   if (hit.targetBpm != null) {
     pool = pool.filter((t) => Math.abs(t.bpm - hit.targetBpm!) <= 8)
   }
+  if (hit.bpmMin != null) pool = pool.filter((t) => t.bpm >= hit.bpmMin!)
+  if (hit.bpmMax != null) pool = pool.filter((t) => t.bpm <= hit.bpmMax!)
 
   // "longest set I could build" → a duration answer, not a sequence.
   // (handled by caller via stats; here we still return the pool length info)
@@ -135,14 +140,29 @@ export function buildSet(
 
   let seq = sequence(pool, hit)
 
-  // Anchor: a named first track.
+  // Anchor: a named first track (token match handles "Artist - Title" ordering).
   if (hit.anchor) {
-    const a = hit.anchor.toLowerCase()
-    const anchor = pool.find((t) => `${t.title} ${t.artist}`.toLowerCase().includes(a))
+    const tokens = hit.anchor
+      .toLowerCase()
+      .replace(/\s*-\s*/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean)
+    const anchor = pool.find((t) => {
+      const h = `${t.title} ${t.artist}`.toLowerCase()
+      return tokens.every((tok) => h.includes(tok))
+    })
     if (anchor) seq = [anchor, ...seq.filter((t) => t.id !== anchor.id)]
   }
 
-  const set = seq.slice(0, Math.min(count, seq.length))
+  // For an explicit BPM arc, sample evenly across the span so the set spans
+  // start→end (rather than taking the lowest N). Index 0 (anchor) is preserved.
+  let set: Track[]
+  const n = Math.min(count, seq.length)
+  if (hit.bpmStart != null && hit.bpmEnd != null && seq.length > n && n > 1) {
+    set = Array.from({ length: n }, (_, i) => seq[Math.round((i * (seq.length - 1)) / (n - 1))])
+  } else {
+    set = seq.slice(0, n)
+  }
   const totalSec = set.reduce((s, t) => s + (t.duration || 0), 0)
   const bits: string[] = []
   if (hit.genre) bits.push(hit.genre)

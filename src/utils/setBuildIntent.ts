@@ -12,6 +12,8 @@ export interface SetBuildHit {
   bpmStart?: number
   bpmEnd?: number
   genre?: string
+  bpmMin?: number
+  bpmMax?: number
   arc: EnergyArc
   neverPlayed?: boolean
   venue?: string
@@ -61,7 +63,8 @@ function parseMinutes(q: string): number | undefined {
 }
 
 const BUILD_VERB = /\b(build|make|create|put together|craft|assemble|generate|give me)\b/
-const SET_NOUN = /\b(set|mix|warm[- ]?up|journey|playlist|b2b|back[- ]?to[- ]?back|pool)\b/
+const SET_NOUN =
+  /\b(sets?|mix(?:es)?|warm[- ]?ups?|journeys?|playlists?|b2b|back[- ]?to[- ]?back|pools?)\b/
 
 export function isBuildRequest(q: string): boolean {
   const dur = /\b\d+\s*(?:-|–|to)?\s*(?:min(?:ute)?s?|hours?|hrs?)\b/.test(q)
@@ -69,7 +72,14 @@ export function isBuildRequest(q: string): boolean {
   if (BUILD_VERB.test(q) && (SET_NOUN.test(q) || dur)) return true
   if (SET_NOUN.test(q) && dur) return true
   if (/\b(sunrise|festival|peak time) set\b/.test(q)) return true
-  if (/\b(\d+|two|three|four|five)\s+(?:different\s+)?(opening|opener) tracks?\b/.test(q)) return true
+  if (/\b(\d+|two|three|four|five)\s+(?:different\s+)?(opening|opener) tracks?\b/.test(q))
+    return true
+  // "I have 20 minutes to fill — what do I play?"
+  if (
+    /\b\d+\s*min(?:ute)?s?\b/.test(q) &&
+    /\b(fill|to play|what (do|should) i play|what to play)\b/.test(q)
+  )
+    return true
   return false
 }
 
@@ -97,6 +107,8 @@ export function detectSetBuild(raw: string): SetBuildHit | null {
   }
 
   hit.genre = findGenre(q)
+  if (!hit.genre && /\bhousey\b/.test(q)) hit.genre = 'house'
+  if (!hit.genre && /\btechy\b/.test(q)) hit.genre = 'tech house'
 
   // arc / vibe
   if (
@@ -116,12 +128,13 @@ export function detectSetBuild(raw: string): SetBuildHit | null {
   )
     hit.neverPlayed = true
 
-  const venue = q.match(
-    /\b(?:at|from)\s+([a-z0-9][a-z0-9'&.\s]{1,30}?)(?=\s+(?:only|set|tracks?)|[?,.]|$)/
-  )
-  if (venue && /\b(at|played at|tracks i'?ve played at)\b/.test(q)) {
-    const v = venue[1].replace(/[?!.,]+$/, '').trim()
-    if (v && !['home', 'least', 'peak'].includes(v)) hit.venue = v
+  // Only treat "at <X>" as a venue in a clear play-context (not "starts at 124 bpm").
+  if (/\b(?:played at|i'?ve played at|gigs? at|tracks i'?ve played at)\b/.test(q)) {
+    const venue = q.match(/\bat\s+([a-z][a-z0-9'&.\s]{1,30}?)(?=\s+(?:only|set|tracks?)|[?,.]|$)/)
+    if (venue) {
+      const v = venue[1].replace(/[?!.,]+$/, '').trim()
+      if (v && !/\bbpm\b/.test(v) && !['home', 'least', 'peak'].includes(v)) hit.venue = v
+    }
   }
 
   const anchor = q.match(
@@ -144,6 +157,21 @@ export function detectSetBuild(raw: string): SetBuildHit | null {
     const word: Record<string, number> = { two: 2, three: 3, four: 4 }
     hit.optionsCount = (word[opts[1]] ?? +opts[1]) || 3
     hit.openers = true
+  }
+
+  // Domain BPM band from genre + arc when none was stated explicitly.
+  if (hit.bpmStart == null && hit.targetBpm == null) {
+    const techno = /techno/.test(hit.genre ?? '')
+    const house = /house/.test(hit.genre ?? '')
+    if (hit.arc === 'peak') {
+      hit.bpmMin = 130
+      hit.bpmMax = 138
+    } else if (hit.arc === 'rise' && house) {
+      hit.bpmMin = 118
+      hit.bpmMax = 124
+    } else if (techno && hit.arc !== 'rise') {
+      hit.bpmMin = 128
+    }
   }
 
   const avoid = q.match(
