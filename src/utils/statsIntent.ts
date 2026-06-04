@@ -118,7 +118,12 @@ export function detectStats(raw: string): StatsHit | null {
     /\bhow big is my (library|collection)|library size|how many tracks (do i have|are in)/.test(q)
   )
     return { metric: 'library_size' }
-  if (/\bwhat'?s in my (library|collection)|summar(y|ise|ize) my (library|collection)/.test(q))
+  // "what's in my library?" (summary) — but NOT "...that sounds like X" (similarity).
+  if (
+    (/\bwhat'?s in my (library|collection)\b/.test(q) &&
+      !/\b(sound|like|similar|vibe|remind|that)\b/.test(q)) ||
+    /summar(y|ise|ize) my (library|collection)/.test(q)
+  )
     return { metric: 'library_size' }
   if (/\btotal (duration|length|playtime|run.?time)|how (long|much music)|total.*hours/.test(q))
     return { metric: 'total_duration' }

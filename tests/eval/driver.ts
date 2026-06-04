@@ -31,6 +31,8 @@ import { detectMaintenance } from '../../src/utils/maintenanceIntent'
 import { computeMaintenance } from '../../electron/algorithms/memory/maintenance'
 import { detectSetBuild } from '../../src/utils/setBuildIntent'
 import { buildSet as buildSetEngine } from '../../electron/algorithms/memory/setBuilder'
+import { detectDiscovery } from '../../src/utils/discoveryIntent'
+import { computeDiscovery } from '../../electron/algorithms/memory/discovery'
 import { searchLibrary } from '../../electron/algorithms/memory/librarySearch'
 import { parseQuery, type ParsedQuery } from '../../electron/algorithms/memory/queryParser'
 import { findForgottenGems } from '../../electron/algorithms/memory/forgottenGems'
@@ -244,6 +246,18 @@ export function resolveQuery(query: string, ctx: EvalCtx): EngineResult {
       tracks: a.tracks,
       stats: a.stats,
       count: a.count,
+      narration: a.narration
+    }
+  }
+
+  const disc = detectDiscovery(query)
+  if (disc) {
+    const a = computeDiscovery(disc, ctx.tracks, ctx.sessions, ctx.now)
+    return {
+      intent: `discovery:${disc.metric}`,
+      kind: a.kind,
+      tracks: a.tracks,
+      sourceTrack: a.sourceTrack,
       narration: a.narration
     }
   }
