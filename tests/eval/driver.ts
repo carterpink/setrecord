@@ -39,6 +39,7 @@ import { detectMood } from '../../src/utils/moodIntent'
 import { computeMood } from '../../electron/algorithms/memory/mood'
 import { detectKeyBpm } from '../../src/utils/keyBpmIntent'
 import { computeKeyBpm } from '../../electron/algorithms/memory/keyBpm'
+import { detectClarify } from '../../src/utils/clarifyIntent'
 import { searchLibrary } from '../../electron/algorithms/memory/librarySearch'
 import { parseQuery, type ParsedQuery } from '../../electron/algorithms/memory/queryParser'
 import { findForgottenGems } from '../../electron/algorithms/memory/forgottenGems'
@@ -315,6 +316,26 @@ export function resolveQuery(query: string, ctx: EvalCtx): EngineResult {
       sourceTrack: a.sourceTrack,
       narration: a.narration
     }
+  }
+
+  // Underspecified / adversarial / destructive → clarify, confirm, or reframe.
+  const clar = detectClarify(query)
+  if (clar) {
+    if (clar.mode === 'clarify')
+      return {
+        intent: 'clarify',
+        kind: 'clarify',
+        clarifyQuestion: clar.question,
+        narration: clar.question ?? ''
+      }
+    if (clar.mode === 'action')
+      return {
+        intent: 'action',
+        kind: 'action',
+        needsConfirmation: true,
+        narration: clar.narration ?? ''
+      }
+    return { intent: 'reframe', kind: 'knowledge', narration: clar.narration ?? '' }
   }
 
   const interp = interpretHome(query)

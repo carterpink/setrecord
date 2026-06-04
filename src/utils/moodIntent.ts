@@ -37,7 +37,11 @@ export function detectMood(raw: string): MoodKey | null {
   if (/\bmelancholic|melancholy|sad\b|wistful|moody and slow/.test(q)) return 'melancholic'
   if (/\bbuild tension|builds? tension|\btension\b/.test(q)) return 'tension'
   if (/\buplifting|feel.?good|sunny|daytime (festival|crowd)/.test(q)) return 'uplifting'
-  if (/\beuphoric|euphoria|for the peak|peak[- ]?time melodic|hands in the air/.test(q))
+  if (
+    /\beuphoric|euphoria|for the peak|peak[- ]?time melodic|hands in the air|slaps?\b|bangers?\b|that slaps|hard.?hitting/.test(
+      q
+    )
+  )
     return 'euphoric'
   if (/\bchill|chilled|mellow|beach|laid.?back|relaxed/.test(q)) return 'chill'
 
