@@ -27,6 +27,9 @@ export interface SetBuildHit {
   optionsCount?: number // "three opening tracks to choose from"
   openers?: boolean
   avoidRecentDays?: number
+  b2b?: boolean // split into two halves
+  pool?: boolean // a flexible pool (not a strict arc), spread of energies
+  genreLean?: string // soft genre preference (e.g. festival → techno)
 }
 
 const GENRES = [
@@ -180,6 +183,21 @@ export function detectSetBuild(raw: string): SetBuildHit | null {
     } else if (techno && hit.arc !== 'rise') {
       hit.bpmMin = 128
     }
+  }
+
+  if (/\bb2b\b|back[- ]?to[- ]?back|two halves|split (?:the tracks )?into (?:two )?halves/.test(q))
+    hit.b2b = true
+  if (/\bpool\b/.test(q)) hit.pool = true
+  if (/\bfestival|big room|main stage\b/.test(q)) hit.genreLean = 'techno'
+  // "works for both dancing and background listening" → mid-tempo, mid-energy.
+  if (
+    /dancing (?:and|&) background|background listening|both dancing|dance(?:floor)? and ambient/.test(
+      q
+    )
+  ) {
+    hit.bpmMin = 118
+    hit.bpmMax = 126
+    hit.arc = 'flat'
   }
 
   const avoid = q.match(

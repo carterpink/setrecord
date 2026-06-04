@@ -55,19 +55,12 @@ function sequence(pool: Track[], hit: SetBuildHit): Track[] {
       return [...up, ...down]
     }
     case 'story': {
-      const dark = pool
-        .filter((t) => /A$/.test(t.key) || t.energy <= 5)
-        .sort((a, b) => a.energy - b.energy)
-      const euphoric = pool
-        .filter((t) => !dark.includes(t) && t.energy >= 7)
-        .sort((a, b) => b.energy - a.energy)
-      const down = pool.filter((t) => !dark.includes(t) && !euphoric.includes(t))
-      return [
-        ...dark.slice(0, Math.ceil(dark.length / 2)),
-        ...euphoric,
-        ...down,
-        ...dark.slice(Math.ceil(dark.length / 2))
-      ]
+      // Mountain: dark/low intro → euphoric peak in the middle → melodic comedown.
+      const asc = pool.slice().sort((a, b) => a.energy - b.energy)
+      const rise: Track[] = []
+      const fall: Track[] = []
+      asc.forEach((t, i) => (i % 2 === 0 ? rise.push(t) : fall.unshift(t)))
+      return [...rise, ...fall]
     }
     case 'flat':
     default:
@@ -96,8 +89,10 @@ export function buildSet(
   }
   if (hit.neverPlayed) pool = pool.filter((t) => t.playCount === 0 && !t.lastPlayed)
   if (hit.durationMinSec != null) pool = pool.filter((t) => t.duration >= hit.durationMinSec!)
-  if (hit.yearMin != null) pool = pool.filter((t) => t.releaseYear != null && t.releaseYear >= hit.yearMin!)
-  if (hit.yearMax != null) pool = pool.filter((t) => t.releaseYear != null && t.releaseYear <= hit.yearMax!)
+  if (hit.yearMin != null)
+    pool = pool.filter((t) => t.releaseYear != null && t.releaseYear >= hit.yearMin!)
+  if (hit.yearMax != null)
+    pool = pool.filter((t) => t.releaseYear != null && t.releaseYear <= hit.yearMax!)
   if (hit.venue) {
     const ids = new Set(
       sessions
@@ -119,6 +114,33 @@ export function buildSet(
   if (hit.arc === 'peak') {
     const hot = pool.filter((t) => t.energy >= 7)
     if (hot.length > 0) pool = hot
+  }
+  // Soft genre lean (festival/big-room → techno family).
+  if (hit.genreLean) {
+    const re = new RegExp(
+      hit.genreLean === 'techno' ? 'techno|tech house|big room' : hit.genreLean,
+      'i'
+    )
+    const leaned = pool.filter((t) => re.test(t.genre ?? ''))
+    if (leaned.length > 0) pool = leaned
+  }
+
+  // A b2b "pool": a flexible spread of energies (not a strict arc).
+  if (hit.pool) {
+    const n = Math.min(hit.count ?? 30, pool.length)
+    const byEnergy = pool.slice().sort((a, b) => a.energy - b.energy)
+    const picked =
+      byEnergy.length > n
+        ? Array.from(
+            { length: n },
+            (_, i) => byEnergy[Math.round((i * (byEnergy.length - 1)) / (n - 1))]
+          )
+        : byEnergy
+    return {
+      kind: 'set',
+      set: picked,
+      narration: `A ${picked.length}-track pool spanning low, mid and high energy${hit.b2b ? ' — flexible ordering for a back-to-back' : ''}.`
+    }
   }
 
   // "longest set I could build" → a duration answer, not a sequence.
@@ -144,6 +166,17 @@ export function buildSet(
   const count =
     hit.count ??
     (hit.lengthMinutes ? Math.max(1, Math.round(hit.lengthMinutes / AVG_TRACK_MIN)) : 14)
+
+  // For energy-arc shapes (peak/story), down-sample the pool to `count`
+  // energy-representative tracks FIRST, so the mountain's peak survives the
+  // slice (otherwise the first N are all low-energy rise tracks).
+  if ((hit.arc === 'peak' || hit.arc === 'story') && pool.length > count && count > 1) {
+    const byE = pool.slice().sort((a, b) => a.energy - b.energy)
+    pool = Array.from(
+      { length: count },
+      (_, i) => byE[Math.round((i * (byE.length - 1)) / (count - 1))]
+    )
+  }
 
   let seq = sequence(pool, hit)
 
@@ -179,6 +212,8 @@ export function buildSet(
   const desc = bits.length ? `${bits.join(', ')} ` : ''
   let narration = `A ${desc}set of ${set.length} tracks (${fmtDuration(totalSec)}).`
   if (hit.noVocals) narration += ' (Vocal filtering is approximate — no reliable vocal tag.)'
+  if (hit.b2b)
+    narration += ` Split into two halves with an energy hand-off at the midpoint (track ${Math.ceil(set.length / 2)}).`
   if (hit.multi && hit.multi > 1)
     narration = `${hit.multi} distinct sets — here's the first (${set.length} tracks).`
 
