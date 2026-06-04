@@ -132,7 +132,7 @@ const SPECIAL = [
   /\b(library health|missing (files?|keys?|bpm)|duplicates?|clean.?up my library)\b/,
   /\b(my taste|my identity|my signature|my sound|wrapped|taste profile|what genres do i)\b/,
   /\b(lifecycle|peak rotation breakdown|how many.*(peak|forgotten|untested|active))\b/,
-  /\bafter\s+.{2,}/
+  /(?<!released\s)(?<!reissued\s)\bafter\s+(?!\d)\D{2,}/
 ]
 
 /**
@@ -245,6 +245,8 @@ function textQuery(q: string): string {
     .replace(/['"?!.]/g, ' ')
     .replace(/\bremix(?:es)? of\b|\bremix of\b/g, ' ') // "remixes of X - Y" → "X Y"
     .replace(/\s*[-–—]\s*/g, ' ') // "Leftfield - Leftism" → "Leftfield Leftism"
+    .replace(/\b(?:released?|reissued?|after|before|since)\b/g, ' ') // year-filter words
+    .replace(/\b\d{4}\b/g, ' ') // years are handled separately
     .replace(/\b\d{1,3}\b/g, ' ') // counts are handled separately
     .replace(
       /\b(give me|show me|find me|gimme|get me|pull up|pull|grab|play me|play|i ?want|i ?need|i'?d like|can you|could you|do i (?:have|own)|have i got|got any|search for|search|look for|find|list|all of my|all my|all|some|any|a few|a couple|me|my|tracks? by|songs? by|releases?|tracks?|songs?|tunes?|cuts?|records?|stuff|music|please|by|from|on|with|in (?:the )?(?:title|name)|called|named|that (?:contain|have)|containing|contains|anything|something|most[\s-]?played|least[\s-]?played|play(?:ed)? the most|fastest|slowest|quickest|newest|latest|recently added|oldest|highest[\s-]?rated|best[\s-]?rated|top[\s-]?rated|favou?rites?|random|surprise me|popular|trending|biggest)\b/g,
@@ -338,6 +340,20 @@ export function interpretTurn(raw: string, prev: LibrarySearchParams): ConvTurn 
       work = work.replace(rel[0], ' ')
     }
   }
+  // Release-year filters: "released after 2019", "before 2000", "from 1995".
+  let yearMin: number | undefined
+  let yearMax: number | undefined
+  const yAfter = work.match(/\b(?:released?\s+)?(after|since|post|from)\s+(\d{4})\b/)
+  if (yAfter && +yAfter[2] >= 1950 && +yAfter[2] <= 2100) {
+    yearMin = +yAfter[2] + (/after|post/.test(yAfter[1]) ? 1 : 0)
+    work = work.replace(yAfter[0], ' ')
+  }
+  const yBefore = work.match(/\b(?:released?\s+)?(before|pre)\s+(\d{4})\b/)
+  if (yBefore && +yBefore[2] >= 1950 && +yBefore[2] <= 2100) {
+    yearMax = +yBefore[2] - 1
+    work = work.replace(yBefore[0], ' ')
+  }
+
   const dateYear = work.match(/\badded (?:in )?(\d{4})\b/)
   if (dateYear) {
     const year = +dateYear[1]
@@ -562,6 +578,8 @@ export function interpretTurn(raw: string, prev: LibrarySearchParams): ConvTurn 
   if (energyMin != null) detected.energyMin = energyMin
   if (energyMax != null) detected.energyMax = energyMax
   if (minRating != null) detected.minRating = minRating
+  if (yearMin != null) detected.yearMin = yearMin
+  if (yearMax != null) detected.yearMax = yearMax
   if (dormantMonths != null) detected.dormantMonths = dormantMonths
   if (neverPlayed) detected.neverPlayed = neverPlayed
   if (keyExact) detected.keyExact = keyExact

@@ -109,6 +109,8 @@ export function searchLibrary(
   if (p.energyMax != null) out = out.filter((t) => t.energy <= p.energyMax!)
   if (p.keyExact) out = out.filter((t) => t.key === p.keyExact)
   if (p.minRating != null) out = out.filter((t) => t.rating >= p.minRating!)
+  if (p.yearMin != null) out = out.filter((t) => t.releaseYear != null && t.releaseYear >= p.yearMin!)
+  if (p.yearMax != null) out = out.filter((t) => t.releaseYear != null && t.releaseYear <= p.yearMax!)
   if (p.neverPlayed) out = out.filter((t) => t.playCount === 0 && !t.lastPlayed)
   if (p.dormantMonths != null) {
     const cutoff = Date.now() - p.dormantMonths * 30 * 24 * 3600 * 1000

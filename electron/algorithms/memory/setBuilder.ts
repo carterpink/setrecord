@@ -96,6 +96,8 @@ export function buildSet(
   }
   if (hit.neverPlayed) pool = pool.filter((t) => t.playCount === 0 && !t.lastPlayed)
   if (hit.durationMinSec != null) pool = pool.filter((t) => t.duration >= hit.durationMinSec!)
+  if (hit.yearMin != null) pool = pool.filter((t) => t.releaseYear != null && t.releaseYear >= hit.yearMin!)
+  if (hit.yearMax != null) pool = pool.filter((t) => t.releaseYear != null && t.releaseYear <= hit.yearMax!)
   if (hit.venue) {
     const ids = new Set(
       sessions

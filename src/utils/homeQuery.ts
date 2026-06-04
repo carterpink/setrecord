@@ -124,8 +124,10 @@ function parseAfterSource(q: string): string {
 }
 
 const DUP_RE = /\b(dupl|duplicates?|dedupe|de-?dupe|clean ?up(?:\s+my)?(?:\s+library)?)\b/
+// The bare "after X" form must not fire on "released after 2019" (a year filter)
+// or "after 2019" — require a non-digit, non-"released" context.
 const AFTER_RE =
-  /\b(?:what (?:do i|to|should i) play after|play after|mix(?:ing)? out of)\b|\bafter\s+\S/i
+  /\b(?:what (?:do i|to|should i) play after|play after|mix(?:ing)? out of)\b|(?<!released\s)(?<!reissued\s)\bafter\s+(?!\d)\S/i
 const FORGOTTEN_RE =
   /\b(forgotten|forgot|gems?|haven'?t (?:played|spun)|used to (?:play|spin)|rediscover|gathering dust|left to rest|in ages|in a while|neglected|dust(?:y|ing)?)\b/
 const WARMUP_RE = /\bwarm[- ]?up\b/

@@ -576,6 +576,9 @@ export function buildWorld(now: Date = new Date()): EvalCtx {
       playCount: 15
     }),
 
+    // ── Harmonic-mix target (032): 8B is a neighbour of G major (9B) at 128 ──
+    t({ id: 'harm1', title: 'C Major Roller', artist: 'Bridge Co', genre: 'Tech House', bpm: 128, key: '8B', energy: 8 }),
+
     // ── Duplicate imports (017/132/137): same title+artist, diff quality ────
     t({
       id: 'dupA1',
@@ -725,6 +728,8 @@ export function buildWorld(now: Date = new Date()): EvalCtx {
       dateAdded: '2021-01-01T00:00:00.000Z'
     })
   )
+
+  for (const tr of tracks) if (RELEASE_YEARS[tr.id] != null) tr.releaseYear = RELEASE_YEARS[tr.id]
 
   const byId = new Map(tracks.map((tr) => [tr.id, tr]))
 

@@ -149,6 +149,8 @@ export interface Track {
   playCount: number
   rating: number // 0-5 stars
   dateAdded: string // ISO string
+  /** Original release year (from import metadata where available). */
+  releaseYear?: number
   lastPlayed?: string // ISO string
   comment?: string
   label?: string
@@ -933,6 +935,10 @@ export interface LibrarySearchParams {
   minRating?: number
   neverPlayed?: boolean
   dormantMonths?: number
+  /** Release year lower bound (inclusive). Tracks with no releaseYear are excluded. */
+  yearMin?: number
+  /** Release year upper bound (inclusive). Tracks with no releaseYear are excluded. */
+  yearMax?: number
   /** Track duration in seconds, lower bound (inclusive). */
   durationMinSec?: number
   /** Track duration in seconds, upper bound (inclusive). */

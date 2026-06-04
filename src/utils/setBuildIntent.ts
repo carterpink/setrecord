@@ -14,6 +14,8 @@ export interface SetBuildHit {
   genre?: string
   bpmMin?: number
   bpmMax?: number
+  yearMin?: number
+  yearMax?: number
   arc: EnergyArc
   neverPlayed?: boolean
   venue?: string
@@ -105,6 +107,12 @@ export function detectSetBuild(raw: string): SetBuildHit | null {
     const single = q.match(/(\d{2,3})\s*bpm/) || q.match(/\b(?:at|around|~)\s*(\d{2,3})\b/)
     if (single && +single[1] >= 90 && +single[1] <= 200) hit.targetBpm = +single[1]
   }
+
+  const yb = q.match(/\bbefore\s+(\d{4})\b/)
+  if (yb) hit.yearMax = +yb[1] - 1
+  const ya = q.match(/\bafter\s+(\d{4})\b/)
+  if (ya) hit.yearMin = +ya[1] + 1
+  if (/\bclassics?\b/.test(q) && hit.yearMax == null && hit.yearMin == null) hit.yearMax = 1999
 
   hit.genre = findGenre(q)
   if (!hit.genre && /\bhousey\b/.test(q)) hit.genre = 'house'
