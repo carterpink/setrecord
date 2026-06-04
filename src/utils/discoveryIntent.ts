@@ -61,7 +61,7 @@ export function detectDiscovery(raw: string): DiscoveryHit | null {
   let m = q.match(/([a-z0-9'&.\s]+?)\s+fans would love/)
   if (m) return { metric: 'similar_to', seed: clean(m[1]) }
   m = q.match(
-    /\b(?:similar to|sounds? like|more like|tracks like|reminds? me of|remind me of|feel like|vibe (?:with|of|like)|share a vibe with)\s+(.+)$/
+    /\b(?:similar to|sounds? like|more like|tracks like|reminds? me of|remind me of|vibe (?:with|of|like)|share a vibe with)\s+(.+)$/
   )
   if (m) return { metric: 'similar_to', seed: clean(m[1]) }
 

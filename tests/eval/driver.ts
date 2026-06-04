@@ -35,6 +35,8 @@ import { detectDiscovery } from '../../src/utils/discoveryIntent'
 import { computeDiscovery } from '../../electron/algorithms/memory/discovery'
 import { detectTransition } from '../../src/utils/transitionIntent'
 import { computeTransition } from '../../electron/algorithms/memory/transitionsEngine'
+import { detectMood } from '../../src/utils/moodIntent'
+import { computeMood } from '../../electron/algorithms/memory/mood'
 import { searchLibrary } from '../../electron/algorithms/memory/librarySearch'
 import { parseQuery, type ParsedQuery } from '../../electron/algorithms/memory/queryParser'
 import { findForgottenGems } from '../../electron/algorithms/memory/forgottenGems'
@@ -290,6 +292,13 @@ export function resolveQuery(query: string, ctx: EvalCtx): EngineResult {
       stats: a.stats,
       narration: a.narration
     }
+  }
+
+  // Mood/vibe — after the more-specific intents (so "build me a set" wins).
+  const mood = detectMood(query)
+  if (mood) {
+    const a = computeMood(mood, ctx.tracks)
+    return { intent: `mood:${mood}`, kind: a.kind, tracks: a.tracks, narration: a.narration }
   }
 
   const interp = interpretHome(query)
