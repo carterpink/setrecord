@@ -1,10 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { History, Layers, Clock, Disc3, Copy, Plus, X, Trash2, MessageSquare } from 'lucide-react'
+import { useTranslation, Trans } from 'react-i18next'
+import {
+  History,
+  Layers,
+  Clock,
+  Disc3,
+  Copy,
+  Plus,
+  X,
+  Trash2,
+  MessageSquare,
+  Sparkles
+} from 'lucide-react'
 import { useHomeStore } from '@/stores/homeStore'
 import { useRecallStore } from '@/stores/recallStore'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { useUiStore } from '@/stores/uiStore'
-import { useCanUse } from '@/stores/licenseStore'
+import { useCanUse, useIsPro } from '@/stores/licenseStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useVoiceCapture } from '@/hooks/useVoiceCapture'
 import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist'
@@ -13,39 +25,44 @@ import { StreakChip } from '@/components/onboarding/StreakChip'
 import { Composer, type ComposerPhase } from './Composer'
 import { HomeTurn } from './HomeTurn'
 
-const PLACEHOLDERS = [
-  'Ask anything about your library — or just talk',
-  'Find something, build something, or ask what’s next',
-  'What are we building tonight?'
-]
+const PLACEHOLDER_KEYS = ['placeholders.talk', 'placeholders.build', 'placeholders.tonight']
 
-function greetingParts(): { eyebrow: string; line: string } {
+function greetingParts(locale: string): { eyebrow: string; lineKey: string } {
   const d = new Date()
   const h = d.getHours()
-  const day = d.toLocaleDateString('en-US', { weekday: 'long' })
-  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-  const line =
-    h >= 22 || h < 5 ? 'Late one.' : h < 12 ? 'Morning.' : h < 18 ? 'Afternoon.' : 'Evening.'
-  return { eyebrow: `${day} · ${time}`.toUpperCase(), line }
+  const day = d.toLocaleDateString(locale, { weekday: 'long' })
+  const time = d.toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })
+  const lineKey =
+    h >= 22 || h < 5
+      ? 'greeting.lateOne'
+      : h < 12
+        ? 'greeting.morning'
+        : h < 18
+          ? 'greeting.afternoon'
+          : 'greeting.evening'
+  return { eyebrow: `${day} · ${time}`.toUpperCase(), lineKey }
 }
 
 function HistoryDrawer({ onClose }: { onClose: () => void }): React.JSX.Element {
+  const { t } = useTranslation('home')
   const conversations = useHomeStore((s) => s.conversations)
   const currentId = useHomeStore((s) => s.currentId)
   const selectConversation = useHomeStore((s) => s.selectConversation)
   const deleteConversation = useHomeStore((s) => s.deleteConversation)
   const newConversation = useHomeStore((s) => s.newConversation)
+  const isPro = useIsPro()
+  const showUpgrade = useUiStore((s) => s.showUpgrade)
 
   return (
     <>
       <div className="home-history-backdrop" onClick={onClose} />
       <aside className="home-history glass-2">
         <div className="home-history-head">
-          <h3>History</h3>
+          <h3>{t('history.title')}</h3>
           <button
             type="button"
             className="home-history-del"
-            aria-label="Close history"
+            aria-label={t('history.closeAria')}
             onClick={onClose}
           >
             <X size={16} strokeWidth={1.7} />
@@ -59,11 +76,26 @@ function HistoryDrawer({ onClose }: { onClose: () => void }): React.JSX.Element 
             onClose()
           }}
         >
-          <Plus size={15} strokeWidth={1.7} /> New conversation
+          <Plus size={15} strokeWidth={1.7} /> {t('history.newConversation')}
         </button>
         <div className="home-history-items">
+          {!isPro && (
+            <button
+              type="button"
+              className="home-history-upsell"
+              onClick={() => {
+                showUpgrade('recall')
+                onClose()
+              }}
+            >
+              <Sparkles size={14} strokeWidth={1.7} />
+              <span>
+                <Trans t={t} i18nKey="history.upsell" components={[<strong key="0" />]} />
+              </span>
+            </button>
+          )}
           {conversations.length === 0 && (
-            <span className="home-history-empty">No conversations yet.</span>
+            <span className="home-history-empty">{t('history.empty')}</span>
           )}
           {conversations.map((c) => (
             <div
@@ -81,7 +113,7 @@ function HistoryDrawer({ onClose }: { onClose: () => void }): React.JSX.Element 
               <button
                 type="button"
                 className="home-history-del"
-                aria-label="Delete conversation"
+                aria-label={t('history.deleteAria')}
                 onClick={(e) => {
                   e.stopPropagation()
                   deleteConversation(c.id)
@@ -98,6 +130,7 @@ function HistoryDrawer({ onClose }: { onClose: () => void }): React.JSX.Element 
 }
 
 export function HomeSurface(): React.JSX.Element {
+  const { t, i18n } = useTranslation('home')
   const turns = useHomeStore((s) => s.turns)
   const run = useHomeStore((s) => s.run)
   const rerun = useHomeStore((s) => s.rerun)
@@ -110,10 +143,10 @@ export function HomeSurface(): React.JSX.Element {
   const [value, setValue] = useState('')
   const [focused, setFocused] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
-  const [phIdx] = useState(() => Math.floor(Math.random() * PLACEHOLDERS.length))
+  const [phIdx] = useState(() => Math.floor(Math.random() * PLACEHOLDER_KEYS.length))
 
   const scrollRef = useRef<HTMLDivElement>(null)
-  const greet = useMemo(() => greetingParts(), [])
+  const greet = useMemo(() => greetingParts(i18n.language), [i18n.language])
 
   const voice = useVoiceCapture({
     onInterim: (text) => setValue(text),
@@ -133,12 +166,12 @@ export function HomeSurface(): React.JSX.Element {
 
   const examples = useMemo(
     () => [
-      { icon: Clock, text: 'Find me 10 songs I haven’t played in ages' },
-      { icon: Layers, text: 'Build me a 90-minute warm-up around 124 bpm' },
-      { icon: Disc3, text: `What do I play after ${sampleTitle}` },
-      { icon: Copy, text: 'Clean up my duplicates' }
+      { icon: Clock, text: t('examples.forgotten') },
+      { icon: Layers, text: t('examples.warmup') },
+      { icon: Disc3, text: t('examples.after', { title: sampleTitle }) },
+      { icon: Copy, text: t('examples.duplicates') }
     ],
-    [sampleTitle]
+    [sampleTitle, t]
   )
 
   // Load + subscribe to model status so the "happens once" framing can appear.
@@ -157,10 +190,9 @@ export function HomeSurface(): React.JSX.Element {
   function submit(text: string): void {
     const q = text.trim()
     if (!q) return
-    if (!canUse) {
-      showUpgrade('recall')
-      return
-    }
+    // Asking is a free, unlimited taste — never walled. The upgrade reason lives
+    // at the capture moment instead (saving the conversation, exporting/keeping a
+    // built set), so the front door always demos the magic. See homeStore.persist.
     setValue('')
     void run(q)
   }
@@ -171,9 +203,7 @@ export function HomeSurface(): React.JSX.Element {
     } else if (voice.available) {
       void voice.start()
     } else {
-      useToastStore
-        .getState()
-        .push({ kind: 'info', message: 'Voice input isn’t available on this machine yet.' })
+      useToastStore.getState().push({ kind: 'info', message: t('voice.unavailable') })
     }
   }
 
@@ -187,7 +217,7 @@ export function HomeSurface(): React.JSX.Element {
       return (
         <div className="voice-setup">
           <span className="voice-setup-spinner" />
-          Setting up voice · one time · {pct}%
+          {t('voice.settingUp', { pct })}
         </div>
       )
     }
@@ -195,7 +225,7 @@ export function HomeSurface(): React.JSX.Element {
       return (
         <div className="voice-setup">
           <span className="voice-setup-spinner" />
-          Starting voice…
+          {t('voice.starting')}
         </div>
       )
     }
@@ -217,7 +247,7 @@ export function HomeSurface(): React.JSX.Element {
       focused={focused}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
-      placeholder={PLACEHOLDERS[phIdx]}
+      placeholder={t(PLACEHOLDER_KEYS[phIdx])}
     />
   )
 
@@ -230,7 +260,7 @@ export function HomeSurface(): React.JSX.Element {
         <div className="home-top-right">
           <button type="button" className="workspace-link" onClick={() => setHistoryOpen(true)}>
             <History size={15} strokeWidth={1.6} />
-            History
+            {t('topBar.history')}
           </button>
         </div>
       </div>
@@ -240,8 +270,8 @@ export function HomeSurface(): React.JSX.Element {
           <div className="greet-wrap">
             <div className="greeting">
               <div className="eyebrow">{greet.eyebrow}</div>
-              <h1>{greet.line}</h1>
-              <div className="sub">What do you want to do with your library?</div>
+              <h1>{t(greet.lineKey)}</h1>
+              <div className="sub">{t('greeting.sub')}</div>
               <StreakChip />
             </div>
             <div className="composer-dock idle">
@@ -281,6 +311,14 @@ export function HomeSurface(): React.JSX.Element {
                 ))}
               </div>
             </div>
+            {!canUse && turns.some((t) => !t.pending) && (
+              <button type="button" className="home-edge-bar" onClick={() => showUpgrade('recall')}>
+                <Sparkles size={14} strokeWidth={1.7} />
+                <span>
+                  <Trans t={t} i18nKey="edgeBar.proPitch" components={[<strong key="0" />]} />
+                </span>
+              </button>
+            )}
             <div className="composer-dock">
               {voiceSetup}
               {composer}

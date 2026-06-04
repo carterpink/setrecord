@@ -29,6 +29,17 @@ export interface Loop {
 
 export type AudioFormat = 'mp3' | 'aiff' | 'wav' | 'flac' | 'm4a' | 'unknown'
 
+// ───────── Localisation ─────────
+
+/** UI languages that ship with a translation bundle. */
+export type AppLanguage = 'en' | 'es' | 'de' | 'fr' | 'pt-BR'
+
+/**
+ * The user's language preference as persisted in settings. `'system'` means
+ * "follow the OS locale" and is the default until the user picks explicitly.
+ */
+export type LanguagePreference = AppLanguage | 'system'
+
 /** Where the current `energy` value came from. */
 export type EnergySource = 'pending' | 'rekordbox' | 'computed' | 'failed' | 'missing' | 'user'
 
@@ -1050,8 +1061,9 @@ export interface LicenseActivationResult {
   error?: LicenseActivationError
 }
 
-/** What the user is buying — drives the external checkout URL. */
-export type CheckoutPlan = 'subscription' | 'lifetime' | 'tip'
+/** What the user is buying — drives the external checkout URL. Annual & monthly
+ * both mint a 'subscription' license key; they differ only in checkout/expiry. */
+export type CheckoutPlan = 'monthly' | 'annual' | 'lifetime' | 'tip'
 
 // ───────── Play history (Phase 11) ─────────
 

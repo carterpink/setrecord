@@ -25,6 +25,7 @@ import {
   type ForgottenFilters
 } from '@/utils/homeQuery'
 import { useLibraryStore } from '@/stores/libraryStore'
+import { isProUser } from '@/utils/premium'
 
 const CONVO_KEY = 'setsense-home-convos'
 const MAX_CONVOS = 50
@@ -737,6 +738,12 @@ interface HomeState {
 
 /** Persist the live turns into the current conversation record. */
 function persist(state: HomeState): HomeConversation[] {
+  // "Edged" free tier (pricing re-cut 2026-06): asking is unlimited and free —
+  // the live thread renders this session — but conversations are an EPHEMERAL
+  // taste. Nothing is written to history until Pro, so the upgrade reason lands
+  // at the value moment ("keep what you just made"), never as a wall on use.
+  // Any conversations saved while previously Pro are left untouched on disk.
+  if (!isProUser()) return state.conversations
   const id = state.currentId
   if (!id) return state.conversations
   const persistedTurns: PersistedTurn[] = state.turns.map((t) => ({

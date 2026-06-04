@@ -1194,7 +1194,9 @@
   display: flex;
   flex-direction: column;
   border-left: 0.5px solid var(--border-default);
+  border-radius: var(--radius-xl);
   animation: home-slide-in var(--dur-state) var(--ease-expo);
+  overflow: hidden;
 }
 .home-history-head {
   display: flex;
@@ -1277,6 +1279,47 @@
   font: var(--type-caption);
   color: var(--text-tertiary);
   padding: 12px 10px;
+}
+/* "Edge" upsells — free conversations are ephemeral; both nudge to Pro at the
+   value moment (keep this / act on this) without ever blocking the free taste. */
+.home-history-upsell,
+.home-edge-bar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  text-align: left;
+  font: var(--type-caption);
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface-1));
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border-default));
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
+}
+.home-history-upsell {
+  margin-bottom: 10px;
+}
+.home-edge-bar {
+  margin: 0 0 10px;
+}
+.home-history-upsell:hover,
+.home-edge-bar:hover {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-1));
+  border-color: var(--accent);
+}
+.home-history-upsell svg,
+.home-edge-bar svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.home-history-upsell strong,
+.home-edge-bar strong {
+  color: var(--text-primary);
+  font-weight: 600;
 }
 @keyframes home-fade-in {
   from {

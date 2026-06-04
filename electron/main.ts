@@ -1419,7 +1419,11 @@ function registerIpcHandlers(): void {
   // to the commerce host so a renderer compromise can't launch arbitrary URLs.
   ipcMain.handle(
     'license:checkout',
-    async (_e, plan: 'subscription' | 'lifetime' | 'tip', tipAmount?: number): Promise<boolean> => {
+    async (
+      _e,
+      plan: 'monthly' | 'annual' | 'lifetime' | 'tip',
+      tipAmount?: number
+    ): Promise<boolean> => {
       try {
         const url = checkoutUrl(plan, tipAmount)
         if (new URL(url).host.toLowerCase() !== COMMERCE_HOST) return false

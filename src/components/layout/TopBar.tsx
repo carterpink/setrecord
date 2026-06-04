@@ -1,16 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation, Trans } from 'react-i18next'
 import {
   Download,
   Home,
   Library,
   MessageSquareHeart,
-  Moon,
   Plus,
   Radio,
   Settings,
   Sliders,
   Sparkles,
-  Sun,
   TimerReset,
   Upload
 } from 'lucide-react'
@@ -25,7 +24,7 @@ import { motion, AnimatePresence } from '@/components/shared/Motion'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
-import { useLicenseStore, useTrialInfo } from '@/stores/licenseStore'
+import { useLicenseStore, useTrialInfo, useRenewalInfo } from '@/stores/licenseStore'
 import { startAudioFeed, type AudioFeedHandle } from '@/components/live/audioFeed'
 import { startScreenReader, type ScreenReaderHandle } from '@/components/live/screenReader'
 import { LiveDevicePicker } from '@/components/live/LiveDevicePicker'
@@ -49,14 +48,14 @@ const ctx = {
 } as const
 
 export function TopBar(): React.JSX.Element {
+  const { t } = useTranslation('layout')
   const mode = useUiStore((s) => s.mode)
   const setMode = useUiStore((s) => s.setMode)
   const showModal = useUiStore((s) => s.showModal)
   const showUpgrade = useUiStore((s) => s.showUpgrade)
   const isPro = useLicenseStore((s) => s.license.tier === 'pro')
   const trial = useTrialInfo()
-  const lightMode = useUiStore((s) => s.lightMode)
-  const toggleLightMode = useUiStore((s) => s.toggleLightMode)
+  const renewal = useRenewalInfo()
   const currentSet = useSetStore((s) => s.currentSet)
   const createSet = useSetStore((s) => s.createSet)
   const libraryStale = useLibraryStore((s) => s.libraryStale)
@@ -102,9 +101,7 @@ export function TopBar(): React.JSX.Element {
       })
       .catch((err) => {
         console.error('[live] screen reader failed', err)
-        useToastStore
-          .getState()
-          .error('SetSense Live needs Screen Recording permission (System Settings → Privacy).')
+        useToastStore.getState().error(t('live.screenPermissionError'))
       })
 
     // Open the overlay + minimise + start the metadata poll.
@@ -161,18 +158,18 @@ export function TopBar(): React.JSX.Element {
   // value string here is what crowds the bar in Build mode.
   const badgeValue = validated
     ? hw
-      ? `${score}% · ${hw} ready`
-      : `${score}%`
+      ? t('boothCheck.valueReady', { score, hw })
+      : t('boothCheck.value', { score })
     : hasTracks
-      ? 'Check set'
+      ? t('boothCheck.checkSet')
       : undefined
   const energyAnalysis = useUiStore((s) => s.energyAnalysis)
 
   const badgeTitle = hasTracks
     ? validated
-      ? `Booth check: ${score}% — click to re-validate for export`
-      : 'Click to check this set works on your CDJ before you export'
-    : 'Add tracks, then run a CDJ compatibility check before you export'
+      ? t('boothCheck.titleValidated', { score })
+      : t('boothCheck.titlePending')
+    : t('boothCheck.titleEmpty')
 
   const isBuild = mode === 'Build'
   // Volume only matters where preview audio plays (building / browsing).
@@ -209,13 +206,13 @@ export function TopBar(): React.JSX.Element {
                 variant="secondary"
                 icon={Plus}
                 onClick={handleNewSet}
-                title="Start a new set (⌘N)"
+                title={t('setTools.newSetTitle')}
               >
-                New set
+                {t('setTools.newSet')}
               </Button>
               <Badge
                 dot={dotKind}
-                label="Booth check"
+                label={t('boothCheck.label')}
                 value={badgeValue}
                 glass={1}
                 onClick={
@@ -225,9 +222,7 @@ export function TopBar(): React.JSX.Element {
                       ? () => showModal('validate')
                       : undefined
                 }
-                title={
-                  isPro ? badgeTitle : 'CDJ compatibility check is a Pro feature — click to upgrade'
-                }
+                title={isPro ? badgeTitle : t('boothCheck.titleProGate')}
               />
             </motion.div>
           )}
@@ -247,13 +242,9 @@ export function TopBar(): React.JSX.Element {
                 variant={isLive ? 'primary' : 'ghost'}
                 icon={Radio}
                 onClick={() => void toggleLive()}
-                title={
-                  isLive
-                    ? 'End Live — close the floating overlay'
-                    : 'Go Live — a transparent glass overlay that floats over Rekordbox, reads what’s playing, and surfaces the best next moves'
-                }
+                title={isLive ? t('live.endTitle') : t('live.goLiveTitle')}
               >
-                {isLive ? 'Live' : 'Go Live'}
+                {isLive ? t('live.live') : t('live.goLive')}
               </Button>
             </motion.div>
           )}
@@ -265,17 +256,18 @@ export function TopBar(): React.JSX.Element {
               className="energy-analysis-pill"
               role="status"
               aria-live="polite"
-              title="Analysing each track's spectral energy — RMS, brightness, and loudness — to compute DJ energy scores. Runs once per track, then cached."
+              title={t('energy.pillTitle')}
               initial={ctx.initial}
               animate={ctx.animate}
               exit={ctx.exit}
               transition={ctx.transition}
             >
-              Analysing energy{' '}
-              <span className="mono">
-                {energyAnalysis.processed} / {energyAnalysis.total}
-              </span>
-              …
+              <Trans
+                t={t}
+                i18nKey="energy.pill"
+                values={{ processed: energyAnalysis.processed, total: energyAnalysis.total }}
+                components={[<span key="0" className="mono" />]}
+              />
             </motion.span>
           )}
         </AnimatePresence>
@@ -303,12 +295,12 @@ export function TopBar(): React.JSX.Element {
         </AnimatePresence>
 
         <motion.div className="topbar-item" layout transition={ctx.transition}>
-          <OverflowMenu aria-label="More options" title="More" dot={libraryStale}>
+          <OverflowMenu aria-label={t('menu.moreAria')} title={t('menu.more')} dot={libraryStale}>
             {(close) => (
               <>
                 <OverflowMenuItem
                   icon={Upload}
-                  label="Import library"
+                  label={t('menu.importLibrary')}
                   badge={libraryStale}
                   onClick={() => {
                     close()
@@ -316,14 +308,8 @@ export function TopBar(): React.JSX.Element {
                   }}
                 />
                 <OverflowMenuItem
-                  icon={lightMode ? Moon : Sun}
-                  label={lightMode ? 'Dark mode' : 'Light mode'}
-                  hint={lightMode ? 'Light' : 'Dark'}
-                  onClick={toggleLightMode}
-                />
-                <OverflowMenuItem
                   icon={MessageSquareHeart}
-                  label="Send feedback"
+                  label={t('menu.sendFeedback')}
                   onClick={() => {
                     close()
                     showModal('feedback')
@@ -331,7 +317,7 @@ export function TopBar(): React.JSX.Element {
                 />
                 <OverflowMenuItem
                   icon={Settings}
-                  label="Settings"
+                  label={t('menu.settings')}
                   onClick={() => {
                     close()
                     showModal('settings')
@@ -356,12 +342,42 @@ export function TopBar(): React.JSX.Element {
               <Button
                 variant="ghost"
                 icon={TimerReset}
+                className={`topbar-trial${trial.daysRemaining <= 2 ? ' topbar-trial-urgent' : ''}`}
                 onClick={() => showUpgrade()}
-                title="You’re on a Pro trial — click to upgrade"
+                title={
+                  trial.daysRemaining <= 1
+                    ? t('trial.titleLastDay')
+                    : t('trial.title', { days: trial.daysRemaining })
+                }
               >
-                {trial.daysRemaining === 1
-                  ? 'Trial · 1 day'
-                  : `Trial · ${trial.daysRemaining} days`}
+                {trial.daysRemaining <= 1
+                  ? t('trial.labelLastDay')
+                  : trial.daysRemaining === 2
+                    ? t('trial.labelTwoDays')
+                    : t('trial.label', { days: trial.daysRemaining })}
+              </Button>
+            </motion.div>
+          )}
+          {renewal.expiringSoon && (
+            <motion.div
+              key="renewal"
+              className="topbar-item"
+              layout
+              initial={ctx.initial}
+              animate={ctx.animate}
+              exit={ctx.exit}
+              transition={ctx.transition}
+            >
+              <Button
+                variant="ghost"
+                icon={TimerReset}
+                className={`topbar-trial${renewal.daysRemaining <= 3 ? ' topbar-trial-urgent' : ''}`}
+                onClick={() => showUpgrade()}
+                title={t('renewal.title', { count: renewal.daysRemaining })}
+              >
+                {renewal.daysRemaining <= 1
+                  ? t('renewal.labelTomorrow')
+                  : t('renewal.label', { days: renewal.daysRemaining })}
               </Button>
             </motion.div>
           )}
@@ -370,11 +386,11 @@ export function TopBar(): React.JSX.Element {
         <motion.div className="topbar-item" layout transition={ctx.transition}>
           {isPro ? (
             <Button variant="primary" icon={Download} onClick={() => showModal('export')}>
-              Export
+              {t('actions.export')}
             </Button>
           ) : (
             <Button variant="primary" icon={Sparkles} onClick={() => showUpgrade()}>
-              Go Pro
+              {t('actions.goPro')}
             </Button>
           )}
         </motion.div>

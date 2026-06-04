@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useState } from 'react'
 import type { CheckoutPlan, LicenseActivationResult, LicenseState } from '@/types'
 import type { ProFeature } from '@/utils/entitlements'
 
@@ -142,4 +143,47 @@ export function useTrialInfo(): TrialInfo {
     expired: status === 'trial-expired',
     daysRemaining
   }
+}
+
+export interface RenewalInfo {
+  /** An active subscription is inside the reminder window (≤ RENEWAL_NOTICE_DAYS). */
+  expiringSoon: boolean
+  /** Whole days until the subscription lapses (≥0). */
+  daysRemaining: number
+}
+
+/** Days before a subscription lapses that we start the renewal nudge. */
+export const RENEWAL_NOTICE_DAYS = 14
+
+/**
+ * Reactive renewal state. Subscriptions are term licenses (no billing server),
+ * so an unrenewed Pro user silently drops to free on the expiry date. This pure
+ * helper drives an honest pre-expiry reminder so that churn is a choice, not an
+ * accident. Lifetime keys (no expiresAt) and trials never qualify.
+ */
+export function computeRenewal(
+  status: LicenseState['status'],
+  plan: LicenseState['plan'],
+  expiresAt: string | null,
+  nowMs: number
+): RenewalInfo {
+  if (status !== 'active' || plan !== 'subscription' || !expiresAt) {
+    return { expiringSoon: false, daysRemaining: 0 }
+  }
+  const ms = Date.parse(expiresAt) - nowMs
+  if (Number.isNaN(ms)) return { expiringSoon: false, daysRemaining: 0 }
+  const daysRemaining = Math.max(0, Math.ceil(ms / 86_400_000))
+  return { expiringSoon: ms > 0 && daysRemaining <= RENEWAL_NOTICE_DAYS, daysRemaining }
+}
+
+/** Reactive renewal view for the topbar reminder chip. */
+export function useRenewalInfo(): RenewalInfo {
+  const status = useLicenseStore((s) => s.license.status)
+  const plan = useLicenseStore((s) => s.license.plan)
+  const expiresAt = useLicenseStore((s) => s.license.expiresAt)
+  // Sample the clock once in a lazy state initializer (the sanctioned place for
+  // an impure read) so render stays pure. Days-granularity needs no live ticking;
+  // the value re-samples on next mount, which is plenty for a renewal reminder.
+  const [nowMs] = useState(() => Date.now())
+  return computeRenewal(status, plan, expiresAt, nowMs)
 }

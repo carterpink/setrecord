@@ -54,9 +54,23 @@ export interface LicensePayload {
 // ── Commerce ────────────────────────────────────────────────────────────────
 // Display strings live here so the paywall and any receipts stay in lockstep.
 
+// Pricing strategy (2026-06): the previous $12/mo + $89 lifetime menu was
+// self-cannibalising — one year of the sub ($144) cost MORE than buying
+// lifetime outright, so the rational buyer never subscribed. The closest market
+// comp (Lexicon, a DJ library manager) sits at $9.99/mo or $199 lifetime; a pure
+// utility (Mixed In Key) is $58–99 one-time. We re-anchor to that platform tier:
+//   • annual is the centre-stage default ($79/yr ≈ $6.58/mo)
+//   • lifetime is the high anchor ($199, ~2.5× annual — funds ongoing import
+//     compatibility work and reads as "serious", so it doesn't undercut annual)
+//   • monthly is a deliberately weaker-value decoy ($9/mo = $108/yr) that makes
+//     annual's saving obvious (Ariely asymmetric dominance)
+// The license PAYLOAD still only knows 'subscription' vs 'lifetime' — annual and
+// monthly both mint a 'subscription' key (different expiresAt), so verification
+// is unchanged; only this checkout/display layer distinguishes cadence.
 export const PRICING = {
-  subscription: { label: '$12', period: '/month', amount: 12 },
-  lifetime: { label: '$89', period: 'one-time', amount: 89 }
+  monthly: { label: '$9', period: '/month', amount: 9 },
+  annual: { label: '$79', period: '/year', amount: 79 },
+  lifetime: { label: '$199', period: 'one-time', amount: 199 }
 } as const
 
 /** Suggested tip amounts (USD) for the "support the developer" path. */
@@ -106,7 +120,10 @@ export function parseActivationUrl(rawUrl: string): string | null {
 }
 
 /** Build the external checkout URL for a given plan or a tip. */
-export function checkoutUrl(plan: 'subscription' | 'lifetime' | 'tip', tipAmount?: number): string {
+export function checkoutUrl(
+  plan: 'monthly' | 'annual' | 'lifetime' | 'tip',
+  tipAmount?: number
+): string {
   // Tell the checkout backend where to send the buyer once payment clears, so
   // it can redirect to `setsense://activate?key=…` and the app self-activates
   // instead of relying on a manual copy-paste from the confirmation email.

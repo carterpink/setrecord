@@ -66,10 +66,32 @@ export function isLocked(feature: ProFeature, tier: LicenseTier): boolean {
 }
 
 // ── Commerce display (mirrors electron/services/licensing/signingKey.ts) ──────
+//
+// Three tiers, deliberately arranged for the paywall (see UpgradeModal):
+//   • monthly  — decoy: weakest value ($9×12 = $108/yr) so annual's saving is obvious
+//   • annual   — the recommended default, centre-stage; framed per-month to shrink
+//                the number ($79 ÷ 12 ≈ $6.58/mo) and against monthly to show savings
+//   • lifetime — the high anchor; "pay once" for buyers who hate subscriptions
+// `perMonth` / `save` / `sub` are pre-computed copy so the component stays dumb.
 
 export const PRO_PRICING = {
-  subscription: { price: '$12', period: 'per month' },
-  lifetime: { price: '$89', period: 'one-time' }
+  monthly: {
+    price: '$9',
+    period: 'per month',
+    sub: 'Billed monthly. Cancel anytime.'
+  },
+  annual: {
+    price: '$79',
+    period: 'per year',
+    perMonth: '$6.58/mo',
+    sub: 'Billed once a year. Cancel anytime.',
+    save: 'Save $29 a year vs monthly'
+  },
+  lifetime: {
+    price: '$199',
+    period: 'one-time',
+    sub: 'Pay once. Yours forever, including future updates.'
+  }
 } as const
 
 export const TIP_AMOUNTS = [5, 12, 25] as const
