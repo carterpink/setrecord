@@ -27,6 +27,8 @@ import { computeStats } from '../../electron/algorithms/memory/stats'
 import { detectGig } from '../../src/utils/gigIntent'
 import { computeGig } from '../../electron/algorithms/memory/gigHistory'
 import { detectKnowledge } from '../../src/utils/knowledge'
+import { detectMaintenance } from '../../src/utils/maintenanceIntent'
+import { computeMaintenance } from '../../electron/algorithms/memory/maintenance'
 import { searchLibrary } from '../../electron/algorithms/memory/librarySearch'
 import { parseQuery, type ParsedQuery } from '../../electron/algorithms/memory/queryParser'
 import { findForgottenGems } from '../../electron/algorithms/memory/forgottenGems'
@@ -210,6 +212,20 @@ export function resolveQuery(query: string, ctx: EvalCtx): EngineResult {
       kind: a.kind,
       stats: a.stats,
       count: a.count,
+      narration: a.narration
+    }
+  }
+
+  const maint = detectMaintenance(query)
+  if (maint) {
+    const a = computeMaintenance(maint, ctx.tracks, ctx.playlists)
+    return {
+      intent: `maintenance:${maint.metric}`,
+      kind: a.kind,
+      tracks: a.tracks,
+      stats: a.stats,
+      count: a.count,
+      needsConfirmation: a.needsConfirmation,
       narration: a.narration
     }
   }
