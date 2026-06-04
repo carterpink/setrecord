@@ -64,6 +64,10 @@ const GENRES = [
   'melodic techno',
   'drum and bass',
   'liquid dnb',
+  'detroit techno',
+  'electro house',
+  'acid house',
+  'acid techno',
   'tech house',
   'deep house',
   'afro house',
@@ -241,7 +245,7 @@ function textQuery(q: string): string {
     .replace(/['"?!.]/g, ' ')
     .replace(/\b\d{1,3}\b/g, ' ') // counts are handled separately
     .replace(
-      /\b(give me|show me|find me|gimme|get me|pull up|pull|grab|play me|play|i ?want|i ?need|i'?d like|can you|could you|do i (?:have|own)|have i got|got any|search for|search|look for|find|list|all of my|all my|all|some|any|a few|a couple|me|my|tracks? by|songs? by|tracks?|songs?|tunes?|cuts?|records?|stuff|music|please|by|from|with|in (?:the )?(?:title|name)|called|named|that (?:contain|have)|containing|contains|anything|something)\b/g,
+      /\b(give me|show me|find me|gimme|get me|pull up|pull|grab|play me|play|i ?want|i ?need|i'?d like|can you|could you|do i (?:have|own)|have i got|got any|search for|search|look for|find|list|all of my|all my|all|some|any|a few|a couple|me|my|tracks? by|songs? by|releases?|tracks?|songs?|tunes?|cuts?|records?|stuff|music|please|by|from|on|with|in (?:the )?(?:title|name)|called|named|that (?:contain|have)|containing|contains|anything|something|most[\s-]?played|least[\s-]?played|play(?:ed)? the most|fastest|slowest|quickest|newest|latest|recently added|oldest|highest[\s-]?rated|best[\s-]?rated|top[\s-]?rated|favou?rites?|random|surprise me|popular|trending|biggest)\b/g,
       ' '
     )
     .replace(/\s+/g, ' ')
@@ -474,6 +478,8 @@ export function interpretTurn(raw: string, prev: LibrarySearchParams): ConvTurn 
   else if (mBare) limit = +mBare[1]
   else if (mLead && +mLead[1] <= 100) limit = +mLead[1]
   if (limit != null && (limit < 1 || limit > 500)) limit = undefined
+  // Singular "my most/least played track" → a single answer.
+  if (limit == null && /\b(most|least)[\s-]?played\s+(track|song|tune)\b/.test(q)) limit = 1
 
   const genre = matchGenre(q)
 
@@ -526,6 +532,8 @@ export function interpretTurn(raw: string, prev: LibrarySearchParams): ConvTurn 
     sort = 'recent'
   else if (/\b(oldest|first added|longest ago)\b/.test(q)) sort = 'oldest'
   else if (/\b(highest[- ]?rated|best[- ]?rated|top[- ]?rated)\b/.test(q)) sort = 'rating'
+  else if (/\b(fastest|quickest|highest[- ]?bpm|hardest tempo)\b/.test(q)) sort = 'bpmDesc'
+  else if (/\b(slowest|lowest[- ]?bpm)\b/.test(q)) sort = 'bpmAsc'
   else if (/\b(random|surprise me|shuffle|anything)\b/.test(q)) sort = 'random'
   if (/\b(popular|trending|charting|hot right now|popular now|whats hot|in right now)\b/.test(q)) {
     popularityNote = true

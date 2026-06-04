@@ -91,7 +91,10 @@ export function searchLibrary(
 
   if (p.text) {
     const q = p.text.toLowerCase()
-    out = out.filter((t) => `${t.title} ${t.artist} ${t.album ?? ''}`.toLowerCase().includes(q))
+    // Include label so "Drumcode releases" / "Transmat" find label matches too.
+    out = out.filter((t) =>
+      `${t.title} ${t.artist} ${t.album ?? ''} ${t.label ?? ''}`.toLowerCase().includes(q)
+    )
   }
   if (p.genre) {
     const matchers = genreMatchers(p.genre)

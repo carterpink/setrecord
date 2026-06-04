@@ -202,9 +202,15 @@ Surface **all** real-world data that helps the user:
     common case. **Baseline 27 → 42 (13% → 20%)**; Basic Search 20%→45%; cases
     002/003/008/199 (Burial/Aphex/Villalobos/Deadmau5) now pass. All 79 existing
     query-layer unit tests still green.
-  - ⏭ Remaining P1: fill `execIntent` for similar_to/build_set/count/duplicates
-    (D4), unify the dual router fully (D6), default the model on with a
-    deterministic floor (D1).
+  - ✅ **Router unified (D6).** Search-vs-ask is now decided solely by
+    interpretHome's `ask` flag — any parsed deterministic search executes
+    (including sort-only: "fastest tracks", "my most played track") instead of
+    being re-derived via `hasStructuredParams` and mis-routed to the off model.
+  - ✅ **Deterministic breadth:** label included in text search (Drumcode/Transmat
+    → 006/118), `fastest`/`slowest` → BPM sort (024), singular "most played track"
+    → 1 result (014), niche genres (detroit/acid/electro house). **42 → 47.**
+  - ⏭ Remaining P1/P2: fill `execIntent` for similar_to/build_set/count/duplicates
+    (D4) and default the model on with a deterministic floor (D1). **47/210 (22%).**
   - Note: removing the literal-echo fallback also corrected two false-green stats
     cases (149/154) whose lenient narration check had matched the echoed query.
 - **P2 — Expanded QueryPlan + engine breadth.** Stats, gig-history, similarity,

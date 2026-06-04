@@ -30,27 +30,6 @@ import { analyzeEnds } from '../../electron/algorithms/memory/closers'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-/** Mirror of homeStore.hasStructuredParams (note: deliberately excludes text + performed*). */
-function hasStructuredParams(p: LibrarySearchParams): boolean {
-  return (
-    (p.text != null && p.text !== '') ||
-    p.genre != null ||
-    p.bpmMin != null ||
-    p.bpmMax != null ||
-    p.energyMin != null ||
-    p.energyMax != null ||
-    p.keyExact != null ||
-    p.minRating != null ||
-    p.neverPlayed != null ||
-    p.dormantMonths != null ||
-    p.durationMinSec != null ||
-    p.durationMaxSec != null ||
-    p.addedAfter != null ||
-    (p.tags?.length ?? 0) > 0 ||
-    (p.sort != null && p.sort !== 'mostPlayed')
-  )
-}
-
 /** Mirror of queries.getTrackIdsPlayedWhere over the fixture sessions. */
 function trackIdsPlayedWhere(ctx: EvalCtx, p: LibrarySearchParams): Set<string> | null {
   const hasGig =
@@ -207,8 +186,10 @@ export function resolveQuery(query: string, ctx: EvalCtx): EngineResult {
   const interp = interpretHome(query)
   const f = interp.filters
 
-  const useModel =
-    interp.kind === 'generic' && !(f.kind === 'generic' && hasStructuredParams(f.params))
+  // Route to the model ONLY when interpretHome couldn't parse the request
+  // (its `ask` flag). Any parsed search — including sort-only ("fastest",
+  // "most played track") — executes deterministically. (D6: one source of truth.)
+  const useModel = interp.kind === 'generic' && f.kind === 'generic' && f.ask === true
 
   if (!useModel) {
     switch (f.kind) {

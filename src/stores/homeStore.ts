@@ -311,27 +311,6 @@ async function execute(filters: HomeFilters): Promise<HomeResult> {
 
 // ─── Model-routed resolution (the "handle anything" path) ────────────────────
 
-/** Does the deterministic parse already carry enough structure to answer exactly? */
-function hasStructuredParams(p: LibrarySearchParams): boolean {
-  return (
-    (p.text != null && p.text !== '') ||
-    p.genre != null ||
-    p.bpmMin != null ||
-    p.bpmMax != null ||
-    p.energyMin != null ||
-    p.energyMax != null ||
-    p.keyExact != null ||
-    p.minRating != null ||
-    p.neverPlayed != null ||
-    p.dormantMonths != null ||
-    p.durationMinSec != null ||
-    p.durationMaxSec != null ||
-    p.addedAfter != null ||
-    (p.tags?.length ?? 0) > 0 ||
-    (p.sort != null && p.sort !== 'mostPlayed')
-  )
-}
-
 const PRETTY_SORT: Record<string, string> = {
   mostPlayed: 'most played first',
   leastPlayed: 'rarest first',
@@ -716,9 +695,12 @@ function usesModelInitially(query: string): {
   useModel: boolean
 } {
   const interp = interpretHome(query)
+  // Route to the model ONLY when interpretHome couldn't parse the request (its
+  // `ask` flag). Any parsed deterministic search executes directly — including
+  // sort-only ones ("fastest tracks", "my most played track"). One source of
+  // truth for search-vs-ask, instead of re-deriving structure from params.
   const useModel =
-    interp.kind === 'generic' &&
-    !(interp.filters.kind === 'generic' && hasStructuredParams(interp.filters.params))
+    interp.kind === 'generic' && interp.filters.kind === 'generic' && interp.filters.ask === true
   return { interp, useModel }
 }
 
