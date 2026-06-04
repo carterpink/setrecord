@@ -192,10 +192,21 @@ Surface **all** real-world data that helps the user:
   "10 Fisher songs" class fails via the literal full-sentence fallback. Logged data
   gap: Track has no `releaseYear` (year-based prompts need a P2 field).
   Run: `npx vitest run tests/eval/eval.test.ts` (writes the scorecard).
-- **P1 — Pipeline unification + core fixes.** Single Understand→Execute pipeline;
-  fix D2/D3/D6; fill `execIntent` (D4); search carries text/artist; default-on
-  with deterministic floor. Re-score. *(This alone should fix the "10 Fisher"
-  class and most of categories 1–2, 12.)*
+- **P1 — Pipeline unification + core fixes. 🚧 IN PROGRESS.**
+  - ✅ **Artist/text search (the "10 Fisher songs" / "find Burial" class).**
+    `textQuery` now strips filler/punctuation ("find", "search for", "anything",
+    quotes); text is extracted whenever there's no *real* filter (a bare count no
+    longer drops the artist); `text` is now a structured signal in
+    `hasStructuredParams` (homeStore + harness driver) so it executes instead of
+    falling through to the literal full-sentence search. Fixes D2/D3 for the
+    common case. **Baseline 27 → 42 (13% → 20%)**; Basic Search 20%→45%; cases
+    002/003/008/199 (Burial/Aphex/Villalobos/Deadmau5) now pass. All 79 existing
+    query-layer unit tests still green.
+  - ⏭ Remaining P1: fill `execIntent` for similar_to/build_set/count/duplicates
+    (D4), unify the dual router fully (D6), default the model on with a
+    deterministic floor (D1).
+  - Note: removing the literal-echo fallback also corrected two false-green stats
+    cases (149/154) whose lenient narration check had matched the echoed query.
 - **P2 — Expanded QueryPlan + engine breadth.** Stats, gig-history, similarity,
   set-building arcs, harmonic search, actions-with-confirmation, clarify. Re-score
   per category.

@@ -33,6 +33,7 @@ import { analyzeEnds } from '../../electron/algorithms/memory/closers'
 /** Mirror of homeStore.hasStructuredParams (note: deliberately excludes text + performed*). */
 function hasStructuredParams(p: LibrarySearchParams): boolean {
   return (
+    (p.text != null && p.text !== '') ||
     p.genre != null ||
     p.bpmMin != null ||
     p.bpmMax != null ||

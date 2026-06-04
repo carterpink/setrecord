@@ -231,16 +231,25 @@ function hasParams(p: LibrarySearchParams): boolean {
   return Object.values(p).some((v) => v !== undefined)
 }
 
-/** Strip leading request verbs so a bare text search isn't polluted. */
+/**
+ * Strip request verbs, filler and punctuation so a bare text search isn't
+ * polluted ("find Burial" → "burial", "give me 10 Fisher songs" → "fisher",
+ * "anything by Ricardo Villalobos" → "ricardo villalobos").
+ */
 function textQuery(q: string): string {
   return q
+    .replace(/['"?!.]/g, ' ')
+    .replace(/\b\d{1,3}\b/g, ' ') // counts are handled separately
     .replace(
-      /\b(give me|show me|find me|gimme|get me|pull|grab|play me|i want|i need|some|a few|a couple|tracks?|songs?|tunes?|please|by|from)\b/g,
+      /\b(give me|show me|find me|gimme|get me|pull up|pull|grab|play me|play|i ?want|i ?need|i'?d like|can you|could you|do i (?:have|own)|have i got|got any|search for|search|look for|find|list|all of my|all my|all|some|any|a few|a couple|me|my|tracks? by|songs? by|tracks?|songs?|tunes?|cuts?|records?|stuff|music|please|by|from|with|in (?:the )?(?:title|name)|called|named|that (?:contain|have)|containing|contains|anything|something)\b/g,
       ' '
     )
     .replace(/\s+/g, ' ')
     .trim()
 }
+
+/** Stripped text that carries no real search target — treat as "no text". */
+const STOPWORD_TEXT = new Set(['', 'one', 'track', 'song', 'tune', 'thing', 'good', 'nice'])
 
 export function interpretTurn(raw: string, prev: LibrarySearchParams): ConvTurn {
   const q = raw.toLowerCase().trim()
@@ -567,7 +576,30 @@ export function interpretTurn(raw: string, prev: LibrarySearchParams): ConvTurn 
   }
 
   const detectedAnything = hasParams(detected)
-  const text = !detectedAnything && !reshuffle ? textQuery(q) : ''
+  // A bare count or sort isn't a "real filter" — keep extracting the artist/title
+  // text in that case so "give me 10 Fisher songs" still searches for Fisher.
+  const hasRealFilter = !!(
+    genre ||
+    bpmMin != null ||
+    bpmMax != null ||
+    energyMin != null ||
+    energyMax != null ||
+    minRating != null ||
+    dormantMonths != null ||
+    neverPlayed ||
+    keyExact ||
+    durationMinSec != null ||
+    durationMaxSec != null ||
+    addedAfter ||
+    addedBefore ||
+    performedVenue ||
+    performedAfter ||
+    performedBefore ||
+    performedEventType ||
+    cueLabel
+  )
+  const stripped = !hasRealFilter && !reshuffle ? textQuery(q) : ''
+  const text = STOPWORD_TEXT.has(stripped) ? '' : stripped
 
   // Decide whether this is a fresh search or a refinement of the running filter.
   const first = !hasParams(prev)

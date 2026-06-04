@@ -314,6 +314,7 @@ async function execute(filters: HomeFilters): Promise<HomeResult> {
 /** Does the deterministic parse already carry enough structure to answer exactly? */
 function hasStructuredParams(p: LibrarySearchParams): boolean {
   return (
+    (p.text != null && p.text !== '') ||
     p.genre != null ||
     p.bpmMin != null ||
     p.bpmMax != null ||
