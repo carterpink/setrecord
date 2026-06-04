@@ -22,6 +22,8 @@ import type { LibrarySearchParams, Track } from '../../src/types'
 import type { EngineResult, EvalCtx, FixtureSession } from './types'
 
 import { interpretHome } from '../../src/utils/homeQuery'
+import { detectStats } from '../../src/utils/statsIntent'
+import { computeStats } from '../../electron/algorithms/memory/stats'
 import { searchLibrary } from '../../electron/algorithms/memory/librarySearch'
 import { parseQuery, type ParsedQuery } from '../../electron/algorithms/memory/queryParser'
 import { findForgottenGems } from '../../electron/algorithms/memory/forgottenGems'
@@ -183,6 +185,20 @@ function dedupeGroups(ctx: EvalCtx): Track[] {
 // ── public entry ─────────────────────────────────────────────────────────────
 
 export function resolveQuery(query: string, ctx: EvalCtx): EngineResult {
+  // Analytics questions are intercepted before the generic search path would
+  // otherwise swallow them as a text search.
+  const statHit = detectStats(query)
+  if (statHit) {
+    const a = computeStats(statHit, ctx.tracks, ctx.sessions, ctx.now)
+    return {
+      intent: `stats:${statHit.metric}`,
+      kind: a.kind,
+      stats: a.stats,
+      count: a.count,
+      narration: a.narration
+    }
+  }
+
   const interp = interpretHome(query)
   const f = interp.filters
 

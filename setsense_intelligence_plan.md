@@ -213,9 +213,14 @@ Surface **all** real-world data that helps the user:
     (D4) and default the model on with a deterministic floor (D1). **47/210 (22%).**
   - Note: removing the literal-echo fallback also corrected two false-green stats
     cases (149/154) whose lenient narration check had matched the echoed query.
-- **P2 — Expanded QueryPlan + engine breadth.** Stats, gig-history, similarity,
-  set-building arcs, harmonic search, actions-with-confirmation, clarify. Re-score
-  per category.
+- **P2 — Expanded QueryPlan + engine breadth. 🚧 IN PROGRESS.**
+  - ✅ **Stats engine** (`src/utils/statsIntent.ts` detect + `electron/algorithms/memory/stats.ts`
+    compute, both pure/shared). 21 metrics. Wired into the harness; **app wiring next**.
+    **47 → 67/210**: Stats 0→**12/12**, and it cleared analytics cases across Basic
+    Search (65%), Genre (75%), BPM/Key (44%), Library Mgmt.
+  - ⏭ Next: wire stats into the app (memoryService + IPC + Home result), then
+    gig-history engine, set-building arcs, transitions, harmonic search,
+    actions-with-confirmation, clarify.
 - **P3 — Knowledge base.** Author + wire `[KNOW]`/`[BOTH]` topics. Re-score
   categories 3, 13, 14, parts of 6/7.
 - **P4 — Conversation context.** Full in-thread history + user-memory preamble.
