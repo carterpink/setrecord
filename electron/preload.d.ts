@@ -204,6 +204,7 @@ declare global {
       // Diagnostic log export (NFR-801 Phase 2)
       exportLogs: () => Promise<{ success: boolean; path?: string; error?: string }>
       revealLogBundle: (path: string) => Promise<void>
+      logSessionInfo: () => Promise<{ sid: string; version: string }>
       // Retention / activation progress (brief #22, Phase B)
       progressGet: () => Promise<ProgressState>
       progressSet: (partial: Partial<ProgressState>) => Promise<ProgressState>
@@ -225,6 +226,7 @@ declare global {
         message: string
         email?: string
         meta?: string
+        diagnostics?: { sid: string; version: string }
       }) => Promise<boolean>
       // USB Detection (Phase 9)
       usbList: () => Promise<USBDevice[]>

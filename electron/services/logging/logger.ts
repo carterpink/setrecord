@@ -30,6 +30,57 @@ export function getSessionId(): string {
   return SESSION_ID
 }
 
+// ── Sentry breadcrumb bridge (NFR-801 Phase 4) ───────────────────────────────
+// Every info/warn/error record the file transport emits is ALSO mirrored to
+// Sentry as a breadcrumb — but only the ALREADY-REDACTED line is sent, and only
+// when crash reporting is active. logger.ts must NOT carry a hard Sentry
+// dependency: the crash reporter flips this flag on init/close, and we reach
+// @sentry/electron through a lazy dynamic import so nothing happens (and nothing
+// is loaded) unless Sentry is genuinely initialised.
+let breadcrumbsActive = false
+
+/**
+ * Enable/disable the Sentry breadcrumb mirror. Called by the crash reporter when
+ * it initialises (true) and when it tears down on consent withdrawal (false).
+ * While false — the default — no breadcrumb is ever emitted.
+ */
+export function setSentryBreadcrumbsActive(active: boolean): void {
+  breadcrumbsActive = active
+}
+
+// Map our log levels onto Sentry's breadcrumb severity vocabulary.
+function sentryLevelFor(level: string): 'error' | 'warning' | 'info' {
+  if (level === 'error') return 'error'
+  if (level === 'warn') return 'warning'
+  return 'info'
+}
+
+/**
+ * Push one redacted log line to Sentry as a breadcrumb. No-ops unless crash
+ * reporting is active. The dynamic import means a misconfigured/absent Sentry
+ * never throws into the logging path; any failure is swallowed.
+ */
+function pushBreadcrumb(record: LogRecord): void {
+  if (!breadcrumbsActive) return
+  // `record.msg` is already scrubbed (redactPath + scrubString) by buildRecord,
+  // and err/ctx have likewise been redacted, so this is safe to transmit.
+  void import('@sentry/electron/main')
+    .then((Sentry) => {
+      if (!breadcrumbsActive) return
+      Sentry.addBreadcrumb({
+        category: record.scope,
+        level: sentryLevelFor(record.lvl),
+        message: record.msg,
+        // Only carry the redacted error name/message — never the raw stack or
+        // any ctx beyond what already passed redaction.
+        ...(record.err ? { data: { errName: record.err.name, errMsg: record.err.msg } } : {})
+      })
+    })
+    .catch(() => {
+      // Sentry not installed / not initialised — breadcrumbs are best-effort.
+    })
+}
+
 // ── In-memory ring buffer ────────────────────────────────────────────────────
 const RING_CAPACITY = 2000
 const ring: string[] = []
@@ -264,7 +315,10 @@ export function initLogger(): void {
   // The file transform turns each surviving record into one redacted NDJSON line.
   log.transports.file.transforms = [
     ({ message }) => {
-      const { line } = buildRecord(message.scope ?? 'main', message.level, message.data)
+      const { record, line } = buildRecord(message.scope ?? 'main', message.level, message.data)
+      // Mirror this (already-redacted) record to Sentry as a breadcrumb. No-ops
+      // unless crash reporting is active; never sends raw paths/identity.
+      pushBreadcrumb(record)
       return [line]
     }
   ]

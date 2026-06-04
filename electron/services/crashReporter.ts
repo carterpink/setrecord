@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/electron/main'
 import type { ErrorEvent } from '@sentry/electron/main'
 import { frameBasename } from './logging/redact'
+import { getSessionId, setSentryBreadcrumbsActive } from './logging/logger'
 
 // Populated at build/launch time via the SENTRY_DSN environment variable.
 // Never hard-coded here — see .env.example for how to configure it.
@@ -64,9 +65,11 @@ export function initCrashReporter(): void {
         }
       }
 
-      // Breadcrumbs can contain console output and navigation events that
-      // may include local paths or other sensitive context
-      delete event.breadcrumbs
+      // Breadcrumbs are NOT stripped here: the only breadcrumbs we emit come
+      // from the logger (NFR-801 Phase 4), and each one is the already-redacted
+      // NDJSON log line — home paths collapsed to '~', emails removed, stack
+      // frames reduced to basenames. So they are safe by construction, and they
+      // give crashes the leading context the file logs already capture.
 
       // Extra / request data should not be present in the main process,
       // but drop defensively
@@ -76,6 +79,16 @@ export function initCrashReporter(): void {
       return event
     }
   })
+
+  // Tag every issue with the per-launch session id so an exported log bundle
+  // (which carries the same sid in meta.json + every NDJSON line) can be matched
+  // to the Sentry issue. The sid is random per launch and non-identifying.
+  Sentry.getCurrentScope().setTag('sid', getSessionId())
+
+  // Begin mirroring redacted log lines into Sentry as breadcrumbs. The logger
+  // only emits these while this flag is on, so breadcrumbs flow strictly while
+  // crash reporting is active.
+  setSentryBreadcrumbsActive(true)
 
   initialised = true
 }
@@ -87,6 +100,9 @@ export function initCrashReporter(): void {
  */
 export async function closeCrashReporter(): Promise<void> {
   if (!initialised) return
+  // Stop the breadcrumb mirror first so no further log lines reach Sentry while
+  // (or after) we tear down.
+  setSentryBreadcrumbsActive(false)
   // Flush with a short timeout, then disable the client.
   await Sentry.close(2000)
   initialised = false

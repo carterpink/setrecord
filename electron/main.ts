@@ -142,7 +142,8 @@ import {
 } from './services/settingsService'
 import type { AppSettings } from './services/settingsService'
 import { initCrashReporter, closeCrashReporter } from './services/crashReporter'
-import { initLogger } from './services/logging/logger'
+import { initLogger, getSessionId } from './services/logging/logger'
+import { buildFeedbackBody } from './services/logging/feedbackDiagnostics'
 import { buildLogBundle } from './services/logging/exportBundle'
 import { checkForUpdatesAndNotify } from './services/updateChecker'
 import { loadSecretsFromKeychain } from './services/secretStore'
@@ -1386,6 +1387,11 @@ function registerIpcHandlers(): void {
     shell.showItemInFolder(path)
   })
 
+  // Per-launch session id + app version, so even an UN-attached bug report can
+  // be correlated to its Sentry issue (which is tagged with the same sid). The
+  // sid is random per launch and non-identifying (NFR-801 Phase 4).
+  ipcMain.handle('logs:sid', () => ({ sid: getSessionId(), version: app.getVersion() }))
+
   // ── Retention / activation progress (brief #22, Phase B) ──────────────────
   ipcMain.handle('progress:get', () => getProgress())
   ipcMain.handle('progress:set', (_e, partial: Partial<ProgressState>) => setProgress(partial))
@@ -1435,20 +1441,29 @@ function registerIpcHandlers(): void {
     'feedback:submit',
     async (
       _e,
-      payload: { category: string; rating: number; message: string; email?: string; meta?: string }
+      payload: {
+        category: string
+        rating: number
+        message: string
+        email?: string
+        meta?: string
+        // NFR-801 Phase 4: a Bug report carries the session id + app version so
+        // even an un-attached report is correlatable to its Sentry issue. These
+        // are non-identifying (sid is random per launch) and user-visible in the
+        // draft they send.
+        diagnostics?: { sid: string; version: string }
+      }
     ): Promise<boolean> => {
       try {
         const to = 'carterpinkmusic@gmail.com'
         const stars = payload.rating > 0 ? ` (${payload.rating}/5)` : ''
         const subject = `SetSense feedback — ${payload.category}${stars}`
-        const body = [
-          payload.message,
-          '',
-          payload.email ? `Reply to: ${payload.email}` : '',
-          payload.meta ? `\n— ${payload.meta}` : ''
-        ]
-          .filter(Boolean)
-          .join('\n')
+        const body = buildFeedbackBody({
+          message: payload.message,
+          email: payload.email,
+          meta: payload.meta,
+          diagnostics: payload.diagnostics
+        })
         const url = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
         await shell.openExternal(url)
         return true
