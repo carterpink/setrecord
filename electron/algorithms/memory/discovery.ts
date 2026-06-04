@@ -198,6 +198,72 @@ export function computeDiscovery(
           : 'Your plays are spread evenly across genres.'
       }
     }
+    case 'surprise': {
+      // Deterministic "random": a low-played track near the middle of the library.
+      const pool = tracks.filter((t) => t.playCount <= 3)
+      const pick = (pool.length ? pool : tracks).sort((a, b) => a.id.localeCompare(b.id))[
+        Math.floor((pool.length ? pool.length : tracks.length) / 2)
+      ]
+      return pick
+        ? {
+            kind: 'tracks',
+            tracks: [pick],
+            narration: `Surprise: ${pick.title} by ${pick.artist} — you haven't reached for this in a while.`
+          }
+        : { kind: 'empty', narration: 'Your library is empty.' }
+    }
+    case 'hidden_gem': {
+      const out = tracks
+        .filter((t) => t.playCount <= 2)
+        .sort((a, b) => b.rating - a.rating || (a.dateAdded ?? '').localeCompare(b.dateAdded ?? ''))
+      return {
+        kind: out.length ? 'tracks' : 'empty',
+        tracks: out.slice(0, 5),
+        narration: out.length
+          ? 'A few low-play hidden gems worth a spin.'
+          : 'No hidden gems surfaced.'
+      }
+    }
+    case 'lockdown': {
+      const lo = new Date('2020-03-01').getTime()
+      const hi = new Date('2021-06-30').getTime()
+      const out = tracks.filter((t) => {
+        const d = new Date(t.dateAdded).getTime()
+        return d >= lo && d <= hi
+      })
+      return {
+        kind: out.length ? 'tracks' : 'empty',
+        tracks: out,
+        narration: out.length
+          ? `${out.length} tracks added during lockdown (assuming Mar 2020 – Jun 2021).`
+          : 'Nothing added in the lockdown window.'
+      }
+    }
+    case 'b_side': {
+      // Adjacent BPM neighbourhood, different genre from your most common.
+      const genreCount = new Map<string, number>()
+      for (const t of tracks)
+        if (t.genre) genreCount.set(t.genre, (genreCount.get(t.genre) ?? 0) + (t.playCount || 0))
+      const topGenre = Array.from(genreCount.entries()).sort((a, b) => b[1] - a[1])[0]?.[0]
+      const out = tracks.filter(
+        (t) => t.genre && t.genre !== topGenre && t.energy >= 4 && t.energy <= 7
+      )
+      return {
+        kind: out.length ? 'tracks' : 'empty',
+        tracks: out.slice(0, 15),
+        narration: `B-side picks — same tempo neighbourhood as your usual, but a different genre to ${topGenre ?? 'your core sound'}.`
+      }
+    }
+    case 'obscure': {
+      const out = tracks.filter((t) => t.playCount <= 1).sort((a, b) => a.playCount - b.playCount)
+      return {
+        kind: out.length ? 'tracks' : 'empty',
+        tracks: out.slice(0, 20),
+        narration: out.length
+          ? `Low-play, under-the-radar tracks — "obscure" is relative, but these are the deep cuts in your library.`
+          : 'Nothing especially obscure surfaced.'
+      }
+    }
     case 'five_years':
       return {
         kind: 'empty',

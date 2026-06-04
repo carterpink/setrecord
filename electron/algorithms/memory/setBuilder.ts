@@ -113,6 +113,11 @@ export function buildSet(
   }
   if (hit.bpmMin != null) pool = pool.filter((t) => t.bpm >= hit.bpmMin!)
   if (hit.bpmMax != null) pool = pool.filter((t) => t.bpm <= hit.bpmMax!)
+  // Peak-time sets stay high-energy (keep the broad pool if that empties it).
+  if (hit.arc === 'peak') {
+    const hot = pool.filter((t) => t.energy >= 7)
+    if (hot.length > 0) pool = hot
+  }
 
   // "longest set I could build" → a duration answer, not a sequence.
   // (handled by caller via stats; here we still return the pool length info)

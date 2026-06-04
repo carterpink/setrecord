@@ -40,6 +40,8 @@ import { computeMood } from '../../electron/algorithms/memory/mood'
 import { detectKeyBpm } from '../../src/utils/keyBpmIntent'
 import { computeKeyBpm } from '../../electron/algorithms/memory/keyBpm'
 import { detectClarify } from '../../src/utils/clarifyIntent'
+import { detectVenue } from '../../src/utils/venueIntent'
+import { computeVenue } from '../../electron/algorithms/memory/venue'
 import { searchLibrary } from '../../electron/algorithms/memory/librarySearch'
 import { parseQuery, type ParsedQuery } from '../../electron/algorithms/memory/queryParser'
 import { findForgottenGems } from '../../electron/algorithms/memory/forgottenGems'
@@ -237,6 +239,20 @@ export function resolveQuery(query: string, ctx: EvalCtx): EngineResult {
       stats: a.stats,
       count: a.count,
       needsConfirmation: a.needsConfirmation,
+      narration: a.narration
+    }
+  }
+
+  // Venue/crowd context (before gig, so "last time at a warehouse" beats the
+  // generic "what did I play" last-session lookup).
+  const ven = detectVenue(query)
+  if (ven) {
+    const a = computeVenue(ven, ctx.tracks, ctx.sessions, ctx.now)
+    return {
+      intent: `venue:${ven.metric}`,
+      kind: a.kind,
+      tracks: a.tracks,
+      sessions: a.sessionIds ? ctx.sessions.filter((s) => a.sessionIds!.includes(s.id)) : undefined,
       narration: a.narration
     }
   }

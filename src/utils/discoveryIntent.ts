@@ -6,7 +6,12 @@
 export type DiscoveryMetric =
   | 'similar_to' // 102/103/106/111/113 (track seed OR creative vibe mapping)
   | 'last_gig' // 105/166
-  | 'discovery' // 104/107/110/159/160
+  | 'discovery' // 104/107/110/160
+  | 'hidden_gem' // 159
+  | 'surprise' // 158
+  | 'lockdown' // 164
+  | 'b_side' // 165
+  | 'obscure' // 169
   | 'unique' // 108
   | 'outside_genres' // 109/162
   | 'five_years' // 112 (honest limitation)
@@ -32,6 +37,24 @@ export function detectDiscovery(raw: string): DiscoveryHit | null {
 
   if (/\b(\d+\s*)?years? ago\b/.test(q) && /\b(play|played|used to)\b/.test(q))
     return { metric: 'five_years' }
+
+  if (/\bsurprise me|pick (me )?(a|one) random|random track|play me anything\b/.test(q))
+    return { metric: 'surprise' }
+  if (
+    /\bhidden gem|dig (into|through|deep).*(collection|gem|crate)|crate ?dig|buried (gem|treasure)/.test(
+      q
+    )
+  )
+    return { metric: 'hidden_gem' }
+  if (/\b(during |in )?lockdown\b|during the pandemic|covid (era|times)/.test(q))
+    return { metric: 'lockdown' }
+  if (/\bb[- ]?side\b/.test(q)) return { metric: 'b_side' }
+  if (
+    /\bno one else.*(playing|plays)|nobody else.*play|obscure|under the radar|deep cuts? no one/.test(
+      q
+    )
+  )
+    return { metric: 'obscure' }
 
   if (
     /\bbased on (?:what i played )?(?:last|my last) (?:night|gig|set)|similar to .*last (gig|night|set)|like what i played.*last/.test(
