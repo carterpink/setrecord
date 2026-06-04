@@ -12,6 +12,10 @@ import {
   replaceRekordboxSessions
 } from '../db/queries'
 import { parseSessionMeta } from './rekordbox/sessionMeta'
+import { lazyLogger } from './logging/lazyLogger'
+import { redactPath } from './logging/redact'
+
+const log = lazyLogger('import')
 
 /**
  * Normalised payload produced by any library source (XML, master.db, future
@@ -308,7 +312,7 @@ function parseHistoryNode(
     const attrs = child.$ ?? {}
     // Only process leaf playlists (Type="1"); skip any unexpected sub-folders
     if (attrs.Type !== '1') {
-      console.log('[history] skipping non-leaf node inside HISTORY:', attrs.Name)
+      log.debug('skipping non-leaf node inside HISTORY', { area: 'history', nodeType: attrs.Type })
       continue
     }
 
@@ -354,7 +358,7 @@ async function parseHistoryXml(
     // Navigate to the PLAYLISTS root node (same structure as collection XML)
     const playlistRoot = parsed?.DJ_PLAYLISTS?.PLAYLISTS?.[0] as XmlNode | undefined
     if (!playlistRoot) {
-      console.log('[history] no PLAYLISTS node found in', xmlPath)
+      log.info('no PLAYLISTS node found', { area: 'history', file: redactPath(xmlPath) })
       return { sessions: 0, tracks: 0 }
     }
 
@@ -363,7 +367,10 @@ async function parseHistoryXml(
     const historyNode = rootChildren.find(isHistoryNode)
 
     if (!historyNode) {
-      console.log('[history] no HISTORY folder found in', xmlPath, '— skipping history import')
+      log.info('no HISTORY folder found — skipping history import', {
+        area: 'history',
+        file: redactPath(xmlPath)
+      })
       return { sessions: 0, tracks: 0 }
     }
 
@@ -372,10 +379,12 @@ async function parseHistoryXml(
     // Filter out sessions with no resolvable tracks (entirely unknown collection)
     const nonEmpty = sessions.filter((s) => s.trackIds.length > 0)
 
-    console.log(
-      `[history] parsed ${sessions.length} session(s) from HISTORY (${nonEmpty.length} non-empty, ` +
-        `${nonEmpty.reduce((n, s) => n + s.trackIds.length, 0)} total track refs)`
-    )
+    log.info('parsed HISTORY sessions', {
+      area: 'history',
+      sessions: sessions.length,
+      nonEmpty: nonEmpty.length,
+      trackRefs: nonEmpty.reduce((n, s) => n + s.trackIds.length, 0)
+    })
 
     if (nonEmpty.length > 0) {
       replaceRekordboxSessions(db, nonEmpty)
@@ -386,7 +395,7 @@ async function parseHistoryXml(
       tracks: nonEmpty.reduce((n, s) => n + s.trackIds.length, 0)
     }
   } catch (err) {
-    console.error('[history] parseHistoryXml failed', err)
+    log.error('parseHistoryXml failed', err, { area: 'history', file: redactPath(xmlPath) })
     return { sessions: 0, tracks: 0 }
   }
 }
@@ -456,7 +465,7 @@ export async function applyImport(
       replaceAllPlaylists(db, [])
     }
   } catch (err) {
-    console.error('[import] playlist write failed', err)
+    log.error('playlist write failed', err)
   }
 
   // 3. Replace history sessions. Non-fatal.
@@ -466,7 +475,7 @@ export async function applyImport(
       replaceRekordboxSessions(db, nonEmpty)
     }
   } catch (err) {
-    console.error('[import] session write failed', err)
+    log.error('session write failed', err)
   }
 
   onProgress({ processed: total, total, phase: 'done' })
@@ -591,7 +600,7 @@ export async function importFromXml(
   try {
     playlists = parsePlaylistTree(playlistRoot, rekordboxIdToTrackId)
   } catch (err) {
-    console.error('[import] playlist parsing failed', err)
+    log.error('playlist parsing failed', err)
   }
 
   let sessions: ImportPayload['sessions'] = []
@@ -602,16 +611,18 @@ export async function importFromXml(
       if (historyNode) {
         const parsedSessions = parseHistoryNode(historyNode, rekordboxIdToTrackId)
         sessions = parsedSessions.filter((s) => s.trackIds.length > 0)
-        console.log(
-          `[import] HISTORY: ${parsedSessions.length} session(s), ${sessions.length} non-empty, ` +
-            `${sessions.reduce((n, s) => n + s.trackIds.length, 0)} track refs`
-        )
+        log.info('HISTORY parsed', {
+          area: 'history',
+          sessions: parsedSessions.length,
+          nonEmpty: sessions.length,
+          trackRefs: sessions.reduce((n, s) => n + s.trackIds.length, 0)
+        })
       } else {
-        console.log('[import] no HISTORY folder in XML — skipping history import')
+        log.info('no HISTORY folder in XML — skipping history import', { area: 'history' })
       }
     }
   } catch (err) {
-    console.error('[import] history parsing failed', err)
+    log.error('history parsing failed', err, { area: 'history' })
   }
 
   // 4. Hand off to the shared writer.

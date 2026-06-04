@@ -3,6 +3,9 @@ import { openMasterDb } from './cipher'
 import { parseSessionMeta } from './sessionMeta'
 import { openNotationToCamelot } from '../../utils/camelot'
 import type { AudioFormat, ImportProgress, Playlist, Track } from '../../../src/types'
+import { lazyLogger } from '../logging/lazyLogger'
+
+const log = lazyLogger('rekordbox')
 
 export interface RekordboxImportPayload {
   tracks: Track[]
@@ -157,7 +160,7 @@ export async function readMasterDb(
     } catch (err) {
       // Some Rekordbox versions use slightly different cue table shapes —
       // keep going without cues rather than aborting the whole import.
-      console.warn('[rekordbox] djmdCue read failed; importing without cues', err)
+      log.warn('djmdCue read failed; importing without cues', err)
     }
     const cuesByContent = bucketCuesByContent(cueRows)
 
@@ -195,7 +198,7 @@ export async function readMasterDb(
     `
       )
       .catch((err) => {
-        console.warn('[rekordbox] djmdPlaylist read failed', err)
+        log.warn('djmdPlaylist read failed', err)
         return [] as RawPlaylistRow[]
       })
     const songPlaylistRows = await db
@@ -208,7 +211,7 @@ export async function readMasterDb(
     `
       )
       .catch((err) => {
-        console.warn('[rekordbox] djmdSongPlaylist read failed', err)
+        log.warn('djmdSongPlaylist read failed', err)
         return [] as RawSongPlaylistRow[]
       })
     const playlists = mapPlaylists(playlistRows, songPlaylistRows, idMap)

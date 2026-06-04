@@ -4,7 +4,12 @@ import { readdirSync, watch } from 'fs'
 import { writeFile, readFile, unlink } from 'fs/promises'
 import { join } from 'path'
 
+import { lazyLogger } from './logging/lazyLogger'
+import { redactPath } from './logging/redact'
+
 const execFileAsync = promisify(execFile)
+
+const log = lazyLogger('usb')
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -166,11 +171,11 @@ export function watchUSBDevices(onChange: (devices: USBDevice[]) => void): () =>
       debounce = setTimeout(() => {
         listUSBDevices()
           .then(onChange)
-          .catch((err) => console.error('[usb] watch callback error', err))
+          .catch((err) => log.error('watch callback error', err))
       }, 400)
     })
   } catch (err) {
-    console.error('[usb] could not watch /Volumes', err)
+    log.error('could not watch /Volumes', err)
   }
 
   return () => {
@@ -207,7 +212,7 @@ export async function testUSBSpeed(
       readMBps: Math.round((sizeMB / (readMs / 1000)) * 10) / 10
     }
   } catch (err) {
-    console.error('[usb] speed test failed', mountPath, err)
+    log.error('speed test failed', err, { mountPath: redactPath(mountPath) })
     await unlink(testPath).catch(() => {})
     return null
   }
