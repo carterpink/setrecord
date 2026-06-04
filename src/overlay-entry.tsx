@@ -11,6 +11,10 @@ import { LiveOverlay } from '@/components/live/LiveOverlay'
  * transparent over Rekordbox). Mock-driven for now; the real path subscribes to
  * live deck data over IPC (window.setsense.onLiveData).
  */
+// This is a renderer entry point (like main.tsx), not a reusable module — the
+// component is mounted directly below and never exported, so Fast Refresh's
+// export requirement does not apply.
+// eslint-disable-next-line react-refresh/only-export-components
 function Overlay(): React.JSX.Element {
   const goLive = useLiveStore((s) => s.goLive)
   const setLiveActive = useLiveStore((s) => s.setLiveActive)

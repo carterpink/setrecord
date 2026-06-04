@@ -1,5 +1,5 @@
 import { extname, normalize } from 'path'
-import { openMasterDb } from './cipher'
+import { openMasterDb, type MasterDb } from './cipher'
 import { parseSessionMeta } from './sessionMeta'
 import { openNotationToCamelot } from '../../utils/camelot'
 import type { AudioFormat, ImportProgress, Playlist, Track } from '../../../src/types'

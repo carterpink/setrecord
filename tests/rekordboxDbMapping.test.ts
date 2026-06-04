@@ -44,7 +44,7 @@ describe('mapContentRow', () => {
       GenreName: 'Electronic',
       KeyName: 'Am',
       LabelName: null,
-      ColorName: null,
+      ColorID: null,
       BPM: 12800, // BPM * 100
       Length: 360000, // ms
       FolderPath: '/Users/dj/Music/',

@@ -1,3 +1,9 @@
+// Pull in the renderer `window.setsense` global augmentation (declared in
+// preload.d.ts) so the dynamically-imported renderer stores typecheck under the
+// node tsconfig project. A triple-slash reference is the only way to load an
+// ambient-global declaration file that has no runtime import.
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference
+/// <reference path="../electron/preload.d.ts" />
 /**
  * Smoke tests for the four reliability hardening measures:
  *   1. DB init recovery — corrupt DB shows dialog, not white screen
@@ -89,7 +95,6 @@ describe('setStore auto-save', () => {
   // Provide a minimal window.setsense bridge
   const mockSaveSet = vi.fn()
   beforeEach(() => {
-    // @ts-expect-error -- vitest node env; simulate renderer global
     global.window = {
       setsense: {
         saveSet: mockSaveSet,
@@ -103,7 +108,7 @@ describe('setStore auto-save', () => {
   })
 
   afterEach(() => {
-    // @ts-expect-error
+    // @ts-expect-error -- delete the simulated renderer global between tests
     delete global.window
     vi.useRealTimers()
   })
@@ -202,7 +207,7 @@ describe('ErrorBoundary', () => {
   it('componentDidCatch logs the error without rethrowing', async () => {
     const { ErrorBoundary } = await import('../src/components/shared/ErrorBoundary')
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    // @ts-expect-error
+    // @ts-expect-error -- constructing the component class directly with partial props
     const instance = new ErrorBoundary({ label: 'test-panel' })
     const err = new Error('crash')
     expect(() =>
@@ -266,7 +271,6 @@ describe('crashReporter', () => {
       breadcrumbs: { values: [{ message: 'indexed ~/Music' }] },
       extra: { localPath: '/home/user' }
     }
-    // @ts-expect-error -- partial event is enough for the filter
     const result = cfg.beforeSend(event)
     expect(result).not.toBeNull()
     expect(result.user).toBeUndefined()
@@ -301,7 +305,6 @@ describe('crashReporter', () => {
         ]
       }
     }
-    // @ts-expect-error
     const result = cfg.beforeSend(event)
     const frame = result.exception.values[0].stacktrace.frames[0]
     expect(frame.filename).toBe('main.ts')
@@ -323,7 +326,6 @@ describe('crashReporter', () => {
         os: { name: 'macOS', version: '15.3' }
       }
     }
-    // @ts-expect-error -- partial event is enough for the filter
     const result = cfg.beforeSend(event)
     expect(result.server_name).toBeUndefined()
     expect(result.contexts.device).toBeUndefined()

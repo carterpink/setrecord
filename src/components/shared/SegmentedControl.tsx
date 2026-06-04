@@ -2,6 +2,11 @@ import clsx from 'clsx'
 import { useId } from 'react'
 import { motion } from 'framer-motion'
 
+/** Icon component accepted per option (lucide-react icons satisfy this). */
+type SegmentIcon = React.ComponentType<
+  { size?: number; strokeWidth?: number } & React.AriaAttributes
+>
+
 interface SegmentedControlProps<T extends string> {
   options: readonly T[]
   value: T
@@ -12,7 +17,7 @@ interface SegmentedControlProps<T extends string> {
   /** id of an element labelling the control group. */
   ariaLabelledby?: string
   /** Optional icon per option — rendered before the label. */
-  icons?: Partial<Record<T, React.ComponentType<{ size?: number; strokeWidth?: number }>>>
+  icons?: Partial<Record<T, SegmentIcon>>
 }
 
 /**
@@ -39,7 +44,7 @@ export function SegmentedControl<T extends string>({
     >
       {options.map((opt) => {
         const isActive = value === opt
-        const Icon = icons?.[opt]
+        const Icon: SegmentIcon | undefined = icons?.[opt]
         return (
           <button
             key={opt}

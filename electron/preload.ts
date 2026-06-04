@@ -570,8 +570,6 @@ if (process.contextIsolated) {
     console.error(error)
   }
 } else {
-  // @ts-expect-error declared in preload.d.ts
   window.electron = electronAPI
-  // @ts-expect-error declared in preload.d.ts
   window.setsense = setsense
 }

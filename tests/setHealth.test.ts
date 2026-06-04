@@ -6,9 +6,10 @@
 import { describe, it, expect } from 'vitest'
 import { computeSetHealth, type SetHealthInput } from '../electron/algorithms/setHealth'
 import { makeTrack } from './fixtures'
+import type { Track } from '../src/types'
 
 /** Build N candidates around a base, varying key/bpm/energy via the callback. */
-function candidates(n: number, fn: (i: number) => Partial<Parameters<typeof makeTrack>[0]>) {
+function candidates(n: number, fn: (i: number) => Partial<Parameters<typeof makeTrack>[0]>): Track[] {
   return Array.from({ length: n }, (_, i) => makeTrack({ id: `c${i}`, ...fn(i) }))
 }
 
