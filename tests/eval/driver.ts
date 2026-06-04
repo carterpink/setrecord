@@ -33,6 +33,8 @@ import { detectSetBuild } from '../../src/utils/setBuildIntent'
 import { buildSet as buildSetEngine } from '../../electron/algorithms/memory/setBuilder'
 import { detectDiscovery } from '../../src/utils/discoveryIntent'
 import { computeDiscovery } from '../../electron/algorithms/memory/discovery'
+import { detectTransition } from '../../src/utils/transitionIntent'
+import { computeTransition } from '../../electron/algorithms/memory/transitionsEngine'
 import { searchLibrary } from '../../electron/algorithms/memory/librarySearch'
 import { parseQuery, type ParsedQuery } from '../../electron/algorithms/memory/queryParser'
 import { findForgottenGems } from '../../electron/algorithms/memory/forgottenGems'
@@ -246,6 +248,21 @@ export function resolveQuery(query: string, ctx: EvalCtx): EngineResult {
       tracks: a.tracks,
       stats: a.stats,
       count: a.count,
+      narration: a.narration
+    }
+  }
+
+  const trans = detectTransition(query)
+  if (trans) {
+    const a = computeTransition(trans, ctx.tracks, ctx.sessions, ctx.now)
+    return {
+      intent: `transition:${trans.metric}`,
+      kind: a.kind,
+      tracks: a.tracks,
+      sequences: a.sequences
+        ? a.sequences.map((s) => ({ tracks: s.tracks, count: s.count }))
+        : undefined,
+      sourceTrack: a.sourceTrack,
       narration: a.narration
     }
   }

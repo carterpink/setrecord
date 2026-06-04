@@ -39,7 +39,7 @@ const ENTRIES: Entry[] = [
   // ── Techniques ───────────────────────────────────────────────────────────
   {
     topic: 'dj-drop',
-    test: /\b(what is|what's|explain).*(a )?(dj )?drop\b|what'?s a drop\b/,
+    test: /\b(what is|what's|explain)\s+(a |the )?(dj )?drop\b|what'?s a drop\b/,
     answer:
       'The drop is the moment the main elements (kick, bassline, lead) re-enter after a breakdown or build — the big energy release the floor is waiting for. In DJing you often mix so the incoming track\'s drop lands cleanly as the outgoing track falls away. (It\'s related to but distinct from the pop "the drop".)'
   },
@@ -306,7 +306,7 @@ function tryMixCompat(q: string): KnowledgeAnswer | null {
   const { compatible, steps } = camelotDistance(a, b)
   const answer = compatible
     ? `Yes — ${m[1].toUpperCase()} (${a}) and ${m[2].toUpperCase()} (${b}) are ${steps === 0 ? 'the same/relative key' : 'adjacent'} on the Camelot wheel, so they're harmonically compatible.`
-    : `${m[1].toUpperCase()} (${a}) and ${m[2].toUpperCase()} (${b}) are ${steps} positions apart on the Camelot wheel — not harmonically compatible. Mix it as an effect, or route through a shared neighbouring key first.`
+    : `${m[1].toUpperCase()} (${a}) and ${m[2].toUpperCase()} (${b}) are ${steps} positions apart on the Camelot wheel — harmonically incompatible. Mix it only as an effect, or route through a shared neighbouring key (a compatible intermediate) first.`
   return { topic: 'mix-compatibility', answer }
 }
 

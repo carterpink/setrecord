@@ -80,6 +80,8 @@ export interface EngineResult {
   count?: number
   /** Sessions returned for kind 'gig'. */
   sessions?: FixtureSession[]
+  /** Recurring track runs for kind 'sequences'. */
+  sequences?: { tracks: Track[]; count: number }[]
   /** The search params the engine actually executed (for introspection). */
   params?: LibrarySearchParams
   /** Source track for "after X" / "similar to X". */
