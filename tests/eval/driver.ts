@@ -37,6 +37,8 @@ import { detectTransition } from '../../src/utils/transitionIntent'
 import { computeTransition } from '../../electron/algorithms/memory/transitionsEngine'
 import { detectMood } from '../../src/utils/moodIntent'
 import { computeMood } from '../../electron/algorithms/memory/mood'
+import { detectKeyBpm } from '../../src/utils/keyBpmIntent'
+import { computeKeyBpm } from '../../electron/algorithms/memory/keyBpm'
 import { searchLibrary } from '../../electron/algorithms/memory/librarySearch'
 import { parseQuery, type ParsedQuery } from '../../electron/algorithms/memory/queryParser'
 import { findForgottenGems } from '../../electron/algorithms/memory/forgottenGems'
@@ -299,6 +301,20 @@ export function resolveQuery(query: string, ctx: EvalCtx): EngineResult {
   if (mood) {
     const a = computeMood(mood, ctx.tracks)
     return { intent: `mood:${mood}`, kind: a.kind, tracks: a.tracks, narration: a.narration }
+  }
+
+  // Precise key/BPM queries (after set-build so "build a set at 128 bpm" wins).
+  const kb = detectKeyBpm(query)
+  if (kb) {
+    const a = computeKeyBpm(kb, ctx.tracks)
+    return {
+      intent: `keybpm:${kb.metric}`,
+      kind: a.kind,
+      tracks: a.tracks,
+      count: a.count,
+      sourceTrack: a.sourceTrack,
+      narration: a.narration
+    }
   }
 
   const interp = interpretHome(query)

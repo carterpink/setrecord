@@ -44,7 +44,7 @@ export function detectMaintenance(raw: string): MaintenanceHit | null {
   if (/\b(without|missing|no|lacking).*(art ?work|cover|album art)/.test(q))
     return { metric: 'missing_artwork' }
   if (
-    /\b(missing|no|without|un-?analy[sz]ed|haven'?t been analy[sz]ed).*\bbpm\b|\bbpm\b.*(missing|not.*analy[sz]ed|null)/.test(
+    /\b(missing|no|without|un-?analy[sz]ed|haven'?t been analy[sz]ed).*\bbpm\b|\bbpm\b.*(missing|not.*analy[sz]ed|has(?:n'?t| not) been analy[sz]ed|null)/.test(
       q
     )
   )
