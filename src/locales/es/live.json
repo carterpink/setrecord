@@ -1,0 +1,31 @@
+{
+  "device": {
+    "title": "Entrada de audio para SetSense Live: elige tu dispositivo de máster/loopback",
+    "ariaLabel": "Entrada de audio de SetSense Live",
+    "default": "Entrada predeterminada"
+  },
+  "strip": {
+    "live": "EN VIVO",
+    "preparing": "Preparando… {{percent}} %",
+    "listening": "Escuchando…",
+    "setHealth": "Salud del set",
+    "health": "salud",
+    "show": "Mostrar",
+    "hide": "Ocultar",
+    "collapseAria": "Contraer paneles",
+    "expandAria": "Expandir paneles",
+    "endAria": "Finalizar Live"
+  },
+  "nowPlaying": {
+    "title": "Reproduciendo ahora",
+    "bpm": "BPM",
+    "energy": "Energía {{energy}}",
+    "preparingLibrary": "Preparando tu biblioteca… {{done}}/{{total}}",
+    "listeningForTrack": "Escuchando la pista…"
+  },
+  "bestNext": {
+    "title": "Mejor siguiente",
+    "options": "{{n}} opciones",
+    "empty": "Las opciones aparecen cuando una pista queda fijada."
+  }
+}

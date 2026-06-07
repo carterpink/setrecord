@@ -1,0 +1,46 @@
+{
+  "header": {
+    "title": "Siguiente sugerencia",
+    "refreshAria": "Actualizar sugerencias"
+  },
+  "noLibraryBody": "Elige cualquier pista y {{app}} sugiere qué mezclar a continuación, según la tonalidad, los BPM y la energía. Importa tu biblioteca para recibir recomendaciones.",
+  "context": {
+    "basedOn": "Según la pista {{position}} — {{title}}",
+    "whatMixesAfter": "Qué mezclar después de <0>{{title}}</0>",
+    "noSelection": "Selecciona una pista de tu set o haz clic en una pista de la biblioteca para ver sugerencias"
+  },
+  "empty": {
+    "noTrack": {
+      "title": "Ninguna pista seleccionada",
+      "body": "Selecciona una pista de tu set o haz clic en una pista de la biblioteca para ver sugerencias."
+    },
+    "noMatches": {
+      "title": "No se encontraron coincidencias",
+      "body": "Prueba a añadir más pistas a tu biblioteca o a ajustar el rango de BPM."
+    }
+  },
+  "card": {
+    "bestBadge": "Mejor coincidencia",
+    "bestBadgeTitle": "Clasificado por compatibilidad de BPM (35%), tonalidad armónica (35%), coincidencia de energía (20%) y calidad del archivo (10%)",
+    "phantomAria": "Pista fantasma — no está en tu biblioteca",
+    "phantomTitle": "Compra o descarga esta pista para habilitar la previsualización",
+    "fileNotFoundAria": "Archivo no encontrado",
+    "fileNotFoundTitle": "Archivo no encontrado: {{path}}",
+    "pauseAria": "Pausar {{title}}",
+    "previewAria": "Previsualizar {{title}}",
+    "hideBreakdown": "Ocultar desglose de puntuación",
+    "showBreakdown": "Mostrar desglose de puntuación",
+    "score": "Puntuación {{score}}/100",
+    "breakdown": {
+      "bpmDelta": "Diferencia de BPM",
+      "key": "Tonalidad",
+      "energyDelta": "Diferencia de energía",
+      "total": "Total",
+      "totalValue": "{{score}}/100"
+    }
+  },
+  "chips": {
+    "comboTitle": "Ya has reproducido esta transición antes",
+    "explainAria": "Explicar {{label}}"
+  }
+}

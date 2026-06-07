@@ -1,0 +1,5 @@
+# NFR-107 — generated benchmark artifacts. Results JSON is committed by CI for
+# trend history; large fixtures and the JSONL scratch file are not.
+library-*.xml
+library-*.json
+node-latest.jsonl

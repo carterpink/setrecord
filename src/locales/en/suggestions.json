@@ -1,0 +1,46 @@
+{
+  "header": {
+    "title": "Suggested next",
+    "refreshAria": "Refresh suggestions"
+  },
+  "noLibraryBody": "Pick any track and {{app}} suggests what mixes next — matched on key, BPM and energy. Import your library to get recommendations.",
+  "context": {
+    "basedOn": "Based on track {{position}} — {{title}}",
+    "whatMixesAfter": "What mixes after <0>{{title}}</0>",
+    "noSelection": "Select a track in your set or click a library track to see suggestions"
+  },
+  "empty": {
+    "noTrack": {
+      "title": "No track selected",
+      "body": "Select a track in your set or click a library track to see suggestions."
+    },
+    "noMatches": {
+      "title": "No matches found",
+      "body": "Try adding more tracks to your library or adjusting BPM range."
+    }
+  },
+  "card": {
+    "bestBadge": "Best match",
+    "bestBadgeTitle": "Ranked by BPM compatibility (35%), harmonic key (35%), energy match (20%), file quality (10%)",
+    "phantomAria": "Phantom track — not in your library",
+    "phantomTitle": "Buy or download this track to enable preview",
+    "fileNotFoundAria": "File not found",
+    "fileNotFoundTitle": "File not found: {{path}}",
+    "pauseAria": "Pause {{title}}",
+    "previewAria": "Preview {{title}}",
+    "hideBreakdown": "Hide score breakdown",
+    "showBreakdown": "Show score breakdown",
+    "score": "Score {{score}}/100",
+    "breakdown": {
+      "bpmDelta": "BPM delta",
+      "key": "Key",
+      "energyDelta": "Energy delta",
+      "total": "Total",
+      "totalValue": "{{score}}/100"
+    }
+  },
+  "chips": {
+    "comboTitle": "You have played this transition before",
+    "explainAria": "Explain {{label}}"
+  }
+}

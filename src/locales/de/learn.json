@@ -1,0 +1,29 @@
+{
+  "coachmark": {
+    "dismiss": "Verstanden"
+  },
+  "panel": {
+    "header": "Learn Mode"
+  },
+  "tooltip": {
+    "iconLabel": "Erklärung anzeigen",
+    "dialogAria": "Erklärung",
+    "proLocked": "Learn Mode ist eine Pro-Funktion. Führe ein Upgrade durch, um Erklärungen freizuschalten."
+  },
+  "diagrams": {
+    "bpm": {
+      "aria": "BPM {{direction}}{{amount}}",
+      "title": "BPM-Änderung: {{direction}}{{amount}}"
+    },
+    "energy": {
+      "aria": "Energiekurve: Ziel im Vergleich zum Erreichten über das Set",
+      "title": "Energiekurve Ziel vs. erreicht",
+      "target": "Ziel",
+      "yourSet": "Dein Set"
+    },
+    "harmonic": {
+      "aria": "Camelot-Rad mit {{fromKey}} und {{toKey}}",
+      "title": "Camelot-Rad: {{fromKey}} → {{toKey}}"
+    }
+  }
+}

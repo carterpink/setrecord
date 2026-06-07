@@ -1,0 +1,85 @@
+{
+  "dnd": {
+    "pickedUpLibrary": "{{title}} de {{artist}} saisi. Déposez-le sur la timeline pour l’ajouter au set.",
+    "pickedUpTimeline": "{{title}} saisi depuis la position {{position}}.",
+    "pickedUpGeneric": "Titre saisi.",
+    "overEmpty": "Le titre se trouve au-dessus d’une zone vide.",
+    "overDropZone": "Au-dessus de la zone de dépôt de la timeline.",
+    "overPosition": "Au-dessus de la position {{position}}.",
+    "cancelledNoTarget": "Glissement annulé — aucune cible de dépôt.",
+    "added": "{{title}} ajouté au set.",
+    "moved": "{{title}} déplacé à la position {{position}}.",
+    "complete": "Glissement terminé.",
+    "cancelled": "Glissement annulé."
+  },
+  "dock": {
+    "setArchitect": "Set Architect",
+    "setArchitectPro": "Set Architect — Pro",
+    "smartFilter": "Filtre intelligent",
+    "smartFilterPro": "Filtre intelligent — Pro",
+    "cueEditor": "Éditeur de cues",
+    "cueEditorPro": "Éditeur de cues — Pro",
+    "cueEditorSelectFirst": "Sélectionnez d’abord un titre dans la timeline",
+    "cueEditorTitle": "Sélectionnez un titre dans votre timeline pour modifier ses cue points",
+    "validateSet": "Valider le set",
+    "validateSetPro": "Valider le set — Pro",
+    "export": "Exporter",
+    "exportPro": "Exporter — Pro"
+  },
+  "volume": {
+    "triggerAria": "Volume {{pct}} %",
+    "triggerTitle": "Volume de pré-écoute — {{pct}} %",
+    "panelAria": "Volume",
+    "mute": "Couper le son",
+    "unmute": "Rétablir le son"
+  },
+  "setTools": {
+    "newSet": "Nouveau set",
+    "newSetTitle": "Démarrer un nouveau set (⌘N)"
+  },
+  "boothCheck": {
+    "label": "Vérif. cabine",
+    "value": "{{score}} %",
+    "valueReady": "{{score}} % · prêt pour {{hw}}",
+    "checkSet": "Vérifier le set",
+    "titleValidated": "Vérif. cabine : {{score}} % — cliquez pour revalider en vue de l’export",
+    "titlePending": "Cliquez pour vérifier que ce set fonctionne sur votre CDJ avant d’exporter",
+    "titleEmpty": "Ajoutez des titres, puis lancez une vérification de compatibilité CDJ avant d’exporter",
+    "titleProGate": "La vérification de compatibilité CDJ est une fonctionnalité Pro — cliquez pour passer à Pro"
+  },
+  "live": {
+    "live": "En direct",
+    "goLive": "Passer en direct",
+    "endTitle": "Terminer le direct — fermer la superposition flottante",
+    "goLiveTitle": "Passer en direct — une superposition de verre transparent qui flotte au-dessus de Rekordbox, lit ce qui est en lecture et révèle les meilleurs enchaînements",
+    "screenPermissionError": "SetSense Live nécessite l’autorisation d’enregistrement de l’écran (Réglages système → Confidentialité)."
+  },
+  "energy": {
+    "pill": "Analyse de l’énergie <0>{{processed}} / {{total}}</0>…",
+    "pillTitle": "Analyse de l’énergie spectrale de chaque titre — RMS, brillance et sonie — pour calculer les scores d’énergie DJ. Exécutée une fois par titre, puis mise en cache."
+  },
+  "menu": {
+    "more": "Plus",
+    "moreAria": "Plus d’options",
+    "importLibrary": "Importer la bibliothèque",
+    "sendFeedback": "Envoyer un commentaire",
+    "settings": "Réglages"
+  },
+  "trial": {
+    "titleLastDay": "Dernier jour de votre essai Pro — à sa fin, vous perdrez Set Architect, la recherche de bibliothèque par IA et l’export. Cliquez pour conserver Pro.",
+    "title": "Votre essai Pro se termine dans {{days}} jours — vous perdrez Set Architect, la recherche de bibliothèque par IA et l’export. Cliquez pour conserver Pro.",
+    "labelLastDay": "Dernier jour de Pro",
+    "labelTwoDays": "2 jours de Pro restants",
+    "label": "Essai · {{days}} jours"
+  },
+  "renewal": {
+    "title_one": "Votre abonnement Pro se termine dans {{count}} jour — renouvelez pour conserver Set Architect, la recherche de bibliothèque par IA et l’export.",
+    "title_other": "Votre abonnement Pro se termine dans {{count}} jours — renouvelez pour conserver Set Architect, la recherche de bibliothèque par IA et l’export.",
+    "labelTomorrow": "Pro se termine demain — renouveler",
+    "label": "Pro se termine dans {{days}} jours — renouveler"
+  },
+  "actions": {
+    "export": "Exporter",
+    "goPro": "Passer à Pro"
+  }
+}

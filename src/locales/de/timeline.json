@@ -1,0 +1,73 @@
+{
+  "saveStatus": {
+    "saving": "Wird gespeichert…",
+    "unsaved": "Nicht gespeicherte Änderungen",
+    "retryAria": "Speichern wiederholen",
+    "failed": "Speichern fehlgeschlagen"
+  },
+  "header": {
+    "namePlaceholder": "Set-Name",
+    "noSetLoaded": "Kein Set geladen",
+    "trackCount_one": "{{count}} Track",
+    "trackCount_other": "{{count}} Tracks",
+    "bpmStats": "Ø {{avg}} BPM ({{min}}–{{max}})",
+    "bpmSingle": "{{bpm}} BPM",
+    "markPerformedTitle": "Dieses Set als bei einem Gig gespielt protokollieren",
+    "markPerformed": "Als gespielt markieren",
+    "logging": "Wird protokolliert…",
+    "curveHelpAria": "Was zeigt dieses Diagramm?"
+  },
+  "performed": {
+    "logged": "„{{name}}“ als gespielt protokolliert.",
+    "markError": "Dieses Set konnte nicht als gespielt markiert werden.",
+    "markFailed": "Beim Markieren des Sets als gespielt ist etwas schiefgelaufen."
+  },
+  "empty": {
+    "readyTitle": "„{{name}}“ — bereit, wann immer du willst.",
+    "blankTitle": "Ein frisches, leeres Set.",
+    "subtitle": "Ziehe Tracks hinein, wische zum Entdecken oder bitte mich, es zu bauen.",
+    "browse": "Bibliothek durchsuchen",
+    "discover": "Wischen zum Entdecken",
+    "buildForMe": "Bau es für mich"
+  },
+  "curve": {
+    "trackLabel": "Track {{position}}",
+    "seriesEnergy": "Energie",
+    "seriesBpm": "BPM",
+    "seriesTarget": "Ziel"
+  },
+  "card": {
+    "phantomAria": "Phantom-Track — noch nicht in deiner Bibliothek",
+    "fileNotFoundAria": "Datei nicht gefunden",
+    "pauseAria": "{{title}} pausieren",
+    "previewAria": "{{title}} vorhören",
+    "phantomBuyTitle": "Kaufe oder lade diesen Track herunter, um die Vorschau zu aktivieren",
+    "fileNotFoundTitle": "Datei nicht gefunden: {{path}}",
+    "fileNotFound": "Datei nicht gefunden",
+    "scoreTitle": "Bewertung {{score}}/100 · {{reasons}} — grün = sauberer Mix, gelb = unsauber, rot = Zugunglück",
+    "explainTransitionAria": "Übergang erklären: {{label}}",
+    "unlockAria": "{{title}} entsperren",
+    "lockAria": "{{title}} an Position fixieren",
+    "lockedTitle": "An Position fixiert — Set Architect behält diese Position bei",
+    "unlockedTitle": "An Position fixieren — Set Architect ersetzt diesen Track nicht",
+    "removeAria": "{{title}} entfernen",
+    "moreActionsAria": "Weitere Aktionen",
+    "moreActionsTitle": "Weitere Aktionen"
+  },
+  "menu": {
+    "playHistory": "Wiedergabeverlauf",
+    "editCues": "Cue-Punkte bearbeiten"
+  },
+  "combos": {
+    "dialogAria": "Nach {{title}} gespielte Tracks",
+    "after": "Danach",
+    "closeAria": "Schließen",
+    "loading": "Wird geladen…",
+    "empty": "Noch kein Wiedergabeverlauf. Importiere deine Rekordbox-Performance-Daten, um dies zu sehen.",
+    "count": "{{plays}}×"
+  },
+  "ghost": {
+    "bestSuggestion": "Beste Empfehlung",
+    "addAria": "{{title}} zum Set hinzufügen"
+  }
+}

@@ -1,0 +1,130 @@
+/* ============================================================
+   SetSense Live — "intelligence" activation sweep (iOS-Siri-style).
+   Plays once on Go Live, then fades to hand off to the HUD.
+   ============================================================ */
+
+.lv-activate {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2;
+}
+
+/* Edge light — the screen border glows, like Siri activation. */
+.lv-activate-edge {
+  position: absolute;
+  inset: 0;
+  box-shadow:
+    inset 0 0 160px 28px rgba(79, 215, 255, 0.2),
+    inset 0 0 70px rgba(207, 255, 4, 0.14),
+    inset 0 0 220px 40px rgba(255, 61, 154, 0.1);
+  animation: lv-edge 1.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+@keyframes lv-edge {
+  0% {
+    opacity: 0;
+  }
+  28% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Center bloom — a soft luminous swell of the brand gradient. */
+.lv-activate-bloom {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    58% 48% at 50% 46%,
+    rgba(207, 255, 4, 0.22),
+    rgba(79, 215, 255, 0.16) 34%,
+    rgba(255, 61, 154, 0.1) 60%,
+    transparent 76%
+  );
+  filter: blur(10px);
+  transform-origin: center 46%;
+  animation: lv-bloom 1.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+@keyframes lv-bloom {
+  0% {
+    opacity: 0;
+    transform: scale(0.68);
+  }
+  34% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.28);
+  }
+}
+
+/* Flowing intelligence waves — gradient-stroked sine paths drifting. */
+.lv-activate-waves {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  width: 100%;
+  height: 46%;
+  transform: translateY(-50%);
+  filter: blur(7px) saturate(165%) drop-shadow(0 0 18px rgba(79, 215, 255, 0.35));
+  animation: lv-waves-in 1.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+@keyframes lv-waves-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scaleY(0.4);
+  }
+  32% {
+    opacity: 0.95;
+    transform: translateY(-50%) scaleY(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50%) scaleY(1.1);
+  }
+}
+.lv-wave {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+.lv-wave-g {
+  /* drift one tile (half the 2400 viewBox) for a seamless loop */
+  animation: lv-drift linear infinite;
+}
+.lv-wave-g1 {
+  opacity: 0.95;
+  animation-duration: 3.4s;
+}
+.lv-wave-g2 {
+  opacity: 0.6;
+  animation-duration: 5s;
+}
+.lv-wave-g3 {
+  opacity: 0.5;
+  animation-duration: 2.7s;
+}
+@keyframes lv-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-1200px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lv-activate-bloom,
+  .lv-activate-edge,
+  .lv-activate-waves {
+    animation-duration: 0.6s;
+  }
+  .lv-wave-g {
+    animation: none;
+  }
+}

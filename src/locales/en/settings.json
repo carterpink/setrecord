@@ -1,0 +1,302 @@
+{
+  "title": "Settings",
+  "closeAria": "Close settings",
+  "save": "Save settings",
+  "saving": "Saving…",
+  "saveError": "Could not save settings. Try again or restart the app.",
+  "sections": {
+    "plan": "Plan",
+    "librarySource": "Library source",
+    "privacy": "Privacy",
+    "backup": "Backup & migration",
+    "dangerZone": "Danger zone"
+  },
+  "language": {
+    "label": "Language",
+    "system": "System default",
+    "caption": "Sets the language for menus, buttons and labels throughout the app. AI answers stay in whatever language you type.",
+    "followingSystem": "Following your system language: {{language}}."
+  },
+  "license": {
+    "proPlan": "{{app}} Pro",
+    "freePlan": "Free plan",
+    "lifetime": "Lifetime licence",
+    "subscription": "Pro subscription",
+    "renews": "Renews / expires {{date}}",
+    "activated": "Activated {{date}}",
+    "freeBlurb": "Import, browse and build sets manually. Unlock suggestions, Set Architect, Recall and export with Pro.",
+    "boundToDevice": "Bound to this device.",
+    "deactivate": "Deactivate on this device",
+    "removing": "Removing…",
+    "upgrade": "Upgrade to Pro",
+    "removed": "License removed from this device.",
+    "deactivateError": "Could not deactivate the license.",
+    "status": {
+      "deviceMismatch": "This licence is activated on another device. Deactivate it there, or contact support to move it — your key is otherwise valid.",
+      "revoked": "This licence was cancelled or refunded. If that’s unexpected, contact support and we’ll help.",
+      "expired": "Your subscription has lapsed. Renew to restore Pro — your settings and library are untouched.",
+      "invalid": "This stored key couldn’t be verified. Re-paste it, or contact support.",
+      "clockWarning": "Your system clock looks like it moved backwards. Pro still works; just check your date & time so subscription dates stay accurate."
+    },
+    "enterKey": "Enter a license key",
+    "keyPlaceholder": "SES1.…",
+    "activate": "Activate",
+    "activating": "Activating…",
+    "activateSuccess": "Pro unlocked — thank you!",
+    "refresh": "Refresh status",
+    "refreshing": "Checking…",
+    "refreshDone": "License status is up to date.",
+    "activationError": {
+      "malformed": "That key doesn't look right. Check for typos and try again.",
+      "badSignature": "This key couldn't be verified. Re-copy it from your receipt, or contact support.",
+      "expired": "This license has expired. Renew to restore Pro.",
+      "deviceMismatch": "This key is active on another device. Deactivate it there first, or contact support.",
+      "revoked": "This license was cancelled or refunded. Contact support if that’s unexpected.",
+      "unknown": "Could not activate that key. Check your connection and try again."
+    }
+  },
+  "learnMode": {
+    "label": "Learn Mode",
+    "caption": "Adds in-line explanations + diagrams to every recommendation. Great for picking up harmonic mixing, BPM transitions, and energy arcs.",
+    "toggleAria": "Toggle Learn Mode",
+    "replayTips": "Replay first-time tips"
+  },
+  "plainSearch": {
+    "label": "Plain-English search",
+    "caption": "Understands looser, messier phrasing on top of the built-in search — so “something chilled around 120” just works. Runs entirely on your Mac, offline and private. Turn off to keep it out of memory.",
+    "toggleAria": "Toggle plain-English search"
+  },
+  "keyNotation": {
+    "label": "Key notation",
+    "camelot": "Camelot (9A)",
+    "openKey": "Open Key (Am)",
+    "caption": "Controls how keys are shown on track rows and key chips throughout the app."
+  },
+  "targetHardware": {
+    "label": "Default target hardware",
+    "detail": "Sets the Pioneer CDJ model used during export validation — controls allowed file formats, max bitrate, hot-cue count, and folder layout. Pick the model your booth uses.",
+    "iconLabel": "What is target hardware?"
+  },
+  "bpmRange": {
+    "label": "Default BPM range",
+    "detail": "The tempo window Set Architect and Suggestions stay within. Narrower = more cohesive flow; wider = more candidate tracks. 8–10 BPM is a typical club range.",
+    "iconLabel": "What is the BPM range?",
+    "value": "{{low}}–{{high}} BPM"
+  },
+  "harmonicMixing": {
+    "label": "Harmonic mixing",
+    "detail": "When on, Set Architect prefers adjacent or same-letter Camelot keys, keeping the harmonic colour consistent and avoiding key clashes. Turn off if you intentionally want jarring key shifts.",
+    "iconLabel": "What is harmonic mixing?",
+    "caption": "On by default in Set Architect"
+  },
+  "librarySource": {
+    "label": "Where {{app}} reads your library from",
+    "fromDb": "Read directly from Rekordbox database",
+    "fromXml": "Imported from Rekordbox XML export",
+    "lastImported": "last imported {{date}}",
+    "none": "No library imported yet.",
+    "resyncNow": "Re-sync now",
+    "resync": "Re-sync library",
+    "staleHint": "Source updated — re-sync recommended."
+  },
+  "autoDetect": {
+    "label": "Auto-detect Rekordbox",
+    "caption": "On launch, look for Rekordbox on this Mac so import is one click.",
+    "toggleAria": "Toggle auto-detect Rekordbox"
+  },
+  "crashReporting": {
+    "label": "Crash reporting",
+    "caption": "Opt in to send anonymous crash reports when the app unexpectedly quits. Reports include only the error type, a redacted stack trace (filenames, no paths), your OS version, and the app version.",
+    "privacyNote": "Your library, track titles, file paths, your device name, and personal data are never included. Off by default. Turning it off stops reporting immediately; turning it on takes effect after restarting {{app}}.",
+    "toggleAria": "Toggle crash reporting"
+  },
+  "backup": {
+    "exportTitle": "Export a backup",
+    "exportCaption": "Saves your tags, sets, play history, lifecycle and smart crates to a single <0>.setsense</0> file. Keep it safe, or import it on another Mac to move your work across. Your audio files and license stay put — nothing is uploaded.",
+    "passphrasePlaceholder": "Passphrase (recommended)",
+    "passphraseAria": "Backup passphrase",
+    "exportButton": "Export backup",
+    "exporting": "Exporting…",
+    "encryptedNote": "Encrypted with your passphrase — you’ll need it to import. There’s no recovery if it’s lost.",
+    "unencryptedNote": "Backups are encrypted by default. Leave this blank and we’ll ask you to confirm before saving an unencrypted file anyone could read.",
+    "exportSuccess": "Backup saved — {{tracks}} tracks, {{sets}} sets, {{sessions}} gigs.",
+    "importTitle": "Import a backup",
+    "importCaption": "Import a <0>.setsense</0> file from another Mac. Import your Rekordbox/Serato library first — a backup carries your work, not the audio, and re-links to the tracks already on this machine.",
+    "chooseButton": "Choose backup…",
+    "enterPassphrase": "Enter backup passphrase",
+    "unlock": "Unlock",
+    "wrongPassphrase": "Wrong passphrase — try again.",
+    "readError": "Could not read that backup.",
+    "fromMachine": "From <0>{{machine}}</0> · {{tracks}} tracks · {{sets}} sets · {{sessions}} gigs",
+    "anotherMac": "another Mac",
+    "restoreHint": "This library is empty — import your Rekordbox/Serato library first, then re-run for best results.",
+    "mergeHint": "Will merge onto your current library — your local cues, ratings and tags are never overwritten.",
+    "importButton": "Import backup",
+    "importing": "Importing…",
+    "importSuccess": "Backup imported — your library has been updated.",
+    "importError": "Import failed.",
+    "complete": "Import complete",
+    "relinkSummary": "Re-linked {{matched}} tracks · {{sets}} sets · {{sessions}} gigs · {{tags}} tags",
+    "notFound": "{{count}} not found on this Mac",
+    "ambiguous": ", {{count}} ambiguous",
+    "notFoundHint": ". Import the missing audio and re-run to link them.",
+    "partialSets_one": "{{count}} set imported with some tracks missing.",
+    "partialSets_other": "{{count}} sets imported with some tracks missing."
+  },
+  "dangerZone": {
+    "label": "Reset {{app}}",
+    "caption": "Erase your library, settings and play history and return {{app}} to how it looked the very first time you opened it. Your music files and your Pro licence stay put.",
+    "eraseButton": "Erase everything…",
+    "cantUndo": "This can’t be undone.",
+    "confirmDetail": "Permanently deletes your library, settings and play history, and restarts {{app}} at first launch. Your audio files and Pro licence are untouched.",
+    "eraseConfirm": "Erase everything & restart"
+  },
+  "tabs": {
+    "general": {
+      "label": "General",
+      "title": "General",
+      "desc": "Language and how keys are shown across the app."
+    },
+    "plan": {
+      "label": "Plan",
+      "title": "Plan",
+      "desc": "Your licence and what's unlocked."
+    },
+    "memory": {
+      "label": "Memory",
+      "title": "Memory",
+      "desc": "How SetSense reads what you ask and learns as you go."
+    },
+    "mixing": {
+      "label": "Mixing",
+      "title": "Mixing defaults",
+      "desc": "The defaults Set Architect and Suggestions build with."
+    },
+    "library": {
+      "label": "Library",
+      "title": "Library source",
+      "desc": "Where SetSense reads your tracks from."
+    },
+    "data": {
+      "label": "Privacy & Backup",
+      "title": "Privacy & backup",
+      "desc": "What leaves your Mac, and moving your work between machines."
+    },
+    "reset": {
+      "label": "Reset",
+      "title": "Reset",
+      "desc": "Return SetSense to how it looked at first launch."
+    },
+    "playback": {
+      "label": "Playback",
+      "title": "Playback",
+      "desc": "Preview behaviour, audio devices and waveform detail."
+    }
+  },
+  "density": {
+    "label": "Library density",
+    "standard": "Standard",
+    "compact": "Compact",
+    "caption": "How tightly track rows pack in the library list."
+  },
+  "launch": {
+    "label": "Open to",
+    "last": "Last used",
+    "home": "Home",
+    "library": "Library",
+    "build": "Build",
+    "caption": "Which workspace SetSense opens to when you launch it."
+  },
+  "reducedMotion": {
+    "label": "Reduce motion",
+    "caption": "Freeze the animated background and minimise transitions. Your system setting is always respected too.",
+    "toggleAria": "Toggle reduced motion"
+  },
+  "beginnerMode": {
+    "label": "Beginner mode",
+    "caption": "Keep the plain-language explanations of DJ jargon, even after any trial ends.",
+    "toggleAria": "Toggle beginner mode"
+  },
+  "voiceInput": {
+    "label": "Voice input",
+    "caption": "Hold to talk to the Home box — transcribed privately on your Mac. Turn off to hide the mic button.",
+    "toggleAria": "Toggle voice input"
+  },
+  "exportFormat": {
+    "label": "Default export format",
+    "ask": "Always ask",
+    "engine": "Engine DJ",
+    "beatport": "Beatport",
+    "caption": "Which export the Export window pre-selects."
+  },
+  "playback": {
+    "lengthLabel": "Preview length",
+    "len30": "30s",
+    "len1m": "1m",
+    "len2m": "2m",
+    "len5m": "5m",
+    "lenFull": "Full",
+    "lengthCaption": "How long a preview plays before it stops on its own.",
+    "volumeLabel": "Default preview volume",
+    "fadeLabel": "Fade previews in",
+    "fadeCaption": "Ease previews in with a short fade instead of a hard start.",
+    "outputLabel": "Output device",
+    "outputCaption": "Where preview audio plays. Defaults to your system output.",
+    "inputLabel": "SetSense Live input",
+    "inputCaption": "The audio input SetSense Live listens to.",
+    "systemDefault": "System default",
+    "unnamedDevice": "Unnamed device",
+    "waveformLabel": "Waveform detail",
+    "wfLow": "Low",
+    "wfStandard": "Standard",
+    "wfHigh": "High",
+    "waveformCaption": "Higher detail draws sharper waveforms but decodes a little slower."
+  },
+  "autoTagging": {
+    "label": "Auto-tagging",
+    "caption": "Let SetSense generate plain-language tags from each track's sound."
+  },
+  "tagRoute": {
+    "label": "Rekordbox tag export",
+    "xml": "XML only",
+    "native": "Allow DB write",
+    "caption": "XML only keeps tags out of the live Rekordbox database — the safe default. Allow DB write also offers the direct MyTag option."
+  },
+  "rbConsent": {
+    "label": "Rekordbox database access",
+    "caption": "You've allowed SetSense to read your Rekordbox database (read-only). Revoke it here; you'll be asked again next time.",
+    "button": "Revoke database access",
+    "revoked": "Rekordbox database access revoked."
+  },
+  "updates": {
+    "label": "Check for updates",
+    "caption": "Look for new releases and let you know — never installs automatically.",
+    "frequency": "Update frequency",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "preReleaseLabel": "Include pre-releases",
+    "preReleaseCaption": "Also offer beta builds when checking.",
+    "checkNow": "Check now",
+    "checking": "Checking…",
+    "resultUpdated": "An update is available.",
+    "resultCurrent": "You're on the latest version.",
+    "resultOffline": "Couldn't reach the update server.",
+    "resultUnavailable": "Updates aren't available in this build."
+  },
+  "offline": {
+    "label": "Offline mode",
+    "caption": "Block all network access — update checks and any model downloads."
+  },
+  "artworkCache": {
+    "label": "Album artwork cache",
+    "caption": "Cached cover art currently uses {{size}}. Clearing it frees space; art re-extracts as you browse.",
+    "clear": "Clear artwork cache",
+    "clearing": "Clearing…",
+    "cleared": "Cleared {{count}} cached covers."
+  },
+  "replayOnboarding": {
+    "label": "Replay the welcome tour",
+    "caption": "Show the first-run onboarding again from the start.",
+    "button": "Replay onboarding"
+  }
+}

@@ -1,0 +1,27 @@
+Category,Feature,Free,Pro
+Import,"Import from Rekordbox, Serato & Engine DJ",Yes,Yes
+Library,Browse / search / filter library,Yes,Yes
+Library,Album artwork & metadata,Yes,Yes
+Memory,Ask the AI box (conversational),"Yes — unlimited",Yes
+Memory,Gig history ("what I played where"),Yes,Yes
+Memory,Identity / Wrapped for DJs,Yes,Yes
+Memory,Rediscover & Uncover (forgotten gems),Yes,Yes
+Memory,Combos ("what I play after X"),Yes,Yes
+Memory,Save conversation history,No (ephemeral),Yes
+Health,Library Health headline,Yes,Yes
+Health,Health drill-down + in-place fixes,No,Yes
+Tags,Browse tags,Yes,Yes
+Tags,Edit tags + send to Rekordbox,No,Yes
+Build,Set Architect (one-click set building),No,Yes
+Build,Suggested Next (ranked transitions),No,Yes
+Build,Smart Crates (custom rule builder),No,Yes
+Build,Cue point editor (hot cues A-H),No,Yes
+Export,Export to Rekordbox XML,No,Yes
+Export,Export to Engine DJ USB,No,Yes
+Export,CDJ hardware validation,No,Yes
+Trial,7-day full-Pro trial on first import,Yes,n/a
+,,,
+PLAN,PRICE,EFFECTIVE PER MONTH,NOTE
+Monthly,$9 / month,$9.00,Decoy — billed monthly
+Annual,$79 / year,$6.58,Recommended — save $29/yr vs monthly
+Lifetime,$199 one-time,—,Pay once; includes future updates

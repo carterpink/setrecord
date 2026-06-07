@@ -1,0 +1,73 @@
+{
+  "saveStatus": {
+    "saving": "Saving…",
+    "unsaved": "Unsaved changes",
+    "retryAria": "Retry save",
+    "failed": "Save failed"
+  },
+  "header": {
+    "namePlaceholder": "Set name",
+    "noSetLoaded": "No set loaded",
+    "trackCount_one": "{{count}} track",
+    "trackCount_other": "{{count}} tracks",
+    "bpmStats": "avg {{avg}} BPM ({{min}}–{{max}})",
+    "bpmSingle": "{{bpm}} BPM",
+    "markPerformedTitle": "Log this set as performed at a gig",
+    "markPerformed": "Mark as performed",
+    "logging": "Logging…",
+    "curveHelpAria": "What does this graph show?"
+  },
+  "performed": {
+    "logged": "Logged “{{name}}” as performed.",
+    "markError": "Could not mark this set as performed.",
+    "markFailed": "Something went wrong marking the set performed."
+  },
+  "empty": {
+    "readyTitle": "“{{name}}” — ready when you are.",
+    "blankTitle": "A fresh, blank set.",
+    "subtitle": "Drag tracks in, swipe to discover, or ask me to build it.",
+    "browse": "Browse library",
+    "discover": "Swipe to discover",
+    "buildForMe": "Build it for me"
+  },
+  "curve": {
+    "trackLabel": "Track {{position}}",
+    "seriesEnergy": "Energy",
+    "seriesBpm": "BPM",
+    "seriesTarget": "Target"
+  },
+  "card": {
+    "phantomAria": "Phantom track — not in your library yet",
+    "fileNotFoundAria": "File not found",
+    "pauseAria": "Pause {{title}}",
+    "previewAria": "Preview {{title}}",
+    "phantomBuyTitle": "Buy or download this track to enable preview",
+    "fileNotFoundTitle": "File not found: {{path}}",
+    "fileNotFound": "File not found",
+    "scoreTitle": "Score {{score}}/100 · {{reasons}} — green = clean mix, amber = messy, red = trainwreck",
+    "explainTransitionAria": "Explain transition: {{label}}",
+    "unlockAria": "Unlock {{title}}",
+    "lockAria": "Lock {{title}} in place",
+    "lockedTitle": "Locked in place — Set Architect will preserve this position",
+    "unlockedTitle": "Lock in place — Set Architect won’t replace this track",
+    "removeAria": "Remove {{title}}",
+    "moreActionsAria": "More actions",
+    "moreActionsTitle": "More actions"
+  },
+  "menu": {
+    "playHistory": "Play history",
+    "editCues": "Edit cue points"
+  },
+  "combos": {
+    "dialogAria": "Tracks played after {{title}}",
+    "after": "After",
+    "closeAria": "Close",
+    "loading": "Loading…",
+    "empty": "No play history yet. Import your Rekordbox performance data to see this.",
+    "count": "{{plays}}×"
+  },
+  "ghost": {
+    "bestSuggestion": "Best suggestion",
+    "addAria": "Add {{title}} to set"
+  }
+}

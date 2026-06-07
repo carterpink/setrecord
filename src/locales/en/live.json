@@ -1,0 +1,31 @@
+{
+  "device": {
+    "title": "Audio input for SetSense Live — pick your master/loopback device",
+    "ariaLabel": "SetSense Live audio input",
+    "default": "Default input"
+  },
+  "strip": {
+    "live": "LIVE",
+    "preparing": "Preparing… {{percent}}%",
+    "listening": "Listening…",
+    "setHealth": "Set Health",
+    "health": "health",
+    "show": "Show",
+    "hide": "Hide",
+    "collapseAria": "Collapse panels",
+    "expandAria": "Expand panels",
+    "endAria": "End Live"
+  },
+  "nowPlaying": {
+    "title": "Now playing",
+    "bpm": "BPM",
+    "energy": "Energy {{energy}}",
+    "preparingLibrary": "Preparing your library… {{done}}/{{total}}",
+    "listeningForTrack": "Listening for the track…"
+  },
+  "bestNext": {
+    "title": "Best next",
+    "options": "{{n}} options",
+    "empty": "Options appear once a track locks in."
+  }
+}
