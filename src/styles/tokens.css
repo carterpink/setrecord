@@ -132,6 +132,67 @@
 
 
 /* ============================================================
+   Light theme overrides
+   ============================================================ */
+
+[data-theme='light'] {
+  /* Papery aurora — warm cream, no blue tint */
+  --aurora-teal: #F4F1EA;
+  --aurora-indigo: #F0EBE0;
+  --aurora-magenta: #EFE9DC;
+  --aurora-black: #F4F1EA;
+
+  /* Accent — lime sings against paper */
+  --accent: #CFFF04;
+  --accent-hover: #B8E600;
+  --accent-dim-12: rgba(207, 255, 4, 0.18);
+  --accent-dim-30: rgba(207, 255, 4, 0.4);
+  --text-on-accent: #0B0B10;
+
+  /* Surfaces — paper + paper-dim */
+  --surface-0: transparent;
+  --surface-1: rgba(244, 241, 234, 0.65);
+  --surface-2: rgba(230, 226, 215, 0.78);
+  --surface-3: rgba(230, 226, 215, 0.92);
+
+  /* Borders — ink, not blue */
+  --border-subtle: rgba(11, 11, 16, 0.08);
+  --border-default: rgba(11, 11, 16, 0.12);
+  --border-emphasis: rgba(11, 11, 16, 0.22);
+
+  /* Scrollbars — ink on light surfaces */
+  --scrollbar-thumb: rgba(11, 11, 16, 0.22);
+  --scrollbar-thumb-hover: rgba(11, 11, 16, 0.34);
+
+  /* Text — ink, generous opacity for 100% readability */
+  --text-primary: #0B0B10;
+  --text-secondary: rgba(11, 11, 16, 0.72);
+  --text-tertiary: rgba(11, 11, 16, 0.6);
+  --text-disabled: rgba(11, 11, 16, 0.3);
+
+  /* Semantic — darker variants so they pass WCAG AA on paper */
+  --semantic-success: #16A34A;
+  --semantic-warning: #B45309;
+  --semantic-danger: #B91C1C;
+  --semantic-info: #1D4ED8;
+
+  /* Glass — papery, not blue */
+  --glass-1-bg: rgba(244, 241, 234, 0.6);
+  --glass-1-blur: blur(20px) saturate(120%);
+  --glass-1-border: 0.5px solid rgba(11, 11, 16, 0.08);
+  --glass-2-bg: rgba(238, 234, 222, 0.72);
+  --glass-2-blur: blur(28px) saturate(125%);
+  --glass-2-border: 0.5px solid rgba(11, 11, 16, 0.1);
+  --glass-3-bg: rgba(230, 226, 215, 0.85);
+  --glass-3-blur: blur(40px) saturate(130%);
+  --glass-3-border: 0.5px solid rgba(11, 11, 16, 0.14);
+  --glass-3-shadow: 0 20px 60px rgba(11, 11, 16, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+
+  /* Brand gradient — identical in both modes */
+  --grad-brand: linear-gradient(135deg, #CFFF04 0%, #4FD7FF 50%, #FF3D9A 100%);
+}
+
+/* ============================================================
    Semantic typography helpers
    ============================================================ */
 
