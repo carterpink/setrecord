@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import { Upload } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { motion } from '@/components/shared/Motion'
 import { Button } from '@/components/shared/Button'
 import { useUiStore } from '@/stores/uiStore'
@@ -21,9 +22,10 @@ interface NoLibraryStateProps {
  */
 export function NoLibraryState({
   icon: Icon = Upload,
-  title = 'Import your Rekordbox library to unlock this',
+  title,
   body
 }: NoLibraryStateProps): React.JSX.Element {
+  const { t } = useTranslation('shared')
   const showModal = useUiStore((s) => s.showModal)
   const showImportGuide = useUiStore((s) => s.showImportGuide)
 
@@ -44,7 +46,7 @@ export function NoLibraryState({
     >
       <Icon size={32} strokeWidth={1.5} style={{ color: 'var(--accent)', marginBottom: 4 }} />
       <div className="ss-h3" style={{ maxWidth: 320 }}>
-        {title}
+        {title ?? t('noLibrary.defaultTitle')}
       </div>
       <div className="ss-body-sm" style={{ opacity: 0.6, maxWidth: 300 }}>
         {body}
@@ -55,7 +57,7 @@ export function NoLibraryState({
         onClick={() => showModal('import')}
         style={{ marginTop: 8 }}
       >
-        Import library
+        {t('noLibrary.importButton')}
       </Button>
       <button
         type="button"
@@ -70,7 +72,7 @@ export function NoLibraryState({
           marginTop: 2
         }}
       >
-        How to export Rekordbox XML
+        {t('noLibrary.guideLink')}
       </button>
     </motion.div>
   )

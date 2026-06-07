@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Sparkles } from 'lucide-react'
 import { useRecallStore } from '@/stores/recallStore'
 import { useLibraryStore } from '@/stores/libraryStore'
@@ -6,6 +7,7 @@ import { NoLibraryState } from '@/components/shared/NoLibraryState'
 import { RecallTrackLine } from './RecallTrackLine'
 
 export function RediscoverSection(): React.JSX.Element {
+  const { t } = useTranslation('recall')
   const gems = useRecallStore((s) => s.gems)
   const loading = useRecallStore((s) => s.gemsLoading)
   const loadGems = useRecallStore((s) => s.loadGems)
@@ -19,15 +21,13 @@ export function RediscoverSection(): React.JSX.Element {
     return (
       <div className="recall-section">
         <header className="recall-section-head">
-          <h2 className="ss-h2">Rediscover</h2>
-          <p className="recall-section-sub">
-            Tracks you used to play, gathering dust. Pull one back into rotation.
-          </p>
+          <h2 className="ss-h2">{t('rediscover.title')}</h2>
+          <p className="recall-section-sub">{t('rediscover.subtitle')}</p>
         </header>
         <NoLibraryState
           icon={Sparkles}
-          title="Forgotten gems surface as you play"
-          body="Import your library and SetSense starts resurfacing tracks you used to love but haven't touched in a while."
+          title={t('rediscover.noLibraryTitle')}
+          body={t('rediscover.noLibraryBody')}
         />
       </div>
     )
@@ -36,18 +36,16 @@ export function RediscoverSection(): React.JSX.Element {
   return (
     <div className="recall-section">
       <header className="recall-section-head">
-        <h2 className="ss-h2">Rediscover</h2>
-        <p className="recall-section-sub">
-          Tracks you used to play, gathering dust. Pull one back into rotation.
-        </p>
+        <h2 className="ss-h2">{t('rediscover.title')}</h2>
+        <p className="recall-section-sub">{t('rediscover.subtitle')}</p>
       </header>
 
-      {loading && <div className="recall-empty">Digging through your crates…</div>}
+      {loading && <div className="recall-empty">{t('rediscover.digging')}</div>}
 
       {!loading && gems.length === 0 && (
         <div className="recall-empty">
           <Sparkles size={20} strokeWidth={1.5} />
-          <span>No forgotten gems yet — play history grows this over time.</span>
+          <span>{t('rediscover.empty')}</span>
         </div>
       )}
 

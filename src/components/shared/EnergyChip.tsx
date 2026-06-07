@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 import { Coachmark } from '@/components/learn/Coachmark'
 import { LearnTooltip } from '@/components/learn/LearnTooltip'
 import { explainEnergyView } from '@/utils/learnMode/explanations'
@@ -22,6 +23,7 @@ export function EnergyChip({
   onChange,
   className
 }: EnergyChipProps): React.JSX.Element {
+  const { t } = useTranslation('shared')
   const [editing, setEditing] = useState(false)
   const chipRef = useRef<HTMLSpanElement>(null)
 
@@ -47,8 +49,8 @@ export function EnergyChip({
     return (
       <span
         className={clsx('nrg-chip nrg-chip--pending', className)}
-        title="Energy: analysing…"
-        aria-label="Energy pending"
+        title={t('energy.analysing')}
+        aria-label={t('energy.pendingAria')}
       >
         ?
       </span>
@@ -67,12 +69,12 @@ export function EnergyChip({
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.key === 'Escape' && setEditing(false)}
-        aria-label={`Energy ${value} of 10, editable`}
+        aria-label={t('energy.editableAria', { value })}
       >
         <button
           type="button"
           className="nrg-adj"
-          aria-label="Decrease energy"
+          aria-label={t('energy.decreaseAria')}
           disabled={value <= 1}
           onMouseDown={(e) => adjust(-1, e)}
         >
@@ -82,7 +84,7 @@ export function EnergyChip({
         <button
           type="button"
           className="nrg-adj"
-          aria-label="Increase energy"
+          aria-label={t('energy.increaseAria')}
           disabled={value >= 10}
           onMouseDown={(e) => adjust(1, e)}
         >
@@ -97,7 +99,7 @@ export function EnergyChip({
       <LearnTooltip
         explanation={explainEnergyView()}
         basic={BEGINNER_TOOLTIP_COPY.energy}
-        iconLabel="What is the energy score?"
+        iconLabel={t('energy.iconLabel')}
       >
         <span
           ref={chipRef}
@@ -107,8 +109,8 @@ export function EnergyChip({
             isOverride && 'nrg-chip--override',
             className
           )}
-          title={isOverride ? `Energy: ${value}/10 (manually set)` : `Energy: ${value}/10`}
-          aria-label={`Energy ${value} of 10`}
+          title={isOverride ? t('energy.titleOverride', { value }) : t('energy.title', { value })}
+          aria-label={t('energy.valueAria', { value })}
           role={editable ? 'button' : undefined}
           tabIndex={editable ? 0 : undefined}
           onClick={(e) => {

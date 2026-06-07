@@ -1,0 +1,142 @@
+{
+  "bpm": {
+    "value": "{{bpm}} BPM",
+    "iconLabel": "O que é BPM?"
+  },
+  "energy": {
+    "analysing": "Energia: analisando…",
+    "pendingAria": "Energia pendente",
+    "editableAria": "Energia {{value}} de 10, editável",
+    "decreaseAria": "Diminuir energia",
+    "increaseAria": "Aumentar energia",
+    "iconLabel": "O que é a pontuação de energia?",
+    "titleOverride": "Energia: {{value}}/10 (definida manualmente)",
+    "title": "Energia: {{value}}/10",
+    "valueAria": "Energia {{value}} de 10"
+  },
+  "energyBar": {
+    "aria": "Energia {{level}} de {{max}}"
+  },
+  "key": {
+    "iconLabel": "O que é uma tonalidade Camelot?",
+    "aria": "Tonalidade {{key}}"
+  },
+  "errorBoundary": {
+    "chromeLabelled": "{{label}} indisponível.",
+    "chromeGeneric": "Esta barra de ferramentas está indisponível.",
+    "reload": "Recarregar o app",
+    "retry": "Tentar de novo",
+    "title": "Algo deu errado",
+    "bodyLabelled": "O painel {{label}} encontrou um erro.",
+    "bodyGeneric": "Um painel encontrou um erro.",
+    "exhaustedHint": "Recarregar o app deve resolver.",
+    "recoverHint": "Você pode tentar de novo ou mudar para outra visualização.",
+    "tryAgain": "Tentar de novo"
+  },
+  "fatalError": {
+    "title": "Não foi possível iniciar o {{app}}",
+    "body": "O núcleo do aplicativo não carregou. Isso geralmente significa que a instalação está danificada. Encerre e reinstale o {{app}}, ou fale com o suporte se o problema persistir."
+  },
+  "inlineWaveform": {
+    "aria": "Prévia da forma de onda"
+  },
+  "librarySourceGuide": {
+    "duration": "Leva cerca de 30 segundos.",
+    "step1": {
+      "title": "Abra o Rekordbox",
+      "body": "Inicie o app neste Mac se ele ainda não estiver aberto."
+    },
+    "step2": {
+      "title": "Arquivo › Exportar coleção em formato xml",
+      "body": "Na barra de menus. Salve o arquivo onde quiser — a Mesa serve."
+    },
+    "step3": {
+      "title": "Escolha o arquivo abaixo",
+      "body": "O {{app}} lê a exportação somente leitura — o Rekordbox fica intacto."
+    }
+  },
+  "noLibrary": {
+    "defaultTitle": "Importe sua biblioteca do Rekordbox para desbloquear isto",
+    "importButton": "Importar biblioteca",
+    "guideLink": "Como exportar o XML do Rekordbox"
+  },
+  "playlistSource": {
+    "allLibrary": "Toda a biblioteca",
+    "onePlaylist": "1 playlist",
+    "manyPlaylists": "{{count}} playlists"
+  },
+  "proGate": {
+    "trialEndedPrefix": "Seu teste do Pro terminou. {{description}}",
+    "keepPro": "Manter o Pro",
+    "unlock": "Desbloquear com o Pro"
+  },
+  "search": {
+    "placeholder": "Buscar…"
+  },
+  "toast": {
+    "moveToSet": "Mover para {{name}}",
+    "moveAria": "Mover para outro set",
+    "dismiss": "Dispensar"
+  },
+  "usb": {
+    "never": "Nunca",
+    "today": "Hoje",
+    "yesterday": "Ontem",
+    "daysAgo": "Há {{count}} dias",
+    "weeksAgo": "Há {{count}} semanas",
+    "monthsAgo": "Há {{count}} meses",
+    "renamedTo": "Renomeado para “{{name}}”",
+    "renameAria": "Renomear unidade USB",
+    "saveNameAria": "Salvar nome",
+    "removedFromTargets": "“{{name}}” removido dos destinos de exportação",
+    "setAsTarget": "“{{name}}” definido como destino de exportação",
+    "speedTestFailed": "O teste de velocidade falhou",
+    "removeFavorite": "Remover dos favoritos",
+    "addFavorite": "Adicionar aos favoritos",
+    "removeTarget": "Remover destino de exportação",
+    "markTarget": "Marcar como destino de exportação",
+    "defaultTarget": "Destino de exportação padrão",
+    "setTarget": "Definir como destino de exportação",
+    "moreOptions": "Mais opções",
+    "rename": "Renomear",
+    "testingSpeed": "Testando velocidade…",
+    "testSpeed": "Testar velocidade",
+    "free": "{{size}} livres",
+    "totalUsed": "{{total}} no total · {{percent}}% usado",
+    "filesystem": "Sistema de arquivos",
+    "speed": "Velocidade",
+    "testing": "Testando…",
+    "speedValue": "~{{speed}} MB/s",
+    "lastExport": "Última exportação",
+    "exports": "Exportações",
+    "forget": "Esquecer {{name}}",
+    "forgetTooltip": "Esquecer este dispositivo",
+    "forgotten": "“{{name}}” esquecido",
+    "exportsCount": "{{count}} exportações",
+    "couldNotScan": "Não foi possível buscar unidades USB",
+    "trigger": "Unidades USB — {{count}} conectadas",
+    "connectedBadge": "{{count}} conectadas",
+    "drivesTitle": "Unidades USB",
+    "refresh": "Atualizar",
+    "refreshAria": "Atualizar unidades USB",
+    "closeAria": "Fechar painel USB",
+    "noneDetected": "Nenhuma unidade USB detectada",
+    "plugInHint": "Conecte uma unidade USB e clique em atualizar",
+    "pastDrives": "Unidades anteriores",
+    "tooltip": "Unidades USB"
+  },
+  "freshStart": {
+    "step.library": "Biblioteca",
+    "step.settings": "Configurações",
+    "step.history": "Histórico de reprodução",
+    "step.artwork": "Capas",
+    "step.caches": "Caches",
+    "resettingAria": "Redefinindo o {{app}}",
+    "startingFresh": "Começando do zero…",
+    "clearing": "Limpando o {{app}}"
+  },
+  "proWaveform": {
+    "overviewAria": "Forma de onda geral da faixa. Clique ou arraste para navegar; use os controles de reprodução e as setas para se mover.",
+    "detailAria": "Forma de onda detalhada. Clique ou arraste para posicionar o cursor; Espaço reproduz ou pausa, as setas esquerda e direita avançam 100 ms."
+  }
+}

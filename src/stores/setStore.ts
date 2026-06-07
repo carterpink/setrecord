@@ -56,6 +56,13 @@ interface SetActions {
   populateFromArchitect: (tracks: SetTrack[], params: ArchitectParams, name?: string) => void
   retrySave: () => void
   undo: () => void
+  /**
+   * Apply a set received from a live collaboration peer. Replaces the working
+   * set (upserting it into the sidebar), persists this peer's own copy, and
+   * recomputes transition scores against the local library. Never pushes undo —
+   * remote keystrokes must not flood the local undo stack.
+   */
+  applyRemoteSet: (next: DJSet) => void
 }
 
 interface SetState {
@@ -456,7 +463,12 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
       const scores = await Promise.all(
         sorted
           .slice(1)
-          .map((st, i) => window.setsense.scoreTransition(sorted[i].trackId, st.trackId))
+          // Per-pair catch: in a live collab a peer may hold "phantom" tracks not
+          // in this machine's library, so an individual lookup can fail. Don't let
+          // one missing track wipe every transition score — just skip that pair.
+          .map((st, i) =>
+            window.setsense.scoreTransition(sorted[i].trackId, st.trackId).catch(() => null)
+          )
       )
       // Re-read state in case the set changed while we awaited
       const latest = get().currentSet
@@ -562,6 +574,20 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
     _scheduleSave(get, set)
     void get().computeAllTransitions()
     useToastStore.getState().push({ kind: 'success', message: 'Undone' })
+  },
+
+  applyRemoteSet: (next: DJSet) => {
+    set((s) => {
+      const exists = s.savedSets.some((x) => x.id === next.id)
+      return {
+        currentSet: next,
+        savedSets: exists
+          ? s.savedSets.map((x) => (x.id === next.id ? next : x))
+          : [next, ...s.savedSets]
+      }
+    })
+    _scheduleSave(get, set)
+    void get().computeAllTransitions()
   }
 }))
 

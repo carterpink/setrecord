@@ -45,6 +45,7 @@ import type {
   SessionMetadataPatch,
   SetSlot,
   VenueType,
+  BriefAnswer,
   Set as DJSet,
   SetTrack,
   SmartCrate,
@@ -192,6 +193,11 @@ declare global {
       // Settings (Phase 8)
       getSettings: () => Promise<AppSettings>
       setSettings: (partial: Partial<AppSettings>) => Promise<AppSettings>
+      // Artwork cache management
+      artworkCacheStats: () => Promise<{ files: number; bytes: number }>
+      artworkClearCache: () => Promise<{ removed: number; bytesFreed: number }>
+      // Manual update check
+      checkForUpdatesNow: () => Promise<'updated' | 'up-to-date' | 'offline' | 'unavailable'>
       // Fresh Start — wipe to first-launch and relaunch
       freshStart: () => Promise<void>
       // Backup & migration (backendless export/import)
@@ -248,6 +254,7 @@ declare global {
       historySessions: () => Promise<PlaySession[]>
       historySessionTracks: (sessionId: string) => Promise<SessionTrack[]>
       historyForTrack: (trackId: string) => Promise<PlaySession[]>
+      historyBrief: (venue: string, eventType?: VenueType) => Promise<BriefAnswer>
       historyQuerySessions: (filter?: SessionFilter) => Promise<PlaySession[]>
       historyUpdateSession: (sessionId: string, patch: SessionMetadataPatch) => Promise<void>
       historyBulkAssign: (filter: SessionFilter, patch: SessionMetadataPatch) => Promise<number>
@@ -306,6 +313,9 @@ declare global {
       speechEnsureMicAccess: () => Promise<MicAccess>
       speechPrepareVoice: () => Promise<VoiceStatus>
       onVoiceProgress: (cb: (s: VoiceStatus) => void) => () => void
+      // Live collaboration (Back-to-Back)
+      collabHostStart: () => Promise<{ port: number; secret: string; host: string }>
+      collabHostStop: () => Promise<void>
       // SetSense Live overlay
       liveStart: () => Promise<void>
       liveStop: () => Promise<void>

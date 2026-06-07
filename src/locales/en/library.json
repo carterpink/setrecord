@@ -1,0 +1,166 @@
+{
+  "search": {
+    "placeholder": "Search library, sets, cue points…",
+    "tip": "Also searches cue point labels — try “intro” or “drop”",
+    "dismissTip": "Dismiss tip"
+  },
+  "sort": {
+    "byAria": "Sort by",
+    "byTitle": "Sort library",
+    "ascending": "Sort ascending — click for descending",
+    "descending": "Sort descending — click for ascending",
+    "ascendingTitle": "Ascending",
+    "descendingTitle": "Descending",
+    "fields": {
+      "artist": "Artist",
+      "title": "Title",
+      "bpm": "BPM",
+      "energy": "Energy",
+      "key": "Key",
+      "dateAdded": "Date added",
+      "playCount": "Play count",
+      "duration": "Duration",
+      "rating": "Rating"
+    }
+  },
+  "toolbar": {
+    "filterAria": "Filter library",
+    "filterTitle": "Filter",
+    "standardViewAria": "Switch to standard view",
+    "compactViewAria": "Switch to compact view",
+    "standardViewTitle": "Standard view",
+    "compactViewTitle": "Compact view"
+  },
+  "filters": {
+    "bpm": "BPM",
+    "energy": "Energy",
+    "key": "Key",
+    "anyKey": "Any",
+    "genre": "Genre",
+    "genrePlaceholder": "e.g. tech house",
+    "format": "Format",
+    "clearAll": "Clear all filters",
+    "chipBpmMin": "BPM ≥ {{value}}",
+    "chipBpmMax": "BPM ≤ {{value}}",
+    "chipEnergyMin": "Energy ≥ {{value}}",
+    "chipEnergyMax": "Energy ≤ {{value}}",
+    "chipKey": "Key: {{value}}",
+    "chipGenre": "Genre: {{value}}"
+  },
+  "banner": {
+    "showingPlaylist": "Showing playlist <0>{{name}}</0>",
+    "showAllTracks": "Show all tracks",
+    "showingFit": "Showing tracks that fit <0>{{title}}</0>",
+    "clearSmartFilter": "Clear smart filter"
+  },
+  "empty": {
+    "noLibrary": "This is where every track you’ve prepped in Rekordbox lives — searchable, sortable, and ready to drop into a set. Import your library to fill it.",
+    "noCompatible": "No compatible tracks found. Try relaxing the BPM range or switching off smart filter.",
+    "noFilterMatch": "No tracks match the active filters.",
+    "noPlaylistTracks": "No tracks in “{{name}}”.",
+    "noSearchMatch": "No tracks match “{{query}}”"
+  },
+  "sets": {
+    "emptyTitle": "No saved sets yet",
+    "emptyBody": "Build a set in the timeline and it will appear here.",
+    "meta_one": "{{count}} track · {{duration}} · {{date}}",
+    "meta_other": "{{count}} tracks · {{duration}} · {{date}}"
+  },
+  "combos": {
+    "dialogAria": "Tracks played after {{title}}",
+    "after": "After",
+    "close": "Close",
+    "empty": "No play history yet. Import your Rekordbox performance data to see this.",
+    "count": "{{count}}×"
+  },
+  "crates": {
+    "back": "All crates",
+    "count_one": "{{count}} track",
+    "count_other": "{{count}} tracks",
+    "evaluating": "Evaluating crate…",
+    "showingFirst": "Showing first {{shown}} of {{total}}.",
+    "loading": "Loading crates…",
+    "hint": "Crates re-fill themselves from rules. Create and edit them on the Recall tab."
+  },
+  "playlistSidebar": {
+    "show": "Show playlists",
+    "hide": "Hide playlists",
+    "heading": "Playlists",
+    "allTracks": "All Tracks"
+  },
+  "contextMenu": {
+    "actionsAria": "Actions for {{title}}",
+    "preview": "Preview",
+    "findSimilar": "Find similar tracks",
+    "addToSet": "Add to set",
+    "editCues": "Edit cue points",
+    "playedAfter": "What have I played after this?",
+    "editTags": "Edit tags…"
+  },
+  "trackRow": {
+    "nowPlaying": "Now playing.",
+    "alreadyInSet": "Already in your set.",
+    "phantomStatus": "Phantom — not in your library.",
+    "fileNotFoundStatus": "File not found.",
+    "selectedStatus": "Selected.",
+    "phantomTrackCompact": "Phantom track",
+    "phantomTrackTitle": "Phantom track — buy or download to enable",
+    "fileNotFound": "File not found",
+    "fileNotFoundPath": "File not found: {{path}}",
+    "phantomArtist": "{{artist}} · Phantom — not in library",
+    "playedAfter": "What have I played after this?"
+  },
+  "tags": {
+    "readingTags": "Reading your tags…",
+    "noTagsYet": "No tags yet",
+    "coverage": "{{tagged}} of {{total}} tracks tagged",
+    "noTagsCaption": "Tags appear automatically as your library is analysed.",
+    "coverageCaption": "Vibe, Energy, Best for and more — {{pct}}% covered.",
+    "retagTitle": "Re-tag the whole library",
+    "tagging": "Tagging {{processed}}/{{total}}",
+    "taggingShort": "Tagging…",
+    "retag": "Re-tag library",
+    "sendTitlePro": "Write these tags into Rekordbox",
+    "sendTitleFree": "Sending tags to Rekordbox is a Pro feature",
+    "sendToRekordbox": "Send to Rekordbox",
+    "browseTagged": "Browse {{count}} tracks tagged {{label}}",
+    "noTracksTagged": "No tracks tagged {{label}}"
+  },
+  "tagEditor": {
+    "dialogAria": "Edit tags for {{title}}",
+    "heading": "Tags",
+    "close": "Close",
+    "proUpsell": "Editing tags is a Pro feature — upgrade to customise.",
+    "resetToAuto": "Reset to auto"
+  },
+  "tagChip": {
+    "remove": "Remove {{label}}"
+  },
+  "tagExport": {
+    "dialogAria": "Send tags to Rekordbox",
+    "title": "Send tags to Rekordbox",
+    "close": "Close",
+    "xmlTitle": "Rekordbox XML",
+    "recommended": "Recommended",
+    "xmlDetail": "Safest. Tags land in the Comments column. Your library is never modified.",
+    "directTitle": "Write directly to Rekordbox",
+    "advanced": "Advanced",
+    "directDetail": "Real, filterable MyTags. Takes a backup first; Rekordbox must be closed.",
+    "warning": "This writes directly into your Rekordbox library. <0>Close Rekordbox first.</0> SetSense saves a timestamped backup of your database before writing, and rolls back if anything goes wrong.",
+    "bullet1": "Creates a “SetSense” MyTag group with your tags",
+    "bullet2": "Tags only tracks that came from your Rekordbox library",
+    "bullet3": "Won’t duplicate tags a track already has",
+    "back": "Back",
+    "backupAndWrite": "Back up & write tags",
+    "working": "Working… this won’t take long.",
+    "backup": "Backup: {{path}}",
+    "done": "Done",
+    "somethingWrong": "Something went wrong.",
+    "xmlDoneTitle": "Tags exported",
+    "xmlDoneDetail": "Wrote {{count}} tracks to an XML file. In Rekordbox, use File → Import Collection (your library isn’t overwritten) — tags appear in the Comments column.",
+    "xmlFailTitle": "Export failed",
+    "nativeDoneTitle": "Tags written to Rekordbox",
+    "nativeDoneDetail": "Created {{tags}} MyTags and tagged {{tracks}} tracks. Open Rekordbox and filter by MyTag to see them.",
+    "nativeFailTitle": "Could not write tags"
+  }
+}

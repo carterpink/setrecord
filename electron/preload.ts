@@ -34,6 +34,7 @@ import type {
   SessionMetadataPatch,
   SetSlot,
   VenueType,
+  BriefAnswer,
   RecallAiStatus,
   RecallAskResult,
   RecallRoute,
@@ -296,6 +297,18 @@ const setsense = {
   setSettings: (partial: Partial<AppSettings>) =>
     ipcRenderer.invoke('settings:set', partial) as Promise<AppSettings>,
 
+  // Artwork cache management (Settings → Privacy & data)
+  artworkCacheStats: () =>
+    ipcRenderer.invoke('artwork:cache-stats') as Promise<{ files: number; bytes: number }>,
+  artworkClearCache: () =>
+    ipcRenderer.invoke('artwork:clear-cache') as Promise<{ removed: number; bytesFreed: number }>,
+
+  // Manual update check (Settings → Privacy & data)
+  checkForUpdatesNow: () =>
+    ipcRenderer.invoke('updates:check-now') as Promise<
+      'updated' | 'up-to-date' | 'offline' | 'unavailable'
+    >,
+
   // Fresh Start — wipe to first-launch and relaunch the app. Never resolves in
   // practice: the app exits before the promise settles.
   freshStart: (): Promise<void> => ipcRenderer.invoke('app:fresh-start'),
@@ -398,6 +411,9 @@ const setsense = {
 
   historyForTrack: (trackId: string): Promise<PlaySession[]> =>
     ipcRenderer.invoke('history:get-for-track', trackId),
+
+  historyBrief: (venue: string, eventType?: VenueType): Promise<BriefAnswer> =>
+    ipcRenderer.invoke('history:brief', venue, eventType),
 
   historyQuerySessions: (filter: SessionFilter = {}): Promise<PlaySession[]> =>
     ipcRenderer.invoke('history:query-sessions', filter),
@@ -521,6 +537,13 @@ const setsense = {
     ipcRenderer.on('speech:voice-progress', handler)
     return () => ipcRenderer.removeListener('speech:voice-progress', handler)
   },
+
+  // ── Live collaboration (Back-to-Back) ────────────────────────────────────
+  /** Start the host's LAN relay; returns the connection info for the invite code. */
+  collabHostStart: (): Promise<{ port: number; secret: string; host: string }> =>
+    ipcRenderer.invoke('collab:host-start'),
+  /** Stop the host's relay (ends the session for all peers). */
+  collabHostStop: (): Promise<void> => ipcRenderer.invoke('collab:host-stop'),
 
   // ── SetSense Live overlay ────────────────────────────────────────────────
   liveStart: (): Promise<void> => ipcRenderer.invoke('live:start'),

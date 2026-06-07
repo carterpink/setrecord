@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Check, X, FlaskConical, Archive } from 'lucide-react'
 import { Button } from '@/components/shared/Button'
 import { IconButton } from '@/components/shared/IconButton'
@@ -18,6 +19,7 @@ type Outcome = 'tested' | 'archive' | 'keep'
  * Unanswered rows behave as "Not yet" on close.
  */
 export function PostGigPromptModal(): React.JSX.Element | null {
+  const { t } = useTranslation('modals')
   const closeModal = useUiStore((s) => s.closeModal)
   const data = useUiStore((s) => s.postGigPromptData)
   const resolveFlag = useRecallStore((s) => s.resolveFlag)
@@ -40,15 +42,15 @@ export function PostGigPromptModal(): React.JSX.Element | null {
   }
 
   return (
-    <Modal onClose={closeModal} ariaLabel="Post-gig review" maxWidth={520}>
+    <Modal onClose={closeModal} ariaLabel={t('postGig.ariaLabel')} maxWidth={520}>
       <div className="modal-header">
         <div>
-          <span className="ss-h2">You tested {data.tracks.length} flagged tracks</span>
+          <span className="ss-h2">{t('postGig.title', { count: data.tracks.length })}</span>
           <span className="ss-caption" style={{ marginLeft: 10, color: 'var(--text-tertiary)' }}>
-            How did each one go?
+            {t('postGig.subtitle')}
           </span>
         </div>
-        <IconButton icon={X} size="sm" aria-label="Close" onClick={closeModal} />
+        <IconButton icon={X} size="sm" aria-label={t('common.close')} onClick={closeModal} />
       </div>
 
       <div className="modal-body">
@@ -67,21 +69,21 @@ export function PostGigPromptModal(): React.JSX.Element | null {
                     className={`post-gig-pick${choice === 'tested' ? ' active tested' : ''}`}
                     onClick={() => setOutcome(track.id, 'tested')}
                   >
-                    <Check size={13} strokeWidth={1.7} /> Tested
+                    <Check size={13} strokeWidth={1.7} /> {t('postGig.tested')}
                   </button>
                   <button
                     type="button"
                     className={`post-gig-pick${choice === 'keep' ? ' active' : ''}`}
                     onClick={() => setOutcome(track.id, 'keep')}
                   >
-                    <FlaskConical size={13} strokeWidth={1.7} /> Not yet
+                    <FlaskConical size={13} strokeWidth={1.7} /> {t('postGig.notYet')}
                   </button>
                   <button
                     type="button"
                     className={`post-gig-pick${choice === 'archive' ? ' active archive' : ''}`}
                     onClick={() => setOutcome(track.id, 'archive')}
                   >
-                    <Archive size={13} strokeWidth={1.7} /> Archive
+                    <Archive size={13} strokeWidth={1.7} /> {t('postGig.archive')}
                   </button>
                 </div>
               </div>
@@ -92,10 +94,10 @@ export function PostGigPromptModal(): React.JSX.Element | null {
 
       <div className="modal-footer">
         <Button variant="ghost" onClick={closeModal}>
-          Skip for now
+          {t('common.skipForNow')}
         </Button>
         <Button variant="primary" onClick={() => void finish()}>
-          Save
+          {t('common.save')}
         </Button>
       </div>
     </Modal>

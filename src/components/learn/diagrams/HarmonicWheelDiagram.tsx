@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 interface HarmonicWheelDiagramProps {
   fromKey: string
   toKey: string
@@ -22,6 +24,7 @@ export function HarmonicWheelDiagram({
   toKey,
   size = 180
 }: HarmonicWheelDiagramProps): React.JSX.Element {
+  const { t } = useTranslation('learn')
   const from = parseKey(fromKey)
   const to = parseKey(toKey)
   const cx = size / 2
@@ -37,12 +40,10 @@ export function HarmonicWheelDiagram({
       height={size}
       viewBox={`0 0 ${size} ${size}`}
       role="img"
-      aria-label={`Camelot wheel showing ${fromKey} and ${toKey}`}
+      aria-label={t('diagrams.harmonic.aria', { fromKey, toKey })}
       style={{ display: 'block', margin: '0 auto' }}
     >
-      <title>
-        Camelot wheel: {fromKey} → {toKey}
-      </title>
+      <title>{t('diagrams.harmonic.title', { fromKey, toKey })}</title>
       <circle
         cx={cx}
         cy={cy}

@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import {
@@ -27,6 +28,7 @@ import { explainEnergyCurveView } from '@/utils/learnMode/explanations'
 import { BEGINNER_TOOLTIP_COPY } from '@/utils/learnMode/coachmarks'
 import { GhostTrackCard } from './GhostTrackCard'
 import { TimelineTrackCard } from './TimelineTrackCard'
+import { CollaborateButton } from '@/components/collab/CollaborateButton'
 
 const VIEWS: readonly TimelineCurveView[] = ['Energy', 'BPM'] as const
 
@@ -37,18 +39,19 @@ function SaveStatusBadge({
   status: 'idle' | 'saving' | 'unsaved' | 'error'
   onRetry: () => void
 }): React.JSX.Element | null {
+  const { t } = useTranslation('timeline')
   if (status === 'idle') return null
   if (status === 'saving') {
     return (
       <span style={{ opacity: 0.55, fontVariantNumeric: 'tabular-nums' }} aria-live="polite">
-        Saving…
+        {t('saveStatus.saving')}
       </span>
     )
   }
   if (status === 'unsaved') {
     return (
       <span style={{ opacity: 0.55 }} aria-live="polite">
-        Unsaved changes
+        {t('saveStatus.unsaved')}
       </span>
     )
   }
@@ -56,7 +59,7 @@ function SaveStatusBadge({
     <button
       type="button"
       onClick={onRetry}
-      aria-label="Retry save"
+      aria-label={t('saveStatus.retryAria')}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -71,13 +74,14 @@ function SaveStatusBadge({
       }}
     >
       <AlertTriangle size={12} strokeWidth={1.8} aria-hidden="true" />
-      <span>Save failed</span>
+      <span>{t('saveStatus.failed')}</span>
       <RefreshCw size={11} strokeWidth={1.8} aria-hidden="true" style={{ marginLeft: 2 }} />
     </button>
   )
 }
 
 export function TimelinePanel(): React.JSX.Element {
+  const { t } = useTranslation('timeline')
   const [view, setView] = useState<TimelineCurveView>('Energy')
   const nameRef = useRef<HTMLInputElement>(null)
 
@@ -104,17 +108,17 @@ export function TimelinePanel(): React.JSX.Element {
     try {
       const sessionId = await window.setsense.historyMarkPerformed(currentSet.id)
       if (!sessionId) {
-        toast.error('Could not mark this set as performed.')
+        toast.error(t('performed.markError'))
         return
       }
       const flagged = await window.setsense.lifecycleFlaggedInSession(sessionId)
       if (flagged.length > 0) {
         showPostGigPrompt({ sessionId, setName: currentSet.name, tracks: flagged })
       } else {
-        toast.success(`Logged “${currentSet.name}” as performed.`)
+        toast.success(t('performed.logged', { name: currentSet.name }))
       }
     } catch {
-      toast.error('Something went wrong marking the set performed.')
+      toast.error(t('performed.markFailed'))
     } finally {
       setMarking(false)
     }
@@ -188,45 +192,59 @@ export function TimelinePanel(): React.JSX.Element {
             className="tl-name-input"
             defaultValue={currentSet?.name ?? ''}
             key={currentSet?.id}
-            placeholder="Set name"
+            placeholder={t('header.namePlaceholder')}
             onBlur={handleNameBlur}
             onKeyDown={handleNameKeyDown}
           />
           {currentSet ? (
-            <div className="ss-caption" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span>
-                {formatDuration(totalSeconds)} · {tracks.length} track
-                {tracks.length !== 1 ? 's' : ''}
+            <div
+              className="ss-caption"
+              style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}
+            >
+              <span
+                style={{
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  minWidth: 0
+                }}
+              >
+                {formatDuration(totalSeconds)} · {t('header.trackCount', { count: tracks.length })}
                 {bpmValues.length > 1
-                  ? ` · avg ${bpmAvg} BPM (${Math.round(bpmMin)}–${Math.round(bpmMax)})`
+                  ? ` · ${t('header.bpmStats', {
+                      avg: bpmAvg,
+                      min: Math.round(bpmMin),
+                      max: Math.round(bpmMax)
+                    })}`
                   : bpmValues.length === 1
-                    ? ` · ${Math.round(bpmValues[0])} BPM`
+                    ? ` · ${t('header.bpmSingle', { bpm: Math.round(bpmValues[0]) })}`
                     : ''}
               </span>
               <SaveStatusBadge status={saveStatus} onRetry={retrySave} />
             </div>
           ) : (
             <div className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-              No set loaded
+              {t('header.noSetLoaded')}
             </div>
           )}
         </div>
+        <CollaborateButton />
         {currentSet && tracks.length >= 2 && (
           <Button
             variant="ghost"
             onClick={() => void handleMarkPerformed()}
             disabled={marking}
-            title="Log this set as performed at a gig"
+            title={t('header.markPerformedTitle')}
           >
             <CheckCircle2 size={13} strokeWidth={1.5} style={{ marginRight: 4 }} />
-            {marking ? 'Logging…' : 'Mark as performed'}
+            {marking ? t('header.logging') : t('header.markPerformed')}
           </Button>
         )}
         <Coachmark concept="energyCurve">
           <LearnTooltip
             explanation={explainEnergyCurveView()}
             basic={BEGINNER_TOOLTIP_COPY.energyCurve}
-            iconLabel="What does this graph show?"
+            iconLabel={t('header.curveHelpAria')}
           >
             <SegmentedControl options={VIEWS} value={view} onChange={setView} />
           </LearnTooltip>
@@ -246,24 +264,26 @@ export function TimelinePanel(): React.JSX.Element {
             <ListMusic size={32} strokeWidth={1} style={{ color: 'var(--text-tertiary)' }} />
             <div>
               <div className="ss-body" style={{ color: 'var(--text-primary)', marginBottom: 4 }}>
-                {currentSet ? `“${currentSet.name}” — ready when you are.` : 'A fresh, blank set.'}
+                {currentSet
+                  ? t('empty.readyTitle', { name: currentSet.name })
+                  : t('empty.blankTitle')}
               </div>
               <div className="ss-body-sm" style={{ color: 'var(--text-secondary)' }}>
-                Drag tracks in, swipe to discover, or ask me to build it.
+                {t('empty.subtitle')}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
               <Button variant="primary" onClick={browseLibrary}>
                 <Search size={13} strokeWidth={1.7} style={{ marginRight: 4 }} />
-                Browse library
+                {t('empty.browse')}
               </Button>
               <Button variant="ghost" onClick={discoverInLibrary}>
                 <Layers size={13} strokeWidth={1.5} style={{ marginRight: 4 }} />
-                Swipe to discover
+                {t('empty.discover')}
               </Button>
               <Button variant="ghost" onClick={() => showModal('architect')}>
                 <Sparkles size={13} strokeWidth={1.5} style={{ marginRight: 4 }} />
-                Build it for me
+                {t('empty.buildForMe')}
               </Button>
             </div>
           </div>

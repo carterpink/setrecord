@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { getPreviewAudioElement } from '@/audio/previewAudioElement'
 import { getCachedPeaks, loadPeaks, type WaveformPeaks } from '@/utils/waveformPeaksCache'
 
@@ -36,6 +37,7 @@ export function InlineWaveform({
   onSeek,
   height = 28
 }: InlineWaveformProps): React.JSX.Element {
+  const { t } = useTranslation('shared')
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   // Seed from the cache once (lazy initialisers only run on first render).
@@ -180,7 +182,7 @@ export function InlineWaveform({
       <canvas
         ref={canvasRef}
         role="img"
-        aria-label="Audio waveform preview"
+        aria-label={t('inlineWaveform.aria')}
         style={{ display: 'block' }}
       />
     </div>

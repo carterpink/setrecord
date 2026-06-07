@@ -48,10 +48,13 @@ export async function startScreenReader(
       canvas.height = Math.floor(video.videoHeight * scale)
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
       const { data } = await worker.recognize(canvas)
-      const lines = (data.lines ?? [])
-        .map((l) => l.text.trim())
-        .filter(Boolean)
-      const out = lines.length ? lines : data.text.split('\n').map((s) => s.trim()).filter(Boolean)
+      const lines = (data.lines ?? []).map((l) => l.text.trim()).filter(Boolean)
+      const out = lines.length
+        ? lines
+        : data.text
+            .split('\n')
+            .map((s) => s.trim())
+            .filter(Boolean)
       if (!stopped && out.length) onLines(out)
     } catch {
       // skip this frame

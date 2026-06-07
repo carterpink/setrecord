@@ -1,11 +1,17 @@
 import ElectronStore from 'electron-store'
-import type { CDJModel, ImportSource } from '../../src/types'
+import type { AppMode, CDJModel, ImportSource, LanguagePreference } from '../../src/types'
 
 export interface AppSettings {
   targetHardware: CDJModel
   defaultBpmMin: number
   defaultBpmMax: number
   harmonicMixingDefault: boolean
+  /**
+   * UI language preference. `'system'` (the default) follows the OS locale on
+   * launch; any other value pins the interface to that language. AI-generated
+   * content is unaffected — it stays in whatever language the user types.
+   */
+  language: LanguagePreference
   learnModeEnabled: boolean
   hasSeenProficiencyAsk: boolean
   /**
@@ -40,6 +46,44 @@ export interface AppSettings {
    * Changes take effect on the next app launch.
    */
   crashReportingEnabled: boolean
+  // ── Display & motion ───────────────────────────────────────────────────────
+  /** Key notation shown on track rows / chips. Source of truth (renderer keeps a fast cache). */
+  keyNotation: 'camelot' | 'standard'
+  /** Freeze decorative animation (aurora drift, etc.) for motion-sensitive users. */
+  reducedMotion: boolean
+  /** Which workspace SetSense opens to. 'last' restores the previous session. */
+  launchMode: 'last' | AppMode
+  // ── Memory / input ─────────────────────────────────────────────────────────
+  /** Enable the on-device push-to-talk voice input in the Home box. */
+  voiceInputEnabled: boolean
+  // ── Library / tagging ──────────────────────────────────────────────────────
+  /** Allow the auto-tagger to generate plain-language tags. */
+  autoTaggingEnabled: boolean
+  /** Default route when writing tags back to Rekordbox. 'xml' never touches the live DB. */
+  defaultTagExportRoute: 'xml' | 'native'
+  // ── Updates / network ──────────────────────────────────────────────────────
+  /** Check for new releases on launch. */
+  updateAutoCheck: boolean
+  /** How often to check when auto-check is on. */
+  updateFrequency: 'daily' | 'weekly' | 'manual'
+  /** Include pre-release builds when checking for updates. */
+  updatePreRelease: boolean
+  /** Block all outbound network (update checks, model self-download). */
+  offlineMode: boolean
+  // ── Playback ───────────────────────────────────────────────────────────────
+  /** Max preview length in seconds before auto-stop. */
+  previewMaxSeconds: number
+  /** Default preview volume 0–1, restored each session. */
+  previewVolume: number
+  /** Short fade in/out on preview start/stop. */
+  previewFade: boolean
+  /** Audio output device id for previews. null = system default. Machine-specific. */
+  outputDeviceId: string | null
+  // ── Waveforms / export ─────────────────────────────────────────────────────
+  /** Waveform render detail (bucket count). */
+  waveformQuality: 'low' | 'standard' | 'high'
+  /** Default format when opening the Export modal. 'ask' shows the chooser. */
+  defaultExportFormat: 'engine' | 'beatport' | 'ask'
 }
 
 const DEFAULTS: AppSettings = {
@@ -47,6 +91,7 @@ const DEFAULTS: AppSettings = {
   defaultBpmMin: 120,
   defaultBpmMax: 132,
   harmonicMixingDefault: true,
+  language: 'system',
   learnModeEnabled: false,
   hasSeenProficiencyAsk: false,
   isBeginner: false,
@@ -61,7 +106,23 @@ const DEFAULTS: AppSettings = {
   lastImportAt: null,
   rekordboxDbConsent: false,
   autoDetectRekordbox: true,
-  crashReportingEnabled: false
+  crashReportingEnabled: false,
+  keyNotation: 'camelot',
+  reducedMotion: false,
+  launchMode: 'last',
+  voiceInputEnabled: true,
+  autoTaggingEnabled: true,
+  defaultTagExportRoute: 'xml',
+  updateAutoCheck: true,
+  updateFrequency: 'daily',
+  updatePreRelease: false,
+  offlineMode: false,
+  previewMaxSeconds: 60,
+  previewVolume: 1,
+  previewFade: false,
+  outputDeviceId: null,
+  waveformQuality: 'standard',
+  defaultExportFormat: 'ask'
 }
 
 const store = new ElectronStore<AppSettings>({
@@ -75,6 +136,7 @@ export function getSettings(): AppSettings {
     defaultBpmMin: store.get('defaultBpmMin'),
     defaultBpmMax: store.get('defaultBpmMax'),
     harmonicMixingDefault: store.get('harmonicMixingDefault'),
+    language: store.get('language') ?? 'system',
     learnModeEnabled: store.get('learnModeEnabled') ?? false,
     hasSeenProficiencyAsk: store.get('hasSeenProficiencyAsk') ?? false,
     isBeginner: store.get('isBeginner') ?? false,
@@ -86,7 +148,23 @@ export function getSettings(): AppSettings {
     lastImportAt: store.get('lastImportAt') ?? null,
     rekordboxDbConsent: store.get('rekordboxDbConsent') ?? false,
     autoDetectRekordbox: store.get('autoDetectRekordbox') ?? true,
-    crashReportingEnabled: store.get('crashReportingEnabled') ?? false
+    crashReportingEnabled: store.get('crashReportingEnabled') ?? false,
+    keyNotation: store.get('keyNotation') ?? 'camelot',
+    reducedMotion: store.get('reducedMotion') ?? false,
+    launchMode: store.get('launchMode') ?? 'last',
+    voiceInputEnabled: store.get('voiceInputEnabled') ?? true,
+    autoTaggingEnabled: store.get('autoTaggingEnabled') ?? true,
+    defaultTagExportRoute: store.get('defaultTagExportRoute') ?? 'xml',
+    updateAutoCheck: store.get('updateAutoCheck') ?? true,
+    updateFrequency: store.get('updateFrequency') ?? 'daily',
+    updatePreRelease: store.get('updatePreRelease') ?? false,
+    offlineMode: store.get('offlineMode') ?? false,
+    previewMaxSeconds: store.get('previewMaxSeconds') ?? 60,
+    previewVolume: store.get('previewVolume') ?? 1,
+    previewFade: store.get('previewFade') ?? false,
+    outputDeviceId: store.get('outputDeviceId') ?? null,
+    waveformQuality: store.get('waveformQuality') ?? 'standard',
+    defaultExportFormat: store.get('defaultExportFormat') ?? 'ask'
   }
 }
 
@@ -101,10 +179,25 @@ export const PORTABLE_SETTINGS_KEYS = [
   'defaultBpmMin',
   'defaultBpmMax',
   'harmonicMixingDefault',
+  'language',
   'learnModeEnabled',
   'isBeginner',
   'memoryAiEnabled',
-  'autoDetectRekordbox'
+  'autoDetectRekordbox',
+  'keyNotation',
+  'reducedMotion',
+  'launchMode',
+  'voiceInputEnabled',
+  'autoTaggingEnabled',
+  'defaultTagExportRoute',
+  'updateAutoCheck',
+  'updateFrequency',
+  'updatePreRelease',
+  'previewMaxSeconds',
+  'previewVolume',
+  'previewFade',
+  'waveformQuality',
+  'defaultExportFormat'
 ] as const satisfies readonly (keyof AppSettings)[]
 
 /** The whitelisted subset of settings for a backup bundle. */
@@ -132,31 +225,19 @@ export function applyPortableSettings(incoming: Partial<AppSettings> | undefined
   }
 }
 
+/** The set of keys a caller may persist — every known AppSettings field. */
+const SETTABLE_KEYS = Object.keys(DEFAULTS) as (keyof AppSettings)[]
+
 export async function setSettings(partial: Partial<AppSettings>): Promise<AppSettings> {
-  if (partial.targetHardware !== undefined) store.set('targetHardware', partial.targetHardware)
-  if (partial.defaultBpmMin !== undefined) store.set('defaultBpmMin', partial.defaultBpmMin)
-  if (partial.defaultBpmMax !== undefined) store.set('defaultBpmMax', partial.defaultBpmMax)
-  if (partial.harmonicMixingDefault !== undefined)
-    store.set('harmonicMixingDefault', partial.harmonicMixingDefault)
-  if (partial.learnModeEnabled !== undefined)
-    store.set('learnModeEnabled', partial.learnModeEnabled)
-  if (partial.hasSeenProficiencyAsk !== undefined)
-    store.set('hasSeenProficiencyAsk', partial.hasSeenProficiencyAsk)
-  if (partial.isBeginner !== undefined) store.set('isBeginner', partial.isBeginner)
-  if (partial.hasCompletedOnboarding !== undefined)
-    store.set('hasCompletedOnboarding', partial.hasCompletedOnboarding)
-  if (partial.memoryAiEnabled !== undefined) store.set('memoryAiEnabled', partial.memoryAiEnabled)
-  if (partial.lastImportSource !== undefined)
-    store.set('lastImportSource', partial.lastImportSource)
-  if (partial.lastImportPath !== undefined) store.set('lastImportPath', partial.lastImportPath)
-  if (partial.lastImportMtime !== undefined) store.set('lastImportMtime', partial.lastImportMtime)
-  if (partial.lastImportAt !== undefined) store.set('lastImportAt', partial.lastImportAt)
-  if (partial.rekordboxDbConsent !== undefined)
-    store.set('rekordboxDbConsent', partial.rekordboxDbConsent)
-  if (partial.autoDetectRekordbox !== undefined)
-    store.set('autoDetectRekordbox', partial.autoDetectRekordbox)
-  if (partial.crashReportingEnabled !== undefined)
-    store.set('crashReportingEnabled', partial.crashReportingEnabled)
+  // Only write known keys (ignores any stray keys an IPC caller might include),
+  // and only when the caller actually provided a value.
+  for (const key of SETTABLE_KEYS) {
+    const value = partial[key]
+    if (value !== undefined) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      store.set(key, value as any)
+    }
+  }
   return getSettings()
 }
 

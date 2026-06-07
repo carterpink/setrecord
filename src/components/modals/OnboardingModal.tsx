@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { APP_NAME } from '@/utils/constants'
 import { ArrowRight, GraduationCap, Headphones, Sparkles } from 'lucide-react'
 import { Button } from '@/components/shared/Button'
@@ -9,6 +10,7 @@ import { useUiStore } from '@/stores/uiStore'
 type Step = 'welcome' | 'proficiency' | 'import'
 
 export function OnboardingModal(): React.JSX.Element {
+  const { t } = useTranslation('modals')
   const { showModal, completeOnboarding } = useUiStore()
   const setLearnModeEnabled = useUiStore((s) => s.setLearnModeEnabled)
   const setIsBeginner = useUiStore((s) => s.setIsBeginner)
@@ -39,7 +41,7 @@ export function OnboardingModal(): React.JSX.Element {
   return (
     <Modal
       onClose={completeOnboarding}
-      ariaLabel={`Welcome to ${APP_NAME}`}
+      ariaLabel={t('onboarding.welcomeTitle', { app: APP_NAME })}
       style={{ maxWidth: 480, width: '100%', textAlign: 'center' }}
       closeOnBackdrop={false}
       closeOnEscape={false}
@@ -56,12 +58,10 @@ export function OnboardingModal(): React.JSX.Element {
             <>
               <div style={{ padding: '8px 0 24px' }}>
                 <div className="ss-h1" style={{ marginBottom: 8 }}>
-                  Welcome to {APP_NAME}
+                  {t('onboarding.welcomeTitle', { app: APP_NAME })}
                 </div>
                 <div className="ss-body" style={{ opacity: 0.7 }}>
-                  {APP_NAME} reads your existing DJ library and helps you build sets that flow —
-                  which track plays next, and whether it&apos;ll sound clean. Let&apos;s load your
-                  music.
+                  {t('onboarding.welcomeBody', { app: APP_NAME })}
                 </div>
               </div>
 
@@ -73,9 +73,9 @@ export function OnboardingModal(): React.JSX.Element {
                 }}
               >
                 {[
-                  { n: '1', label: 'Load your library' },
-                  { n: '2', label: 'See what mixes' },
-                  { n: '3', label: 'Build a set' }
+                  { n: '1', label: t('onboarding.step1') },
+                  { n: '2', label: t('onboarding.step2') },
+                  { n: '3', label: t('onboarding.step3') }
                 ].map((s) => (
                   <div
                     key={s.n}
@@ -116,10 +116,10 @@ export function OnboardingModal(): React.JSX.Element {
 
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                 <Button variant="secondary" onClick={completeOnboarding}>
-                  Skip for now
+                  {t('common.skipForNow')}
                 </Button>
                 <Button variant="primary" icon={ArrowRight} onClick={() => setStep('proficiency')}>
-                  Get started
+                  {t('onboarding.getStarted')}
                 </Button>
               </div>
             </>
@@ -129,10 +129,10 @@ export function OnboardingModal(): React.JSX.Element {
             <>
               <div style={{ padding: '8px 0 20px' }}>
                 <div className="ss-h2" style={{ marginBottom: 8 }}>
-                  How much DJ experience do you have?
+                  {t('onboarding.proficiencyTitle')}
                 </div>
                 <div className="ss-body" style={{ opacity: 0.7 }}>
-                  We&apos;ll tune the explanations to match.
+                  {t('onboarding.proficiencyBody')}
                 </div>
               </div>
 
@@ -144,12 +144,10 @@ export function OnboardingModal(): React.JSX.Element {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <GraduationCap size={18} strokeWidth={1.6} aria-hidden="true" />
-                    <span className="ss-h3">I&apos;m new to DJing</span>
+                    <span className="ss-h3">{t('onboarding.newTitle')}</span>
                   </div>
                   <div className="ss-body-sm" style={{ opacity: 0.7 }}>
-                    Plain-language tips appear the first time you see each thing — keys, BPM,
-                    energy, transitions. They&apos;re free and stay on, so the app never feels like
-                    jargon.
+                    {t('onboarding.newBody')}
                   </div>
                 </button>
 
@@ -160,21 +158,20 @@ export function OnboardingModal(): React.JSX.Element {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <Headphones size={18} strokeWidth={1.6} aria-hidden="true" />
-                    <span className="ss-h3">I&apos;ve mixed before</span>
+                    <span className="ss-h3">{t('onboarding.experiencedTitle')}</span>
                   </div>
                   <div className="ss-body-sm" style={{ opacity: 0.7 }}>
-                    Keep the UI minimal. Learn Mode stays off — flip it on anytime in Settings if
-                    you&apos;re teaching or reviewing a tricky transition.
+                    {t('onboarding.experiencedBody')}
                   </div>
                 </button>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Button variant="secondary" onClick={() => setStep('welcome')}>
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button variant="secondary" onClick={completeOnboarding}>
-                  Skip for now
+                  {t('common.skipForNow')}
                 </Button>
               </div>
             </>
@@ -184,11 +181,10 @@ export function OnboardingModal(): React.JSX.Element {
             <>
               <div style={{ padding: '8px 0 24px' }}>
                 <div className="ss-h2" style={{ marginBottom: 8 }}>
-                  Find your library
+                  {t('onboarding.findTitle')}
                 </div>
                 <div className="ss-body" style={{ opacity: 0.7 }}>
-                  We&apos;ll look for Rekordbox or Serato on this Mac and load your tracks
-                  automatically.
+                  {t('onboarding.findBody')}
                 </div>
               </div>
 
@@ -212,16 +208,16 @@ export function OnboardingModal(): React.JSX.Element {
               >
                 <Sparkles size={32} strokeWidth={1.5} style={{ color: 'var(--accent)' }} />
                 <div className="ss-body-sm" style={{ opacity: 0.85, fontWeight: 500 }}>
-                  Find my library
+                  {t('onboarding.findCta')}
                 </div>
                 <div className="ss-caption" style={{ opacity: 0.6 }}>
-                  Or load a Rekordbox XML export if you prefer.
+                  {t('onboarding.findHint')}
                 </div>
               </button>
 
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                 <Button variant="secondary" onClick={completeOnboarding}>
-                  Skip for now
+                  {t('common.skipForNow')}
                 </Button>
               </div>
             </>

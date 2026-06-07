@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronUp, ChevronDown, Sparkles, AudioLines } from 'lucide-react'
 import { useLiveStore, type LiveNextUp } from '@/stores/liveStore'
@@ -57,6 +58,7 @@ function NextRow({ n, rank }: { n: LiveNextUp; rank: number }): React.JSX.Elemen
 }
 
 export function LiveOverlay(): React.JSX.Element | null {
+  const { t } = useTranslation('live')
   const isLive = useLiveStore((s) => s.isLive)
   const expanded = useLiveStore((s) => s.expanded)
   const status = useLiveStore((s) => s.status)
@@ -104,114 +106,126 @@ export function LiveOverlay(): React.JSX.Element | null {
       >
         {/* ───── control strip ───── */}
         <div className="lv-strip" {...interactiveHandlers}>
-        <span className="lv-dot" />
-        <span className="lv-strip-label">
-          {locked ? (
+          <span className="lv-dot" />
+          <span className="lv-strip-label">
+            {locked ? (
+              <>
+                <AudioLines size={14} strokeWidth={1.8} className="lv-wave" />
+                {t('strip.live')}
+              </>
+            ) : indexing ? (
+              t('strip.preparing', { percent: indexPct })
+            ) : (
+              t('strip.listening')
+            )}
+          </span>
+          <span className="lv-timer">{clock(elapsedSec)}</span>
+
+          {locked && (
             <>
-              <AudioLines size={14} strokeWidth={1.8} className="lv-wave" />
-              LIVE
+              <span className="lv-strip-div" />
+              <span className="lv-strip-health" title={t('strip.setHealth')}>
+                <span style={{ color: healthColor(setHealth) }}>{setHealth}</span>
+                <span className="lv-strip-health-lbl">{t('strip.health')}</span>
+              </span>
             </>
-          ) : indexing ? (
-            `Preparing… ${indexPct}%`
-          ) : (
-            'Listening…'
           )}
-        </span>
-        <span className="lv-timer">{clock(elapsedSec)}</span>
 
-        {locked && (
-          <>
-            <span className="lv-strip-div" />
-            <span className="lv-strip-health" title="Set Health">
-              <span style={{ color: healthColor(setHealth) }}>{setHealth}</span>
-              <span className="lv-strip-health-lbl">health</span>
-            </span>
-          </>
-        )}
+          <span className="lv-strip-div" />
+          <span className="lv-hint">
+            {expanded ? t('strip.hide') : t('strip.show')}
+            <kbd className="lv-kbd">⌘</kbd>
+            <kbd className="lv-kbd">\</kbd>
+          </span>
+          <button
+            type="button"
+            className="lv-strip-btn"
+            aria-label={expanded ? t('strip.collapseAria') : t('strip.expandAria')}
+            onClick={toggleExpanded}
+          >
+            {expanded ? (
+              <ChevronUp size={15} strokeWidth={1.8} />
+            ) : (
+              <ChevronDown size={15} strokeWidth={1.8} />
+            )}
+          </button>
+          <button
+            type="button"
+            className="lv-strip-btn"
+            aria-label={t('strip.endAria')}
+            onClick={handleEnd}
+          >
+            <X size={15} strokeWidth={1.8} />
+          </button>
+        </div>
 
-        <span className="lv-strip-div" />
-        <span className="lv-hint">
-          {expanded ? 'Hide' : 'Show'}
-          <kbd className="lv-kbd">⌘</kbd>
-          <kbd className="lv-kbd">\</kbd>
-        </span>
-        <button
-          type="button"
-          className="lv-strip-btn"
-          aria-label={expanded ? 'Collapse panels' : 'Expand panels'}
-          onClick={toggleExpanded}
-        >
-          {expanded ? (
-            <ChevronUp size={15} strokeWidth={1.8} />
-          ) : (
-            <ChevronDown size={15} strokeWidth={1.8} />
-          )}
-        </button>
-        <button type="button" className="lv-strip-btn" aria-label="End Live" onClick={handleEnd}>
-          <X size={15} strokeWidth={1.8} />
-        </button>
-      </div>
-
-      {/* ───── floating panels ───── */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div key="panels" className="lv-panels" {...panelMotion}>
-            {/* Now playing */}
-            <div className="lv-panel" {...interactiveHandlers}>
-              <div className="lv-panel-head">
-                <Sparkles size={15} strokeWidth={1.8} className="lv-panel-icon" />
-                <span className="lv-panel-title">Now playing</span>
-              </div>
-              {locked ? (
-                <>
-                  <div className="lv-now-title">{current!.title}</div>
-                  <div className="lv-now-artist">{current!.artist}</div>
-                  <div className="lv-now-meta">
-                    <span className="lv-bpm">
-                      {current!.bpm.toFixed(0)}
-                      <small>BPM</small>
+        {/* ───── floating panels ───── */}
+        <AnimatePresence>
+          {expanded && (
+            <motion.div key="panels" className="lv-panels" {...panelMotion}>
+              {/* Now playing */}
+              <div className="lv-panel" {...interactiveHandlers}>
+                <div className="lv-panel-head">
+                  <Sparkles size={15} strokeWidth={1.8} className="lv-panel-icon" />
+                  <span className="lv-panel-title">{t('nowPlaying.title')}</span>
+                </div>
+                {locked ? (
+                  <>
+                    <div className="lv-now-title">{current!.title}</div>
+                    <div className="lv-now-artist">{current!.artist}</div>
+                    <div className="lv-now-meta">
+                      <span className="lv-bpm">
+                        {current!.bpm.toFixed(0)}
+                        <small>{t('nowPlaying.bpm')}</small>
+                      </span>
+                      <span className="lv-chip lv-chip-key">{current!.key}</span>
+                      <span className="lv-chip">
+                        {t('nowPlaying.energy', { energy: current!.energy })}
+                      </span>
+                      <span className="lv-now-pos">{clock(positionSec)}</span>
+                    </div>
+                  </>
+                ) : indexing ? (
+                  <div className="lv-listening">
+                    <span className="lv-listening-text">
+                      {t('nowPlaying.preparingLibrary', {
+                        done: indexProgress?.done ?? 0,
+                        total: indexProgress?.total ?? 0
+                      })}
                     </span>
-                    <span className="lv-chip lv-chip-key">{current!.key}</span>
-                    <span className="lv-chip">Energy {current!.energy}</span>
-                    <span className="lv-now-pos">{clock(positionSec)}</span>
                   </div>
-                </>
-              ) : indexing ? (
-                <div className="lv-listening">
-                  <span className="lv-listening-text">
-                    Preparing your library… {indexProgress?.done ?? 0}/{indexProgress?.total ?? 0}
-                  </span>
-                </div>
-              ) : (
-                <div className="lv-listening">
-                  <span className="lv-listening-dots" aria-hidden="true">
-                    <span />
-                    <span />
-                    <span />
-                  </span>
-                  <span className="lv-listening-text">Listening for the track…</span>
-                </div>
-              )}
-            </div>
-
-            {/* Best next */}
-            <div className="lv-panel" {...interactiveHandlers}>
-              <div className="lv-panel-head">
-                <span className="lv-panel-title">Best next</span>
-                {locked && best && (
-                  <span className="lv-panel-meta">{nextUp.length} options</span>
+                ) : (
+                  <div className="lv-listening">
+                    <span className="lv-listening-dots" aria-hidden="true">
+                      <span />
+                      <span />
+                      <span />
+                    </span>
+                    <span className="lv-listening-text">{t('nowPlaying.listeningForTrack')}</span>
+                  </div>
                 )}
               </div>
-              {locked ? (
-                nextUp.map((n, i) => <NextRow key={n.id} n={n} rank={i + 1} />)
-              ) : (
-                <div className="lv-listening">
-                  <span className="lv-listening-text dim">Options appear once a track locks in.</span>
+
+              {/* Best next */}
+              <div className="lv-panel" {...interactiveHandlers}>
+                <div className="lv-panel-head">
+                  <span className="lv-panel-title">{t('bestNext.title')}</span>
+                  {locked && best && (
+                    <span className="lv-panel-meta">
+                      {t('bestNext.options', { n: nextUp.length })}
+                    </span>
+                  )}
                 </div>
-              )}
-            </div>
-          </motion.div>
-        )}
+                {locked ? (
+                  nextUp.map((n, i) => <NextRow key={n.id} n={n} rank={i + 1} />)
+                ) : (
+                  <div className="lv-listening">
+                    <span className="lv-listening-text dim">{t('bestNext.empty')}</span>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </motion.div>
     </div>

@@ -1,0 +1,46 @@
+{
+  "header": {
+    "title": "Suggestion suivante",
+    "refreshAria": "Actualiser les suggestions"
+  },
+  "noLibraryBody": "Choisis n’importe quel morceau et {{app}} te suggère quoi enchaîner — en fonction de la tonalité, des BPM et de l’énergie. Importe ta bibliothèque pour recevoir des recommandations.",
+  "context": {
+    "basedOn": "D’après le morceau {{position}} — {{title}}",
+    "whatMixesAfter": "Quoi enchaîner après <0>{{title}}</0>",
+    "noSelection": "Sélectionne un morceau de ton set ou clique sur un morceau de la bibliothèque pour voir les suggestions"
+  },
+  "empty": {
+    "noTrack": {
+      "title": "Aucun morceau sélectionné",
+      "body": "Sélectionne un morceau de ton set ou clique sur un morceau de la bibliothèque pour voir les suggestions."
+    },
+    "noMatches": {
+      "title": "Aucune correspondance trouvée",
+      "body": "Essaie d’ajouter plus de morceaux à ta bibliothèque ou d’ajuster la plage de BPM."
+    }
+  },
+  "card": {
+    "bestBadge": "Meilleure correspondance",
+    "bestBadgeTitle": "Classé selon la compatibilité des BPM (35%), la tonalité harmonique (35%), la correspondance d’énergie (20%) et la qualité du fichier (10%)",
+    "phantomAria": "Morceau fantôme — absent de ta bibliothèque",
+    "phantomTitle": "Achète ou télécharge ce morceau pour activer l’aperçu",
+    "fileNotFoundAria": "Fichier introuvable",
+    "fileNotFoundTitle": "Fichier introuvable : {{path}}",
+    "pauseAria": "Mettre en pause {{title}}",
+    "previewAria": "Aperçu de {{title}}",
+    "hideBreakdown": "Masquer le détail du score",
+    "showBreakdown": "Afficher le détail du score",
+    "score": "Score {{score}}/100",
+    "breakdown": {
+      "bpmDelta": "Écart de BPM",
+      "key": "Tonalité",
+      "energyDelta": "Écart d’énergie",
+      "total": "Total",
+      "totalValue": "{{score}}/100"
+    }
+  },
+  "chips": {
+    "comboTitle": "Tu as déjà joué cette transition",
+    "explainAria": "Expliquer {{label}}"
+  }
+}

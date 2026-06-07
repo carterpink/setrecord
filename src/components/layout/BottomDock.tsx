@@ -1,4 +1,5 @@
 import { Flag, HardDrive, ShieldCheck, Sparkles, Zap } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { IconButton } from '@/components/shared/IconButton'
 import { ProBadge } from '@/components/shared/ProGate'
 import { useSetStore } from '@/stores/setStore'
@@ -6,6 +7,7 @@ import { useUiStore } from '@/stores/uiStore'
 import { useLicenseStore } from '@/stores/licenseStore'
 
 export function BottomDock(): React.JSX.Element {
+  const { t } = useTranslation('layout')
   const { showModal, showUpgrade, smartFilter, toggleSmartFilter } = useUiStore()
   const { selectedTrackId } = useSetStore()
   const isPro = useLicenseStore((s) => s.license.tier === 'pro')
@@ -18,20 +20,26 @@ export function BottomDock(): React.JSX.Element {
       <div className="dock-wrap dock-visible">
         <div className="dock glass-3">
           {/* Set Architect — Pro */}
-          <span className="dock-item" data-label={isPro ? 'Set Architect' : 'Set Architect — Pro'}>
+          <span
+            className="dock-item"
+            data-label={isPro ? t('dock.setArchitect') : t('dock.setArchitectPro')}
+          >
             <IconButton
               icon={Sparkles}
-              aria-label="Set Architect"
+              aria-label={t('dock.setArchitect')}
               onClick={() => (isPro ? showModal('architect') : showUpgrade('setArchitect'))}
             />
             {!isPro && <ProBadge className="dock-pro-badge" />}
           </span>
 
           {/* Smart filter — Pro; dimmed when no track selected */}
-          <span className="dock-item" data-label={isPro ? 'Smart filter' : 'Smart filter — Pro'}>
+          <span
+            className="dock-item"
+            data-label={isPro ? t('dock.smartFilter') : t('dock.smartFilterPro')}
+          >
             <IconButton
               icon={Zap}
-              aria-label="Smart filter"
+              aria-label={t('dock.smartFilter')}
               active={smartFilter}
               disabled={isPro && !canSmartFilter}
               onClick={
@@ -54,21 +62,17 @@ export function BottomDock(): React.JSX.Element {
             className="dock-item"
             data-label={
               !isPro
-                ? 'Cue editor — Pro'
+                ? t('dock.cueEditorPro')
                 : canOpenCueEditor
-                  ? 'Cue editor'
-                  : 'Select a timeline track first'
+                  ? t('dock.cueEditor')
+                  : t('dock.cueEditorSelectFirst')
             }
           >
             <IconButton
               icon={Flag}
-              aria-label="Cue editor"
+              aria-label={t('dock.cueEditor')}
               disabled={isPro && !canOpenCueEditor}
-              title={
-                isPro && !canOpenCueEditor
-                  ? 'Select a track in your timeline to edit its cue points'
-                  : undefined
-              }
+              title={isPro && !canOpenCueEditor ? t('dock.cueEditorTitle') : undefined}
               onClick={
                 !isPro
                   ? () => showUpgrade('cueEditor')
@@ -87,20 +91,23 @@ export function BottomDock(): React.JSX.Element {
           <span className="dock-divider" aria-hidden="true" />
 
           {/* Validate — Pro */}
-          <span className="dock-item" data-label={isPro ? 'Validate set' : 'Validate set — Pro'}>
+          <span
+            className="dock-item"
+            data-label={isPro ? t('dock.validateSet') : t('dock.validateSetPro')}
+          >
             <IconButton
               icon={ShieldCheck}
-              aria-label="Validate set"
+              aria-label={t('dock.validateSet')}
               onClick={() => (isPro ? showModal('validate') : showUpgrade('export'))}
             />
             {!isPro && <ProBadge className="dock-pro-badge" />}
           </span>
 
           {/* Export — Pro */}
-          <span className="dock-item" data-label={isPro ? 'Export' : 'Export — Pro'}>
+          <span className="dock-item" data-label={isPro ? t('dock.export') : t('dock.exportPro')}>
             <IconButton
               icon={HardDrive}
-              aria-label="Export"
+              aria-label={t('dock.export')}
               onClick={() => (isPro ? showModal('export') : showUpgrade('export'))}
             />
             {!isPro && <ProBadge className="dock-pro-badge" />}

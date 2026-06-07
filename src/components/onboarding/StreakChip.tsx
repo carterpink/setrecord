@@ -1,4 +1,5 @@
 import { Flame } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useProgressStore } from '@/stores/progressStore'
 
 /**
@@ -8,6 +9,7 @@ import { useProgressStore } from '@/stores/progressStore'
  * in active weeks, and it simply acknowledges a habit rather than pressuring one.
  */
 export function StreakChip(): React.JSX.Element | null {
+  const { t } = useTranslation('onboarding')
   const currentStreak = useProgressStore((s) => s.progress.currentStreak)
   if (currentStreak < 2) return null
 
@@ -27,7 +29,7 @@ export function StreakChip(): React.JSX.Element | null {
       }}
     >
       <Flame size={12} strokeWidth={1.8} style={{ color: 'var(--accent)' }} aria-hidden="true" />
-      {currentStreak} weeks of prep
+      {t('streak.weeksOfPrep', { count: currentStreak })}
     </span>
   )
 }

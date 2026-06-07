@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { listInputDevices, type InputDevice } from './audioFeed'
 import { getPreferredInputId, setPreferredInputId } from './liveDevice'
 
@@ -9,6 +10,7 @@ import { getPreferredInputId, setPreferredInputId } from './liveDevice'
  * been granted (after the first Go Live). Hidden outside Electron.
  */
 export function LiveDevicePicker(): React.JSX.Element | null {
+  const { t } = useTranslation('live')
   const [devices, setDevices] = useState<InputDevice[]>([])
   const [selected, setSelected] = useState<string>(getPreferredInputId() ?? '')
 
@@ -34,8 +36,8 @@ export function LiveDevicePicker(): React.JSX.Element | null {
   return (
     <select
       value={selected}
-      title="Audio input for SetSense Live — pick your master/loopback device"
-      aria-label="SetSense Live audio input"
+      title={t('device.title')}
+      aria-label={t('device.ariaLabel')}
       style={{
         height: 30,
         maxWidth: 150,
@@ -53,7 +55,7 @@ export function LiveDevicePicker(): React.JSX.Element | null {
         setPreferredInputId(v || undefined)
       }}
     >
-      <option value="">Default input</option>
+      <option value="">{t('device.default')}</option>
       {devices.map((d) => (
         <option key={d.deviceId} value={d.deviceId}>
           {d.label}

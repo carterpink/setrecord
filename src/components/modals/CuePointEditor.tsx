@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ChevronLeft,
   ChevronRight,
@@ -32,6 +33,7 @@ type LoadStatus = 'loading' | 'ready' | 'error' | 'missing'
 const BEAT_LOOP_OPTIONS = [0.5, 1, 2, 4, 8, 16]
 
 export function CuePointEditor(): React.JSX.Element {
+  const { t } = useTranslation('modals')
   const { closeModal } = useUiStore()
   const { selectedTrackId, currentSet } = useSetStore()
   const { patchTrackCues, patchTrackBeatgrid, patchTrackLoops } = useLibraryStore()
@@ -183,10 +185,10 @@ export function CuePointEditor(): React.JSX.Element {
         console.error('[CuePointEditor] updateTrackCues failed', err)
         setCuePoints(pc)
         setHotCues(ph)
-        useToastStore.getState().error('Could not save cue — try again.')
+        useToastStore.getState().error(t('cueEditor.saveCueError'))
       }
     },
-    [track, cuePoints, hotCues, patchTrackCues]
+    [track, cuePoints, hotCues, patchTrackCues, t]
   )
 
   const saveBeatgrid = useCallback(
@@ -199,10 +201,10 @@ export function CuePointEditor(): React.JSX.Element {
         patchTrackBeatgrid(track.id, nextBpm, nextAnchor)
       } catch (err) {
         console.error('[CuePointEditor] updateTrackBeatgrid failed', err)
-        useToastStore.getState().error('Could not save beatgrid.')
+        useToastStore.getState().error(t('cueEditor.saveBeatgridError'))
       }
     },
-    [track, patchTrackBeatgrid]
+    [track, patchTrackBeatgrid, t]
   )
 
   const saveLoops = useCallback(
@@ -216,10 +218,10 @@ export function CuePointEditor(): React.JSX.Element {
       } catch (err) {
         console.error('[CuePointEditor] updateTrackLoops failed', err)
         setLoops(prev)
-        useToastStore.getState().error('Could not save loop.')
+        useToastStore.getState().error(t('cueEditor.saveLoopError'))
       }
     },
-    [track, loops, patchTrackLoops]
+    [track, loops, patchTrackLoops, t]
   )
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -374,7 +376,7 @@ export function CuePointEditor(): React.JSX.Element {
   return (
     <Modal
       onClose={handleClose}
-      ariaLabel="Cue point editor"
+      ariaLabel={t('cueEditor.title')}
       style={{ maxWidth: 880, width: '94vw' }}
       closeOnEscape={false}
     >
@@ -399,10 +401,10 @@ export function CuePointEditor(): React.JSX.Element {
               </div>
             </>
           ) : (
-            <div className="ss-h3">Cue point editor</div>
+            <div className="ss-h3">{t('cueEditor.title')}</div>
           )}
         </div>
-        <button className="icon-btn" onClick={handleClose} aria-label="Close">
+        <button className="icon-btn" onClick={handleClose} aria-label={t('common.close')}>
           <X size={16} strokeWidth={1.5} />
         </button>
       </div>
@@ -410,9 +412,7 @@ export function CuePointEditor(): React.JSX.Element {
       <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {!track ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)' }}>
-            <div className="ss-body-sm">
-              Select a track in the set timeline, then open the cue editor.
-            </div>
+            <div className="ss-body-sm">{t('cueEditor.noTrack')}</div>
           </div>
         ) : (
           <>
@@ -436,12 +436,12 @@ export function CuePointEditor(): React.JSX.Element {
 
             {status === 'error' && (
               <div className="ss-caption" style={{ color: 'var(--semantic-danger)' }}>
-                Can’t decode this audio file.
+                {t('cueEditor.decodeError')}
               </div>
             )}
             {status === 'missing' && (
               <div className="ss-caption" style={{ color: 'var(--semantic-warning)' }}>
-                Audio file not found.
+                {t('cueEditor.fileNotFound')}
               </div>
             )}
 
@@ -450,23 +450,23 @@ export function CuePointEditor(): React.JSX.Element {
               <button
                 className="icon-btn"
                 onClick={() => seek(0)}
-                aria-label="Jump to start"
-                title="Jump to start"
+                aria-label={t('cueEditor.jumpToStart')}
+                title={t('cueEditor.jumpToStart')}
               >
                 <SkipBack size={16} strokeWidth={1.5} />
               </button>
               <button
                 className="icon-btn"
                 onClick={() => nudge(-100)}
-                aria-label="Back 100ms"
-                title="Back 100ms (←)"
+                aria-label={t('cueEditor.back100')}
+                title={t('cueEditor.back100Title')}
               >
                 <ChevronLeft size={16} strokeWidth={1.5} />
               </button>
               <button
                 type="button"
                 onClick={togglePlay}
-                aria-label={playing ? 'Pause' : 'Play'}
+                aria-label={playing ? t('cueEditor.pause') : t('cueEditor.play')}
                 style={{
                   width: 44,
                   height: 44,
@@ -490,8 +490,8 @@ export function CuePointEditor(): React.JSX.Element {
               <button
                 className="icon-btn"
                 onClick={() => nudge(100)}
-                aria-label="Forward 100ms"
-                title="Forward 100ms (→)"
+                aria-label={t('cueEditor.forward100')}
+                title={t('cueEditor.forward100Title')}
               >
                 <ChevronRight size={16} strokeWidth={1.5} />
               </button>
@@ -518,22 +518,31 @@ export function CuePointEditor(): React.JSX.Element {
                   setVolume(v)
                   if (audioRef.current) audioRef.current.volume = v
                 }}
-                aria-label="Volume"
+                aria-label={t('cueEditor.volume')}
                 style={{ width: 84, accentColor: 'var(--accent)' }}
               />
             </div>
 
             {/* View controls */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <Toggle label="Snap" icon={Magnet} active={snap} onClick={() => setSnap((v) => !v)} />
-              <Toggle label="Grid" active={showGrid} onClick={() => setShowGrid((v) => !v)} />
               <Toggle
-                label="Phrases"
+                label={t('cueEditor.snap')}
+                icon={Magnet}
+                active={snap}
+                onClick={() => setSnap((v) => !v)}
+              />
+              <Toggle
+                label={t('cueEditor.grid')}
+                active={showGrid}
+                onClick={() => setShowGrid((v) => !v)}
+              />
+              <Toggle
+                label={t('cueEditor.phrases')}
                 active={showPhrases}
                 onClick={() => setShowPhrases((v) => !v)}
               />
               <Toggle
-                label="Follow"
+                label={t('cueEditor.follow')}
                 icon={Crosshair}
                 active={follow}
                 onClick={() => {
@@ -544,10 +553,10 @@ export function CuePointEditor(): React.JSX.Element {
               />
               <div style={{ flex: 1 }} />
               <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                Zoom
+                {t('cueEditor.zoom')}
               </span>
               <button className="pill-btn" onClick={() => wfRef.current?.zoomFit()}>
-                Fit
+                {t('cueEditor.fit')}
               </button>
               <button className="pill-btn" onClick={() => wfRef.current?.zoomBy(0.5)}>
                 –
@@ -559,7 +568,7 @@ export function CuePointEditor(): React.JSX.Element {
                 step={1}
                 value={Math.round(zoomPx) || 1}
                 onChange={(e) => wfRef.current?.zoomTo(Number(e.target.value))}
-                aria-label="Zoom"
+                aria-label={t('cueEditor.zoom')}
                 style={{ width: 110, accentColor: 'var(--accent)' }}
               />
               <button className="pill-btn" onClick={() => wfRef.current?.zoomBy(2)}>
@@ -569,30 +578,38 @@ export function CuePointEditor(): React.JSX.Element {
 
             {/* Beatgrid */}
             <div className="cue-row">
-              <span className="cue-row-label">Beatgrid</span>
+              <span className="cue-row-label">{t('cueEditor.beatgrid')}</span>
               <span
                 className="ss-mono"
                 style={{ fontSize: 13, color: 'var(--accent)', minWidth: 64 }}
               >
                 {bpm > 0 ? bpm.toFixed(2) : '—'} <span style={{ opacity: 0.5 }}>BPM</span>
               </span>
-              <button className="pill-btn" onClick={halveBpm} title="Halve BPM">
+              <button className="pill-btn" onClick={halveBpm} title={t('cueEditor.halveBpm')}>
                 ½×
               </button>
-              <button className="pill-btn" onClick={doubleBpm} title="Double BPM">
+              <button className="pill-btn" onClick={doubleBpm} title={t('cueEditor.doubleBpm')}>
                 2×
               </button>
               <button
                 className="pill-btn"
                 onClick={setDownbeatHere}
-                title="Set first downbeat at playhead"
+                title={t('cueEditor.setDownbeatTitle')}
               >
-                Set downbeat
+                {t('cueEditor.setDownbeat')}
               </button>
-              <button className="pill-btn" onClick={() => nudgeGrid(-5)} title="Shift grid earlier">
+              <button
+                className="pill-btn"
+                onClick={() => nudgeGrid(-5)}
+                title={t('cueEditor.shiftEarlier')}
+              >
                 ◂ 5ms
               </button>
-              <button className="pill-btn" onClick={() => nudgeGrid(5)} title="Shift grid later">
+              <button
+                className="pill-btn"
+                onClick={() => nudgeGrid(5)}
+                title={t('cueEditor.shiftLater')}
+              >
                 5ms ▸
               </button>
             </div>
@@ -600,7 +617,8 @@ export function CuePointEditor(): React.JSX.Element {
             {/* Loops */}
             <div className="cue-row">
               <span className="cue-row-label">
-                <Repeat size={12} strokeWidth={1.5} style={{ verticalAlign: '-2px' }} /> Loops
+                <Repeat size={12} strokeWidth={1.5} style={{ verticalAlign: '-2px' }} />{' '}
+                {t('cueEditor.loops')}
               </span>
               {BEAT_LOOP_OPTIONS.map((b) => (
                 <button
@@ -608,7 +626,7 @@ export function CuePointEditor(): React.JSX.Element {
                   className="pill-btn"
                   disabled={!grid}
                   onClick={() => beatLoop(b)}
-                  title={`${b}-bar beat loop`}
+                  title={t('cueEditor.beatLoopTitle', { beats: b })}
                 >
                   {b < 1 ? '½' : b}
                 </button>
@@ -618,18 +636,18 @@ export function CuePointEditor(): React.JSX.Element {
                 data-active={draftLoopStart !== null}
                 onClick={handleLoopInOut}
               >
-                {draftLoopStart !== null ? 'Set out' : 'Loop in'}
+                {draftLoopStart !== null ? t('cueEditor.setOut') : t('cueEditor.loopIn')}
               </button>
               <button
                 className="pill-btn"
                 disabled={!activeLoop && draftLoopStart === null}
                 onClick={exitLoop}
               >
-                Exit
+                {t('cueEditor.exit')}
               </button>
               {loops.length > 0 && (
                 <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                  {loops.length} saved
+                  {t('cueEditor.loopsSaved', { count: loops.length })}
                 </span>
               )}
             </div>
@@ -648,14 +666,14 @@ export function CuePointEditor(): React.JSX.Element {
                         setActiveLoop(lp)
                         seek(lp.startMs)
                       }}
-                      title="Jump to loop"
+                      title={t('cueEditor.jumpToLoop')}
                     >
                       {formatMs(lp.startMs)}
                       {lp.beats ? ` · ${lp.beats < 1 ? '½' : lp.beats}b` : ''}
                     </button>
                     <button
                       onClick={() => deleteLoop(lp)}
-                      aria-label="Delete loop"
+                      aria-label={t('cueEditor.deleteLoop')}
                       className="loop-chip-x"
                     >
                       <X size={11} strokeWidth={2} />
@@ -670,7 +688,7 @@ export function CuePointEditor(): React.JSX.Element {
             {/* Default cue */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <div className="ss-body-sm">Default cue</div>
+                <div className="ss-body-sm">{t('cueEditor.defaultCue')}</div>
                 {defaultCue && (
                   <div
                     className="ss-caption"
@@ -694,7 +712,7 @@ export function CuePointEditor(): React.JSX.Element {
                 }}
                 onClick={handleSetDefaultCue}
               >
-                Set cue
+                {t('cueEditor.setCue')}
               </button>
             </div>
 
@@ -702,7 +720,7 @@ export function CuePointEditor(): React.JSX.Element {
 
             <div>
               <div className="ss-body-sm" style={{ marginBottom: 12 }}>
-                Hot cues
+                {t('cueEditor.hotCues')}
               </div>
               <HotCueGrid hotCues={hotCues} onToggle={handleHotCue} />
             </div>

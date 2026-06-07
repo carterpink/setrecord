@@ -17,15 +17,18 @@
  */
 import { app, dialog, shell, type BrowserWindow } from 'electron'
 import ElectronStore from 'electron-store'
+import { getSettings } from './settingsService'
 
 // Update feed source. Matches the `publish` provider in electron-builder.yml.
 const REPO_OWNER = 'carterpink'
 const REPO_NAME = 'setsensensev2'
 const LATEST_RELEASE_API = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest`
+const RELEASES_LIST_API = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases?per_page=10`
 const RELEASES_PAGE = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/latest`
 
-// Don't nag more than once a day, even across multiple launches.
+// Default cadence (Settings → Privacy can switch this to weekly or manual-only).
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 // Give up quietly if GitHub is slow — this is a background courtesy, not critical.
 const NETWORK_TIMEOUT_MS = 8000
 // Release notes shown in the dialog are capped so the prompt stays readable.
@@ -70,12 +73,32 @@ interface LatestRelease {
   notes: string
 }
 
-/** Ask GitHub for the latest published release. Null on any failure. */
-async function fetchLatestRelease(): Promise<LatestRelease | null> {
+interface GhRelease {
+  tag_name?: string
+  html_url?: string
+  draft?: boolean
+  prerelease?: boolean
+  body?: string
+}
+
+function toRelease(data: GhRelease): LatestRelease {
+  return {
+    version: data.tag_name as string,
+    url: data.html_url || RELEASES_PAGE,
+    notes: (data.body || '').trim()
+  }
+}
+
+/**
+ * Ask GitHub for the newest release. With `allowPrerelease`, we scan the releases
+ * list and pick the highest-versioned non-draft (pre-releases included); otherwise
+ * we use the stable `/releases/latest` endpoint. Null on any failure.
+ */
+async function fetchLatestRelease(allowPrerelease = false): Promise<LatestRelease | null> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), NETWORK_TIMEOUT_MS)
   try {
-    const res = await fetch(LATEST_RELEASE_API, {
+    const res = await fetch(allowPrerelease ? RELEASES_LIST_API : LATEST_RELEASE_API, {
       signal: controller.signal,
       headers: {
         Accept: 'application/vnd.github+json',
@@ -83,20 +106,17 @@ async function fetchLatestRelease(): Promise<LatestRelease | null> {
       }
     })
     if (!res.ok) return null
-    const data = (await res.json()) as {
-      tag_name?: string
-      html_url?: string
-      draft?: boolean
-      prerelease?: boolean
-      body?: string
+    const data = await res.json()
+    if (allowPrerelease && Array.isArray(data)) {
+      const top = (data as GhRelease[])
+        .filter((d) => d && d.tag_name && !d.draft)
+        .sort((a, b) => (isNewer(a.tag_name as string, b.tag_name as string) ? -1 : 1))[0]
+      return top ? toRelease(top) : null
     }
+    const single = data as GhRelease
     // Only offer finished, public releases — never drafts or pre-releases.
-    if (!data.tag_name || data.draft || data.prerelease) return null
-    return {
-      version: data.tag_name,
-      url: data.html_url || RELEASES_PAGE,
-      notes: (data.body || '').trim()
-    }
+    if (!single.tag_name || single.draft || single.prerelease) return null
+    return toRelease(single)
   } catch {
     // Offline, aborted (timeout), or rate-limited — all non-events. Stay silent.
     return null
@@ -153,10 +173,15 @@ export async function checkForUpdatesAndNotify(window?: BrowserWindow | null): P
   // Dev runs and tests never "update" — only packaged installs do.
   if (!app.isPackaged) return
 
-  const now = Date.now()
-  if (now - store.get('lastCheckAt') < CHECK_INTERVAL_MS) return
+  const s = getSettings()
+  // Honour the user's update preferences (Settings → Privacy & data).
+  if (s.offlineMode || !s.updateAutoCheck || s.updateFrequency === 'manual') return
 
-  const latest = await fetchLatestRelease()
+  const interval = s.updateFrequency === 'weekly' ? WEEK_MS : CHECK_INTERVAL_MS
+  const now = Date.now()
+  if (now - store.get('lastCheckAt') < interval) return
+
+  const latest = await fetchLatestRelease(s.updatePreRelease)
   // Stamp the attempt regardless of outcome so a flaky network can't make us
   // hammer the API on every launch.
   store.set('lastCheckAt', now)
@@ -167,4 +192,25 @@ export async function checkForUpdatesAndNotify(window?: BrowserWindow | null): P
   if (store.get('skippedVersion') === latest.version) return
 
   await promptUser(latest, current, window)
+}
+
+/**
+ * Manual "Check now" trigger (Settings → Privacy & data). Ignores the auto-check
+ * and frequency throttle — and a prior "skip" — but still respects offline mode.
+ * Returns a short status for renderer feedback. Never throws.
+ */
+export async function checkForUpdatesNow(
+  window?: BrowserWindow | null
+): Promise<'updated' | 'up-to-date' | 'offline' | 'unavailable'> {
+  if (!app.isPackaged) return 'unavailable'
+  if (getSettings().offlineMode) return 'offline'
+
+  const latest = await fetchLatestRelease(getSettings().updatePreRelease)
+  store.set('lastCheckAt', Date.now())
+  if (!latest) return 'offline'
+
+  const current = app.getVersion()
+  if (!isNewer(latest.version, current)) return 'up-to-date'
+  await promptUser(latest, current, window)
+  return 'updated'
 }

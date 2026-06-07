@@ -2,6 +2,13 @@ import clsx from 'clsx'
 import { useId } from 'react'
 import { motion } from 'framer-motion'
 
+/** Decorative icon rendered before an option label (e.g. a lucide glyph). */
+type SegmentIcon = React.ComponentType<{
+  size?: number
+  strokeWidth?: number
+  'aria-hidden'?: boolean
+}>
+
 interface SegmentedControlProps<T extends string> {
   options: readonly T[]
   value: T
@@ -11,8 +18,8 @@ interface SegmentedControlProps<T extends string> {
   ariaLabel?: string
   /** id of an element labelling the control group. */
   ariaLabelledby?: string
-  /** Optional icon per option — rendered before the label. */
-  icons?: Partial<Record<T, React.ComponentType<{ size?: number; strokeWidth?: number }>>>
+  /** Optional icon per option — rendered before the label (decorative). */
+  icons?: Partial<Record<T, SegmentIcon>>
 }
 
 /**
@@ -39,7 +46,9 @@ export function SegmentedControl<T extends string>({
     >
       {options.map((opt) => {
         const isActive = value === opt
-        const Icon = icons?.[opt]
+        // Cast collapses the deferred `Record<T, …>[T]` indexed-access type to a
+        // concrete component so the JSX below resolves even when T widens to string.
+        const Icon = icons?.[opt] as SegmentIcon | undefined
         return (
           <button
             key={opt}

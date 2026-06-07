@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useTranslation, Trans } from 'react-i18next'
 import { RefreshCw, Sparkles } from 'lucide-react'
 import { APP_NAME } from '@/utils/constants'
 import { IconButton } from '@/components/shared/IconButton'
@@ -20,6 +21,7 @@ import { SuggestionCard } from './SuggestionCard'
 const listVariants = stagger(0.05)
 
 export function SuggestionsPanel(): React.JSX.Element {
+  const { t } = useTranslation('suggestions')
   const { currentSet, selectedTrackId, addTrackAfterSelected } = useSetStore()
   const playlists = useLibraryStore((s) => s.playlists)
   const totalTracks = useLibraryStore((s) => s.tracks.length)
@@ -64,11 +66,9 @@ export function SuggestionsPanel(): React.JSX.Element {
     return (
       <div className="panel glass-1">
         <div className="sugg-header">
-          <div className="ss-h2">Suggested next</div>
+          <div className="ss-h2">{t('header.title')}</div>
         </div>
-        <NoLibraryState
-          body={`Pick any track and ${APP_NAME} suggests what mixes next — matched on key, BPM and energy. Import your library to get recommendations.`}
-        />
+        <NoLibraryState body={t('noLibraryBody', { app: APP_NAME })} />
       </div>
     )
   }
@@ -77,7 +77,7 @@ export function SuggestionsPanel(): React.JSX.Element {
     return (
       <div className="panel glass-1">
         <div className="sugg-header">
-          <div className="ss-h2">Suggested next</div>
+          <div className="ss-h2">{t('header.title')}</div>
         </div>
         <ProLock feature="suggestions" />
       </div>
@@ -87,11 +87,11 @@ export function SuggestionsPanel(): React.JSX.Element {
   return (
     <div className="panel glass-1">
       <div className="sugg-header">
-        <div className="ss-h2">Suggested next</div>
+        <div className="ss-h2">{t('header.title')}</div>
         <IconButton
           icon={RefreshCw}
           size="sm"
-          aria-label="Refresh suggestions"
+          aria-label={t('header.refreshAria')}
           onClick={refresh}
           style={isLoading ? { animation: 'spin 0.6s linear infinite' } : undefined}
         />
@@ -99,19 +99,25 @@ export function SuggestionsPanel(): React.JSX.Element {
 
       {selectedSetTrack ? (
         <div className="ss-body-sm" style={{ marginBottom: 8 }}>
-          Based on track {formatPosition(selectedSetTrack.position)} —{' '}
-          {selectedSetTrack.track.title}
+          {t('context.basedOn', {
+            position: formatPosition(selectedSetTrack.position),
+            title: selectedSetTrack.track.title
+          })}
         </div>
       ) : isLibraryMode && libraryTrack ? (
         <div className="ss-body-sm" style={{ marginBottom: 8 }}>
-          What mixes after{' '}
-          <strong style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
-            {libraryTrack.title}
-          </strong>
+          <Trans
+            t={t}
+            i18nKey="context.whatMixesAfter"
+            values={{ title: libraryTrack.title }}
+            components={[
+              <strong key="0" style={{ color: 'var(--text-primary)', fontWeight: 500 }} />
+            ]}
+          />
         </div>
       ) : (
         <div className="ss-body-sm" style={{ marginBottom: 8, color: 'var(--text-tertiary)' }}>
-          Select a track in your set or click a library track to see suggestions
+          {t('context.noSelection')}
         </div>
       )}
 
@@ -147,14 +153,14 @@ export function SuggestionsPanel(): React.JSX.Element {
         ) : !effectiveTrackId ? (
           <EmptyState
             icon={Sparkles}
-            title="No track selected"
-            body="Select a track in your set or click a library track to see suggestions."
+            title={t('empty.noTrack.title')}
+            body={t('empty.noTrack.body')}
           />
         ) : suggestions.length === 0 ? (
           <EmptyState
             icon={Sparkles}
-            title="No matches found"
-            body="Try adding more tracks to your library or adjusting BPM range."
+            title={t('empty.noMatches.title')}
+            body={t('empty.noMatches.body')}
           />
         ) : (
           <AnimatePresence mode="wait">

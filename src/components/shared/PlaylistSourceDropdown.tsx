@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Check, ChevronDown, Music2 } from 'lucide-react'
 import clsx from 'clsx'
 import type { Playlist } from '@/types'
@@ -23,6 +24,7 @@ export function PlaylistSourceDropdown({
   onChange,
   totalCount
 }: PlaylistSourceDropdownProps): React.JSX.Element | null {
+  const { t } = useTranslation('shared')
   const leafPlaylists = useMemo(
     () => playlists.filter((p) => !p.isFolder && p.trackIds.length > 0),
     [playlists]
@@ -43,10 +45,11 @@ export function PlaylistSourceDropdown({
 
   const label =
     selectedIds.length === 0
-      ? 'All library'
+      ? t('playlistSource.allLibrary')
       : selectedIds.length === 1
-        ? (leafPlaylists.find((p) => p.id === selectedIds[0])?.name ?? '1 playlist')
-        : `${selectedIds.length} playlists`
+        ? (leafPlaylists.find((p) => p.id === selectedIds[0])?.name ??
+          t('playlistSource.onePlaylist'))
+        : t('playlistSource.manyPlaylists', { count: selectedIds.length })
 
   function toggle(id: string): void {
     onChange(selectedIds.includes(id) ? selectedIds.filter((x) => x !== id) : [...selectedIds, id])
@@ -104,7 +107,7 @@ export function PlaylistSourceDropdown({
               <span className="arch-playlist-option-check">
                 {selectedIds.length === 0 && <Check size={10} strokeWidth={2.5} />}
               </span>
-              <span style={{ flex: 1 }}>All library</span>
+              <span style={{ flex: 1 }}>{t('playlistSource.allLibrary')}</span>
               <span className="arch-playlist-option-count">{totalCount.toLocaleString()}</span>
             </button>
 

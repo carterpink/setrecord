@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation, Trans } from 'react-i18next'
 import { APP_NAME } from '@/utils/constants'
 import {
   AlertTriangle,
@@ -44,10 +45,10 @@ interface EngineProgress {
   phase: 'copying' | 'writing' | 'done'
 }
 
-const CONFIDENCE_META: Record<BeatportConfidence, { label: string; color: string }> = {
-  high: { label: 'Match ready', color: 'var(--semantic-ok)' },
-  medium: { label: 'Likely', color: 'var(--semantic-warning)' },
-  low: { label: 'Needs fix', color: 'var(--semantic-danger)' }
+const CONFIDENCE_META: Record<BeatportConfidence, { labelKey: string; color: string }> = {
+  high: { labelKey: 'export.beatport.confidenceHigh', color: 'var(--semantic-ok)' },
+  medium: { labelKey: 'export.beatport.confidenceMedium', color: 'var(--semantic-warning)' },
+  low: { labelKey: 'export.beatport.confidenceLow', color: 'var(--semantic-danger)' }
 }
 
 function BpInput({
@@ -83,6 +84,7 @@ function BpInput({
 }
 
 function ConfidenceChip({ confidence }: { confidence: BeatportConfidence }): React.JSX.Element {
+  const { t } = useTranslation('modals')
   const meta = CONFIDENCE_META[confidence]
   return (
     <span
@@ -97,7 +99,7 @@ function ConfidenceChip({ confidence }: { confidence: BeatportConfidence }): Rea
         whiteSpace: 'nowrap'
       }}
     >
-      {meta.label}
+      {t(meta.labelKey)}
     </span>
   )
 }
@@ -115,6 +117,7 @@ interface ExportModalProps {
 }
 
 export function ExportModal({ validateOnly = false }: ExportModalProps): React.JSX.Element {
+  const { t } = useTranslation('modals')
   const { closeModal } = useUiStore()
   const currentSet = useSetStore((s) => s.currentSet)
   const connectedDevices = useUSBStore((s) => s.connectedDevices)
@@ -145,6 +148,8 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
       .getSettings()
       .then((s) => {
         if (s.targetHardware) setHardware(s.targetHardware)
+        // Pre-select the ecosystem from the user's default export format.
+        if (s.defaultExportFormat === 'engine') setTarget('engine')
       })
       .catch(() => {})
   }, [])
@@ -164,7 +169,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
         target === 'engine' ? 'engine' : 'pioneer'
       )
       if (!result) {
-        setExportError('Validation failed — set not found.')
+        setExportError(t('export.error.validationNotFound'))
         setPhase(target === 'engine' ? 'engineUsbPicker' : 'idle')
         return
       }
@@ -185,7 +190,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
         setPhase('issues')
       }
     } catch (err) {
-      setExportError(err instanceof Error ? err.message : 'Validation failed.')
+      setExportError(err instanceof Error ? err.message : t('export.error.validationFailed'))
       setPhase(target === 'engine' ? 'engineUsbPicker' : 'idle')
     }
   }
@@ -203,7 +208,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
     if (!currentSet || !selectedUsbId) return
     const device = connectedDevices.find((d) => d.id === selectedUsbId)
     if (!device) {
-      setExportError('That USB drive is no longer connected.')
+      setExportError(t('export.error.usbDisconnected'))
       setPhase('engineUsbPicker')
       return
     }
@@ -220,13 +225,13 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
       } else {
         setExportError(
           result?.error === 'pro_required'
-            ? 'Exporting is a SetSense Pro feature.'
-            : (result?.error ?? 'Export failed.')
+            ? t('export.error.proRequired')
+            : (result?.error ?? t('export.error.exportFailed'))
         )
         setPhase('issues')
       }
     } catch (err) {
-      setExportError(err instanceof Error ? err.message : 'Export failed.')
+      setExportError(err instanceof Error ? err.message : t('export.error.exportFailed'))
       setPhase('issues')
     } finally {
       unsubscribe()
@@ -261,12 +266,12 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
         setExportedTrackCount(result.trackCount ?? null)
         setPhase('done')
       } else if (result && !result.success) {
-        setExportError(result.error ?? 'Export failed.')
+        setExportError(result.error ?? t('export.error.exportFailed'))
         setPhase('issues')
       }
     } catch (err) {
       if (signal.aborted) return
-      setExportError(err instanceof Error ? err.message : 'Export failed.')
+      setExportError(err instanceof Error ? err.message : t('export.error.exportFailed'))
       setPhase('issues')
     } finally {
       abortRef.current = null
@@ -300,13 +305,13 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
       } else {
         setExportError(
           result?.error === 'pro_required'
-            ? 'Exporting is a SetSense Pro feature.'
-            : (result?.error ?? 'Export failed.')
+            ? t('export.error.proRequired')
+            : (result?.error ?? t('export.error.exportFailed'))
         )
         setPhase('beatportReview')
       }
     } catch (err) {
-      setExportError(err instanceof Error ? err.message : 'Export failed.')
+      setExportError(err instanceof Error ? err.message : t('export.error.exportFailed'))
       setPhase('beatportReview')
     }
   }
@@ -318,12 +323,12 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
     try {
       const result = await copyToUSB(exportedPath, device.mountPath, filename, device.id)
       if (result.success) {
-        toastSuccess(`Copied to ${device.customName ?? device.label}`)
+        toastSuccess(t('export.toast.copied', { name: device.customName ?? device.label }))
       } else {
-        toastError(result.error ?? 'Copy failed')
+        toastError(result.error ?? t('export.toast.copyFailed'))
       }
     } catch {
-      toastError('Could not copy to USB')
+      toastError(t('export.toast.copyError'))
     } finally {
       setCopyingToUSBId(null)
     }
@@ -338,11 +343,11 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
 
   // Step-by-step progress text during validation
   const VALIDATION_STEPS = [
-    'Checking file existence…',
-    'Checking format compatibility…',
-    'Checking BPM data…',
-    'Checking key data…',
-    'Finalising…'
+    t('export.validation.step1'),
+    t('export.validation.step2'),
+    t('export.validation.step3'),
+    t('export.validation.step4'),
+    t('export.validation.step5')
   ]
   // Drives the stepped "Checking…" labels. Resetting the step to 0 when leaving
   // the validating phase is an intentional UI reset, not a render cascade.
@@ -368,10 +373,10 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
   const warningIssues = validationResult?.issues.filter((i) => i.severity === 'warning') ?? []
   const isBeatportPhase = phase.startsWith('beatport')
   const headerTitle = validateOnly
-    ? 'Validate set'
+    ? t('export.headerValidate')
     : isBeatportPhase
-      ? 'Export to Beatport'
-      : 'Export set'
+      ? t('export.headerBeatport')
+      : t('export.headerExport')
   const bpCounts = {
     high: bpRows.filter((r) => r.confidence === 'high').length,
     medium: bpRows.filter((r) => r.confidence === 'medium').length,
@@ -383,7 +388,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
       {/* Header */}
       <div className="modal-header">
         <span className="ss-h2">{headerTitle}</span>
-        <IconButton icon={X} size="sm" aria-label="Close" onClick={closeModal} />
+        <IconButton icon={X} size="sm" aria-label={t('common.close')} onClick={closeModal} />
       </div>
 
       <div className="modal-body">
@@ -407,13 +412,12 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                       padding: '32px 0'
                     }}
                   >
-                    No set loaded. Build or load a set first.
+                    {t('export.noSet')}
                   </p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <p className="ss-body-sm" style={{ color: 'var(--text-secondary)', margin: 0 }}>
-                      Choose what to export. Either option writes a brand-new file you pick the
-                      location for — your existing library is never modified.
+                      {t('export.chooseIntro')}
                     </p>
 
                     <button
@@ -448,13 +452,15 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                             fontWeight: 600
                           }}
                         >
-                          Rekordbox XML
+                          {t('export.cardXmlTitle')}
                         </span>
                         <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                          An <code>.xml</code> you import into Rekordbox or copy to a USB drive.
-                          Carries cue points, hot cues, BPM and key for all{' '}
-                          {currentSet.tracks.length} track
-                          {currentSet.tracks.length !== 1 ? 's' : ''}.
+                          <Trans
+                            t={t}
+                            i18nKey="export.cardXmlBody"
+                            count={currentSet.tracks.length}
+                            components={[<code key="0" />]}
+                          />
                         </span>
                       </div>
                     </button>
@@ -496,12 +502,10 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                             fontWeight: 600
                           }}
                         >
-                          Engine DJ USB (Denon)
+                          {t('export.cardEngineTitle')}
                         </span>
                         <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                          Writes a gig-ready Engine Library straight to a USB drive — copies the
-                          audio and builds the database so it plays plug-and-play on Denon gear.
-                          Denon re-analyses beatgrids on load.
+                          {t('export.cardEngineBody')}
                         </span>
                       </div>
                     </button>
@@ -534,12 +538,15 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                             fontWeight: 600
                           }}
                         >
-                          Beatport playlist (CSV)
+                          {t('export.cardBeatportTitle')}
                         </span>
                         <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                          A <code>.csv</code> ready for Beatport&rsquo;s playlist import (or
-                          Soundiiz / TuneMyMusic). {APP_NAME} matches each track by ISRC, title and
-                          artist, then flags anything that needs a quick manual fix.
+                          <Trans
+                            t={t}
+                            i18nKey="export.cardBeatportBody"
+                            values={{ app: APP_NAME }}
+                            components={[<code key="0" />]}
+                          />
                         </span>
                       </div>
                     </button>
@@ -560,7 +567,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                       padding: '32px 0'
                     }}
                   >
-                    No set loaded. Build or load a set first.
+                    {t('export.noSet')}
                   </p>
                 ) : (
                   <>
@@ -576,15 +583,14 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                       }}
                     >
                       <p className="ss-body-sm" style={{ color: 'var(--text-primary)', margin: 0 }}>
-                        Creates a Rekordbox-compatible XML file you can import back into Rekordbox
-                        or copy directly to a USB drive.
+                        {t('export.idleBody')}
                       </p>
                       <p className="ss-caption" style={{ color: 'var(--semantic-ok)', margin: 0 }}>
-                        Your existing Rekordbox library is not modified.
+                        {t('export.idleNotModified')}
                       </p>
                     </div>
                     <div className="arch-field">
-                      <label className="ss-label">Target hardware</label>
+                      <label className="ss-label">{t('export.targetHardware')}</label>
                       <SegmentedControl
                         options={CDJ_MODELS}
                         value={hardware}
@@ -595,8 +601,10 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                       className="ss-caption"
                       style={{ color: 'var(--text-tertiary)', marginTop: 8 }}
                     >
-                      {APP_NAME} will check all {currentSet.tracks.length} track
-                      {currentSet.tracks.length !== 1 ? 's' : ''} are compatible before exporting.
+                      {t('export.willCheck', {
+                        app: APP_NAME,
+                        count: currentSet.tracks.length
+                      })}
                     </p>
                     {exportError && (
                       <p
@@ -616,10 +624,10 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
             {phase === 'engineUsbPicker' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <p className="ss-body-sm" style={{ color: 'var(--text-secondary)', margin: 0 }}>
-                  Choose the USB drive to write your Engine Library to. {APP_NAME} copies your{' '}
-                  {currentSet?.tracks.length ?? 0} track
-                  {currentSet?.tracks.length !== 1 ? 's' : ''} onto the drive — make sure it has
-                  enough free space.
+                  {t('export.usbPickerBody', {
+                    app: APP_NAME,
+                    count: currentSet?.tracks.length ?? 0
+                  })}
                 </p>
                 {connectedDevices.length === 0 ? (
                   <div
@@ -637,7 +645,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                       aria-hidden="true"
                     />
                     <p className="ss-caption" style={{ margin: 0 }}>
-                      No USB drive detected. Plug one in and it&rsquo;ll appear here.
+                      {t('export.noUsb')}
                     </p>
                   </div>
                 ) : (
@@ -740,7 +748,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                   style={{ marginBottom: 16, padding: '10px 14px' }}
                 >
                   <span className="ss-body-sm" style={{ color: 'var(--text-secondary)' }}>
-                    Safety score
+                    {t('export.safetyScore')}
                   </span>
                   <span
                     className="ss-mono"
@@ -763,17 +771,14 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                       className="ss-label"
                       style={{ color: 'var(--semantic-danger)', marginBottom: 8 }}
                     >
-                      Blocking issues — must fix to export
+                      {t('export.blockingTitle')}
                     </p>
                     {blockingIssues.some((i) => i.type === 'missing_file') && (
                       <p
                         className="ss-caption"
                         style={{ color: 'var(--text-tertiary)', marginBottom: 10 }}
                       >
-                        Every track must be linked to a real local file before export — a CDJ
-                        can&rsquo;t play a track that isn&rsquo;t on the drive. Buy or download
-                        phantom tracks and import them, or relink missing files from the Recall
-                        tab&rsquo;s Library health section.
+                        {t('export.missingFileHint')}
                       </p>
                     )}
                     {blockingIssues.map((issue, i) => (
@@ -816,7 +821,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                       className="ss-label"
                       style={{ color: 'var(--semantic-warning)', marginBottom: 8 }}
                     >
-                      Warnings — will export with caveats
+                      {t('export.warningsTitle')}
                     </p>
                     {warningIssues.map((issue, i) => (
                       <div
@@ -860,7 +865,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                         className="ss-label"
                         style={{ color: 'var(--text-secondary)', marginBottom: 8 }}
                       >
-                        Cue points included in export
+                        {t('export.cuePointsIncluded')}
                       </p>
                       {validationResult.cueSummary
                         .filter((e) => e.hotCueCount + e.cuePointCount > 0)
@@ -893,10 +898,10 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                             >
                               {[
                                 entry.hotCueCount > 0
-                                  ? `${entry.hotCueCount} hot cue${entry.hotCueCount !== 1 ? 's' : ''}`
+                                  ? t('export.hotCueCount', { count: entry.hotCueCount })
                                   : '',
                                 entry.cuePointCount > 0
-                                  ? `${entry.cuePointCount} memory cue${entry.cuePointCount !== 1 ? 's' : ''}`
+                                  ? t('export.memoryCueCount', { count: entry.cuePointCount })
                                   : ''
                               ]
                                 .filter(Boolean)
@@ -933,9 +938,9 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                 <span className="ss-body" style={{ color: 'var(--text-secondary)' }}>
                   {target === 'engine'
                     ? engineProgress?.phase === 'writing'
-                      ? 'Writing Engine database…'
-                      : 'Copying tracks to USB…'
-                    : 'Writing Rekordbox XML…'}
+                      ? t('export.writingEngineDb')
+                      : t('export.copyingToUsb')
+                    : t('export.writingXml')}
                 </span>
                 <div
                   style={{
@@ -961,8 +966,10 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                 </div>
                 {target === 'engine' && engineProgress && (
                   <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                    {engineProgress.processed} of {engineProgress.total} track
-                    {engineProgress.total !== 1 ? 's' : ''}
+                    {t('export.progressTracks', {
+                      processed: engineProgress.processed,
+                      count: engineProgress.total
+                    })}
                   </span>
                 )}
               </div>
@@ -985,22 +992,20 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                     className="ss-body"
                     style={{ color: 'var(--text-primary)', display: 'block' }}
                   >
-                    {target === 'engine'
-                      ? 'Engine library written to USB'
-                      : 'Set exported successfully'}
+                    {target === 'engine' ? t('export.doneEngine') : t('export.doneXml')}
                   </span>
                   {exportedTrackCount != null && (
                     <span
                       className="ss-caption"
                       style={{ color: 'var(--text-tertiary)', display: 'block', marginTop: 4 }}
                     >
-                      {exportedTrackCount} track{exportedTrackCount !== 1 ? 's' : ''} included
+                      {t('export.tracksIncluded', { count: exportedTrackCount })}
                     </span>
                   )}
                 </div>
                 <div className="stat-row glass-1" style={{ width: '100%', padding: '10px 14px' }}>
                   <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                    Saved to
+                    {t('export.savedTo')}
                   </span>
                   <span
                     className="ss-mono"
@@ -1021,9 +1026,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                   className="ss-caption"
                   style={{ color: 'var(--text-tertiary)', textAlign: 'center', margin: 0 }}
                 >
-                  {target === 'engine'
-                    ? 'Eject the drive and plug it into your Denon gear, or import it into Engine DJ. Beatgrids are analysed on load. Your library is not modified.'
-                    : 'Import this file into Rekordbox, or copy it to a USB drive using the buttons below. Your existing Rekordbox library is not modified.'}
+                  {target === 'engine' ? t('export.doneHintEngine') : t('export.doneHintXml')}
                 </p>
 
                 {/* USB copy shortcuts — Pioneer only; the Engine export already wrote to the drive. */}
@@ -1037,7 +1040,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                         textAlign: 'left'
                       }}
                     >
-                      Copy to USB drive
+                      {t('export.copyToUsbHeader')}
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {connectedDevices.map((device) => (
@@ -1047,7 +1050,9 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                           className="usb-copy-btn glass-1"
                           disabled={copyingToUSBId === device.id}
                           onClick={() => void handleCopyToUSB(device)}
-                          aria-label={`Copy to ${device.customName ?? device.label}`}
+                          aria-label={t('export.copyToAria', {
+                            name: device.customName ?? device.label
+                          })}
                         >
                           <HardDrive
                             size={13}
@@ -1065,7 +1070,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                             style={{ color: 'var(--text-tertiary)', marginLeft: 'auto' }}
                           >
                             {copyingToUSBId === device.id ? (
-                              'Copying…'
+                              t('export.copying')
                             ) : (
                               <>
                                 <Copy
@@ -1078,7 +1083,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                                   }}
                                   aria-hidden="true"
                                 />
-                                Copy
+                                {t('export.copy')}
                               </>
                             )}
                           </span>
@@ -1104,12 +1109,14 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                   }}
                 >
                   <span className="ss-body-sm" style={{ color: 'var(--text-primary)' }}>
-                    {bpCounts.high} match-ready · {bpCounts.medium} likely · {bpCounts.low} need
-                    fixing
+                    {t('export.beatport.counts', {
+                      high: bpCounts.high,
+                      medium: bpCounts.medium,
+                      low: bpCounts.low
+                    })}
                   </span>
                   <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                    Rows with an ISRC match exactly. For the rest, tidy the title/artist or add an
-                    ISRC below — edits only change the CSV, never your library.
+                    {t('export.beatport.reviewHint')}
                   </span>
                 </div>
 
@@ -1181,22 +1188,22 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                             }}
                           >
                             <BpInput
-                              label="Title"
+                              label={t('export.beatport.fieldTitle')}
                               value={row.title}
                               onChange={(v) => updateBpRow(i, { title: v })}
                             />
                             <BpInput
-                              label="Artist"
+                              label={t('export.beatport.fieldArtist')}
                               value={row.artist}
                               onChange={(v) => updateBpRow(i, { artist: v })}
                             />
                             <BpInput
-                              label="Mix"
+                              label={t('export.beatport.fieldMix')}
                               value={row.mix ?? ''}
                               onChange={(v) => updateBpRow(i, { mix: v })}
                             />
                             <BpInput
-                              label="ISRC"
+                              label={t('export.beatport.fieldIsrc')}
                               value={row.isrc ?? ''}
                               onChange={(v) => updateBpRow(i, { isrc: v })}
                             />
@@ -1219,7 +1226,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                               textDecoration: 'none'
                             }}
                           >
-                            Look up on Beatport
+                            {t('export.beatport.lookUp')}
                             <ExternalLink size={11} aria-hidden="true" />
                           </a>
                         </div>
@@ -1256,7 +1263,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                   style={{ color: 'var(--accent)', animation: 'spin 1s linear infinite' }}
                 />
                 <span className="ss-body" style={{ color: 'var(--text-secondary)' }}>
-                  Writing Beatport CSV…
+                  {t('export.beatport.writing')}
                 </span>
               </div>
             )}
@@ -1278,20 +1285,20 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                     className="ss-body"
                     style={{ color: 'var(--text-primary)', display: 'block' }}
                   >
-                    Beatport playlist exported
+                    {t('export.beatport.doneTitle')}
                   </span>
                   {exportedTrackCount != null && (
                     <span
                       className="ss-caption"
                       style={{ color: 'var(--text-tertiary)', display: 'block', marginTop: 4 }}
                     >
-                      {exportedTrackCount} track{exportedTrackCount !== 1 ? 's' : ''} included
+                      {t('export.tracksIncluded', { count: exportedTrackCount })}
                     </span>
                   )}
                 </div>
                 <div className="stat-row glass-1" style={{ width: '100%', padding: '10px 14px' }}>
                   <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                    Saved to
+                    {t('export.savedTo')}
                   </span>
                   <span
                     className="ss-mono"

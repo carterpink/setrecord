@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { AlertCircle, ChevronDown, ChevronUp, Pause, Play, ShoppingCart } from 'lucide-react'
 import { useDraggable } from '@dnd-kit/core'
@@ -38,6 +39,7 @@ export function SuggestionCard({
   onPreview,
   onAdd
 }: SuggestionCardProps): React.JSX.Element {
+  const { t } = useTranslation('suggestions')
   const { track, matchReasons, best, transitionScore } = suggestion
   const [showBreakdown, setShowBreakdown] = useState(false)
   const isPhantom = track.phantom === true
@@ -88,12 +90,12 @@ export function SuggestionCard({
       {best ? (
         <motion.span
           className="best-badge"
-          title="Ranked by BPM compatibility (35%), harmonic key (35%), energy match (20%), file quality (10%)"
+          title={t('card.bestBadgeTitle')}
           initial={{ scale: 0.85, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.35, ease: [0.32, 0.72, 0.12, 1], delay: 0.1 }}
         >
-          Best match
+          {t('card.bestBadge')}
         </motion.span>
       ) : null}
 
@@ -104,18 +106,18 @@ export function SuggestionCard({
           disabled={unavailable}
           aria-label={
             isPhantom
-              ? 'Phantom track — not in your library'
+              ? t('card.phantomAria')
               : missing
-                ? 'File not found'
+                ? t('card.fileNotFoundAria')
                 : isThisPlaying
-                  ? `Pause ${track.title}`
-                  : `Preview ${track.title}`
+                  ? t('card.pauseAria', { title: track.title })
+                  : t('card.previewAria', { title: track.title })
           }
           title={
             isPhantom
-              ? 'Buy or download this track to enable preview'
+              ? t('card.phantomTitle')
               : missing
-                ? `File not found: ${track.filePath}`
+                ? t('card.fileNotFoundTitle', { path: track.filePath })
                 : undefined
           }
           onClick={handlePlayClick}
@@ -179,14 +181,14 @@ export function SuggestionCard({
             setShowBreakdown((v) => !v)
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          title={showBreakdown ? 'Hide score breakdown' : 'Show score breakdown'}
+          title={showBreakdown ? t('card.hideBreakdown') : t('card.showBreakdown')}
         >
           {showBreakdown ? (
             <ChevronUp size={11} strokeWidth={2} />
           ) : (
             <ChevronDown size={11} strokeWidth={2} />
           )}
-          <span>Score {transitionScore.score}/100</span>
+          <span>{t('card.score', { score: transitionScore.score })}</span>
         </button>
       </div>
 
@@ -203,17 +205,17 @@ export function SuggestionCard({
             onPointerDown={(e) => e.stopPropagation()}
           >
             <div className="breakdown-row">
-              <span>BPM delta</span>
+              <span>{t('card.breakdown.bpmDelta')}</span>
               <span>±{transitionScore.bpmDelta.toFixed(1)}</span>
             </div>
             <div className="breakdown-row">
-              <span>Key</span>
+              <span>{t('card.breakdown.key')}</span>
               <span style={{ textTransform: 'capitalize' }}>
                 {transitionScore.keyCompatibility.replace('-', ' ')}
               </span>
             </div>
             <div className="breakdown-row">
-              <span>Energy delta</span>
+              <span>{t('card.breakdown.energyDelta')}</span>
               <span>
                 {transitionScore.energyDelta > 0
                   ? `+${transitionScore.energyDelta}`
@@ -221,8 +223,10 @@ export function SuggestionCard({
               </span>
             </div>
             <div className="breakdown-row">
-              <span style={{ color: 'var(--text-primary)' }}>Total</span>
-              <span style={{ color: 'var(--text-primary)' }}>{transitionScore.score}/100</span>
+              <span style={{ color: 'var(--text-primary)' }}>{t('card.breakdown.total')}</span>
+              <span style={{ color: 'var(--text-primary)' }}>
+                {t('card.breakdown.totalValue', { score: transitionScore.score })}
+              </span>
             </div>
           </motion.div>
         )}

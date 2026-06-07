@@ -114,9 +114,7 @@ export async function startAudioFeed(
   // can't load (e.g. CSP), so capture still works either way.
   let node: AudioNode
   try {
-    const blobUrl = URL.createObjectURL(
-      new Blob([WORKLET_SRC], { type: 'application/javascript' })
-    )
+    const blobUrl = URL.createObjectURL(new Blob([WORKLET_SRC], { type: 'application/javascript' }))
     try {
       await ctx.audioWorklet.addModule(blobUrl)
     } finally {

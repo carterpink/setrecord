@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react'
 import type { Suggestion } from '@/types'
 import { formatBpm, formatDuration } from '@/utils/format'
@@ -8,6 +9,7 @@ interface GhostTrackCardProps {
 }
 
 export function GhostTrackCard({ suggestion, onAdd }: GhostTrackCardProps): React.JSX.Element {
+  const { t } = useTranslation('timeline')
   const { track } = suggestion
 
   return (
@@ -30,7 +32,7 @@ export function GhostTrackCard({ suggestion, onAdd }: GhostTrackCardProps): Reac
             className="ss-caption"
             style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}
           >
-            Best suggestion
+            {t('ghost.bestSuggestion')}
           </span>
         </div>
       </div>
@@ -42,7 +44,7 @@ export function GhostTrackCard({ suggestion, onAdd }: GhostTrackCardProps): Reac
       <button
         type="button"
         className="icon-btn sm"
-        aria-label={`Add ${track.title} to set`}
+        aria-label={t('ghost.addAria', { title: track.title })}
         style={{ pointerEvents: 'all' }}
         onClick={(e) => {
           e.stopPropagation()

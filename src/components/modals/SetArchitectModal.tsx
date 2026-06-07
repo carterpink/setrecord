@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Check, ChevronDown, Copy, Loader, Lock, RefreshCw, Sparkles, X } from 'lucide-react'
 import type { ArchitectParams, EnergyCurveType, GenreProfileInfo, SetTrack, SetVibe } from '@/types'
 import { Button } from '@/components/shared/Button'
@@ -62,6 +63,7 @@ function formatMinutes(min: number): string {
 }
 
 export function SetArchitectModal(): React.JSX.Element {
+  const { t } = useTranslation('modals')
   const { closeModal } = useUiStore()
   const learnModeEnabled = useUiStore((s) => s.learnModeEnabled)
   const { populateFromArchitect } = useSetStore()
@@ -140,9 +142,12 @@ export function SetArchitectModal(): React.JSX.Element {
   // Resolve the blurb for the currently selected style (for the result copy).
   function resolveBlurb(): string {
     if (genreOverride) {
-      return genreInfo?.profiles.find((p) => p.id === genreOverride)?.blurb ?? 'a balanced flow'
+      return (
+        genreInfo?.profiles.find((p) => p.id === genreOverride)?.blurb ??
+        t('architect.balancedFlow')
+      )
     }
-    return genreInfo?.detected.blurb ?? 'a balanced flow'
+    return genreInfo?.detected.blurb ?? t('architect.balancedFlow')
   }
 
   // Live count of the source pool — gives the user confidence before they hit Build.
@@ -167,11 +172,11 @@ export function SetArchitectModal(): React.JSX.Element {
   function applyNl(): void {
     const { params: parsed, summary } = parseArchitectQuery(nlText)
     if (Object.keys(parsed).length === 0) {
-      setNlSummary('Couldn’t read that — try “2-hour peak club set, 126–130”.')
+      setNlSummary(t('architect.nlNoMatch'))
       return
     }
     setParams((p) => ({ ...p, ...parsed }))
-    setNlSummary(`Applied: ${summary}`)
+    setNlSummary(t('architect.nlApplied', { summary }))
   }
 
   // Build (or regenerate) a set. Every build runs with a variation seed so the
@@ -209,7 +214,7 @@ export function SetArchitectModal(): React.JSX.Element {
         new Promise<void>((r) => setTimeout(r, 700))
       ])
       if (!setTracks || setTracks.length === 0) {
-        setBuildError('No tracks matched — try widening the BPM range or duration.')
+        setBuildError(t('architect.noTracksMatched'))
         setIsBuilding(false)
         return
       }
@@ -219,7 +224,7 @@ export function SetArchitectModal(): React.JSX.Element {
       setPhase('result')
       setIsBuilding(false)
     } catch {
-      setBuildError('Build failed. Try adjusting your BPM range or duration.')
+      setBuildError(t('architect.buildFailed'))
       setIsBuilding(false)
     }
   }
@@ -258,7 +263,7 @@ export function SetArchitectModal(): React.JSX.Element {
     closeModal()
   }
 
-  const subtitle = phase === 'form' ? 'Build a set' : 'One possible set'
+  const subtitle = phase === 'form' ? t('architect.subtitleForm') : t('architect.subtitleResult')
 
   return (
     <Modal onClose={closeModal} ariaLabel="Set Architect" maxWidth={520}>
@@ -270,12 +275,12 @@ export function SetArchitectModal(): React.JSX.Element {
             {subtitle}
           </span>
         </div>
-        <IconButton icon={X} size="sm" aria-label="Close" onClick={closeModal} />
+        <IconButton icon={X} size="sm" aria-label={t('common.close')} onClick={closeModal} />
       </div>
 
       <div className="modal-body">
         {totalTracks === 0 ? (
-          <NoLibraryState body="Set Architect builds a full set for you — picking tracks that flow on key, BPM and energy across the night. Import your library so it has tracks to work with." />
+          <NoLibraryState body={t('architect.noLibraryBody')} />
         ) : (
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
@@ -295,12 +300,12 @@ export function SetArchitectModal(): React.JSX.Element {
                         strokeWidth={1.7}
                         style={{ verticalAlign: '-2px', marginRight: 5 }}
                       />
-                      Describe it in words
+                      {t('architect.describeLabel')}
                     </label>
                     <div className="arch-nl-row">
                       <input
                         className="arch-input"
-                        placeholder="e.g. 2-hour peak club set, 126–130"
+                        placeholder={t('architect.describePlaceholder')}
                         value={nlText}
                         onChange={(e) => setNlText(e.target.value)}
                         onKeyDown={(e) => {
@@ -316,28 +321,30 @@ export function SetArchitectModal(): React.JSX.Element {
                         onClick={applyNl}
                         disabled={nlText.trim() === ''}
                       >
-                        Apply
+                        {t('architect.apply')}
                       </button>
                     </div>
                     {nlSummary && <span className="arch-nl-summary">{nlSummary}</span>}
                   </div>
 
                   <div className="arch-field">
-                    <label className="ss-label">Set name</label>
+                    <label className="ss-label">{t('architect.setName')}</label>
                     <input
                       className="arch-input"
-                      placeholder={`${params.vibe} set`}
+                      placeholder={t('architect.setNamePlaceholder', {
+                        vibe: t(`architect.vibe.${params.vibe}`)
+                      })}
                       value={setName}
                       onChange={(e) => setSetName(e.target.value)}
                     />
                   </div>
 
                   <div className="arch-field">
-                    <label className="ss-label">Vibe</label>
+                    <label className="ss-label">{t('architect.vibeLabel')}</label>
                     <div className="arch-chips">
                       {VIBES.map((v) => (
                         <Chip key={v} selected={params.vibe === v} onClick={() => patch('vibe', v)}>
-                          {v}
+                          {t(`architect.vibe.${v}`)}
                         </Chip>
                       ))}
                     </div>
@@ -345,7 +352,7 @@ export function SetArchitectModal(): React.JSX.Element {
 
                   <div className="arch-field">
                     <div className="arch-field-header">
-                      <label className="ss-label">Duration</label>
+                      <label className="ss-label">{t('architect.duration')}</label>
                       <span className="ss-mono" style={{ fontSize: 12 }}>
                         {formatMinutes(params.targetDuration)}
                       </span>
@@ -361,15 +368,15 @@ export function SetArchitectModal(): React.JSX.Element {
 
                   {genreInfo && overrideProfiles.length > 0 && (
                     <div className="arch-field">
-                      <label className="ss-label">Optimise for</label>
+                      <label className="ss-label">{t('architect.optimiseFor')}</label>
                       <div className="arch-chips">
                         <Chip
                           selected={genreOverride === null}
                           onClick={() => setGenreOverride(null)}
                         >
                           {genreInfo.detected.id !== 'generic'
-                            ? `Auto · ${genreInfo.detected.label}`
-                            : 'Auto'}
+                            ? t('architect.autoDetected', { label: genreInfo.detected.label })
+                            : t('architect.auto')}
                         </Chip>
                         {overrideProfiles.map((p) => (
                           <Chip
@@ -385,7 +392,7 @@ export function SetArchitectModal(): React.JSX.Element {
                   )}
 
                   <div className="arch-field">
-                    <label className="ss-label">BPM range</label>
+                    <label className="ss-label">{t('architect.bpmRange')}</label>
                     <RangeSlider
                       min={60}
                       max={200}
@@ -402,9 +409,12 @@ export function SetArchitectModal(): React.JSX.Element {
                   {leafPlaylists.length > 0 && (
                     <div className="arch-field">
                       <div className="arch-field-header">
-                        <label className="ss-label">Draw tracks from</label>
+                        <label className="ss-label">{t('architect.drawFrom')}</label>
                         <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                          {sourcePoolSize.toLocaleString()} tracks
+                          {t('architect.tracksCount', {
+                            count: sourcePoolSize,
+                            formatted: sourcePoolSize.toLocaleString()
+                          })}
                         </span>
                       </div>
                       <PlaylistSourceDropdown
@@ -428,10 +438,7 @@ export function SetArchitectModal(): React.JSX.Element {
                       }}
                     >
                       <Lock size={11} strokeWidth={2} aria-hidden="true" />
-                      <span>
-                        {lockedFromTimeline.length} locked track
-                        {lockedFromTimeline.length === 1 ? '' : 's'} will stay in place
-                      </span>
+                      <span>{t('architect.lockedNote', { count: lockedFromTimeline.length })}</span>
                     </div>
                   )}
 
@@ -449,7 +456,7 @@ export function SetArchitectModal(): React.JSX.Element {
                       <div className="arch-building" style={{ justifyContent: 'center' }}>
                         <Loader size={15} strokeWidth={1.5} className="arch-spinner" />
                         <span className="ss-body-sm" style={{ color: 'var(--text-secondary)' }}>
-                          Building…
+                          {t('architect.building')}
                         </span>
                       </div>
                     ) : (
@@ -459,7 +466,7 @@ export function SetArchitectModal(): React.JSX.Element {
                         onClick={() => runBuild()}
                         style={{ width: '100%' }}
                       >
-                        Build set
+                        {t('architect.buildSet')}
                       </Button>
                     )}
                   </div>
@@ -470,8 +477,7 @@ export function SetArchitectModal(): React.JSX.Element {
               {phase === 'result' && (
                 <>
                   <div className="ss-body-sm" style={{ marginBottom: 12, opacity: 0.8 }}>
-                    Here’s one possible {resultTracks.length}-track set — every build is a valid
-                    arrangement. Regenerate for another take.
+                    {t('architect.resultIntro', { count: resultTracks.length })}
                   </div>
 
                   {resultBlurb && (
@@ -486,7 +492,7 @@ export function SetArchitectModal(): React.JSX.Element {
                       }}
                     >
                       <Sparkles size={11} strokeWidth={2} aria-hidden="true" />
-                      <span>This set follows {resultBlurb}.</span>
+                      <span>{t('architect.followsBlurb', { blurb: resultBlurb })}</span>
                     </div>
                   )}
 
@@ -506,7 +512,7 @@ export function SetArchitectModal(): React.JSX.Element {
                                   verticalAlign: '-1px',
                                   color: 'var(--accent)'
                                 }}
-                                aria-label="locked"
+                                aria-label={t('architect.lockedAria')}
                               />
                             )}
                           </span>
@@ -536,21 +542,19 @@ export function SetArchitectModal(): React.JSX.Element {
                       onClick={() => runBuild()}
                       disabled={isBuilding}
                       title={
-                        seedLocked
-                          ? 'Seed locked — rebuilds the same set'
-                          : 'Build another arrangement'
+                        seedLocked ? t('architect.seedLockedTitle') : t('architect.regenerateTitle')
                       }
                     >
                       {isBuilding
                         ? seedLocked
-                          ? 'Reproducing…'
-                          : 'Regenerating…'
+                          ? t('architect.reproducing')
+                          : t('architect.regenerating')
                         : seedLocked
-                          ? 'Reproduce'
-                          : 'Regenerate'}
+                          ? t('architect.reproduce')
+                          : t('architect.regenerate')}
                     </Button>
                     <Button variant="primary" onClick={useThisSet} style={{ flex: 1 }}>
-                      Use this set
+                      {t('architect.useThisSet')}
                     </Button>
                   </div>
 
@@ -587,7 +591,7 @@ export function SetArchitectModal(): React.JSX.Element {
                           transition: 'transform 0.15s ease'
                         }}
                       />
-                      <span className="ss-caption">Advanced · seed &amp; reproduce</span>
+                      <span className="ss-caption">{t('architect.advanced')}</span>
                     </button>
 
                     {showAdvanced && (
@@ -602,7 +606,7 @@ export function SetArchitectModal(): React.JSX.Element {
                         {resultParams.variationSeed !== undefined && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                              Seed
+                              {t('architect.seed')}
                             </span>
                             <code className="ss-mono" style={{ fontSize: 13 }}>
                               {encodeSeed(resultParams.variationSeed)}
@@ -610,7 +614,9 @@ export function SetArchitectModal(): React.JSX.Element {
                             <IconButton
                               icon={seedCopied ? Check : Copy}
                               size="sm"
-                              aria-label={seedCopied ? 'Seed copied' : 'Copy seed'}
+                              aria-label={
+                                seedCopied ? t('architect.seedCopied') : t('architect.copySeed')
+                              }
                               onClick={copySeed}
                             />
                           </div>
@@ -629,15 +635,13 @@ export function SetArchitectModal(): React.JSX.Element {
                             checked={seedLocked}
                             onChange={(e) => setSeedLocked(e.target.checked)}
                           />
-                          <span className="ss-caption">
-                            Lock seed — Regenerate reproduces this set instead of a new take
-                          </span>
+                          <span className="ss-caption">{t('architect.lockSeed')}</span>
                         </label>
 
                         <div className="arch-nl-row">
                           <input
                             className="arch-input"
-                            placeholder="Paste a seed to reproduce…"
+                            placeholder={t('architect.pasteSeedPlaceholder')}
                             value={seedDraft}
                             onChange={(e) => {
                               setSeedDraft(e.target.value)
@@ -656,17 +660,16 @@ export function SetArchitectModal(): React.JSX.Element {
                             onClick={reproduceFromSeed}
                             disabled={seedDraft.trim() === '' || isBuilding}
                           >
-                            Reproduce
+                            {t('architect.reproduce')}
                           </button>
                         </div>
                         {seedError && (
                           <span className="ss-caption" style={{ color: 'var(--semantic-danger)' }}>
-                            That doesn’t look like a valid seed.
+                            {t('architect.invalidSeed')}
                           </span>
                         )}
                         <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                          Same seed and settings reproduce this set — as long as your library hasn’t
-                          changed.
+                          {t('architect.seedHint')}
                         </span>
                       </div>
                     )}

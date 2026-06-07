@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Disc3, History, Play, Plus, Search, Tag } from 'lucide-react'
 import type { Track } from '@/types'
 
@@ -35,6 +36,7 @@ export function TrackContextMenu({
   onShowCombos,
   onEditTags
 }: TrackContextMenuProps): React.ReactPortal {
+  const { t } = useTranslation('library')
   const menuRef = useRef<HTMLDivElement>(null)
 
   // Close on click outside or Escape
@@ -91,35 +93,35 @@ export function TrackContextMenu({
   const items: MenuItem[] = [
     {
       icon: Play,
-      label: 'Preview',
+      label: t('contextMenu.preview'),
       action: onPreview,
       disabled: unavailable
     },
     {
       icon: Search,
-      label: 'Find similar tracks',
+      label: t('contextMenu.findSimilar'),
       action: onFindSimilar,
       disabled: unavailable
     },
     {
       icon: Plus,
-      label: 'Add to set',
+      label: t('contextMenu.addToSet'),
       action: onAddToSet
     },
     {
       icon: Disc3,
-      label: 'Edit cue points',
+      label: t('contextMenu.editCues'),
       action: onEditCues,
       disabled: unavailable
     },
     {
       icon: History,
-      label: 'What have I played after this?',
+      label: t('contextMenu.playedAfter'),
       action: onShowCombos
     },
     {
       icon: Tag,
-      label: 'Edit tags…',
+      label: t('contextMenu.editTags'),
       action: onEditTags
     }
   ]
@@ -129,7 +131,7 @@ export function TrackContextMenu({
       ref={menuRef}
       className="track-context-menu glass-2"
       role="menu"
-      aria-label={`Actions for ${track.title}`}
+      aria-label={t('contextMenu.actionsAria', { title: track.title })}
       style={{ position: 'fixed', left: clampedX, top: clampedY, zIndex: 9999 }}
       onKeyDown={onMenuKeyDown}
     >

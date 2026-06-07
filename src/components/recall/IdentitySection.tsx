@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ResponsiveContainer,
   BarChart,
@@ -38,6 +39,7 @@ function StatList({
   title: string
   rows: { label: string; count: number }[]
 }): React.JSX.Element {
+  const { t } = useTranslation('recall')
   return (
     <div className="recall-stat-card glass-2">
       <h3 className="recall-stat-title">{title}</h3>
@@ -48,7 +50,7 @@ function StatList({
             <span className="recall-stat-count">{r.count}</span>
           </li>
         ))}
-        {rows.length === 0 && <li className="recall-stat-empty">Fills in as you play</li>}
+        {rows.length === 0 && <li className="recall-stat-empty">{t('identity.fillsIn')}</li>}
       </ol>
     </div>
   )
@@ -61,10 +63,11 @@ function StatList({
  * and lets each Camelot segment use its wheel-position colour from camelotColors.
  */
 function KeyByBpmChart({ data }: { data: IdentitySnapshot['keyByBpmZone'] }): React.JSX.Element {
+  const { t } = useTranslation('recall')
   if (data.length === 0) {
     return (
       <div className="recall-stat-empty" style={{ padding: 24 }}>
-        Not enough tracks with BPM + key to chart this.
+        {t('identity.noKeyBpm')}
       </div>
     )
   }
@@ -130,7 +133,7 @@ function KeyByBpmChart({ data }: { data: IdentitySnapshot['keyByBpmZone'] }): Re
                 fill={colour.color}
                 opacity={0.85}
               >
-                <title>{`${zone.range} BPM · ${key}: ${count} tracks`}</title>
+                <title>{t('identity.keyByBpmTooltip', { range: zone.range, key, count })}</title>
               </rect>
             )
           })
@@ -172,6 +175,7 @@ function KeyByBpmChart({ data }: { data: IdentitySnapshot['keyByBpmZone'] }): Re
 }
 
 export function IdentitySection(): React.JSX.Element {
+  const { t } = useTranslation('recall')
   const identity = useRecallStore((s) => s.identity)
   const loading = useRecallStore((s) => s.identityLoading)
   const loadIdentity = useRecallStore((s) => s.loadIdentity)
@@ -186,7 +190,7 @@ export function IdentitySection(): React.JSX.Element {
   if (loading && !identity) {
     return (
       <div className="recall-section">
-        <div className="recall-empty">Reading your fingerprint…</div>
+        <div className="recall-empty">{t('identity.reading')}</div>
       </div>
     )
   }
@@ -195,8 +199,8 @@ export function IdentitySection(): React.JSX.Element {
       <div className="recall-section">
         <NoLibraryState
           icon={Fingerprint}
-          title="Your DJ fingerprint fills in as you play"
-          body="Your top genres, keys, BPM range and energy spread appear here the moment you import your library."
+          title={t('identity.noLibraryTitle')}
+          body={t('identity.noLibraryBody')}
         />
       </div>
     )
@@ -207,10 +211,8 @@ export function IdentitySection(): React.JSX.Element {
       <header className="recall-section-head">
         <div className="recall-section-head-row">
           <div>
-            <h2 className="ss-h2">Identity</h2>
-            <p className="recall-section-sub">
-              Your sound, in aggregate — the shape of everything you collect and play.
-            </p>
+            <h2 className="ss-h2">{t('identity.title')}</h2>
+            <p className="recall-section-sub">{t('identity.subtitle')}</p>
           </div>
           {hasShareData && (
             <button
@@ -219,7 +221,7 @@ export function IdentitySection(): React.JSX.Element {
               onClick={() => setShowShare((s) => !s)}
             >
               <Share2 size={14} strokeWidth={1.7} />
-              {showShare ? 'Hide share card' : 'Share as image'}
+              {showShare ? t('identity.hideShareCard') : t('identity.shareAsImage')}
             </button>
           )}
         </div>
@@ -229,7 +231,7 @@ export function IdentitySection(): React.JSX.Element {
 
       <div className="recall-charts">
         <div className="recall-chart-card glass-2">
-          <h3 className="recall-stat-title">BPM spread</h3>
+          <h3 className="recall-stat-title">{t('identity.bpmSpread')}</h3>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={identity.bpmHistogram}>
               <XAxis dataKey="range" tick={{ fontSize: 10, fill: 'var(--text-tertiary)' }} />
@@ -241,7 +243,7 @@ export function IdentitySection(): React.JSX.Element {
         </div>
 
         <div className="recall-chart-card glass-2">
-          <h3 className="recall-stat-title">Energy profile</h3>
+          <h3 className="recall-stat-title">{t('identity.energyProfile')}</h3>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={identity.energyDistribution}>
               <XAxis dataKey="level" tick={{ fontSize: 10, fill: 'var(--text-tertiary)' }} />
@@ -254,10 +256,8 @@ export function IdentitySection(): React.JSX.Element {
 
         {identity.tasteTimeline.length > 0 && (
           <div className="recall-chart-card glass-2 recall-chart-wide">
-            <h3 className="recall-stat-title">Library growth</h3>
-            <p className="recall-chart-sub">
-              tracks added per quarter (by file date added) · plays once you log history
-            </p>
+            <h3 className="recall-stat-title">{t('identity.libraryGrowth')}</h3>
+            <p className="recall-chart-sub">{t('identity.libraryGrowthSub')}</p>
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={identity.tasteTimeline}>
                 <XAxis dataKey="period" tick={{ fontSize: 10, fill: 'var(--text-tertiary)' }} />
@@ -269,7 +269,7 @@ export function IdentitySection(): React.JSX.Element {
                   stroke="var(--accent)"
                   strokeWidth={2}
                   dot={false}
-                  name="added"
+                  name={t('identity.addedSeries')}
                 />
                 <Line
                   type="monotone"
@@ -277,7 +277,7 @@ export function IdentitySection(): React.JSX.Element {
                   stroke="var(--text-tertiary)"
                   strokeWidth={1.5}
                   dot={false}
-                  name="played"
+                  name={t('identity.playedSeries')}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -286,21 +286,18 @@ export function IdentitySection(): React.JSX.Element {
 
         {identity.keyByBpmZone.length > 0 && (
           <div className="recall-chart-card glass-2 recall-chart-wide">
-            <h3 className="recall-stat-title">Key palette by BPM zone</h3>
-            <p className="recall-chart-sub">
-              How your harmonic choices shift across tempo — the dominant key sits on top of each
-              stack.
-            </p>
+            <h3 className="recall-stat-title">{t('identity.keyPalette')}</h3>
+            <p className="recall-chart-sub">{t('identity.keyPaletteSub')}</p>
             <KeyByBpmChart data={identity.keyByBpmZone} />
           </div>
         )}
       </div>
 
       <div className="recall-stat-grid">
-        <StatList title="Top genres" rows={identity.genreDistribution} />
-        <StatList title="Top artists" rows={identity.topArtists} />
-        <StatList title="Top labels" rows={identity.topLabels} />
-        <StatList title="Key spread" rows={identity.keyDistribution} />
+        <StatList title={t('identity.topGenres')} rows={identity.genreDistribution} />
+        <StatList title={t('identity.topArtists')} rows={identity.topArtists} />
+        <StatList title={t('identity.topLabels')} rows={identity.topLabels} />
+        <StatList title={t('identity.keySpread')} rows={identity.keyDistribution} />
       </div>
     </div>
   )

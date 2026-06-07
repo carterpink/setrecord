@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation, Trans } from 'react-i18next'
 import { APP_NAME } from '@/utils/constants'
 import { Heart, Lightbulb, Bug, MessageSquare, Star, X, Check, Copy } from 'lucide-react'
 import { Button } from '@/components/shared/Button'
@@ -7,10 +8,10 @@ import { Modal } from '@/components/shared/Modal'
 import { useUiStore } from '@/stores/uiStore'
 
 const CATEGORIES = [
-  { id: 'Love', label: 'Love it', icon: Heart },
-  { id: 'Idea', label: 'Idea', icon: Lightbulb },
-  { id: 'Bug', label: 'Bug', icon: Bug },
-  { id: 'Other', label: 'Other', icon: MessageSquare }
+  { id: 'Love', labelKey: 'feedback.cats.love', icon: Heart },
+  { id: 'Idea', labelKey: 'feedback.cats.idea', icon: Lightbulb },
+  { id: 'Bug', labelKey: 'feedback.cats.bug', icon: Bug },
+  { id: 'Other', labelKey: 'feedback.cats.other', icon: MessageSquare }
 ] as const
 
 type CategoryId = (typeof CATEGORIES)[number]['id']
@@ -18,6 +19,7 @@ type CategoryId = (typeof CATEGORIES)[number]['id']
 const SUPPORT_EMAIL = 'carterpinkmusic@gmail.com'
 
 export function FeedbackModal(): React.JSX.Element {
+  const { t } = useTranslation('modals')
   const closeModal = useUiStore((s) => s.closeModal)
 
   const [category, setCategory] = useState<CategoryId>('Idea')
@@ -57,15 +59,15 @@ export function FeedbackModal(): React.JSX.Element {
   }
 
   return (
-    <Modal onClose={closeModal} ariaLabel="Send feedback" maxWidth={460}>
+    <Modal onClose={closeModal} ariaLabel={t('feedback.title')} maxWidth={460}>
       <div className="modal-header">
         <div>
-          <span className="ss-h2">Send feedback</span>
+          <span className="ss-h2">{t('feedback.title')}</span>
           <span className="ss-caption" style={{ marginLeft: 10, color: 'var(--text-tertiary)' }}>
-            Shapes what we build next
+            {t('feedback.subtitle')}
           </span>
         </div>
-        <IconButton icon={X} size="sm" aria-label="Close" onClick={closeModal} />
+        <IconButton icon={X} size="sm" aria-label={t('common.close')} onClick={closeModal} />
       </div>
 
       <div className="modal-body">
@@ -74,13 +76,17 @@ export function FeedbackModal(): React.JSX.Element {
             <div className="feedback-sent-icon">
               <Check size={26} strokeWidth={2} />
             </div>
-            <h3 className="ss-h3">Thank you</h3>
+            <h3 className="ss-h3">{t('feedback.thankYou')}</h3>
             <p
               className="ss-body-sm"
               style={{ color: 'var(--text-secondary)', textAlign: 'center' }}
             >
-              A pre-filled email just opened — hit send and it lands with us. If nothing opened,
-              email <strong>{SUPPORT_EMAIL}</strong> directly.
+              <Trans
+                t={t}
+                i18nKey="feedback.sentBody"
+                values={{ email: SUPPORT_EMAIL }}
+                components={[<strong key="0" />]}
+              />
             </p>
             <div className="feedback-sent-actions">
               <button type="button" className="health-fix-btn" onClick={() => void copyMessage()}>
@@ -89,17 +95,17 @@ export function FeedbackModal(): React.JSX.Element {
                 ) : (
                   <Copy size={13} strokeWidth={1.7} />
                 )}
-                {copied ? 'Copied' : 'Copy message'}
+                {copied ? t('feedback.copied') : t('feedback.copyMessage')}
               </button>
               <Button variant="primary" onClick={closeModal}>
-                Done
+                {t('common.done')}
               </Button>
             </div>
           </div>
         ) : (
           <>
             <div className="feedback-cats">
-              {CATEGORIES.map(({ id, label, icon: Icon }) => (
+              {CATEGORIES.map(({ id, labelKey, icon: Icon }) => (
                 <button
                   key={id}
                   type="button"
@@ -107,14 +113,14 @@ export function FeedbackModal(): React.JSX.Element {
                   onClick={() => setCategory(id)}
                 >
                   <Icon size={18} strokeWidth={1.6} />
-                  <span>{label}</span>
+                  <span>{t(labelKey)}</span>
                 </button>
               ))}
             </div>
 
             <div className="feedback-field">
               <span className="ss-label" id="feedback-rating-label">
-                How’s it feeling?
+                {t('feedback.ratingLabel')}
               </span>
               <div
                 className="feedback-stars"
@@ -127,7 +133,7 @@ export function FeedbackModal(): React.JSX.Element {
                     key={n}
                     type="button"
                     className="feedback-star"
-                    aria-label={`${n} star${n === 1 ? '' : 's'}`}
+                    aria-label={t('feedback.starAria', { count: n })}
                     onMouseEnter={() => setHoverRating(n)}
                     onClick={() => setRating(n === rating ? 0 : n)}
                   >
@@ -146,7 +152,7 @@ export function FeedbackModal(): React.JSX.Element {
 
             <div className="feedback-field">
               <label className="ss-label" htmlFor="feedback-message">
-                {category === 'Bug' ? 'What went wrong?' : 'Tell us more'}
+                {category === 'Bug' ? t('feedback.messageLabelBug') : t('feedback.messageLabel')}
               </label>
               <textarea
                 id="feedback-message"
@@ -155,10 +161,10 @@ export function FeedbackModal(): React.JSX.Element {
                 autoFocus
                 placeholder={
                   category === 'Bug'
-                    ? 'What did you do, and what happened instead?'
+                    ? t('feedback.placeholderBug')
                     : category === 'Idea'
-                      ? `What would make ${APP_NAME} better for you?`
-                      : 'Share anything — the good, the rough, the wishlist.'
+                      ? t('feedback.placeholderIdea', { app: APP_NAME })
+                      : t('feedback.placeholderOther')
                 }
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -167,13 +173,13 @@ export function FeedbackModal(): React.JSX.Element {
 
             <div className="feedback-field">
               <label className="ss-label" htmlFor="feedback-email">
-                Email (optional — so we can reply)
+                {t('feedback.emailLabel')}
               </label>
               <input
                 id="feedback-email"
                 className="feedback-input"
                 type="email"
-                placeholder="you@email.com"
+                placeholder={t('feedback.emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -181,7 +187,7 @@ export function FeedbackModal(): React.JSX.Element {
 
             <div className="arch-actions" style={{ marginTop: 4 }}>
               <button type="button" className="btn btn-ghost" onClick={closeModal}>
-                Cancel
+                {t('cancel', { ns: 'common' })}
               </button>
               <Button
                 variant="primary"
@@ -189,7 +195,7 @@ export function FeedbackModal(): React.JSX.Element {
                 disabled={!message.trim()}
                 style={{ flex: 1 }}
               >
-                Send feedback
+                {t('feedback.send')}
               </Button>
             </div>
           </>

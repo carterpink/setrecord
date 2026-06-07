@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import {
   HardDrive,
   RefreshCw,
@@ -27,15 +29,15 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1e3).toFixed(0)} KB`
 }
 
-function formatRelativeDate(iso: string | undefined): string {
-  if (!iso) return 'Never'
+function formatRelativeDate(iso: string | undefined, t: TFunction<'shared'>): string {
+  if (!iso) return t('usb.never')
   const ms = Date.now() - new Date(iso).getTime()
   const days = Math.floor(ms / (1000 * 60 * 60 * 24))
-  if (days === 0) return 'Today'
-  if (days === 1) return 'Yesterday'
-  if (days < 7) return `${days} days ago`
-  if (days < 30) return `${Math.floor(days / 7)} weeks ago`
-  return `${Math.floor(days / 30)} months ago`
+  if (days === 0) return t('usb.today')
+  if (days === 1) return t('usb.yesterday')
+  if (days < 7) return t('usb.daysAgo', { count: days })
+  if (days < 30) return t('usb.weeksAgo', { count: Math.floor(days / 7) })
+  return t('usb.monthsAgo', { count: Math.floor(days / 30) })
 }
 
 function speedColor(mbps: number): string {
@@ -88,6 +90,7 @@ function RenameInput({
   device: USBDevice
   onDone: () => void
 }): React.JSX.Element {
+  const { t } = useTranslation('shared')
   const [value, setValue] = useState(device.customName ?? device.label)
   const inputRef = useRef<HTMLInputElement>(null)
   const updatePrefs = useUSBStore((s) => s.updatePrefs)
@@ -102,7 +105,7 @@ function RenameInput({
     const trimmed = value.trim()
     if (trimmed && trimmed !== (device.customName ?? device.label)) {
       await updatePrefs(device.id, { customName: trimmed })
-      success(`Renamed to "${trimmed}"`)
+      success(t('usb.renamedTo', { name: trimmed }))
     }
     onDone()
   }
@@ -122,13 +125,13 @@ function RenameInput({
           }
           if (e.key === 'Escape') onDone()
         }}
-        aria-label="Rename USB drive"
+        aria-label={t('usb.renameAria')}
       />
       <button
         type="button"
         className="usb-rename-ok"
         onClick={() => void submit()}
-        aria-label="Save name"
+        aria-label={t('usb.saveNameAria')}
       >
         <Check size={13} strokeWidth={2} />
       </button>
@@ -139,6 +142,7 @@ function RenameInput({
 // ─── Device card — connected ──────────────────────────────────────────────────
 
 function DeviceCard({ device }: { device: USBDevice }): React.JSX.Element {
+  const { t } = useTranslation('shared')
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const { renamingDeviceId, setRenamingDeviceId, testingSpeedIds, updatePrefs, runSpeedTest } =
@@ -170,8 +174,8 @@ function DeviceCard({ device }: { device: USBDevice }): React.JSX.Element {
     await updatePrefs(device.id, { isExportTarget: !device.isExportTarget })
     success(
       device.isExportTarget
-        ? `"${displayName}" removed from export targets`
-        : `"${displayName}" set as export target`
+        ? t('usb.removedFromTargets', { name: displayName })
+        : t('usb.setAsTarget', { name: displayName })
     )
   }
 
@@ -180,7 +184,7 @@ function DeviceCard({ device }: { device: USBDevice }): React.JSX.Element {
     try {
       await runSpeedTest(device.id, device.mountPath)
     } catch {
-      error('Speed test failed')
+      error(t('usb.speedTestFailed'))
     }
   }
 
@@ -208,7 +212,7 @@ function DeviceCard({ device }: { device: USBDevice }): React.JSX.Element {
           <motion.button
             type="button"
             className={`usb-action-btn ${device.isFavorite ? 'usb-action-btn--active' : ''}`}
-            aria-label={device.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            aria-label={device.isFavorite ? t('usb.removeFavorite') : t('usb.addFavorite')}
             aria-pressed={device.isFavorite}
             whileTap={{ scale: 0.72 }}
             transition={{ type: 'spring', stiffness: 500, damping: 20 }}
@@ -234,9 +238,9 @@ function DeviceCard({ device }: { device: USBDevice }): React.JSX.Element {
           <motion.button
             type="button"
             className={`usb-action-btn ${device.isExportTarget ? 'usb-action-btn--target' : ''}`}
-            aria-label={device.isExportTarget ? 'Remove export target' : 'Mark as export target'}
+            aria-label={device.isExportTarget ? t('usb.removeTarget') : t('usb.markTarget')}
             aria-pressed={device.isExportTarget}
-            title={device.isExportTarget ? 'Default export target' : 'Set as export target'}
+            title={device.isExportTarget ? t('usb.defaultTarget') : t('usb.setTarget')}
             whileTap={{ scale: 0.72 }}
             transition={{ type: 'spring', stiffness: 500, damping: 20 }}
             onClick={() => void toggleExportTarget()}
@@ -254,7 +258,7 @@ function DeviceCard({ device }: { device: USBDevice }): React.JSX.Element {
             <button
               type="button"
               className="usb-action-btn"
-              aria-label="More options"
+              aria-label={t('usb.moreOptions')}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((o) => !o)}
             >
@@ -280,7 +284,7 @@ function DeviceCard({ device }: { device: USBDevice }): React.JSX.Element {
                     }}
                   >
                     <Pencil size={12} strokeWidth={1.7} />
-                    Rename
+                    {t('usb.rename')}
                   </button>
                   <button
                     type="button"
@@ -290,7 +294,7 @@ function DeviceCard({ device }: { device: USBDevice }): React.JSX.Element {
                     onClick={() => void handleSpeedTest()}
                   >
                     <Zap size={12} strokeWidth={1.7} />
-                    {isTesting ? 'Testing speed…' : 'Test speed'}
+                    {isTesting ? t('usb.testingSpeed') : t('usb.testSpeed')}
                   </button>
                 </motion.div>
               )}
@@ -302,16 +306,19 @@ function DeviceCard({ device }: { device: USBDevice }): React.JSX.Element {
       {/* Storage bar */}
       <StorageBar percentUsed={device.percentUsed} />
       <div className="usb-storage-label ss-caption">
-        <span>{formatBytes(device.freeBytes)} free</span>
+        <span>{t('usb.free', { size: formatBytes(device.freeBytes) })}</span>
         <span>
-          {formatBytes(device.totalBytes)} total · {device.percentUsed}% used
+          {t('usb.totalUsed', {
+            total: formatBytes(device.totalBytes),
+            percent: device.percentUsed
+          })}
         </span>
       </div>
 
       {/* Metadata grid */}
       <div className="usb-meta-grid">
         <div className="usb-meta-item">
-          <span className="usb-meta-label ss-caption">Filesystem</span>
+          <span className="usb-meta-label ss-caption">{t('usb.filesystem')}</span>
           <span
             className="usb-meta-value ss-caption"
             style={{ color: filesystemColor(device.filesystem) }}
@@ -321,17 +328,17 @@ function DeviceCard({ device }: { device: USBDevice }): React.JSX.Element {
           </span>
         </div>
         <div className="usb-meta-item">
-          <span className="usb-meta-label ss-caption">Speed</span>
+          <span className="usb-meta-label ss-caption">{t('usb.speed')}</span>
           {isTesting ? (
             <span className="usb-meta-value ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-              Testing…
+              {t('usb.testing')}
             </span>
           ) : device.readSpeedMBps ? (
             <span
               className="usb-meta-value ss-caption"
               style={{ color: speedColor(device.readSpeedMBps) }}
             >
-              ~{device.readSpeedMBps} MB/s
+              {t('usb.speedValue', { speed: device.readSpeedMBps })}
             </span>
           ) : (
             <button
@@ -339,21 +346,21 @@ function DeviceCard({ device }: { device: USBDevice }): React.JSX.Element {
               className="usb-test-speed-btn ss-caption"
               onClick={() => void handleSpeedTest()}
             >
-              Test speed
+              {t('usb.testSpeed')}
             </button>
           )}
         </div>
         {device.lastExport && (
           <div className="usb-meta-item">
-            <span className="usb-meta-label ss-caption">Last export</span>
+            <span className="usb-meta-label ss-caption">{t('usb.lastExport')}</span>
             <span className="usb-meta-value ss-caption">
-              {formatRelativeDate(device.lastExport)}
+              {formatRelativeDate(device.lastExport, t)}
             </span>
           </div>
         )}
         {device.exportCount > 0 && (
           <div className="usb-meta-item">
-            <span className="usb-meta-label ss-caption">Exports</span>
+            <span className="usb-meta-label ss-caption">{t('usb.exports')}</span>
             <span className="usb-meta-value ss-caption">{device.exportCount}</span>
           </div>
         )}
@@ -373,6 +380,7 @@ function DeviceCard({ device }: { device: USBDevice }): React.JSX.Element {
 // ─── Remembered device row ────────────────────────────────────────────────────
 
 function RememberedRow({ device }: { device: RememberedUSBDevice }): React.JSX.Element {
+  const { t } = useTranslation('shared')
   const forgetDevice = useUSBStore((s) => s.forgetDevice)
   const { info } = useToastStore()
   const displayName = device.customName ?? device.label
@@ -390,18 +398,20 @@ function RememberedRow({ device }: { device: RememberedUSBDevice }): React.JSX.E
           {displayName}
         </span>
         <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-          · {formatRelativeDate(device.lastSeen)}
-          {device.exportCount > 0 ? ` · ${device.exportCount} exports` : ''}
+          · {formatRelativeDate(device.lastSeen, t)}
+          {device.exportCount > 0
+            ? ` · ${t('usb.exportsCount', { count: device.exportCount })}`
+            : ''}
         </span>
       </div>
       <button
         type="button"
         className="usb-action-btn"
-        aria-label={`Forget ${displayName}`}
-        title="Forget this device"
+        aria-label={t('usb.forget', { name: displayName })}
+        title={t('usb.forgetTooltip')}
         onClick={() => {
           void forgetDevice(device.id)
-          info(`"${displayName}" forgotten`)
+          info(t('usb.forgotten', { name: displayName }))
         }}
       >
         <Trash2 size={12} strokeWidth={1.7} />
@@ -413,6 +423,7 @@ function RememberedRow({ device }: { device: RememberedUSBDevice }): React.JSX.E
 // ─── Main panel ───────────────────────────────────────────────────────────────
 
 export function USBDetectionPanel(): React.JSX.Element {
+  const { t } = useTranslation('shared')
   const { connectedDevices, rememberedDevices, panelOpen, setPanelOpen, refreshDevices } =
     useUSBStore()
   const panelRef = useRef<HTMLDivElement>(null)
@@ -451,7 +462,7 @@ export function USBDetectionPanel(): React.JSX.Element {
     try {
       await refreshDevices()
     } catch {
-      error('Could not scan for USB drives')
+      error(t('usb.couldNotScan'))
     } finally {
       setRefreshing(false)
     }
@@ -476,15 +487,18 @@ export function USBDetectionPanel(): React.JSX.Element {
       <button
         type="button"
         className={`usb-panel-trigger ${panelOpen ? 'usb-panel-trigger--open' : ''} ${connectedCount > 0 ? 'usb-panel-trigger--has-devices' : ''}`}
-        aria-label={`USB drives — ${connectedCount} connected`}
+        aria-label={t('usb.trigger', { count: connectedCount })}
         aria-expanded={panelOpen}
         aria-haspopup="true"
         onClick={() => setPanelOpen(!panelOpen)}
-        title="USB Drives"
+        title={t('usb.tooltip')}
       >
         <HardDrive size={15} strokeWidth={1.7} />
         {connectedCount > 0 && (
-          <span className="usb-badge" aria-label={`${connectedCount} connected`}>
+          <span
+            className="usb-badge"
+            aria-label={t('usb.connectedBadge', { count: connectedCount })}
+          >
             {connectedCount}
           </span>
         )}
@@ -500,17 +514,17 @@ export function USBDetectionPanel(): React.JSX.Element {
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ duration: 0.2, ease: [0.32, 0.72, 0.12, 1] }}
             role="dialog"
-            aria-label="USB Drives"
+            aria-label={t('usb.drivesTitle')}
           >
             {/* Header */}
             <div className="usb-dropdown-header">
-              <span className="ss-h3">USB Drives</span>
+              <span className="ss-h3">{t('usb.drivesTitle')}</span>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <button
                   type="button"
                   className={`usb-refresh-btn ${refreshing ? 'usb-refresh-btn--spinning' : ''}`}
-                  aria-label="Refresh USB drives"
-                  title="Refresh"
+                  aria-label={t('usb.refreshAria')}
+                  title={t('usb.refresh')}
                   onClick={() => void handleRefresh()}
                   disabled={refreshing}
                 >
@@ -519,7 +533,7 @@ export function USBDetectionPanel(): React.JSX.Element {
                 <button
                   type="button"
                   className="usb-action-btn"
-                  aria-label="Close USB panel"
+                  aria-label={t('usb.closeAria')}
                   onClick={() => setPanelOpen(false)}
                 >
                   <X size={14} strokeWidth={1.7} />
@@ -538,13 +552,13 @@ export function USBDetectionPanel(): React.JSX.Element {
                     aria-hidden="true"
                   />
                   <span className="ss-body-sm" style={{ color: 'var(--text-tertiary)' }}>
-                    No USB drives detected
+                    {t('usb.noneDetected')}
                   </span>
                   <span
                     className="ss-caption"
                     style={{ color: 'var(--text-disabled)', textAlign: 'center' }}
                   >
-                    Plug in a USB drive and click refresh
+                    {t('usb.plugInHint')}
                   </span>
                 </div>
               ) : (
@@ -554,7 +568,7 @@ export function USBDetectionPanel(): React.JSX.Element {
               {/* Past (remembered) devices */}
               {pastDevices.length > 0 && (
                 <div className="usb-past-section">
-                  <p className="ss-caption usb-past-header">Past Drives</p>
+                  <p className="ss-caption usb-past-header">{t('usb.pastDrives')}</p>
                   {pastDevices.map((d) => (
                     <RememberedRow key={d.id} device={d} />
                   ))}

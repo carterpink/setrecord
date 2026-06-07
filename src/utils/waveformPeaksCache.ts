@@ -36,12 +36,24 @@ export type PeaksState =
   | { status: 'error' }
   | { status: 'missing' }
 
-const BUCKETS = 1600
+// Bucket count = waveform resolution. User-tunable via Settings → Playback
+// (low/standard/high). Mutated through setWaveformQuality, which also drops the
+// cache so existing envelopes re-decode at the new resolution.
+let BUCKETS = 1600
 const MAX_ENTRIES = 24
 
 const cache = new Map<string, WaveformPeaks>()
 const negativeCache = new Map<string, 'error' | 'missing'>()
 const inflight = new Map<string, Promise<PeaksState>>()
+
+/** Apply the persisted waveform-quality preference (boot + after Settings save). */
+export function setWaveformQuality(q: 'low' | 'standard' | 'high'): void {
+  const next = q === 'low' ? 800 : q === 'high' ? 3200 : 1600
+  if (next === BUCKETS) return
+  BUCKETS = next
+  cache.clear()
+  negativeCache.clear()
+}
 
 let audioCtx: AudioContext | null = null
 

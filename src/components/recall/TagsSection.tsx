@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ChevronLeft } from 'lucide-react'
 import type { Track } from '@/types'
 import { useLibraryStore } from '@/stores/libraryStore'
@@ -17,6 +18,7 @@ const MAX_RENDER = 200
  * jump to the Build collection.
  */
 export function TagsSection(): React.JSX.Element {
+  const { t } = useTranslation('recall')
   const tracks = useLibraryStore((s) => s.tracks)
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
@@ -26,15 +28,15 @@ export function TagsSection(): React.JSX.Element {
     return (
       <div className="recall-scroll">
         <button type="button" className="crate-back" onClick={() => setSelectedTag(null)}>
-          <ChevronLeft size={14} strokeWidth={1.7} /> All tags
+          <ChevronLeft size={14} strokeWidth={1.7} /> {t('tags.allTags')}
         </button>
         <div className="crate-tab-head">
           <span className="crate-tab-name">{labelForSlug(selectedTag)}</span>
-          <span className="crate-tab-count">{matches.length} tracks</span>
+          <span className="crate-tab-count">{t('tags.trackCount', { count: matches.length })}</span>
         </div>
         {matches.length === 0 ? (
           <div className="library-empty" style={{ padding: 16 }}>
-            No tracks carry this tag yet.
+            {t('tags.noTracks')}
           </div>
         ) : (
           matches
@@ -43,7 +45,7 @@ export function TagsSection(): React.JSX.Element {
         )}
         {matches.length > MAX_RENDER && (
           <div className="recall-more-note">
-            Showing first {MAX_RENDER} of {matches.length}.
+            {t('tags.showingFirst', { max: MAX_RENDER, total: matches.length })}
           </div>
         )}
       </div>

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import {
   Wrench,
   Link2,
@@ -18,15 +20,27 @@ import { useToastStore } from '@/stores/toastStore'
 import { useCanUse } from '@/stores/licenseStore'
 import { ProLock } from '@/components/shared/ProGate'
 
-const LIFECYCLE_ORDER: { key: keyof LifecycleCounts; label: string; tip?: string }[] = [
-  { key: 'new', label: 'New', tip: 'Added in the last 30 days, never played live' },
-  { key: 'untested', label: 'Untested', tip: 'Never played live — added more than 30 days ago' },
-  { key: 'testing', label: 'Testing', tip: '1–3 plays' },
-  { key: 'active', label: 'Active', tip: '4–9 plays, played recently' },
-  { key: 'peak', label: 'Peak rotation', tip: '10+ plays, played within 90 days' },
-  { key: 'occasional', label: 'Occasional', tip: 'Played 90–365 days ago' },
-  { key: 'forgotten', label: 'Forgotten', tip: 'Last played 1–3 years ago' },
-  { key: 'archive', label: 'Archive', tip: 'Last played more than 3 years ago, or you archived it' }
+const LIFECYCLE_ORDER: { key: keyof LifecycleCounts; labelKey: string; tipKey: string }[] = [
+  { key: 'new', labelKey: 'health.lifecycle.new', tipKey: 'health.lifecycle.newTip' },
+  {
+    key: 'untested',
+    labelKey: 'health.lifecycle.untested',
+    tipKey: 'health.lifecycle.untestedTip'
+  },
+  { key: 'testing', labelKey: 'health.lifecycle.testing', tipKey: 'health.lifecycle.testingTip' },
+  { key: 'active', labelKey: 'health.lifecycle.active', tipKey: 'health.lifecycle.activeTip' },
+  { key: 'peak', labelKey: 'health.lifecycle.peak', tipKey: 'health.lifecycle.peakTip' },
+  {
+    key: 'occasional',
+    labelKey: 'health.lifecycle.occasional',
+    tipKey: 'health.lifecycle.occasionalTip'
+  },
+  {
+    key: 'forgotten',
+    labelKey: 'health.lifecycle.forgotten',
+    tipKey: 'health.lifecycle.forgottenTip'
+  },
+  { key: 'archive', labelKey: 'health.lifecycle.archive', tipKey: 'health.lifecycle.archiveTip' }
 ]
 
 const CAMELOT_KEYS = Array.from({ length: 12 }, (_, i) => i + 1).flatMap((n) => [`${n}A`, `${n}B`])
@@ -42,6 +56,7 @@ function HealthTrackRow({
   kind: FixKind
   onFixed: () => void
 }): React.JSX.Element {
+  const { t } = useTranslation('recall')
   const updateTrackMeta = useLibraryStore((s) => s.updateTrackMeta)
   const relinkTrackFile = useLibraryStore((s) => s.relinkTrackFile)
   const [bpm, setBpm] = useState('')
@@ -79,7 +94,7 @@ function HealthTrackRow({
         <div className="health-fix-control">
           <input
             type="number"
-            placeholder="BPM"
+            placeholder={t('health.row.bpmPlaceholder')}
             value={bpm}
             onChange={(e) => setBpm(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && void saveBpm()}
@@ -93,7 +108,7 @@ function HealthTrackRow({
       {kind === 'key' && (
         <div className="health-fix-control">
           <select value={key} onChange={(e) => setKey(e.target.value)}>
-            <option value="">Key…</option>
+            <option value="">{t('health.row.keyPlaceholder')}</option>
             {CAMELOT_KEYS.map((k) => (
               <option key={k} value={k}>
                 {k}
@@ -113,15 +128,15 @@ function HealthTrackRow({
           disabled={busy}
           onClick={() => void relink()}
         >
-          <Link2 size={13} strokeWidth={1.7} /> Relink…
+          <Link2 size={13} strokeWidth={1.7} /> {t('health.row.relink')}
         </button>
       )}
 
       {kind === 'format' && <span className="health-fix-format">.{track.format}</span>}
 
       {kind === 'analysing' && (
-        <span className="health-fix-format" title="Awaiting background analyser">
-          pending
+        <span className="health-fix-format" title={t('health.row.pendingTitle')}>
+          {t('health.row.pending')}
         </span>
       )}
     </div>
@@ -132,44 +147,51 @@ function HealthTrackRow({
  * Stacked breakdown of how the health score was calculated, so the user can
  * see why a score isn't 100. Mirrors HEALTH_WEIGHTS verbatim.
  */
-function ScoreExplainer({ breakdown }: { breakdown: HealthScoreBreakdown }): React.JSX.Element {
+function ScoreExplainer({
+  breakdown,
+  t
+}: {
+  breakdown: HealthScoreBreakdown
+  t: TFunction
+}): React.JSX.Element {
   const w = breakdown.weights
   const rows = [
     {
-      label: 'Missing files',
+      label: t('health.score.missingFiles'),
       penalty: breakdown.missingFiles,
-      rule: `−${w.missingFilesPerTrack} per file, capped at −${w.missingFilesCap}`
+      rule: t('health.score.rulePerFile', { per: w.missingFilesPerTrack, cap: w.missingFilesCap })
     },
     {
-      label: 'Missing key',
+      label: t('health.score.missingKey'),
       penalty: breakdown.missingKey,
-      rule: `−${w.missingKeyPerTrack} per file, capped at −${w.missingKeyCap}`
+      rule: t('health.score.rulePerFile', { per: w.missingKeyPerTrack, cap: w.missingKeyCap })
     },
     {
-      label: 'Missing BPM',
+      label: t('health.score.missingBpm'),
       penalty: breakdown.missingBpm,
-      rule: `−${w.missingBpmPerTrack} per file, capped at −${w.missingBpmCap}`
+      rule: t('health.score.rulePerFile', { per: w.missingBpmPerTrack, cap: w.missingBpmCap })
     },
     {
-      label: 'Unsupported formats',
+      label: t('health.score.unsupportedFormats'),
       penalty: breakdown.unsupportedFormats,
-      rule: `−${w.unsupportedFormatsPerTrack} per file, capped at −${w.unsupportedFormatsCap}`
+      rule: t('health.score.rulePerFile', {
+        per: w.unsupportedFormatsPerTrack,
+        cap: w.unsupportedFormatsCap
+      })
     },
     {
-      label: 'Duplicate groups',
+      label: t('health.score.duplicateGroups'),
       penalty: breakdown.duplicates,
-      rule: `−${w.duplicatesPerGroup} per group, capped at −${w.duplicatesCap}`
+      rule: t('health.score.rulePerGroup', { per: w.duplicatesPerGroup, cap: w.duplicatesCap })
     }
   ]
   return (
     <div className="health-score-explainer glass-2">
       <div className="health-score-explainer-head">
         <Info size={13} strokeWidth={1.7} />
-        <span>How this score is calculated</span>
+        <span>{t('health.score.head')}</span>
       </div>
-      <p className="health-score-explainer-intro">
-        Missing files hit the hardest because at gig time a missing file just won&apos;t play.
-      </p>
+      <p className="health-score-explainer-intro">{t('health.score.intro')}</p>
       <ul className="health-score-explainer-rows">
         {rows.map((r) => (
           <li key={r.label}>
@@ -197,6 +219,7 @@ function DuplicateGroupCard({
   onKeepAll: () => void
   onArchiveOthers: (keepId: string) => void
 }): React.JSX.Element {
+  const { t } = useTranslation('recall')
   // Highest-bitrate / longest-duration track is the sensible default to keep,
   // but defer the choice to the user.
   const [keepId, setKeepId] = useState<string>(tracks[0]?.id ?? '')
@@ -233,10 +256,10 @@ function DuplicateGroupCard({
           onClick={() => onArchiveOthers(keepId)}
           disabled={!keepId || tracks.length < 2}
         >
-          <ArchiveIcon size={13} strokeWidth={1.7} /> Keep selected, archive the rest
+          <ArchiveIcon size={13} strokeWidth={1.7} /> {t('health.dupe.keepArchive')}
         </button>
         <button type="button" className="health-dupe-btn ghost" onClick={onKeepAll}>
-          <X size={13} strokeWidth={1.7} /> Not a duplicate
+          <X size={13} strokeWidth={1.7} /> {t('health.dupe.notDuplicate')}
         </button>
       </div>
     </div>
@@ -244,6 +267,7 @@ function DuplicateGroupCard({
 }
 
 export function HealthSection(): React.JSX.Element {
+  const { t } = useTranslation('recall')
   const health = useRecallStore((s) => s.health)
   const lifecycle = useRecallStore((s) => s.lifecycle)
   const loading = useRecallStore((s) => s.healthLoading)
@@ -289,11 +313,15 @@ export function HealthSection(): React.JSX.Element {
       const res = await window.setsense.analyseEnergy()
       if (!res.running) {
         // Either nothing to do or already running; either way show feedback.
-        toast.info('Analysis already in progress or nothing pending')
+        toast.info(t('health.analyseInProgress'))
         setAnalysing(null)
       }
     } catch (e) {
-      toast.error('Could not start analyser: ' + (e instanceof Error ? e.message : 'unknown'))
+      toast.error(
+        t('health.analyseError', {
+          error: e instanceof Error ? e.message : t('health.errorUnknown')
+        })
+      )
       setAnalysing(null)
     }
   }
@@ -307,10 +335,14 @@ export function HealthSection(): React.JSX.Element {
       setTimeout(() => {
         void loadHealth()
         setRescanning(false)
-        toast.success('Re-scanned file paths — Missing files updated')
+        toast.success(t('health.rescanSuccess'))
       }, 800)
     } catch (e) {
-      toast.error('Could not re-scan: ' + (e instanceof Error ? e.message : 'unknown'))
+      toast.error(
+        t('health.rescanError', {
+          error: e instanceof Error ? e.message : t('health.errorUnknown')
+        })
+      )
       setRescanning(false)
     }
   }
@@ -318,7 +350,7 @@ export function HealthSection(): React.JSX.Element {
   if (loading && !health) {
     return (
       <div className="recall-section">
-        <div className="recall-empty">Scanning your library…</div>
+        <div className="recall-empty">{t('health.scanning')}</div>
       </div>
     )
   }
@@ -332,18 +364,33 @@ export function HealthSection(): React.JSX.Element {
 
   const CATS: { id: string; label: string; ids: string[]; kind: FixKind }[] = health
     ? [
-        { id: 'missingFiles', label: 'Missing files', ids: health.missingFileIds, kind: 'relink' },
-        { id: 'missingKey', label: 'Missing key', ids: health.missingKeyIds, kind: 'key' },
-        { id: 'missingBpm', label: 'Missing BPM', ids: health.missingBpmIds, kind: 'bpm' },
+        {
+          id: 'missingFiles',
+          label: t('health.cats.missingFiles'),
+          ids: health.missingFileIds,
+          kind: 'relink'
+        },
+        {
+          id: 'missingKey',
+          label: t('health.cats.missingKey'),
+          ids: health.missingKeyIds,
+          kind: 'key'
+        },
+        {
+          id: 'missingBpm',
+          label: t('health.cats.missingBpm'),
+          ids: health.missingBpmIds,
+          kind: 'bpm'
+        },
         {
           id: 'unsupported',
-          label: 'Unsupported format',
+          label: t('health.cats.unsupported'),
           ids: health.unsupportedFormatIds,
           kind: 'format'
         },
         {
           id: 'notAnalysed',
-          label: 'Not yet analysed',
+          label: t('health.cats.notAnalysed'),
           ids: health.notAnalysedIds,
           kind: 'analysing'
         }
@@ -353,10 +400,8 @@ export function HealthSection(): React.JSX.Element {
   return (
     <div className="recall-section">
       <header className="recall-section-head">
-        <h2 className="ss-h2">Health</h2>
-        <p className="recall-section-sub">
-          Where the rot is — click a number to see the tracks and fix them in place.
-        </p>
+        <h2 className="ss-h2">{t('health.title')}</h2>
+        <p className="recall-section-sub">{t('health.subtitle')}</p>
       </header>
 
       {health && (
@@ -364,25 +409,21 @@ export function HealthSection(): React.JSX.Element {
           <div className="recall-health-score-wrap">
             <div className="recall-health-score glass-2">
               <span className="recall-health-score-num">{health.healthScore}</span>
-              <span className="recall-health-score-label">/ 100 library health</span>
+              <span className="recall-health-score-label">{t('health.scoreLabel')}</span>
               <button
                 type="button"
                 className="health-score-info-btn"
-                aria-label="How is this calculated?"
+                aria-label={t('health.scoreInfoAria')}
                 onClick={() => setShowExplainer((s) => !s)}
               >
                 <Info size={14} strokeWidth={1.7} />
               </button>
             </div>
-            {showExplainer && <ScoreExplainer breakdown={health.scoreBreakdown} />}
+            {showExplainer && <ScoreExplainer breakdown={health.scoreBreakdown} t={t} />}
           </div>
 
           {!canDrillDown && (
-            <ProLock
-              feature="healthDrilldown"
-              compact
-              description="See exactly which tracks are missing files, key, BPM or are duplicated — and fix them in place."
-            />
+            <ProLock feature="healthDrilldown" compact description={t('health.proDescription')} />
           )}
 
           {canDrillDown && (
@@ -407,7 +448,7 @@ export function HealthSection(): React.JSX.Element {
                   onClick={() => setOpen(open === 'dupes' ? null : 'dupes')}
                 >
                   <span className="recall-health-num">{health.duplicateGroups.length}</span>
-                  <span className="recall-health-cat">Duplicate groups</span>
+                  <span className="recall-health-cat">{t('health.cats.duplicateGroups')}</span>
                 </button>
               </div>
 
@@ -421,19 +462,13 @@ export function HealthSection(): React.JSX.Element {
                     )}
                     <span>{CATS.find((c) => c.id === open)?.label}</span>
                     {open === 'notAnalysed' && (
-                      <span className="health-detail-hint">
-                        Background analyser writes energy from the audio file — no Rekordbox needed.
-                      </span>
+                      <span className="health-detail-hint">{t('health.hints.notAnalysed')}</span>
                     )}
                     {(open === 'missingKey' || open === 'missingBpm') && (
-                      <span className="health-detail-hint">
-                        Key/BPM come from Rekordbox. Set them inline below or fix them upstream.
-                      </span>
+                      <span className="health-detail-hint">{t('health.hints.keyBpm')}</span>
                     )}
                     {open === 'unsupported' && (
-                      <span className="health-detail-hint">
-                        CDJs reject these formats — convert to AIFF/WAV/FLAC in Rekordbox.
-                      </span>
+                      <span className="health-detail-hint">{t('health.hints.unsupported')}</span>
                     )}
 
                     {/* Auto-analyse / re-scan buttons in the table header. */}
@@ -447,15 +482,18 @@ export function HealthSection(): React.JSX.Element {
                         {analysing ? (
                           <>
                             <Loader2 size={13} strokeWidth={1.7} className="health-spin" />
-                            Analysing
+                            {t('health.analysing')}
                             {analysing.total > 0
-                              ? ` ${analysing.processed}/${analysing.total}`
+                              ? t('health.analysingProgress', {
+                                  processed: analysing.processed,
+                                  total: analysing.total
+                                })
                               : '…'}
                           </>
                         ) : (
                           <>
                             <Sparkles size={13} strokeWidth={1.7} />
-                            Analyse all
+                            {t('health.analyseAll')}
                           </>
                         )}
                       </button>
@@ -470,12 +508,12 @@ export function HealthSection(): React.JSX.Element {
                         {rescanning ? (
                           <>
                             <Loader2 size={13} strokeWidth={1.7} className="health-spin" />
-                            Re-scanning
+                            {t('health.rescanning')}
                           </>
                         ) : (
                           <>
                             <RefreshCw size={13} strokeWidth={1.7} />
-                            Re-scan all
+                            {t('health.rescanAll')}
                           </>
                         )}
                       </button>
@@ -498,10 +536,8 @@ export function HealthSection(): React.JSX.Element {
                 <div className="health-detail glass-2">
                   <div className="health-detail-head">
                     <AlertCircle size={14} strokeWidth={1.7} />
-                    <span>Duplicate groups — same artist + title</span>
-                    <span className="health-detail-hint">
-                      Pick one to keep — the rest move to your Archive lifecycle state.
-                    </span>
+                    <span>{t('health.dupesTitle')}</span>
+                    <span className="health-detail-hint">{t('health.dupesHint')}</span>
                   </div>
                   {health.duplicateGroups.slice(0, 100).map((g) => {
                     const groupTracks = hydrate(g.ids)
@@ -530,15 +566,14 @@ export function HealthSection(): React.JSX.Element {
 
       {canDrillDown && lifecycle && (
         <div className="recall-lifecycle">
-          <h3 className="ss-h3">Track lifecycle</h3>
+          <h3 className="ss-h3">{t('health.lifecycle.title')}</h3>
           <p className="recall-section-sub recall-lifecycle-sub">
-            How tracks move through your library. &ldquo;Untested&rdquo; means never played live —
-            that&apos;s separate from &ldquo;Not yet analysed&rdquo; above.
+            {t('health.lifecycle.subtitle')}
           </p>
           <div className="recall-lifecycle-bars">
-            {LIFECYCLE_ORDER.map(({ key, label, tip }) => (
-              <div className="recall-lifecycle-row" key={key} title={tip ?? ''}>
-                <span className="recall-lifecycle-label">{label}</span>
+            {LIFECYCLE_ORDER.map(({ key, labelKey, tipKey }) => (
+              <div className="recall-lifecycle-row" key={key} title={t(tipKey)}>
+                <span className="recall-lifecycle-label">{t(labelKey)}</span>
                 <span className="recall-lifecycle-count">{lifecycle[key]}</span>
               </div>
             ))}

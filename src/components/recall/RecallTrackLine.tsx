@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 import { Plus, Volume2, AlertCircle } from 'lucide-react'
 import type { Track } from '@/types'
 import { KeyChip } from '@/components/shared/KeyChip'
@@ -34,6 +35,7 @@ export function RecallTrackLine({
   addable = true,
   compact = false
 }: RecallTrackLineProps): React.JSX.Element {
+  const { t } = useTranslation('recall')
   const addTrackAndToast = useSetStore((s) => s.addTrackAndToast)
   const startPreview = usePlaybackStore((s) => s.startPreview)
   const playing = usePlaybackStore((s) => s.previewTrack?.id === track.id && s.isPlaying)
@@ -56,7 +58,11 @@ export function RecallTrackLine({
       )}
       role="button"
       tabIndex={0}
-      title={missing ? `File not found: ${track.filePath}` : `${track.title} — ${track.artist}`}
+      title={
+        missing
+          ? t('trackLine.fileNotFound', { path: track.filePath })
+          : t('trackLine.trackArtist', { title: track.title, artist: track.artist })
+      }
       onClick={() => {
         if (!missing) startPreview(track)
       }}
@@ -107,8 +113,8 @@ export function RecallTrackLine({
         <button
           type="button"
           className="recall-line-add"
-          title="Add to current set"
-          aria-label="Add to current set"
+          title={t('trackLine.addToCurrentSet')}
+          aria-label={t('trackLine.addToCurrentSet')}
           onClick={handleAdd}
         >
           <Plus size={16} strokeWidth={1.5} />

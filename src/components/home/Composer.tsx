@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useTranslation, Trans } from 'react-i18next'
 import { Mic, AudioLines, ArrowUp, StopCircle, Lock } from 'lucide-react'
 
 export type ComposerPhase = 'idle' | 'listening' | 'thinking'
@@ -9,6 +10,8 @@ interface ComposerProps {
   onChange: (v: string) => void
   onSubmit: () => void
   onMicToggle: () => void
+  /** Show the push-to-talk mic button. Off when the user disables voice input. */
+  showMic?: boolean
   /** Live input level 0..1 while listening (from real mic capture); optional. */
   level?: number
   /** Slim variant for when the composer is docked under a live conversation. */
@@ -42,6 +45,7 @@ export function Composer({
   onChange,
   onSubmit,
   onMicToggle,
+  showMic = true,
   level,
   compact = false,
   focused,
@@ -49,6 +53,7 @@ export function Composer({
   onBlur,
   placeholder
 }: ComposerProps): React.JSX.Element {
+  const { t } = useTranslation('home')
   const rootRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
   const rafRef = useRef(0)
@@ -124,27 +129,29 @@ export function Composer({
               onFocus={onFocus}
               onBlur={onBlur}
               readOnly={listening}
-              aria-label="Ask your library"
+              aria-label={t('composer.askAria')}
             />
-            <button
-              type="button"
-              className={`mic-btn${listening ? ' live' : ''}`}
-              onClick={onMicToggle}
-              title={listening ? 'Stop' : 'Speak'}
-              aria-label={listening ? 'Stop listening' : 'Speak'}
-            >
-              {listening ? (
-                <AudioLines size={18} strokeWidth={1.6} />
-              ) : (
-                <Mic size={18} strokeWidth={1.6} />
-              )}
-            </button>
+            {showMic && (
+              <button
+                type="button"
+                className={`mic-btn${listening ? ' live' : ''}`}
+                onClick={onMicToggle}
+                title={listening ? t('composer.stop') : t('composer.speak')}
+                aria-label={listening ? t('composer.stopAria') : t('composer.speak')}
+              >
+                {listening ? (
+                  <AudioLines size={18} strokeWidth={1.6} />
+                ) : (
+                  <Mic size={18} strokeWidth={1.6} />
+                )}
+              </button>
+            )}
             <button
               type="button"
               className={`send-btn${ready ? ' ready' : ''}`}
               onClick={() => ready && onSubmit()}
-              title="Send"
-              aria-label="Send"
+              title={t('composer.send')}
+              aria-label={t('composer.send')}
             >
               <ArrowUp size={18} strokeWidth={1.8} />
             </button>
@@ -163,11 +170,11 @@ export function Composer({
                     <span />
                     <span />
                   </span>
-                  Listening — keep going
+                  {t('composer.listening')}
                 </span>
                 <span className="stop-link" onClick={onMicToggle}>
                   <StopCircle size={13} strokeWidth={1.6} />
-                  tap to stop
+                  {t('composer.tapToStop')}
                 </span>
               </div>
             )
@@ -176,11 +183,15 @@ export function Composer({
               <div className="box-actions-left">
                 <span className="box-hint">
                   <Lock size={12} strokeWidth={1.7} />
-                  Nothing leaves your Mac
+                  {t('composer.privacyHint')}
                 </span>
               </div>
               <span className="box-hint">
-                <span className="kbd">↵</span>to send · <span className="kbd">⇧↵</span>new line
+                <Trans
+                  t={t}
+                  i18nKey="composer.sendHint"
+                  components={[<span key="0" className="kbd" />, <span key="1" className="kbd" />]}
+                />
               </span>
             </div>
           )}

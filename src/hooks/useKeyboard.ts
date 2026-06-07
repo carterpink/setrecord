@@ -63,6 +63,7 @@ export function useKeyboard(): void {
         const { previewTrack: track, togglePlay: toggle } = usePlaybackStore.getState()
         if (track) {
           e.preventDefault()
+          e.stopImmediatePropagation()
           toggle()
         }
         return

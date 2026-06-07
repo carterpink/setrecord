@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { HotCue } from '@/types'
 import { HOT_CUE_COLORS, HOT_CUE_LABELS } from '@/utils/constants'
 import { formatMs } from '@/utils/format'
@@ -10,6 +11,7 @@ interface HotCueGridProps {
 
 /** 4×2 grid of A–H hot-cue buttons. Filled buttons show their colour + time. */
 export function HotCueGrid({ hotCues, onToggle }: HotCueGridProps): React.JSX.Element {
+  const { t } = useTranslation('modals')
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
       {HOT_CUE_LABELS.map((label, index) => {
@@ -60,7 +62,7 @@ export function HotCueGrid({ hotCues, onToggle }: HotCueGridProps): React.JSX.El
               </span>
             ) : (
               <span className="ss-caption" style={{ color: 'var(--text-tertiary)', fontSize: 10 }}>
-                empty
+                {t('cueEditor.hotCueEmpty')}
               </span>
             )}
           </button>

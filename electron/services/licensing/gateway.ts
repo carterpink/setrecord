@@ -15,7 +15,15 @@
 
 import { net } from 'electron'
 
-/** Base URL of the license API, e.g. https://api.setsense.app. Null = pure offline. */
+/**
+ * Base URL of the fulfilment Worker (the setsense-fulfilment repo), e.g.
+ * https://setsense-fulfilment.<subdomain>.workers.dev. This single value turns
+ * on BOTH online revocation/renewal (/v1/check, /v1/activate) AND server-side
+ * checkout creation (/checkout). Null = pure offline, no purchasing.
+ *
+ * Set this to your deployed Worker URL after running `npm run deploy` in the
+ * fulfilment repo. Leave null until the backend is live.
+ */
 export const LICENSE_API_BASE: string | null = null
 
 const REQUEST_TIMEOUT_MS = 5000
@@ -42,11 +50,32 @@ export interface CheckResult {
   revoked?: boolean
   /** Server may tighten expiry (e.g. subscription cancelled). Never extends it. */
   expiresAt?: string | null
+  /**
+   * A freshly re-issued signed key to swap in. The server returns this when a
+   * subscription has RENEWED — the new key carries a later expiresAt, which a
+   * tightening-only expiry override could never express. The caller verifies it
+   * before storing, so a bad key is ignored. Absent ⇒ keep the current key.
+   */
+  key?: string
+}
+
+export interface CheckoutRequest {
+  /** Billing cadence the buyer picked. The server maps this to a store variant. */
+  plan: 'monthly' | 'annual' | 'lifetime'
+  /** This machine's anonymous device id, so a subscription key binds here. */
+  deviceId: string
+}
+
+export interface CheckoutResult {
+  reachable: boolean
+  /** Hosted-checkout URL to open in the browser. Absent on any failure. */
+  url?: string
 }
 
 export interface LicenseGateway {
   activate(req: ActivateRequest): Promise<ActivateResult>
   check(req: CheckRequest): Promise<CheckResult>
+  checkout(req: CheckoutRequest): Promise<CheckoutResult>
 }
 
 /** The no-network gateway. Everything is "unreachable" so callers stay offline. */
@@ -55,6 +84,9 @@ export const offlineGateway: LicenseGateway = {
     return { reachable: false }
   },
   async check() {
+    return { reachable: false }
+  },
+  async checkout() {
     return { reachable: false }
   }
 }
@@ -111,13 +143,20 @@ export function createHttpGateway(base: string): LicenseGateway {
       const json = (await postJson(base, '/v1/check', req)) as {
         revoked?: boolean
         expiresAt?: string | null
+        key?: string
       } | null
       if (!json) return { reachable: false }
       return {
         reachable: true,
         revoked: json.revoked === true,
-        expiresAt: typeof json.expiresAt === 'string' ? json.expiresAt : null
+        expiresAt: typeof json.expiresAt === 'string' ? json.expiresAt : null,
+        key: typeof json.key === 'string' ? json.key : undefined
       }
+    },
+    async checkout(req) {
+      const json = (await postJson(base, '/checkout', req)) as { url?: string } | null
+      if (!json) return { reachable: false }
+      return { reachable: true, url: typeof json.url === 'string' ? json.url : undefined }
     }
   }
 }

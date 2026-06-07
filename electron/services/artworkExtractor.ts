@@ -110,6 +110,65 @@ export function pruneArtworkCache(): ArtworkPruneResult {
   return { removed, bytesFreed }
 }
 
+export interface ArtworkCacheStats {
+  /** Number of cached cover-art files. */
+  files: number
+  /** Total bytes on disk. */
+  bytes: number
+}
+
+/** Current size of the artwork cache (Settings → Privacy & data readout). */
+export function getArtworkCacheStats(): ArtworkCacheStats {
+  const dir = getArtworkCacheDir()
+  let files = 0
+  let bytes = 0
+  try {
+    for (const name of readdirSync(dir)) {
+      if (!name.endsWith('.jpg')) continue
+      try {
+        bytes += statSync(join(dir, name)).size
+        files += 1
+      } catch {
+        // skip files we can't stat
+      }
+    }
+  } catch {
+    // cache dir unreadable — report empty
+  }
+  return { files, bytes }
+}
+
+/**
+ * Delete every cached cover-art file (Settings → Privacy & data). Art is
+ * re-extracted lazily on the next library load, so this is non-destructive.
+ * No-op while the extraction queue runs so we never race a worker mid-write.
+ */
+export function clearArtworkCache(): ArtworkPruneResult {
+  const empty: ArtworkPruneResult = { removed: 0, bytesFreed: 0 }
+  if (_running) return empty
+  const dir = getArtworkCacheDir()
+  let entries: string[]
+  try {
+    entries = readdirSync(dir)
+  } catch {
+    return empty
+  }
+  let removed = 0
+  let bytesFreed = 0
+  for (const name of entries) {
+    if (!name.endsWith('.jpg')) continue
+    const full = join(dir, name)
+    try {
+      bytesFreed += statSync(full).size
+      unlinkSync(full)
+      removed += 1
+    } catch {
+      // best effort
+    }
+  }
+  return { removed, bytesFreed }
+}
+
 // ───────── single-file extraction ─────────
 
 export interface ArtworkResult {

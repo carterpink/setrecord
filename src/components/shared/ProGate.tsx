@@ -1,5 +1,6 @@
 import { Lock, Sparkles } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useUiStore } from '@/stores/uiStore'
 import { useTrialInfo } from '@/stores/licenseStore'
 import type { ProFeature } from '@/utils/entitlements'
@@ -37,6 +38,7 @@ export function ProLock({
   compact,
   children
 }: ProLockProps): React.JSX.Element {
+  const { t } = useTranslation('shared')
   const showUpgrade = useUiStore((s) => s.showUpgrade)
   const { expired: trialExpired } = useTrialInfo()
   const meta = PRO_FEATURES[feature]
@@ -54,13 +56,13 @@ export function ProLock({
       </h3>
       <p className="pro-lock-desc">
         {trialExpired
-          ? `Your Pro trial has ended. ${description ?? meta.blurb}`
+          ? t('proGate.trialEndedPrefix', { description: description ?? meta.blurb })
           : (description ?? meta.blurb)}
       </p>
       {children}
       <button type="button" className="pro-lock-cta" onClick={() => showUpgrade(feature)}>
         <Sparkles size={14} strokeWidth={1.8} aria-hidden="true" />
-        {trialExpired ? 'Keep Pro' : 'Unlock with Pro'}
+        {trialExpired ? t('proGate.keepPro') : t('proGate.unlock')}
       </button>
     </div>
   )

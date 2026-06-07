@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 
 interface EnergyBarProps {
   /** Number of segments lit (0–max). */
@@ -20,11 +21,12 @@ export function EnergyBar({
   style,
   title
 }: EnergyBarProps): React.JSX.Element {
+  const { t } = useTranslation('shared')
   return (
     <span
       className={clsx('ebar', horizontal && 'h', className)}
       style={style}
-      aria-label={`Energy ${level} of ${max}`}
+      aria-label={t('energyBar.aria', { level, max })}
       title={title}
     >
       {Array.from({ length: max }).map((_, i) => (

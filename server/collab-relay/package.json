@@ -1,0 +1,17 @@
+{
+  "name": "setsense-collab-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloud WebSocket relay for SetSense live Back-to-Back collaboration (rooms + broadcast).",
+  "type": "module",
+  "main": "server.mjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

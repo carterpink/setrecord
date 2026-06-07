@@ -19,6 +19,23 @@
   }
 }
 
+/* User-controlled reduced motion (Settings → General). Mirrors the OS-level
+   block above so the in-app toggle works even when the OS pref is off. */
+.ss-reduce-motion *,
+.ss-reduce-motion *::before,
+.ss-reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+.ss-reduce-motion .spin,
+.ss-reduce-motion [data-keep-motion='true'],
+.ss-reduce-motion .arch-spinner {
+  animation-duration: revert !important;
+  animation-iteration-count: revert !important;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

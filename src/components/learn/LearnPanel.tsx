@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { GraduationCap } from 'lucide-react'
 import type { LearnExplanation } from '@/utils/learnMode/explanations'
 import { HarmonicWheelDiagram } from './diagrams/HarmonicWheelDiagram'
@@ -34,10 +35,8 @@ function DiagramRenderer({
  * Inline expanded explanation panel for surfaces where a popover would be too small
  * (Set Architect post-build result, future deep-dive sections).
  */
-export function LearnPanel({
-  explanation,
-  headerLabel = 'Learn Mode'
-}: LearnPanelProps): React.JSX.Element {
+export function LearnPanel({ explanation, headerLabel }: LearnPanelProps): React.JSX.Element {
+  const { t } = useTranslation('learn')
   return (
     <div className="learn-card">
       <div className="learn-card-header">
@@ -46,7 +45,7 @@ export function LearnPanel({
           className="ss-caption"
           style={{ textTransform: 'uppercase', letterSpacing: 0.5, opacity: 0.7 }}
         >
-          {headerLabel}
+          {headerLabel ?? t('panel.header')}
         </span>
       </div>
       <div className="learn-card-title">{explanation.summary}</div>

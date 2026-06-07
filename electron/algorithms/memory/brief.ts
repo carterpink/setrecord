@@ -14,55 +14,18 @@
  * empty and the Brief degrades to repeat-play evidence. No DB/electron deps.
  */
 
-import type { Track, VenueType } from '../../../src/types'
+import type {
+  Track,
+  VenueType,
+  BriefSession,
+  BriefReactionRow,
+  BriefProfile,
+  BriefAnswer
+} from '../../../src/types'
 import type { BriefHit } from '../../../src/utils/briefIntent'
 
-export interface BriefSession {
-  id: string
-  performedAt: string // ISO date
-  venue?: string
-  city?: string
-  eventType?: string
-  setSlot?: string
-  durationSec?: number
-  trackIds: string[]
-}
-
-/** A measured reaction row (mirrors a subset of SetReaction). */
-export interface BriefReactionRow {
-  sessionId: string
-  trackId: string
-  reactionScore?: number
-  confidence?: number
-}
-
-export interface BriefProfile {
-  bpmLow?: number
-  bpmHigh?: number
-  avgEnergy?: number
-  topGenres: string[]
-  typicalSetLength?: string
-}
-
-export interface BriefAnswer {
-  kind: 'brief'
-  venueLabel: string
-  /** How many past sessions the brief is built from. 0 = first time here. */
-  timesPlayed: number
-  lastPlayedAt?: string
-  /** True when matched on event type because the named venue had no history. */
-  fromEventType: boolean
-  profile?: BriefProfile
-  /** Tracks that have landed here before. */
-  proven: Track[]
-  /** Flagged / fresh tracks that fit the room and haven't been tried here. */
-  bring: Track[]
-  /** Honest caveats and reaction-derived insights. */
-  notes: string[]
-  /** Whether any matched session carries crowd-reaction data. */
-  hasReactionData: boolean
-  narration: string
-}
+// Re-exported so existing importers (tests, eval driver, IPC) keep resolving these here.
+export type { BriefSession, BriefReactionRow, BriefProfile, BriefAnswer }
 
 const RECENT_DAYS = 60
 const PROVEN_REACTION = 0.66 // single play counts as "proven" above this reaction

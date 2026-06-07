@@ -53,6 +53,7 @@ import {
   getSessions,
   getSessionTracks,
   getSessionsForTrack,
+  getReactionsForSession,
   querySessions,
   updateSession,
   bulkAssignSessions,
@@ -71,7 +72,10 @@ import {
   getSchemaVersion,
   getExistingTrackIdsByPath
 } from './db/queries'
+import { computeBrief } from './algorithms/memory/brief'
+import type { BriefSession, BriefReactionRow } from '../src/types'
 import { exportBackup, inspectBackup, importBackup } from './services/backupService'
+import { startRelay, stopRelay } from './services/collab/relayServer'
 import { retagLibrary, retagTrack } from './services/tagging/tagger'
 import type {
   Set as DJSet,
@@ -99,7 +103,13 @@ import {
   isAnalysisRunning,
   pendingCount as pendingEnergyCount
 } from './services/energyAnalyser'
-import { runArtworkQueue, isArtworkRunning, pruneArtworkCache } from './services/artworkExtractor'
+import {
+  runArtworkQueue,
+  isArtworkRunning,
+  pruneArtworkCache,
+  getArtworkCacheStats,
+  clearArtworkCache
+} from './services/artworkExtractor'
 import { detectAllSources, getProvider } from './services/import/registry'
 import type { ImportedTrackRef, LibrarySourceProvider } from './services/import/types'
 import type {
@@ -143,7 +153,7 @@ import {
 import type { AppSettings } from './services/settingsService'
 import { freshStart } from './services/resetService'
 import { initCrashReporter, closeCrashReporter } from './services/crashReporter'
-import { checkForUpdatesAndNotify } from './services/updateChecker'
+import { checkForUpdatesAndNotify, checkForUpdatesNow } from './services/updateChecker'
 import { loadSecretsFromKeychain } from './services/secretStore'
 import {
   getLicenseState,
@@ -152,7 +162,7 @@ import {
   refreshLicenseOnline,
   isProEntitled
 } from './services/licenseService'
-import { loadDeviceId } from './services/licensing/deviceId'
+import { loadDeviceId, getDeviceId } from './services/licensing/deviceId'
 import { startTrial } from './services/licensing/trialStore'
 import {
   getProgress,
@@ -163,12 +173,8 @@ import {
   type ProgressState,
   type FirstEvent
 } from './services/progressService'
-import {
-  COMMERCE_HOST,
-  checkoutUrl,
-  ACTIVATION_SCHEME,
-  parseActivationUrl
-} from './services/licensing/signingKey'
+import { ACTIVATION_SCHEME, parseActivationUrl } from './services/licensing/signingKey'
+import { getGateway } from './services/licensing/gateway'
 import {
   listUSBDevices,
   watchUSBDevices,
@@ -219,6 +225,14 @@ function mediaMimeType(filePath: string): string {
 if (process.env.SETSENSE_CDP) {
   app.commandLine.appendSwitch('remote-debugging-port', process.env.SETSENSE_CDP)
   app.commandLine.appendSwitch('remote-allow-origins', '*')
+}
+
+// Test harness: run a second, isolated instance on the same machine by pointing
+// it at a throwaway userData dir (its own SQLite DB, license + settings). Lets two
+// app instances join the same live collaboration session for solo-dev testing.
+// Inert unless ELECTRON_USER_DATA_DIR is set; must run before the path is resolved.
+if (process.env.ELECTRON_USER_DATA_DIR) {
+  app.setPath('userData', process.env.ELECTRON_USER_DATA_DIR)
 }
 
 // Must be called synchronously before app.whenReady() for custom schemes to work
@@ -754,6 +768,12 @@ function startUSBWatcher(): void {
 }
 
 function registerIpcHandlers(): void {
+  // ── Live collaboration (Back-to-Back) host relay ───────────────────────────
+  // Pure LAN: starts the host's broadcast relay and returns the connection info
+  // the renderer turns into an invite code. No backend, no accounts.
+  ipcMain.handle('collab:host-start', () => startRelay())
+  ipcMain.handle('collab:host-stop', () => stopRelay())
+
   // ── SetSense Live overlay ──────────────────────────────────────────────────
   const pushLive = (data: unknown): void => {
     if (data && overlayWindow && !overlayWindow.isDestroyed()) {
@@ -1370,6 +1390,13 @@ function registerIpcHandlers(): void {
     return next
   })
 
+  // Artwork cache management (Settings → Privacy & data).
+  ipcMain.handle('artwork:cache-stats', () => getArtworkCacheStats())
+  ipcMain.handle('artwork:clear-cache', () => clearArtworkCache())
+
+  // Manual "Check for updates now" (Settings → Privacy & data).
+  ipcMain.handle('updates:check-now', () => checkForUpdatesNow(mainWindow))
+
   // ── Fresh Start — wipe to first-launch and relaunch ───────────────────────
   // Clears the library, settings, history and on-disk caches, then restarts the
   // app so it boots clean into onboarding. The keychain license is preserved
@@ -1422,12 +1449,20 @@ function registerIpcHandlers(): void {
     async (
       _e,
       plan: 'monthly' | 'annual' | 'lifetime' | 'tip',
-      tipAmount?: number
+      _tipAmount?: number
     ): Promise<boolean> => {
       try {
-        const url = checkoutUrl(plan, tipAmount)
-        if (new URL(url).host.toLowerCase() !== COMMERCE_HOST) return false
-        await shell.openExternal(url)
+        // Tips route through a different flow (not yet wired to the MoR backend).
+        if (plan === 'tip') return false
+        // Ask the fulfilment backend to create a hosted checkout bound to this
+        // device. Store variant ids + the API key live server-side, never here.
+        const res = await getGateway().checkout({ plan, deviceId: getDeviceId() })
+        if (!res.reachable || !res.url) return false
+        // Only ever hand the OS a Lemon Squeezy URL, so a compromised renderer
+        // can't coax us into opening an arbitrary link.
+        const host = new URL(res.url).host.toLowerCase()
+        if (host !== 'lemonsqueezy.com' && !host.endsWith('.lemonsqueezy.com')) return false
+        await shell.openExternal(res.url)
         return true
       } catch (err) {
         console.error('[license:checkout] failed', err)
@@ -1587,6 +1622,39 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('history:get-for-track', (_e, trackId: string) => {
     return getSessionsForTrack(getDb(), trackId)
+  })
+
+  // Pre-gig "Brief": a game plan from the DJ's own history at a venue / event type.
+  ipcMain.handle('history:brief', (_e, venue: string, eventType?: VenueType) => {
+    const db = getDb()
+    const sessions: BriefSession[] = getSessions(db).map((s) => ({
+      id: s.id,
+      performedAt: s.performedAt ?? s.createdAt,
+      venue: s.venue,
+      city: s.city,
+      eventType: s.eventType,
+      setSlot: s.setSlot,
+      durationSec: s.duration,
+      trackIds: getSessionTracks(db, s.id).map((st) => st.trackId)
+    }))
+    const reactions: BriefReactionRow[] = []
+    for (const s of sessions) {
+      for (const r of getReactionsForSession(db, s.id)) {
+        reactions.push({
+          sessionId: r.sessionId,
+          trackId: r.trackId,
+          reactionScore: r.reactionScore,
+          confidence: r.confidence
+        })
+      }
+    }
+    return computeBrief(
+      { venue: venue || undefined, eventType },
+      getAllTracks(db),
+      sessions,
+      new Date(),
+      reactions
+    )
   })
 
   ipcMain.handle('history:query-sessions', (_e, filter: SessionFilter = {}) => {
@@ -1914,6 +1982,7 @@ app.whenReady().then(async () => {
 
 app.on('window-all-closed', () => {
   stopUSBWatcher?.()
+  void stopRelay()
   if (process.platform !== 'darwin') {
     app.quit()
   }

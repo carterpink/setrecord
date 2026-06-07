@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Sparkles } from 'lucide-react'
 import { useUiStore } from '@/stores/uiStore'
@@ -24,6 +25,7 @@ const POP_WIDTH = 248
  * verbatim with zero extra work — the common case stays free of noise.
  */
 export function Coachmark({ concept, children }: CoachmarkProps): React.JSX.Element {
+  const { t } = useTranslation('learn')
   const learnModeEnabled = useUiStore((s) => s.learnModeEnabled)
   const isBeginner = useUiStore((s) => s.isBeginner)
   const isPro = useIsPro()
@@ -117,7 +119,7 @@ export function Coachmark({ concept, children }: CoachmarkProps): React.JSX.Elem
                   dismiss(concept)
                 }}
               >
-                Got it
+                {t('coachmark.dismiss')}
               </button>
             </motion.div>
           )}

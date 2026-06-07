@@ -1,7 +1,8 @@
 import { create } from 'zustand'
-import type { AppMode, Track } from '@/types'
+import type { AppMode, LanguagePreference, Track } from '@/types'
 import type { ProFeature } from '@/utils/entitlements'
 import { usePlaybackStore } from '@/stores/playbackStore'
+import { applyLanguagePreference } from '@/i18n'
 
 type ModalName =
   | 'import'
@@ -49,9 +50,22 @@ interface UIState {
   /** Library row density — standard 56px or compact 40px. */
   libraryDensity: 'standard' | 'compact'
   toggleLibraryDensity: () => void
+  setLibraryDensity: (v: 'standard' | 'compact') => void
   /** Key notation display preference. */
   keyNotation: 'camelot' | 'standard'
   setKeyNotation: (v: 'camelot' | 'standard') => void
+  /** Freeze decorative animation (aurora drift, etc.). Mirrors AppSettings. */
+  reducedMotion: boolean
+  setReducedMotion: (v: boolean) => void
+  /** Which workspace SetSense opens to on launch. 'last' restores the previous session. */
+  launchMode: 'last' | AppMode
+  setLaunchMode: (v: 'last' | AppMode) => void
+  /** Enable the on-device push-to-talk voice input in the Home box. Mirrors AppSettings. */
+  voiceInputEnabled: boolean
+  setVoiceInputEnabled: (v: boolean) => void
+  /** UI language preference. 'system' follows the OS locale. Hydrated on boot. */
+  language: LanguagePreference
+  setLanguage: (v: LanguagePreference) => void
   playlistSidebarCollapsed: boolean
   togglePlaylistSidebar: () => void
   // Incremented each time ⌘K is pressed — panels watch this to focus search
@@ -64,8 +78,6 @@ interface UIState {
   hasCompletedOnboarding: boolean
   /** Persist completion and dismiss the onboarding modal in one call. */
   completeOnboarding: () => void
-  lightMode: boolean
-  toggleLightMode: () => void
   // Background energy analysis status — null when idle, populated while the
   // analyser is draining the pending queue.
   energyAnalysis: { processed: number; total: number } | null
@@ -85,15 +97,15 @@ interface UIState {
     learnModeEnabled: boolean
     isBeginner: boolean
     hasCompletedOnboarding: boolean
+    language: LanguagePreference
+    keyNotation: 'camelot' | 'standard'
+    reducedMotion: boolean
+    launchMode: 'last' | AppMode
+    voiceInputEnabled: boolean
   }) => void
   /** Suggestions panel source pool — independent of the library sidebar filter. */
   suggestionsSourcePlaylistIds: string[]
   setSuggestionsSourcePlaylistIds: (ids: string[]) => void
-}
-
-function getInitialLightMode(): boolean {
-  if (typeof window === 'undefined') return false
-  return window.localStorage.getItem('setsense-theme') === 'light'
 }
 
 function getInitialSidebarCollapsed(): boolean {
@@ -106,6 +118,9 @@ function getInitialMode(): AppMode {
   // workspace; "Build" is the set-builder. Migrate legacy persisted values:
   // Recall/Discover → Home, Prepare → Build, old "Library" front-door → Home.
   if (typeof window === 'undefined') return 'Home'
+  // An explicit "open to ___" launch preference wins over last-session restore.
+  const launch = window.localStorage.getItem('setsense-launch-mode')
+  if (launch === 'Home' || launch === 'Library' || launch === 'Build') return launch as AppMode
   const saved = window.localStorage.getItem('setsense-mode')
   if (saved === 'Prepare' || saved === 'Build') return 'Build'
   if (saved === 'Home' || saved === 'Library' || saved === 'Build') return saved as AppMode
@@ -124,6 +139,28 @@ function getInitialKeyNotation(): 'camelot' | 'standard' {
   return window.localStorage.getItem('setsense-key-notation') === 'standard'
     ? 'standard'
     : 'camelot'
+}
+
+function getInitialReducedMotion(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.localStorage.getItem('setsense-reduced-motion') === 'true'
+}
+
+function getInitialLaunchMode(): 'last' | AppMode {
+  if (typeof window === 'undefined') return 'last'
+  const v = window.localStorage.getItem('setsense-launch-mode')
+  return v === 'Home' || v === 'Library' || v === 'Build' ? (v as AppMode) : 'last'
+}
+
+function getInitialVoiceInput(): boolean {
+  if (typeof window === 'undefined') return true
+  return window.localStorage.getItem('setsense-voice-input') !== 'off'
+}
+
+/** Toggle the document-level reduced-motion class that gates decorative CSS animation. */
+function applyReducedMotionClass(on: boolean): void {
+  if (typeof document === 'undefined') return
+  document.documentElement.classList.toggle('ss-reduce-motion', on)
 }
 
 function getInitialSuggestionsSource(): string[] {
@@ -175,12 +212,65 @@ export const useUiStore = create<UIState>((set) => ({
       }
       return { libraryDensity: next }
     }),
+  setLibraryDensity: (v) => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('setsense-library-density', v)
+    }
+    set({ libraryDensity: v })
+  },
   keyNotation: getInitialKeyNotation(),
   setKeyNotation: (v) => {
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('setsense-key-notation', v)
     }
     set({ keyNotation: v })
+    // Persist to AppSettings (source of truth) so it travels with backups and
+    // stays consistent across machines — the localStorage write above is only a
+    // fast first-paint cache.
+    if (typeof window !== 'undefined' && window.setsense) {
+      void window.setsense.setSettings({ keyNotation: v })
+    }
+  },
+  reducedMotion: getInitialReducedMotion(),
+  setReducedMotion: (v) => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('setsense-reduced-motion', v ? 'true' : 'false')
+    }
+    applyReducedMotionClass(v)
+    set({ reducedMotion: v })
+    if (typeof window !== 'undefined' && window.setsense) {
+      void window.setsense.setSettings({ reducedMotion: v })
+    }
+  },
+  launchMode: getInitialLaunchMode(),
+  setLaunchMode: (v) => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('setsense-launch-mode', v)
+    }
+    set({ launchMode: v })
+    if (typeof window !== 'undefined' && window.setsense) {
+      void window.setsense.setSettings({ launchMode: v })
+    }
+  },
+  voiceInputEnabled: getInitialVoiceInput(),
+  setVoiceInputEnabled: (v) => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('setsense-voice-input', v ? 'on' : 'off')
+    }
+    set({ voiceInputEnabled: v })
+    if (typeof window !== 'undefined' && window.setsense) {
+      void window.setsense.setSettings({ voiceInputEnabled: v })
+    }
+  },
+  // Mirrors AppSettings.language; the real value is hydrated on boot in AppShell.
+  // Defaults to 'system' so first paint follows the OS locale (set in i18n init).
+  language: 'system',
+  setLanguage: (v) => {
+    set({ language: v })
+    applyLanguagePreference(v)
+    if (typeof window !== 'undefined' && window.setsense) {
+      void window.setsense.setSettings({ language: v })
+    }
   },
   playlistSidebarCollapsed: getInitialSidebarCollapsed(),
   togglePlaylistSidebar: () =>
@@ -203,13 +293,6 @@ export const useUiStore = create<UIState>((set) => ({
       void window.setsense.setSettings({ hasCompletedOnboarding: true })
     }
   },
-  lightMode: getInitialLightMode(),
-  toggleLightMode: () =>
-    set((s) => {
-      const lightMode = !s.lightMode
-      window.localStorage.setItem('setsense-theme', lightMode ? 'light' : 'dark')
-      return { lightMode }
-    }),
   energyAnalysis: null,
   setEnergyAnalysis: (status) => set({ energyAnalysis: status }),
   mode: getInitialMode(),
@@ -236,8 +319,29 @@ export const useUiStore = create<UIState>((set) => ({
       void window.setsense.setSettings({ isBeginner: v })
     }
   },
-  hydrateFromSettings: ({ learnModeEnabled, isBeginner, hasCompletedOnboarding }) =>
-    set({ learnModeEnabled, isBeginner, hasCompletedOnboarding }),
+  hydrateFromSettings: ({
+    learnModeEnabled,
+    isBeginner,
+    hasCompletedOnboarding,
+    language,
+    keyNotation,
+    reducedMotion,
+    launchMode,
+    voiceInputEnabled
+  }) => {
+    applyLanguagePreference(language)
+    applyReducedMotionClass(reducedMotion)
+    set({
+      learnModeEnabled,
+      isBeginner,
+      hasCompletedOnboarding,
+      language,
+      keyNotation,
+      reducedMotion,
+      launchMode,
+      voiceInputEnabled
+    })
+  },
   suggestionsSourcePlaylistIds: getInitialSuggestionsSource(),
   setSuggestionsSourcePlaylistIds: (ids) => {
     if (typeof window !== 'undefined') {
@@ -246,6 +350,10 @@ export const useUiStore = create<UIState>((set) => ({
     set({ suggestionsSourcePlaylistIds: ids })
   }
 }))
+
+// Apply the persisted reduced-motion preference before first paint so
+// motion-sensitive users don't see a frame of aurora drift on boot.
+applyReducedMotionClass(getInitialReducedMotion())
 
 // Dev aid: expose the UI store so tooling can drive modals during local testing.
 if (import.meta.env.DEV && typeof window !== 'undefined') {

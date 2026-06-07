@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { ArrowRight, ListPlus, Save } from 'lucide-react'
 import type { Track } from '@/types'
 import { RecallTrackLine } from '@/components/recall/RecallTrackLine'
@@ -12,6 +13,7 @@ export function GenericResult({
   result: HomeResult
   query: string
 }): React.JSX.Element | null {
+  const { t } = useTranslation('home')
   const createSetFromTracks = useSetStore((s) => s.createSetFromTracks)
   const addTracksToCurrent = useSetStore((s) => s.addTracksToCurrent)
 
@@ -21,11 +23,11 @@ export function GenericResult({
 
   if (result.kind === 'tracks') {
     const tracks: Track[] = result.tracks
-    const name = query.slice(0, 48) || 'Library picks'
+    const name = query.slice(0, 48) || t('generic.libraryPicks')
     return (
       <div className="answer">
         <div className="res-head">
-          <span className="res-title">{tracks.length} tracks</span>
+          <span className="res-title">{t('generic.tracksTitle', { count: tracks.length })}</span>
           <span className="res-meta">{result.narration}</span>
         </div>
         <div className="recall-conv-actions">
@@ -34,14 +36,14 @@ export function GenericResult({
             className="recall-conv-save"
             onClick={() => createSetFromTracks(name, tracks)}
           >
-            <Save size={13} strokeWidth={1.7} /> Save as set
+            <Save size={13} strokeWidth={1.7} /> {t('generic.saveAsSet')}
           </button>
           <button
             type="button"
             className="recall-conv-save"
             onClick={() => addTracksToCurrent(tracks)}
           >
-            <ListPlus size={13} strokeWidth={1.7} /> Add to current set
+            <ListPlus size={13} strokeWidth={1.7} /> {t('generic.addToCurrentSet')}
           </button>
         </div>
         <div className="recall-list">
@@ -57,9 +59,7 @@ export function GenericResult({
     return (
       <div className="answer">
         <div className="res-head">
-          <span className="res-title">
-            {result.count} {result.count === 1 ? 'track' : 'tracks'}
-          </span>
+          <span className="res-title">{t('generic.countTitle', { count: result.count })}</span>
           <span className="res-meta">{result.narration}</span>
         </div>
         {result.sample.length > 0 && (

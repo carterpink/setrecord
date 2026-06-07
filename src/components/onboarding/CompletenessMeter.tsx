@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useUiStore } from '@/stores/uiStore'
 import { useCompleteness } from '@/stores/progressStore'
 
@@ -8,6 +9,7 @@ import { useCompleteness } from '@/stores/progressStore'
  * is already real progress, so we never show a demotivating 0%.
  */
 export function CompletenessMeter(): React.JSX.Element | null {
+  const { t, i18n } = useTranslation('onboarding')
   const completeness = useCompleteness()
   const energyAnalysis = useUiStore((s) => s.energyAnalysis)
 
@@ -16,10 +18,13 @@ export function CompletenessMeter(): React.JSX.Element | null {
   const percent = Math.max(8, completeness.percent)
   const analysing = energyAnalysis && energyAnalysis.total > 0
   const note = analysing
-    ? `Analysing energy — ${energyAnalysis.total - energyAnalysis.processed} tracks to go`
+    ? t('meter.analysing', { count: energyAnalysis.total - energyAnalysis.processed })
     : completeness.pendingEnergy > 0
-      ? `${completeness.pendingEnergy.toLocaleString()} tracks still need energy analysis`
-      : 'Add keys and BPMs to complete your library'
+      ? t('meter.pendingEnergy', {
+          count: completeness.pendingEnergy,
+          formattedCount: completeness.pendingEnergy.toLocaleString(i18n.language)
+        })
+      : t('meter.addKeysBpms')
 
   return (
     <div
@@ -40,7 +45,7 @@ export function CompletenessMeter(): React.JSX.Element | null {
         }}
       >
         <span className="ss-caption" style={{ opacity: 0.7 }}>
-          Library analysed
+          {t('meter.libraryAnalysed')}
         </span>
         <span className="ss-caption" style={{ opacity: 0.7 }}>
           {completeness.percent}%

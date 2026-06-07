@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Layers, ChevronLeft } from 'lucide-react'
 import type { CrateWithCount } from '@/types'
 import { useRecallStore } from '@/stores/recallStore'
@@ -15,6 +16,7 @@ const MAX_RENDER = 200
  * drag, and double-click straight into the working set.
  */
 export function CratesLibraryTab(): React.JSX.Element {
+  const { t } = useTranslation('library')
   const crates = useRecallStore((s) => s.crates)
   const loading = useRecallStore((s) => s.cratesLoading)
   const loadCrates = useRecallStore((s) => s.loadCrates)
@@ -34,15 +36,17 @@ export function CratesLibraryTab(): React.JSX.Element {
     return (
       <div className="track-list" style={{ overflowY: 'auto', flex: 1 }}>
         <button type="button" className="crate-back" onClick={() => void selectCrate(null)}>
-          <ChevronLeft size={14} strokeWidth={1.7} /> All crates
+          <ChevronLeft size={14} strokeWidth={1.7} /> {t('crates.back')}
         </button>
         <div className="crate-tab-head">
           <span className="crate-tab-name">{selected.crate.name}</span>
-          <span className="crate-tab-count">{selected.tracks.length} tracks</span>
+          <span className="crate-tab-count">
+            {t('crates.count', { count: selected.tracks.length })}
+          </span>
         </div>
         {selectedLoading && (
           <div className="library-empty" style={{ padding: 16 }}>
-            Evaluating crate…
+            {t('crates.evaluating')}
           </div>
         )}
         {!selectedLoading &&
@@ -60,7 +64,7 @@ export function CratesLibraryTab(): React.JSX.Element {
             ))}
         {selected.tracks.length > MAX_RENDER && (
           <div className="recall-more-note">
-            Showing first {MAX_RENDER} of {selected.tracks.length}.
+            {t('crates.showingFirst', { shown: MAX_RENDER, total: selected.tracks.length })}
           </div>
         )}
       </div>
@@ -71,7 +75,7 @@ export function CratesLibraryTab(): React.JSX.Element {
     <div className="track-list" style={{ overflowY: 'auto', flex: 1, padding: 10 }}>
       {loading && crates.length === 0 && (
         <div className="library-empty" style={{ padding: 16 }}>
-          Loading crates…
+          {t('crates.loading')}
         </div>
       )}
       <div className="recall-crate-grid">
@@ -84,13 +88,13 @@ export function CratesLibraryTab(): React.JSX.Element {
           >
             <Layers size={18} strokeWidth={1.5} />
             <span className="recall-crate-name">{crate.name}</span>
-            <span className="recall-crate-count">{crate.trackCount} tracks</span>
+            <span className="recall-crate-count">
+              {t('crates.count', { count: crate.trackCount })}
+            </span>
           </button>
         ))}
       </div>
-      <p className="crate-tab-hint">
-        Crates re-fill themselves from rules. Create and edit them on the Recall tab.
-      </p>
+      <p className="crate-tab-hint">{t('crates.hint')}</p>
     </div>
   )
 }

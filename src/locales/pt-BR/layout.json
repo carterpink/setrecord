@@ -1,0 +1,85 @@
+{
+  "dnd": {
+    "pickedUpLibrary": "{{title}} de {{artist}} selecionada. Solte na linha do tempo para adicioná-la ao set.",
+    "pickedUpTimeline": "{{title}} selecionada da posição {{position}}.",
+    "pickedUpGeneric": "Faixa selecionada.",
+    "overEmpty": "A faixa está sobre uma área vazia.",
+    "overDropZone": "Sobre a zona de soltar da linha do tempo.",
+    "overPosition": "Sobre a posição {{position}}.",
+    "cancelledNoTarget": "Arraste cancelado — sem destino para soltar.",
+    "added": "{{title}} adicionada ao set.",
+    "moved": "{{title}} movida para a posição {{position}}.",
+    "complete": "Arraste concluído.",
+    "cancelled": "Arraste cancelado."
+  },
+  "dock": {
+    "setArchitect": "Set Architect",
+    "setArchitectPro": "Set Architect — Pro",
+    "smartFilter": "Filtro inteligente",
+    "smartFilterPro": "Filtro inteligente — Pro",
+    "cueEditor": "Editor de cues",
+    "cueEditorPro": "Editor de cues — Pro",
+    "cueEditorSelectFirst": "Selecione primeiro uma faixa na linha do tempo",
+    "cueEditorTitle": "Selecione uma faixa na sua linha do tempo para editar seus cue points",
+    "validateSet": "Validar set",
+    "validateSetPro": "Validar set — Pro",
+    "export": "Exportar",
+    "exportPro": "Exportar — Pro"
+  },
+  "volume": {
+    "triggerAria": "Volume {{pct}}%",
+    "triggerTitle": "Volume de prévia — {{pct}}%",
+    "panelAria": "Volume",
+    "mute": "Silenciar",
+    "unmute": "Ativar som"
+  },
+  "setTools": {
+    "newSet": "Novo set",
+    "newSetTitle": "Iniciar um novo set (⌘N)"
+  },
+  "boothCheck": {
+    "label": "Verificação de cabine",
+    "value": "{{score}}%",
+    "valueReady": "{{score}}% · pronto para {{hw}}",
+    "checkSet": "Verificar set",
+    "titleValidated": "Verificação de cabine: {{score}}% — clique para revalidar para exportação",
+    "titlePending": "Clique para verificar se este set funciona no seu CDJ antes de exportar",
+    "titleEmpty": "Adicione faixas e depois execute uma verificação de compatibilidade com CDJ antes de exportar",
+    "titleProGate": "A verificação de compatibilidade com CDJ é um recurso Pro — clique para fazer upgrade"
+  },
+  "live": {
+    "live": "Ao vivo",
+    "goLive": "Ficar ao vivo",
+    "endTitle": "Encerrar Ao vivo — fechar a sobreposição flutuante",
+    "goLiveTitle": "Ficar ao vivo — uma sobreposição de vidro transparente que flutua sobre o Rekordbox, lê o que está tocando e revela os melhores próximos movimentos",
+    "screenPermissionError": "O SetSense Live precisa de permissão de Gravação de tela (Ajustes do Sistema → Privacidade)."
+  },
+  "energy": {
+    "pill": "Analisando energia <0>{{processed}} / {{total}}</0>…",
+    "pillTitle": "Analisando a energia espectral de cada faixa — RMS, brilho e sonoridade — para calcular as pontuações de energia DJ. Executa uma vez por faixa e depois fica em cache."
+  },
+  "menu": {
+    "more": "Mais",
+    "moreAria": "Mais opções",
+    "importLibrary": "Importar biblioteca",
+    "sendFeedback": "Enviar feedback",
+    "settings": "Ajustes"
+  },
+  "trial": {
+    "titleLastDay": "Último dia do seu teste Pro — quando ele terminar, você perderá o Set Architect, a busca na biblioteca com IA e a exportação. Clique para manter o Pro.",
+    "title": "Seu teste Pro termina em {{days}} dias — você perderá o Set Architect, a busca na biblioteca com IA e a exportação. Clique para manter o Pro.",
+    "labelLastDay": "Último dia de Pro",
+    "labelTwoDays": "Restam 2 dias de Pro",
+    "label": "Teste · {{days}} dias"
+  },
+  "renewal": {
+    "title_one": "Sua assinatura Pro termina em {{count}} dia — renove para manter o Set Architect, a busca na biblioteca com IA e a exportação.",
+    "title_other": "Sua assinatura Pro termina em {{count}} dias — renove para manter o Set Architect, a busca na biblioteca com IA e a exportação.",
+    "labelTomorrow": "Pro termina amanhã — renovar",
+    "label": "Pro termina em {{days}} dias — renovar"
+  },
+  "actions": {
+    "export": "Exportar",
+    "goPro": "Seja Pro"
+  }
+}

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Check, Trash2 } from 'lucide-react'
+import { APP_NAME } from '@/utils/constants'
 import { motion, AnimatePresence } from '@/components/shared/Motion'
 
 /**
@@ -10,7 +12,14 @@ import { motion, AnimatePresence } from '@/components/shared/Motion'
  * overlay never has to animate out: the whole app simply restarts into onboarding.
  */
 
-const STEPS = ['Library', 'Settings', 'Play history', 'Artwork', 'Caches'] as const
+// Stable identifiers for each clear-step; the visible label is resolved via i18n.
+const STEP_KEYS = [
+  'step.library',
+  'step.settings',
+  'step.history',
+  'step.artwork',
+  'step.caches'
+] as const
 
 // Per-item dwell + a final beat before we trigger the wipe. Tuned so the whole
 // sequence reads as deliberate (~2s) without feeling slow.
@@ -18,12 +27,13 @@ const STEP_MS = 300
 const FINAL_BEAT_MS = 550
 
 export function FreshStartOverlay({ onComplete }: { onComplete: () => void }): React.JSX.Element {
+  const { t } = useTranslation('shared')
   const [doneCount, setDoneCount] = useState(0)
   const firedRef = useRef(false)
 
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = []
-    for (let i = 1; i <= STEPS.length; i++) {
+    for (let i = 1; i <= STEP_KEYS.length; i++) {
       timers.push(setTimeout(() => setDoneCount(i), STEP_MS * i))
     }
     timers.push(
@@ -33,13 +43,13 @@ export function FreshStartOverlay({ onComplete }: { onComplete: () => void }): R
           firedRef.current = true
           onComplete()
         },
-        STEP_MS * STEPS.length + FINAL_BEAT_MS
+        STEP_MS * STEP_KEYS.length + FINAL_BEAT_MS
       )
     )
     return () => timers.forEach(clearTimeout)
   }, [onComplete])
 
-  const allDone = doneCount >= STEPS.length
+  const allDone = doneCount >= STEP_KEYS.length
 
   return (
     <motion.div
@@ -48,7 +58,7 @@ export function FreshStartOverlay({ onComplete }: { onComplete: () => void }): R
       animate={{ opacity: 1 }}
       transition={{ duration: 0.25 }}
       role="alertdialog"
-      aria-label="Resetting SetSense"
+      aria-label={t('freshStart.resettingAria', { app: APP_NAME })}
       aria-live="assertive"
     >
       <div className="fresh-start-card">
@@ -62,14 +72,14 @@ export function FreshStartOverlay({ onComplete }: { onComplete: () => void }): R
         </motion.div>
 
         <div className="fresh-start-title ss-h2">
-          {allDone ? 'Starting fresh…' : 'Clearing SetSense'}
+          {allDone ? t('freshStart.startingFresh') : t('freshStart.clearing', { app: APP_NAME })}
         </div>
 
         <ul className="fresh-start-list">
-          {STEPS.map((label, i) => {
+          {STEP_KEYS.map((stepKey, i) => {
             const status = i < doneCount ? 'done' : i === doneCount ? 'active' : 'pending'
             return (
-              <li key={label} className={`fresh-start-item is-${status}`}>
+              <li key={stepKey} className={`fresh-start-item is-${status}`}>
                 <span className="fresh-start-mark" aria-hidden="true">
                   <AnimatePresence mode="wait" initial={false}>
                     {status === 'done' ? (
@@ -100,7 +110,7 @@ export function FreshStartOverlay({ onComplete }: { onComplete: () => void }): R
                     )}
                   </AnimatePresence>
                 </span>
-                <span className="fresh-start-label">{label}</span>
+                <span className="fresh-start-label">{t(`freshStart.${stepKey}`)}</span>
               </li>
             )
           })}

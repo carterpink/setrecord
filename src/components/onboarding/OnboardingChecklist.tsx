@@ -1,4 +1,5 @@
 import { Check, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { motion } from '@/components/shared/Motion'
 import { useUiStore } from '@/stores/uiStore'
 import { useSetStore } from '@/stores/setStore'
@@ -17,6 +18,7 @@ import {
  * (imported + saw a suggestion + started a set) or dismisses it.
  */
 export function OnboardingChecklist(): React.JSX.Element | null {
+  const { t } = useTranslation('onboarding')
   const steps = useChecklistSteps()
   const activationComplete = useActivationComplete()
   const dismissed = useProgressStore((s) => s.progress.checklistDismissed)
@@ -70,11 +72,11 @@ export function OnboardingChecklist(): React.JSX.Element | null {
         }}
       >
         <span className="ss-body-sm" style={{ fontWeight: 600 }}>
-          Get set up — {done} of {steps.length} done
+          {t('checklist.heading', { done, total: steps.length })}
         </span>
         <button
           type="button"
-          aria-label="Dismiss checklist"
+          aria-label={t('checklist.dismissAria')}
           onClick={() => void dismissChecklist()}
           style={{
             background: 'none',

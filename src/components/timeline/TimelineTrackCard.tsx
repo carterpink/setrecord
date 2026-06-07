@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
 import clsx from 'clsx'
 import {
@@ -19,6 +20,7 @@ import type { ComboResult, SetTrack, Track } from '@/types'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
+import { useCollabStore } from '@/stores/collabStore'
 import { formatDuration, formatPosition } from '@/utils/format'
 import { EnergyChip } from '@/components/shared/EnergyChip'
 import { TransitionDot } from '@/components/shared/TransitionDot'
@@ -44,6 +46,7 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
   onSelect,
   onRemove
 }: TimelineTrackCardProps): React.JSX.Element {
+  const { t } = useTranslation('timeline')
   const { track, position, transitionScore } = setTrack
   const score = transitionScore
   const isLocked = setTrack.locked === true
@@ -51,6 +54,16 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
   const learnModeEnabled = useUiStore((s) => s.learnModeEnabled)
   const showModal = useUiStore((s) => s.showModal)
   const isPhantom = track.phantom === true
+
+  // Live collaboration: highlight the slot a peer is currently focused on.
+  const editorColor = useCollabStore((s) => {
+    const peer = s.peers.find((p) => p.editingSlotId === setTrack.id)
+    return peer ? peer.color : null
+  })
+  const editorName = useCollabStore((s) => {
+    const peer = s.peers.find((p) => p.editingSlotId === setTrack.id)
+    return peer ? peer.name : null
+  })
 
   const [combosData, setCombosData] = useState<{ results: ComboResult[]; loading: boolean } | null>(
     null
@@ -134,7 +147,8 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.4 : 1,
-    cursor: isLocked ? 'default' : isDragging ? 'grabbing' : 'grab'
+    cursor: isLocked ? 'default' : isDragging ? 'grabbing' : 'grab',
+    ...(editorColor ? { boxShadow: `0 0 0 1.5px ${editorColor}` } : null)
   }
 
   return (
@@ -160,19 +174,19 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
           className={clsx('tl-handle', isThisPlaying && 'playing')}
           aria-label={
             isPhantom
-              ? 'Phantom track — not in your library yet'
+              ? t('card.phantomAria')
               : missing
-                ? 'File not found'
+                ? t('card.fileNotFoundAria')
                 : isThisPlaying
-                  ? `Pause ${track.title}`
-                  : `Preview ${track.title}`
+                  ? t('card.pauseAria', { title: track.title })
+                  : t('card.previewAria', { title: track.title })
           }
           disabled={missing || isPhantom}
           title={
             isPhantom
-              ? 'Buy or download this track to enable preview'
+              ? t('card.phantomBuyTitle')
               : missing
-                ? `File not found: ${track.filePath}`
+                ? t('card.fileNotFoundTitle', { path: track.filePath })
                 : undefined
           }
           style={missing || isPhantom ? { opacity: 0.35, cursor: 'not-allowed' } : undefined}
@@ -207,6 +221,23 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
           <div className="tl-row1">
             <span className="tl-num ss-mono">{formatPosition(position)}</span>
             <span className="ss-h3">{track.title}</span>
+            {editorName && (
+              <span
+                className="ss-caption"
+                style={{
+                  marginLeft: 6,
+                  padding: '1px 6px',
+                  borderRadius: 999,
+                  background: editorColor ?? 'transparent',
+                  color: '#0a0a0a',
+                  fontSize: 9,
+                  fontWeight: 700,
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {editorName}
+              </span>
+            )}
           </div>
           <div className="ss-body-sm" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span>
@@ -241,7 +272,7 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
               }}
             >
               <AlertCircle size={10} strokeWidth={2} />
-              File not found
+              {t('card.fileNotFound')}
             </div>
           )}
           {score ? (
@@ -249,13 +280,16 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
               className="tl-q"
               onClick={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
-              title={`Score ${score.score}/100 · ${(score.reasons ?? []).join(' · ')} — green = clean mix, amber = messy, red = trainwreck`}
+              title={t('card.scoreTitle', {
+                score: score.score,
+                reasons: (score.reasons ?? []).join(' · ')
+              })}
             >
               <TransitionDot kind={score.dotKind} />
               {learnModeEnabled && previousTrack ? (
                 <LearnTooltip
                   explanation={explainTransition(score, previousTrack, track)}
-                  iconLabel={`Explain transition: ${score.label}`}
+                  iconLabel={t('card.explainTransitionAria', { label: score.label })}
                 >
                   <span
                     className="ss-caption"
@@ -292,13 +326,13 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
           <button
             type="button"
             className={clsx('icon-btn sm tl-lock-btn', isLocked && 'tl-lock-btn--locked')}
-            aria-label={isLocked ? `Unlock ${track.title}` : `Lock ${track.title} in place`}
-            aria-pressed={isLocked}
-            title={
+            aria-label={
               isLocked
-                ? 'Locked in place — Set Architect will preserve this position'
-                : "Lock in place — Set Architect won't replace this track"
+                ? t('card.unlockAria', { title: track.title })
+                : t('card.lockAria', { title: track.title })
             }
+            aria-pressed={isLocked}
+            title={isLocked ? t('card.lockedTitle') : t('card.unlockedTitle')}
             onClick={(e) => {
               e.stopPropagation()
               toggleLock(setTrack.id)
@@ -316,7 +350,7 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
             <button
               type="button"
               className="icon-btn sm"
-              aria-label={`Remove ${track.title}`}
+              aria-label={t('card.removeAria', { title: track.title })}
               onClick={(e) => {
                 e.stopPropagation()
                 onRemove()
@@ -332,8 +366,8 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
               ref={menuBtnRef}
               type="button"
               className="icon-btn sm tl-lock-btn"
-              aria-label="More actions"
-              title="More actions"
+              aria-label={t('card.moreActionsAria')}
+              title={t('card.moreActionsTitle')}
               aria-expanded={showMenu}
               onClick={openMenu}
               onPointerDown={(e) => e.stopPropagation()}
@@ -377,7 +411,7 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
               }}
             >
               <History size={13} strokeWidth={1.7} aria-hidden="true" />
-              Play history
+              {t('menu.playHistory')}
             </button>
             <button
               type="button"
@@ -389,7 +423,7 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
               }}
             >
               <Disc3 size={13} strokeWidth={1.7} aria-hidden="true" />
-              Edit cue points
+              {t('menu.editCues')}
             </button>
           </div>,
           document.body
@@ -400,7 +434,7 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
           <div
             className="combos-overlay"
             role="dialog"
-            aria-label={`Tracks played after ${track.title}`}
+            aria-label={t('combos.dialogAria', { title: track.title })}
             onClick={(e) => {
               if (e.target === e.currentTarget) setCombosData(null)
             }}
@@ -417,7 +451,7 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
                       letterSpacing: '0.08em'
                     }}
                   >
-                    After
+                    {t('combos.after')}
                   </div>
                   <div className="ss-body-sm" style={{ fontWeight: 500 }}>
                     {track.title}
@@ -426,7 +460,7 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
                 <button
                   className="smart-filter-dismiss"
                   onClick={() => setCombosData(null)}
-                  aria-label="Close"
+                  aria-label={t('combos.closeAria')}
                 >
                   <X size={12} strokeWidth={2} />
                 </button>
@@ -436,14 +470,14 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
                   className="ss-caption"
                   style={{ color: 'var(--text-tertiary)', padding: '8px 0' }}
                 >
-                  Loading…
+                  {t('combos.loading')}
                 </div>
               ) : combosData.results.length === 0 ? (
                 <div
                   className="ss-caption"
                   style={{ color: 'var(--text-tertiary)', padding: '8px 0' }}
                 >
-                  No play history yet. Import your Rekordbox performance data to see this.
+                  {t('combos.empty')}
                 </div>
               ) : (
                 <div className="combos-list">
@@ -455,7 +489,9 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
                           {c.track.artist}
                         </div>
                       </div>
-                      <span className="combo-count ss-caption">{c.count}×</span>
+                      <span className="combo-count ss-caption">
+                        {t('combos.count', { plays: c.count })}
+                      </span>
                     </div>
                   ))}
                 </div>

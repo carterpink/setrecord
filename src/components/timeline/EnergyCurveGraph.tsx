@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import {
   ResponsiveContainer,
   LineChart,
@@ -43,6 +44,7 @@ export function EnergyCurveGraph({
   viewMode = 'energy',
   energyCurveType
 }: Props): React.JSX.Element {
+  const { t } = useTranslation('timeline')
   if (tracks.length === 0) {
     return (
       <div className="tl-curve glass-2" style={{ height: 80, borderRadius: 'var(--radius-md)' }} />
@@ -80,10 +82,14 @@ export function EnergyCurveGraph({
             }}
             itemStyle={{ color: 'rgba(255,255,255,0.7)' }}
             labelStyle={{ color: 'rgba(255,255,255,0.4)', marginBottom: 2 }}
-            labelFormatter={(v) => `Track ${v}`}
+            labelFormatter={(v) => t('curve.trackLabel', { position: v })}
             formatter={(value, name) => [
               value,
-              name === 'actual' ? (viewMode === 'energy' ? 'Energy' : 'BPM') : 'Target'
+              name === 'actual'
+                ? viewMode === 'energy'
+                  ? t('curve.seriesEnergy')
+                  : t('curve.seriesBpm')
+                : t('curve.seriesTarget')
             ]}
             cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
           />

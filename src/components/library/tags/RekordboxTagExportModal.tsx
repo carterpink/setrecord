@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useTranslation, Trans } from 'react-i18next'
 import { X, FileDown, Database, ShieldCheck, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import type { RekordboxTagWriteResult } from '@/types'
 
@@ -37,8 +38,20 @@ interface DoneState {
  *    with an automatic backup taken first and Rekordbox required to be closed.
  */
 export function RekordboxTagExportModal({ onClose }: Props): React.ReactPortal {
+  const { t } = useTranslation('library')
   const [phase, setPhase] = useState<Phase>('choose')
   const [done, setDone] = useState<DoneState | null>(null)
+  // When Settings → Library defaults to XML-only, the direct DB-write path is
+  // hidden — a deliberate safety guard around the live Rekordbox database.
+  const [allowNative, setAllowNative] = useState(false)
+
+  useEffect(() => {
+    if (typeof window.setsense === 'undefined') return
+    window.setsense
+      .getSettings()
+      .then((s) => setAllowNative((s.defaultTagExportRoute ?? 'xml') === 'native'))
+      .catch(() => {})
+  }, [])
 
   async function runXml(): Promise<void> {
     setPhase('running')
@@ -51,10 +64,14 @@ export function RekordboxTagExportModal({ onClose }: Props): React.ReactPortal {
       res.success
         ? {
             ok: true,
-            title: 'Tags exported',
-            detail: `Wrote ${res.trackCount ?? 0} tracks to an XML file. In Rekordbox, use File → Import Collection (your library isn't overwritten) — tags appear in the Comments column.`
+            title: t('tagExport.xmlDoneTitle'),
+            detail: t('tagExport.xmlDoneDetail', { count: res.trackCount ?? 0 })
           }
-        : { ok: false, title: 'Export failed', detail: res.error ?? 'Something went wrong.' }
+        : {
+            ok: false,
+            title: t('tagExport.xmlFailTitle'),
+            detail: res.error ?? t('tagExport.somethingWrong')
+          }
     )
     setPhase('done')
   }
@@ -66,14 +83,17 @@ export function RekordboxTagExportModal({ onClose }: Props): React.ReactPortal {
       res.success
         ? {
             ok: true,
-            title: 'Tags written to Rekordbox',
-            detail: `Created ${res.tagsCreated ?? 0} MyTags and tagged ${res.associations ?? 0} tracks. Open Rekordbox and filter by MyTag to see them.`,
+            title: t('tagExport.nativeDoneTitle'),
+            detail: t('tagExport.nativeDoneDetail', {
+              tags: res.tagsCreated ?? 0,
+              tracks: res.associations ?? 0
+            }),
             backupPath: res.backupPath
           }
         : {
             ok: false,
-            title: 'Could not write tags',
-            detail: res.error ?? 'Something went wrong.',
+            title: t('tagExport.nativeFailTitle'),
+            detail: res.error ?? t('tagExport.somethingWrong'),
             backupPath: res.backupPath
           }
     )
@@ -84,7 +104,7 @@ export function RekordboxTagExportModal({ onClose }: Props): React.ReactPortal {
     <div
       className="combos-overlay"
       role="dialog"
-      aria-label="Send tags to Rekordbox"
+      aria-label={t('tagExport.dialogAria')}
       onClick={(e) => {
         if (e.target === e.currentTarget && phase !== 'running') onClose()
       }}
@@ -92,10 +112,14 @@ export function RekordboxTagExportModal({ onClose }: Props): React.ReactPortal {
       <div className="combos-popover glass-3" style={{ width: 440, maxWidth: '90vw' }}>
         <div className="combos-header">
           <div className="ss-body-sm" style={{ fontWeight: 600 }}>
-            Send tags to Rekordbox
+            {t('tagExport.title')}
           </div>
           {phase !== 'running' && (
-            <button className="smart-filter-dismiss" onClick={onClose} aria-label="Close">
+            <button
+              className="smart-filter-dismiss"
+              onClick={onClose}
+              aria-label={t('tagExport.close')}
+            >
               <X size={12} strokeWidth={2} />
             </button>
           )}
@@ -107,29 +131,34 @@ export function RekordboxTagExportModal({ onClose }: Props): React.ReactPortal {
               <FileDown size={18} strokeWidth={1.6} style={{ color: 'var(--accent)' }} />
               <div style={{ textAlign: 'left' }}>
                 <div className="ss-body-sm" style={{ fontWeight: 600 }}>
-                  Rekordbox XML <span style={{ color: 'var(--accent)' }}>· Recommended</span>
+                  {t('tagExport.xmlTitle')}{' '}
+                  <span style={{ color: 'var(--accent)' }}>· {t('tagExport.recommended')}</span>
                 </div>
                 <div className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                  Safest. Tags land in the Comments column. Your library is never modified.
+                  {t('tagExport.xmlDetail')}
                 </div>
               </div>
             </button>
-            <button
-              type="button"
-              onClick={() => setPhase('confirm-native')}
-              style={optionCardStyle}
-            >
-              <Database size={18} strokeWidth={1.6} style={{ color: 'var(--text-secondary)' }} />
-              <div style={{ textAlign: 'left' }}>
-                <div className="ss-body-sm" style={{ fontWeight: 600 }}>
-                  Write directly to Rekordbox{' '}
-                  <span style={{ color: 'var(--text-tertiary)' }}>· Advanced</span>
+            {allowNative && (
+              <button
+                type="button"
+                onClick={() => setPhase('confirm-native')}
+                style={optionCardStyle}
+              >
+                <Database size={18} strokeWidth={1.6} style={{ color: 'var(--text-secondary)' }} />
+                <div style={{ textAlign: 'left' }}>
+                  <div className="ss-body-sm" style={{ fontWeight: 600 }}>
+                    {t('tagExport.directTitle')}{' '}
+                    <span style={{ color: 'var(--text-tertiary)' }}>
+                      · {t('tagExport.advanced')}
+                    </span>
+                  </div>
+                  <div className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
+                    {t('tagExport.directDetail')}
+                  </div>
                 </div>
-                <div className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                  Real, filterable MyTags. Takes a backup first; Rekordbox must be closed.
-                </div>
-              </div>
-            </button>
+              </button>
+            )}
           </div>
         )}
 
@@ -155,22 +184,20 @@ export function RekordboxTagExportModal({ onClose }: Props): React.ReactPortal {
                 className="ss-caption"
                 style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}
               >
-                This writes directly into your Rekordbox library.{' '}
-                <strong>Close Rekordbox first.</strong> SetSense saves a timestamped backup of your
-                database before writing, and rolls back if anything goes wrong.
+                <Trans t={t} i18nKey="tagExport.warning" components={[<strong key="0" />]} />
               </div>
             </div>
             <ul
               className="ss-caption"
               style={{ color: 'var(--text-tertiary)', margin: '0 0 14px 16px', lineHeight: 1.6 }}
             >
-              <li>Creates a “SetSense” MyTag group with your tags</li>
-              <li>Tags only tracks that came from your Rekordbox library</li>
-              <li>Won’t duplicate tags a track already has</li>
+              <li>{t('tagExport.bullet1')}</li>
+              <li>{t('tagExport.bullet2')}</li>
+              <li>{t('tagExport.bullet3')}</li>
             </ul>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button type="button" className="btn btn-ghost" onClick={() => setPhase('choose')}>
-                Back
+                {t('tagExport.back')}
               </button>
               <button
                 type="button"
@@ -179,7 +206,7 @@ export function RekordboxTagExportModal({ onClose }: Props): React.ReactPortal {
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
               >
                 <ShieldCheck size={13} strokeWidth={1.7} />
-                Back up &amp; write tags
+                {t('tagExport.backupAndWrite')}
               </button>
             </div>
           </div>
@@ -190,7 +217,7 @@ export function RekordboxTagExportModal({ onClose }: Props): React.ReactPortal {
             className="ss-body-sm"
             style={{ padding: '18px 4px', color: 'var(--text-secondary)' }}
           >
-            Working… this won’t take long.
+            {t('tagExport.working')}
           </div>
         )}
 
@@ -223,14 +250,14 @@ export function RekordboxTagExportModal({ onClose }: Props): React.ReactPortal {
                     className="ss-caption"
                     style={{ color: 'var(--text-tertiary)', marginTop: 6, wordBreak: 'break-all' }}
                   >
-                    Backup: {done.backupPath}
+                    {t('tagExport.backup', { path: done.backupPath })}
                   </div>
                 )}
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button type="button" className="btn btn-primary" onClick={onClose}>
-                Done
+                {t('tagExport.done')}
               </button>
             </div>
           </div>

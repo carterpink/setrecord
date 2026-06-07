@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { CuePoint, HotCue, Loop } from '@/types'
 import type { WaveformPeaks } from '@/utils/waveformPeaksCache'
 import { beatsInRange, type Beatgrid, barBeatAt } from '@/utils/beatgrid'
@@ -68,6 +69,7 @@ interface ProWaveformProps {
  */
 export const ProWaveform = forwardRef<ProWaveformHandle, ProWaveformProps>(
   function ProWaveform(props, ref): React.JSX.Element {
+    const { t } = useTranslation('shared')
     const { height = 150, minimapHeight = 34 } = props
 
     const wrapRef = useRef<HTMLDivElement>(null)
@@ -539,7 +541,7 @@ export const ProWaveform = forwardRef<ProWaveformHandle, ProWaveformProps>(
         <canvas
           ref={miniRef}
           role="img"
-          aria-label="Track overview waveform. Click or drag to scrub; use the playback controls and arrow keys to navigate."
+          aria-label={t('proWaveform.overviewAria')}
           style={{ display: 'block', width: '100%', cursor: 'pointer', borderRadius: 6 }}
           onPointerDown={(e) => {
             dragRef.current = 'mini'
@@ -558,7 +560,7 @@ export const ProWaveform = forwardRef<ProWaveformHandle, ProWaveformProps>(
         <canvas
           ref={mainRef}
           role="img"
-          aria-label="Detailed waveform. Click or drag to set the playhead; Space plays or pauses, left and right arrows nudge by 100ms."
+          aria-label={t('proWaveform.detailAria')}
           style={{
             display: 'block',
             width: '100%',

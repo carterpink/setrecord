@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 interface EnergyCurveDiagramProps {
   target: number[]
   actual: number[]
@@ -27,6 +29,7 @@ export function EnergyCurveDiagram({
   width = 280,
   height = 110
 }: EnergyCurveDiagramProps): React.JSX.Element {
+  const { t } = useTranslation('learn')
   const padX = 8
   const padY = 8
   const targetPath = buildPath(target, width, height, padX, padY)
@@ -39,10 +42,10 @@ export function EnergyCurveDiagram({
         height={height}
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label="Energy curve: target versus achieved across the set"
+        aria-label={t('diagrams.energy.aria')}
         style={{ display: 'block' }}
       >
-        <title>Energy curve target vs achieved</title>
+        <title>{t('diagrams.energy.title')}</title>
         {[2, 5, 8].map((g) => {
           const innerH = height - padY * 2
           const y = padY + innerH - (g / 10) * innerH
@@ -90,7 +93,7 @@ export function EnergyCurveDiagram({
               borderRadius: 1
             }}
           />
-          Target
+          {t('diagrams.energy.target')}
         </span>
         <span
           className="ss-caption"
@@ -105,7 +108,7 @@ export function EnergyCurveDiagram({
               borderRadius: 1
             }}
           />
-          Your set
+          {t('diagrams.energy.yourSet')}
         </span>
       </div>
     </div>

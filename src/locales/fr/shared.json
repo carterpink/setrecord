@@ -1,0 +1,142 @@
+{
+  "bpm": {
+    "value": "{{bpm}} BPM",
+    "iconLabel": "Qu’est-ce que le BPM ?"
+  },
+  "energy": {
+    "analysing": "Énergie : analyse…",
+    "pendingAria": "Énergie en attente",
+    "editableAria": "Énergie {{value}} sur 10, modifiable",
+    "decreaseAria": "Baisser l’énergie",
+    "increaseAria": "Augmenter l’énergie",
+    "iconLabel": "Qu’est-ce que le score d’énergie ?",
+    "titleOverride": "Énergie : {{value}}/10 (réglée manuellement)",
+    "title": "Énergie : {{value}}/10",
+    "valueAria": "Énergie {{value}} sur 10"
+  },
+  "energyBar": {
+    "aria": "Énergie {{level}} sur {{max}}"
+  },
+  "key": {
+    "iconLabel": "Qu’est-ce qu’une clé Camelot ?",
+    "aria": "Clé {{key}}"
+  },
+  "errorBoundary": {
+    "chromeLabelled": "{{label}} indisponible.",
+    "chromeGeneric": "Cette barre d’outils est indisponible.",
+    "reload": "Recharger l’app",
+    "retry": "Réessayer",
+    "title": "Une erreur est survenue",
+    "bodyLabelled": "Le panneau {{label}} a rencontré une erreur.",
+    "bodyGeneric": "Un panneau a rencontré une erreur.",
+    "exhaustedHint": "Recharger l’app devrait régler le problème.",
+    "recoverHint": "Tu peux réessayer ou passer à une autre vue.",
+    "tryAgain": "Réessayer"
+  },
+  "fatalError": {
+    "title": "{{app}} n’a pas pu démarrer",
+    "body": "Le cœur de l’application n’a pas pu se charger. Cela signifie généralement que l’installation est endommagée. Quitte et réinstalle {{app}}, ou contacte le support si le problème persiste."
+  },
+  "inlineWaveform": {
+    "aria": "Aperçu de la forme d’onde"
+  },
+  "librarySourceGuide": {
+    "duration": "Cela prend environ 30 secondes.",
+    "step1": {
+      "title": "Ouvre Rekordbox",
+      "body": "Lance l’app sur ce Mac si elle n’est pas déjà ouverte."
+    },
+    "step2": {
+      "title": "Fichier › Exporter la collection au format xml",
+      "body": "Dans la barre de menus. Enregistre le fichier où tu veux — le Bureau convient."
+    },
+    "step3": {
+      "title": "Choisis le fichier ci-dessous",
+      "body": "{{app}} lit l’export en lecture seule — Rekordbox reste intact."
+    }
+  },
+  "noLibrary": {
+    "defaultTitle": "Importe ta bibliothèque Rekordbox pour débloquer ceci",
+    "importButton": "Importer la bibliothèque",
+    "guideLink": "Comment exporter le XML Rekordbox"
+  },
+  "playlistSource": {
+    "allLibrary": "Toute la bibliothèque",
+    "onePlaylist": "1 playlist",
+    "manyPlaylists": "{{count}} playlists"
+  },
+  "proGate": {
+    "trialEndedPrefix": "Ta période d’essai Pro est terminée. {{description}}",
+    "keepPro": "Garder Pro",
+    "unlock": "Débloquer avec Pro"
+  },
+  "search": {
+    "placeholder": "Rechercher…"
+  },
+  "toast": {
+    "moveToSet": "Déplacer vers {{name}}",
+    "moveAria": "Déplacer vers un autre set",
+    "dismiss": "Fermer"
+  },
+  "usb": {
+    "never": "Jamais",
+    "today": "Aujourd’hui",
+    "yesterday": "Hier",
+    "daysAgo": "Il y a {{count}} jours",
+    "weeksAgo": "Il y a {{count}} semaines",
+    "monthsAgo": "Il y a {{count}} mois",
+    "renamedTo": "Renommé en « {{name}} »",
+    "renameAria": "Renommer la clé USB",
+    "saveNameAria": "Enregistrer le nom",
+    "removedFromTargets": "« {{name}} » retiré des cibles d’export",
+    "setAsTarget": "« {{name}} » défini comme cible d’export",
+    "speedTestFailed": "Échec du test de vitesse",
+    "removeFavorite": "Retirer des favoris",
+    "addFavorite": "Ajouter aux favoris",
+    "removeTarget": "Retirer la cible d’export",
+    "markTarget": "Marquer comme cible d’export",
+    "defaultTarget": "Cible d’export par défaut",
+    "setTarget": "Définir comme cible d’export",
+    "moreOptions": "Plus d’options",
+    "rename": "Renommer",
+    "testingSpeed": "Test de vitesse…",
+    "testSpeed": "Tester la vitesse",
+    "free": "{{size}} libres",
+    "totalUsed": "{{total}} au total · {{percent}}% utilisé",
+    "filesystem": "Système de fichiers",
+    "speed": "Vitesse",
+    "testing": "Test en cours…",
+    "speedValue": "~{{speed}} Mo/s",
+    "lastExport": "Dernier export",
+    "exports": "Exports",
+    "forget": "Oublier {{name}}",
+    "forgetTooltip": "Oublier cet appareil",
+    "forgotten": "« {{name}} » oublié",
+    "exportsCount": "{{count}} exports",
+    "couldNotScan": "Impossible de rechercher des clés USB",
+    "trigger": "Clés USB — {{count}} connectées",
+    "connectedBadge": "{{count}} connectées",
+    "drivesTitle": "Clés USB",
+    "refresh": "Actualiser",
+    "refreshAria": "Actualiser les clés USB",
+    "closeAria": "Fermer le panneau USB",
+    "noneDetected": "Aucune clé USB détectée",
+    "plugInHint": "Branche une clé USB et clique sur actualiser",
+    "pastDrives": "Clés précédentes",
+    "tooltip": "Clés USB"
+  },
+  "freshStart": {
+    "step.library": "Bibliothèque",
+    "step.settings": "Réglages",
+    "step.history": "Historique de lecture",
+    "step.artwork": "Pochettes",
+    "step.caches": "Caches",
+    "resettingAria": "Réinitialisation de {{app}}",
+    "startingFresh": "Nouveau départ…",
+    "clearing": "Nettoyage de {{app}}"
+  },
+  "proWaveform": {
+    "overviewAria": "Forme d’onde d’ensemble de la piste. Clique ou fais glisser pour parcourir ; utilise les commandes de lecture et les flèches pour naviguer.",
+    "detailAria": "Forme d’onde détaillée. Clique ou fais glisser pour placer la tête de lecture ; Espace lit ou met en pause, les flèches gauche et droite décalent de 100 ms."
+  }
+}

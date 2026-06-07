@@ -1,9 +1,12 @@
+import { useTranslation } from 'react-i18next'
+
 interface BpmRampDiagramProps {
   fromBpm: number
   toBpm: number
 }
 
 export function BpmRampDiagram({ fromBpm, toBpm }: BpmRampDiagramProps): React.JSX.Element {
+  const { t } = useTranslation('learn')
   const delta = toBpm - fromBpm
   const direction = delta > 0 ? '+' : delta < 0 ? '−' : '±'
   const fmt = (n: number): string => (Math.round(n * 10) / 10).toString()
@@ -25,12 +28,9 @@ export function BpmRampDiagram({ fromBpm, toBpm }: BpmRampDiagramProps): React.J
         height={20}
         viewBox="0 0 60 20"
         role="img"
-        aria-label={`BPM ${direction}${fmt(Math.abs(delta))}`}
+        aria-label={t('diagrams.bpm.aria', { direction, amount: fmt(Math.abs(delta)) })}
       >
-        <title>
-          BPM change: {direction}
-          {fmt(Math.abs(delta))}
-        </title>
+        <title>{t('diagrams.bpm.title', { direction, amount: fmt(Math.abs(delta)) })}</title>
         <line x1={2} y1={10} x2={50} y2={10} stroke="rgba(200,255,61,0.7)" strokeWidth={1.5} />
         <polygon points="50,5 58,10 50,15" fill="rgba(200,255,61,0.7)" />
       </svg>

@@ -18,7 +18,9 @@ import type {
   PlaySession,
   SessionTrack,
   SessionFilter,
-  SessionMetadataPatch
+  SessionMetadataPatch,
+  BriefAnswer,
+  VenueType
 } from '@/types'
 import { interpretTurn } from '@/utils/recallQuery'
 import { useUiStore } from '@/stores/uiStore'
@@ -215,6 +217,12 @@ interface RecallState {
   bulkAssignGigs: (filter: SessionFilter, patch: SessionMetadataPatch) => Promise<number>
   loadGigTracklist: (session: PlaySession) => Promise<void>
   clearGigTracklist: () => void
+  // Pre-gig Brief (game plan) — surface-agnostic (driven from a Gigs row or a Venues card)
+  activeBrief: BriefAnswer | null
+  briefOpen: boolean
+  briefLoading: boolean
+  loadBrief: (venue: string, eventType?: VenueType) => Promise<void>
+  clearBrief: () => void
 
   // Flag-for-gig loop
   flaggedTracks: Track[]
@@ -508,6 +516,24 @@ export const useRecallStore = create<RecallState>((set, get) => ({
     }
   },
   clearGigTracklist: () => set({ gigTracklist: null }),
+
+  activeBrief: null,
+  briefOpen: false,
+  briefLoading: false,
+  loadBrief: async (venue, eventType) => {
+    const s = api()
+    if (!s) return
+    set({ briefOpen: true, briefLoading: true, activeBrief: null })
+    try {
+      const brief = await s.historyBrief(venue || '', eventType)
+      set({ activeBrief: brief })
+    } catch {
+      set({ activeBrief: null })
+    } finally {
+      set({ briefLoading: false })
+    }
+  },
+  clearBrief: () => set({ briefOpen: false, activeBrief: null, briefLoading: false }),
 
   flaggedTracks: [],
   loadFlagged: async () => {

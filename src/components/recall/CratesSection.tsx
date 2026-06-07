@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation, Trans } from 'react-i18next'
 import { Plus, Trash2, Layers, FlaskConical, ChevronDown, ChevronRight } from 'lucide-react'
 import type { CrateRule, CrateWithCount, SmartCrate, AudioFormat, Track } from '@/types'
 import { useRecallStore } from '@/stores/recallStore'
@@ -37,20 +38,20 @@ interface BuilderRule {
   playCountValue?: number
 }
 
-const RULE_LABELS: Record<RuleType, string> = {
-  bpm: 'BPM between',
-  energy: 'Energy between',
-  genre: 'Genre includes',
-  neverPlayed: 'Never played live',
-  rating: 'Rating at least',
-  dormant: 'Not played in (months)',
-  key: 'Key is exactly',
-  keyCompat: 'Key compatible with',
-  format: 'File format is',
-  missingMeta: 'Missing key or BPM',
-  duration: 'Duration between (min)',
-  playCount: 'Play count'
-}
+const RULE_TYPES: RuleType[] = [
+  'bpm',
+  'energy',
+  'genre',
+  'neverPlayed',
+  'rating',
+  'dormant',
+  'key',
+  'keyCompat',
+  'format',
+  'missingMeta',
+  'duration',
+  'playCount'
+]
 
 const CAMELOT_KEYS: string[] = (() => {
   const out: string[] = []
@@ -111,6 +112,7 @@ function numOrUndef(v: string): number | undefined {
 const MAX_RENDER = 150
 
 function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
+  const { t } = useTranslation('recall')
   const saveCrate = useRecallStore((s) => s.saveCrate)
   const [name, setName] = useState('')
   const [match, setMatch] = useState<'all' | 'any'>('all')
@@ -122,7 +124,7 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
   const save = async (): Promise<void> => {
     const crate: SmartCrate = {
       id: crypto.randomUUID(),
-      name: name.trim() || 'Untitled crate',
+      name: name.trim() || t('crates.builder.untitledName'),
       match,
       rules: rules.map(builderRuleToCrateRule)
     }
@@ -134,17 +136,17 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
     <div className="recall-builder glass-2">
       <input
         className="recall-builder-name"
-        placeholder="Crate name"
+        placeholder={t('crates.builder.namePlaceholder')}
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
       <div className="recall-builder-match">
-        Match
+        {t('crates.builder.matchLabel')}
         <select value={match} onChange={(e) => setMatch(e.target.value as 'all' | 'any')}>
-          <option value="all">all</option>
-          <option value="any">any</option>
+          <option value="all">{t('crates.builder.matchAll')}</option>
+          <option value="any">{t('crates.builder.matchAny')}</option>
         </select>
-        of these rules:
+        {t('crates.builder.matchSuffix')}
       </div>
 
       {rules.map((rule, i) => (
@@ -153,9 +155,9 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
             value={rule.type}
             onChange={(e) => updateRule(i, { type: e.target.value as RuleType })}
           >
-            {(Object.keys(RULE_LABELS) as RuleType[]).map((t) => (
-              <option key={t} value={t}>
-                {RULE_LABELS[t]}
+            {RULE_TYPES.map((rt) => (
+              <option key={rt} value={rt}>
+                {t(`crates.ruleLabels.${rt}`)}
               </option>
             ))}
           </select>
@@ -165,13 +167,13 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
               <input
                 type="number"
                 value={rule.bpmMin ?? ''}
-                placeholder="min"
+                placeholder={t('crates.builder.placeholders.min')}
                 onChange={(e) => updateRule(i, { bpmMin: numOrUndef(e.target.value) })}
               />
               <input
                 type="number"
                 value={rule.bpmMax ?? ''}
-                placeholder="max"
+                placeholder={t('crates.builder.placeholders.max')}
                 onChange={(e) => updateRule(i, { bpmMax: numOrUndef(e.target.value) })}
               />
             </>
@@ -183,7 +185,7 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
                 min={1}
                 max={10}
                 value={rule.energyMin ?? ''}
-                placeholder="min"
+                placeholder={t('crates.builder.placeholders.min')}
                 onChange={(e) => updateRule(i, { energyMin: numOrUndef(e.target.value) })}
               />
               <input
@@ -191,7 +193,7 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
                 min={1}
                 max={10}
                 value={rule.energyMax ?? ''}
-                placeholder="max"
+                placeholder={t('crates.builder.placeholders.max')}
                 onChange={(e) => updateRule(i, { energyMax: numOrUndef(e.target.value) })}
               />
             </>
@@ -200,7 +202,7 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
             <input
               type="text"
               value={rule.genreIncludes ?? ''}
-              placeholder="e.g. techno"
+              placeholder={t('crates.builder.placeholders.genre')}
               onChange={(e) => updateRule(i, { genreIncludes: e.target.value })}
             />
           )}
@@ -210,7 +212,7 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
               min={0}
               max={5}
               value={rule.ratingMin ?? ''}
-              placeholder="stars"
+              placeholder={t('crates.builder.placeholders.stars')}
               onChange={(e) => updateRule(i, { ratingMin: numOrUndef(e.target.value) })}
             />
           )}
@@ -219,7 +221,7 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
               type="number"
               min={1}
               value={rule.lastPlayedOlderThanMonths ?? ''}
-              placeholder="months"
+              placeholder={t('crates.builder.placeholders.months')}
               onChange={(e) =>
                 updateRule(i, { lastPlayedOlderThanMonths: numOrUndef(e.target.value) })
               }
@@ -230,7 +232,7 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
               value={rule.keyExact ?? ''}
               onChange={(e) => updateRule(i, { keyExact: e.target.value || undefined })}
             >
-              <option value="">— pick —</option>
+              <option value="">{t('crates.builder.pickPlaceholder')}</option>
               {CAMELOT_KEYS.map((k) => (
                 <option key={k} value={k}>
                   {k}
@@ -243,7 +245,7 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
               value={rule.keyCompatibleWith ?? ''}
               onChange={(e) => updateRule(i, { keyCompatibleWith: e.target.value || undefined })}
             >
-              <option value="">— pick —</option>
+              <option value="">{t('crates.builder.pickPlaceholder')}</option>
               {CAMELOT_KEYS.map((k) => (
                 <option key={k} value={k}>
                   {k}
@@ -258,7 +260,7 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
                 updateRule(i, { format: (e.target.value || undefined) as AudioFormat | undefined })
               }
             >
-              <option value="">— pick —</option>
+              <option value="">{t('crates.builder.pickPlaceholder')}</option>
               {FORMATS.map((f) => (
                 <option key={f} value={f}>
                   {f}
@@ -272,14 +274,14 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
                 type="number"
                 min={0}
                 value={rule.durationMinMin ?? ''}
-                placeholder="min"
+                placeholder={t('crates.builder.placeholders.min')}
                 onChange={(e) => updateRule(i, { durationMinMin: numOrUndef(e.target.value) })}
               />
               <input
                 type="number"
                 min={0}
                 value={rule.durationMaxMin ?? ''}
-                placeholder="max"
+                placeholder={t('crates.builder.placeholders.max')}
                 onChange={(e) => updateRule(i, { durationMaxMin: numOrUndef(e.target.value) })}
               />
             </>
@@ -302,7 +304,7 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
                 type="number"
                 min={0}
                 value={rule.playCountValue ?? ''}
-                placeholder="count"
+                placeholder={t('crates.builder.placeholders.count')}
                 onChange={(e) => updateRule(i, { playCountValue: numOrUndef(e.target.value) })}
               />
             </>
@@ -312,7 +314,7 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
           <button
             type="button"
             className="recall-icon-btn"
-            title="Remove rule"
+            title={t('crates.builder.removeRule')}
             onClick={() => setRules((rs) => rs.filter((_, idx) => idx !== i))}
           >
             <Trash2 size={14} strokeWidth={1.5} />
@@ -325,15 +327,15 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
         className="recall-add-rule"
         onClick={() => setRules((rs) => [...rs, { type: 'energy', energyMin: 8, energyMax: 10 }])}
       >
-        <Plus size={14} strokeWidth={1.5} /> Add rule
+        <Plus size={14} strokeWidth={1.5} /> {t('crates.builder.addRule')}
       </button>
 
       <div className="recall-builder-actions">
         <button type="button" className="btn-ghost" onClick={onClose}>
-          Cancel
+          {t('crates.builder.cancel')}
         </button>
         <button type="button" className="btn-primary" onClick={() => void save()}>
-          Save crate
+          {t('crates.builder.save')}
         </button>
       </div>
     </div>
@@ -341,6 +343,7 @@ function CrateBuilder({ onClose }: { onClose: () => void }): React.JSX.Element {
 }
 
 export function CratesSection(): React.JSX.Element {
+  const { t } = useTranslation('recall')
   const crates = useRecallStore((s) => s.crates)
   const loading = useRecallStore((s) => s.cratesLoading)
   const loadCrates = useRecallStore((s) => s.loadCrates)
@@ -396,22 +399,25 @@ export function CratesSection(): React.JSX.Element {
   return (
     <div className="recall-section">
       <header className="recall-section-head">
-        <h2 className="ss-h2">Crates</h2>
-        <p className="recall-section-sub">
-          Living crates that re-fill themselves from rules. Build one, never sort it again.
-        </p>
+        <h2 className="ss-h2">{t('crates.title')}</h2>
+        <p className="recall-section-sub">{t('crates.subtitle')}</p>
       </header>
 
       {flaggedTracks.length > 0 && (
         <div className="recall-flagged-banner glass-2">
           <FlaskConical size={16} strokeWidth={1.5} />
           <span>
-            <strong>{flaggedTracks.length}</strong> tracks flagged for your next gig
+            <Trans
+              t={t}
+              i18nKey="crates.flaggedBanner"
+              values={{ count: flaggedTracks.length }}
+              components={[<strong key="0" />]}
+            />
           </span>
         </div>
       )}
 
-      {loading && <div className="recall-empty">Loading crates…</div>}
+      {loading && <div className="recall-empty">{t('crates.loading')}</div>}
 
       <div className="recall-crate-grid">
         {crates.map((crate: CrateWithCount) => (
@@ -431,13 +437,15 @@ export function CratesSection(): React.JSX.Element {
             <Layers size={18} strokeWidth={1.5} />
             <span className="recall-crate-name">{crate.name}</span>
             <span className="recall-crate-sub">{formatCrateRules(crate)}</span>
-            <span className="recall-crate-count">{crate.trackCount} tracks</span>
+            <span className="recall-crate-count">
+              {t('crates.trackCount', { count: crate.trackCount })}
+            </span>
             {!crate.isSeed && (
               <button
                 type="button"
                 className="recall-crate-del"
-                title="Delete crate"
-                aria-label={`Delete ${crate.name}`}
+                title={t('crates.deleteTitle')}
+                aria-label={t('crates.deleteAria', { name: crate.name })}
                 onClick={(e) => {
                   e.stopPropagation()
                   void deleteCrate(crate.id)
@@ -454,13 +462,13 @@ export function CratesSection(): React.JSX.Element {
           onClick={() => setBuilding(true)}
         >
           <Plus size={18} strokeWidth={1.5} />
-          <span className="recall-crate-name">New crate</span>
+          <span className="recall-crate-name">{t('crates.newCrate')}</span>
         </button>
       </div>
 
       {building && <CrateBuilder onClose={() => setBuilding(false)} />}
 
-      {selectedLoading && <div className="recall-empty">Evaluating crate…</div>}
+      {selectedLoading && <div className="recall-empty">{t('crates.evaluating')}</div>}
 
       {selected && !selectedLoading && (
         <div className="recall-crate-tracks">
@@ -478,13 +486,20 @@ export function CratesSection(): React.JSX.Element {
               ) : (
                 <ChevronRight size={14} strokeWidth={1.5} />
               )}
-              Rules
+              {t('crates.rules')}
             </button>
           </div>
 
           {rulesOpen && (
             <div className="recall-rules-detail glass-2">
-              <div className="recall-rules-mode">Match {selected.crate.match} of:</div>
+              <div className="recall-rules-mode">
+                {t('crates.matchMode', {
+                  match:
+                    selected.crate.match === 'all'
+                      ? t('crates.builder.matchAll')
+                      : t('crates.builder.matchAny')
+                })}
+              </div>
               <ul>
                 {formatCrateRuleLines(selected.crate).map((line, i) => (
                   <li key={i}>{line}</li>
@@ -496,12 +511,12 @@ export function CratesSection(): React.JSX.Element {
           {isUntestedCrate && checked.size > 0 && (
             <div className="recall-flag-bar glass-2">
               <FlaskConical size={14} strokeWidth={1.5} />
-              <span>{checked.size} selected</span>
+              <span>{t('crates.flagBarSelected', { count: checked.size })}</span>
               <button type="button" className="btn-primary" onClick={() => void handleFlag()}>
-                Flag for next gig
+                {t('crates.flagForNextGig')}
               </button>
               <button type="button" className="btn-ghost" onClick={() => setChecked(new Set())}>
-                Clear
+                {t('crates.clear')}
               </button>
             </div>
           )}
@@ -515,15 +530,15 @@ export function CratesSection(): React.JSX.Element {
                     className="recall-line-check"
                     checked={checked.has(track.id)}
                     onChange={() => toggleCheck(track.id)}
-                    aria-label={`Select ${track.title}`}
+                    aria-label={t('crates.selectTrackAria', { title: track.title })}
                   />
                 )}
                 <RecallTrackLine
                   track={track}
                   badge={
                     flaggedById.has(track.id) ? (
-                      <span className="recall-flagged-pill" title="Flagged for next gig">
-                        <FlaskConical size={11} strokeWidth={1.5} /> testing
+                      <span className="recall-flagged-pill" title={t('crates.flaggedPillTitle')}>
+                        <FlaskConical size={11} strokeWidth={1.5} /> {t('crates.testing')}
                       </span>
                     ) : undefined
                   }
@@ -533,8 +548,7 @@ export function CratesSection(): React.JSX.Element {
           </div>
           {selected.tracks.length > MAX_RENDER && (
             <div className="recall-more-note">
-              Showing first {MAX_RENDER} of {selected.tracks.length} — refine the rules to narrow it
-              down.
+              {t('crates.showingFirst', { max: MAX_RENDER, total: selected.tracks.length })}
             </div>
           )}
         </div>

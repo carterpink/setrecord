@@ -1,0 +1,29 @@
+{
+  "coachmark": {
+    "dismiss": "Got it"
+  },
+  "panel": {
+    "header": "Learn Mode"
+  },
+  "tooltip": {
+    "iconLabel": "Show explanation",
+    "dialogAria": "Explanation",
+    "proLocked": "Learn Mode is a Pro feature. Upgrade to unlock explanations."
+  },
+  "diagrams": {
+    "bpm": {
+      "aria": "BPM {{direction}}{{amount}}",
+      "title": "BPM change: {{direction}}{{amount}}"
+    },
+    "energy": {
+      "aria": "Energy curve: target versus achieved across the set",
+      "title": "Energy curve target vs achieved",
+      "target": "Target",
+      "yourSet": "Your set"
+    },
+    "harmonic": {
+      "aria": "Camelot wheel showing {{fromKey}} and {{toKey}}",
+      "title": "Camelot wheel: {{fromKey}} → {{toKey}}"
+    }
+  }
+}

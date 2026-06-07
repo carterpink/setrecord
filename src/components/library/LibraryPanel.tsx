@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation, Trans } from 'react-i18next'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { AlignJustify, ArrowDownUp, Folder, ListMusic, Menu, Music, SlidersHorizontal, X } from 'lucide-react'
+import {
+  AlignJustify,
+  ArrowDownUp,
+  Folder,
+  ListMusic,
+  Menu,
+  Music,
+  SlidersHorizontal,
+  X
+} from 'lucide-react'
 import type { ComboResult, LibraryTab, Track } from '@/types'
 import { SearchInput } from '@/components/shared/SearchInput'
 import { EmptyState } from '@/components/shared/EmptyState'
@@ -45,17 +55,17 @@ interface TrackFilters {
   format?: string[]
 }
 
-const SORT_LABELS: Record<SortField, string> = {
-  artist: 'Artist',
-  title: 'Title',
-  bpm: 'BPM',
-  energy: 'Energy',
-  key: 'Key',
-  dateAdded: 'Date added',
-  playCount: 'Play count',
-  duration: 'Duration',
-  rating: 'Rating'
-}
+const SORT_FIELDS: readonly SortField[] = [
+  'artist',
+  'title',
+  'bpm',
+  'energy',
+  'key',
+  'dateAdded',
+  'playCount',
+  'duration',
+  'rating'
+]
 
 const CAMELOT_KEYS = [
   '1A',
@@ -99,6 +109,7 @@ function anyActive(f: TrackFilters): boolean {
 }
 
 export function LibraryPanel(): React.JSX.Element {
+  const { t } = useTranslation('library')
   const [tab, setTab] = useState<LibraryTab>('Collection')
   const {
     tracks,
@@ -313,7 +324,7 @@ export function LibraryPanel(): React.JSX.Element {
     <div className="panel glass-1">
       <SearchInput
         ref={searchRef}
-        placeholder="Search library, sets, cue points…"
+        placeholder={t('search.placeholder')}
         kbd="⌘K"
         onChange={handleSearch}
         defaultValue={searchQuery}
@@ -323,9 +334,13 @@ export function LibraryPanel(): React.JSX.Element {
       {!tipDismissed && (
         <div className="search-tip">
           <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-            Also searches cue point labels — try &ldquo;intro&rdquo; or &ldquo;drop&rdquo;
+            {t('search.tip')}
           </span>
-          <button className="smart-filter-dismiss" onClick={dismissTip} aria-label="Dismiss tip">
+          <button
+            className="smart-filter-dismiss"
+            onClick={dismissTip}
+            aria-label={t('search.dismissTip')}
+          >
             <X size={10} strokeWidth={2} />
           </button>
         </div>
@@ -349,24 +364,20 @@ export function LibraryPanel(): React.JSX.Element {
                 className="library-sort-select"
                 value={sortField}
                 onChange={(e) => setSortField(e.target.value as SortField)}
-                aria-label="Sort by"
-                title="Sort library"
+                aria-label={t('sort.byAria')}
+                title={t('sort.byTitle')}
               >
-                {(Object.keys(SORT_LABELS) as SortField[]).map((f) => (
+                {SORT_FIELDS.map((f) => (
                   <option key={f} value={f}>
-                    {SORT_LABELS[f]}
+                    {t(`sort.fields.${f}`)}
                   </option>
                 ))}
               </select>
               <button
                 className="library-sort-dir"
                 onClick={() => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
-                aria-label={
-                  sortDir === 'asc'
-                    ? 'Sort ascending — click for descending'
-                    : 'Sort descending — click for ascending'
-                }
-                title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
+                aria-label={sortDir === 'asc' ? t('sort.ascending') : t('sort.descending')}
+                title={sortDir === 'asc' ? t('sort.ascendingTitle') : t('sort.descendingTitle')}
               >
                 <ArrowDownUp
                   size={12}
@@ -382,8 +393,8 @@ export function LibraryPanel(): React.JSX.Element {
                 size="sm"
                 active={anyActive(filters) || filterPanelOpen}
                 onClick={() => setFilterPanelOpen((v) => !v)}
-                aria-label="Filter library"
-                title="Filter"
+                aria-label={t('toolbar.filterAria')}
+                title={t('toolbar.filterTitle')}
               />
               <IconButton
                 icon={libraryDensity === 'compact' ? AlignJustify : Menu}
@@ -392,10 +403,14 @@ export function LibraryPanel(): React.JSX.Element {
                 onClick={toggleLibraryDensity}
                 aria-label={
                   libraryDensity === 'compact'
-                    ? 'Switch to standard view'
-                    : 'Switch to compact view'
+                    ? t('toolbar.standardViewAria')
+                    : t('toolbar.compactViewAria')
                 }
-                title={libraryDensity === 'compact' ? 'Standard view' : 'Compact view'}
+                title={
+                  libraryDensity === 'compact'
+                    ? t('toolbar.standardViewTitle')
+                    : t('toolbar.compactViewTitle')
+                }
               />
             </div>
           </div>
@@ -413,7 +428,7 @@ export function LibraryPanel(): React.JSX.Element {
               >
                 <div className="filter-panel-inner">
                   <div className="filter-row filter-row--stacked">
-                    <span className="filter-label ss-caption">BPM</span>
+                    <span className="filter-label ss-caption">{t('filters.bpm')}</span>
                     <RangeSlider
                       min={60}
                       max={200}
@@ -431,7 +446,7 @@ export function LibraryPanel(): React.JSX.Element {
                     />
                   </div>
                   <div className="filter-row filter-row--stacked">
-                    <span className="filter-label ss-caption">Energy</span>
+                    <span className="filter-label ss-caption">{t('filters.energy')}</span>
                     <RangeSlider
                       min={1}
                       max={10}
@@ -449,7 +464,7 @@ export function LibraryPanel(): React.JSX.Element {
                     />
                   </div>
                   <div className="filter-row">
-                    <span className="filter-label ss-caption">Key</span>
+                    <span className="filter-label ss-caption">{t('filters.key')}</span>
                     <select
                       className="filter-select"
                       value={filters.key ?? ''}
@@ -457,7 +472,7 @@ export function LibraryPanel(): React.JSX.Element {
                         setFilters((f) => ({ ...f, key: e.target.value || undefined }))
                       }
                     >
-                      <option value="">Any</option>
+                      <option value="">{t('filters.anyKey')}</option>
                       {CAMELOT_KEYS.map((k) => (
                         <option key={k} value={k}>
                           {k}
@@ -466,11 +481,11 @@ export function LibraryPanel(): React.JSX.Element {
                     </select>
                   </div>
                   <div className="filter-row">
-                    <span className="filter-label ss-caption">Genre</span>
+                    <span className="filter-label ss-caption">{t('filters.genre')}</span>
                     <input
                       className="filter-text"
                       type="text"
-                      placeholder="e.g. tech house"
+                      placeholder={t('filters.genrePlaceholder')}
                       value={filters.genre ?? ''}
                       onChange={(e) =>
                         setFilters((f) => ({ ...f, genre: e.target.value || undefined }))
@@ -478,7 +493,7 @@ export function LibraryPanel(): React.JSX.Element {
                     />
                   </div>
                   <div className="filter-row">
-                    <span className="filter-label ss-caption">Format</span>
+                    <span className="filter-label ss-caption">{t('filters.format')}</span>
                     <div className="filter-chips">
                       {FORMATS.map((fmt) => {
                         const active = filters.format?.includes(fmt)
@@ -502,7 +517,7 @@ export function LibraryPanel(): React.JSX.Element {
                   </div>
                   {anyActive(filters) && (
                     <button className="filter-clear-all ss-caption" onClick={() => setFilters({})}>
-                      Clear all filters
+                      {t('filters.clearAll')}
                     </button>
                   )}
                 </div>
@@ -515,7 +530,7 @@ export function LibraryPanel(): React.JSX.Element {
             <div className="active-filter-chips">
               {filters.bpmMin != null && (
                 <span className="active-filter-chip">
-                  BPM ≥ {filters.bpmMin}
+                  {t('filters.chipBpmMin', { value: filters.bpmMin })}
                   <button onClick={() => clearFilter('bpmMin')}>
                     <X size={9} />
                   </button>
@@ -523,7 +538,7 @@ export function LibraryPanel(): React.JSX.Element {
               )}
               {filters.bpmMax != null && (
                 <span className="active-filter-chip">
-                  BPM ≤ {filters.bpmMax}
+                  {t('filters.chipBpmMax', { value: filters.bpmMax })}
                   <button onClick={() => clearFilter('bpmMax')}>
                     <X size={9} />
                   </button>
@@ -531,7 +546,7 @@ export function LibraryPanel(): React.JSX.Element {
               )}
               {filters.energyMin != null && (
                 <span className="active-filter-chip">
-                  Energy ≥ {filters.energyMin}
+                  {t('filters.chipEnergyMin', { value: filters.energyMin })}
                   <button onClick={() => clearFilter('energyMin')}>
                     <X size={9} />
                   </button>
@@ -539,7 +554,7 @@ export function LibraryPanel(): React.JSX.Element {
               )}
               {filters.energyMax != null && (
                 <span className="active-filter-chip">
-                  Energy ≤ {filters.energyMax}
+                  {t('filters.chipEnergyMax', { value: filters.energyMax })}
                   <button onClick={() => clearFilter('energyMax')}>
                     <X size={9} />
                   </button>
@@ -547,7 +562,7 @@ export function LibraryPanel(): React.JSX.Element {
               )}
               {filters.key && (
                 <span className="active-filter-chip">
-                  Key: {filters.key}
+                  {t('filters.chipKey', { value: filters.key })}
                   <button onClick={() => clearFilter('key')}>
                     <X size={9} />
                   </button>
@@ -555,7 +570,7 @@ export function LibraryPanel(): React.JSX.Element {
               )}
               {filters.genre && (
                 <span className="active-filter-chip">
-                  Genre: {filters.genre}
+                  {t('filters.chipGenre', { value: filters.genre })}
                   <button onClick={() => clearFilter('genre')}>
                     <X size={9} />
                   </button>
@@ -595,12 +610,17 @@ export function LibraryPanel(): React.JSX.Element {
                   style={{ overflow: 'hidden' }}
                 >
                   <span className="ss-caption">
-                    Showing playlist <strong>{selectedPlaylist.name}</strong>
+                    <Trans
+                      t={t}
+                      i18nKey="banner.showingPlaylist"
+                      values={{ name: selectedPlaylist.name }}
+                      components={[<strong key="0" />]}
+                    />
                   </span>
                   <button
                     className="smart-filter-dismiss"
                     onClick={() => setSelectedPlaylist(null)}
-                    aria-label="Show all tracks"
+                    aria-label={t('banner.showAllTracks')}
                   >
                     <X size={11} strokeWidth={2} />
                   </button>
@@ -621,12 +641,17 @@ export function LibraryPanel(): React.JSX.Element {
                   style={{ overflow: 'hidden' }}
                 >
                   <span className="ss-caption">
-                    Showing tracks that fit <strong>{filterReferenceTrack.title}</strong>
+                    <Trans
+                      t={t}
+                      i18nKey="banner.showingFit"
+                      values={{ title: filterReferenceTrack.title }}
+                      components={[<strong key="0" />]}
+                    />
                   </span>
                   <button
                     className="smart-filter-dismiss"
                     onClick={toggleSmartFilter}
-                    aria-label="Clear smart filter"
+                    aria-label={t('banner.clearSmartFilter')}
                   >
                     <X size={11} strokeWidth={2} />
                   </button>
@@ -665,9 +690,7 @@ export function LibraryPanel(): React.JSX.Element {
               </div>
             )}
 
-            {!isLoading && !hasLibrary && (
-              <NoLibraryState body="This is where every track you’ve prepped in Rekordbox lives — searchable, sortable, and ready to drop into a set. Import your library to fill it." />
-            )}
+            {!isLoading && !hasLibrary && <NoLibraryState body={t('empty.noLibrary')} />}
 
             {!isLoading && hasLibrary && (
               <div
@@ -684,12 +707,12 @@ export function LibraryPanel(): React.JSX.Element {
                   <div className="library-empty" style={{ padding: 16 }}>
                     <div className="ss-body-sm">
                       {smartFilterActive
-                        ? 'No compatible tracks found. Try relaxing the BPM range or switching off smart filter.'
+                        ? t('empty.noCompatible')
                         : anyActive(filters)
-                          ? 'No tracks match the active filters.'
+                          ? t('empty.noFilterMatch')
                           : selectedPlaylist
-                            ? `No tracks in "${selectedPlaylist.name}".`
-                            : `No tracks match "${searchQuery}"`}
+                            ? t('empty.noPlaylistTracks', { name: selectedPlaylist.name })
+                            : t('empty.noSearchMatch', { query: searchQuery })}
                     </div>
                   </div>
                 ) : (
@@ -746,11 +769,7 @@ export function LibraryPanel(): React.JSX.Element {
       {tab === 'Sets' && (
         <div className="track-list">
           {savedSets.length === 0 ? (
-            <EmptyState
-              icon={ListMusic}
-              title="No saved sets yet"
-              body="Build a set in the timeline and it will appear here."
-            />
+            <EmptyState icon={ListMusic} title={t('sets.emptyTitle')} body={t('sets.emptyBody')} />
           ) : (
             savedSets.map((s) => (
               <SetListRow
@@ -808,7 +827,7 @@ export function LibraryPanel(): React.JSX.Element {
         <div
           className="combos-overlay"
           role="dialog"
-          aria-label={`Tracks played after ${combosData.track.title}`}
+          aria-label={t('combos.dialogAria', { title: combosData.track.title })}
           onClick={(e) => {
             if (e.target === e.currentTarget) setCombosData(null)
           }}
@@ -825,7 +844,7 @@ export function LibraryPanel(): React.JSX.Element {
                     letterSpacing: '0.08em'
                   }}
                 >
-                  After
+                  {t('combos.after')}
                 </div>
                 <div className="ss-body-sm" style={{ fontWeight: 500 }}>
                   {combosData.track.title}
@@ -834,7 +853,7 @@ export function LibraryPanel(): React.JSX.Element {
               <button
                 className="smart-filter-dismiss"
                 onClick={() => setCombosData(null)}
-                aria-label="Close"
+                aria-label={t('combos.close')}
               >
                 <X size={12} strokeWidth={2} />
               </button>
@@ -844,7 +863,7 @@ export function LibraryPanel(): React.JSX.Element {
                 className="ss-caption"
                 style={{ color: 'var(--text-tertiary)', padding: '8px 0' }}
               >
-                No play history yet. Import your Rekordbox performance data to see this.
+                {t('combos.empty')}
               </div>
             ) : (
               <div className="combos-list">
@@ -856,7 +875,9 @@ export function LibraryPanel(): React.JSX.Element {
                         {c.track.artist}
                       </div>
                     </div>
-                    <span className="combo-count ss-caption">{c.count}×</span>
+                    <span className="combo-count ss-caption">
+                      {t('combos.count', { count: c.count })}
+                    </span>
                   </div>
                 ))}
               </div>

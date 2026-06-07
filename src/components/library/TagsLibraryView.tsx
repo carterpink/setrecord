@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Sparkles, RefreshCw, Upload } from 'lucide-react'
 import { useTagStore } from '@/stores/tagStore'
 import { useIsPro } from '@/stores/licenseStore'
@@ -22,6 +23,7 @@ export function TagsLibraryView({
   onSelectTag,
   onSendToRekordbox
 }: TagsLibraryViewProps): React.JSX.Element {
+  const { t, i18n } = useTranslation('library')
   const coverage = useTagStore((s) => s.coverage)
   const loading = useTagStore((s) => s.loadingCoverage)
   const retagging = useTagStore((s) => s.retagging)
@@ -30,10 +32,20 @@ export function TagsLibraryView({
   const retag = useTagStore((s) => s.retag)
   const isPro = useIsPro()
   const showUpgrade = useUiStore((s) => s.showUpgrade)
+  // Auto-tagging can be disabled in Settings → Library; gate the retag action.
+  const [autoTaggingEnabled, setAutoTaggingEnabled] = useState(true)
 
   useEffect(() => {
     void loadCoverage()
   }, [loadCoverage])
+
+  useEffect(() => {
+    if (typeof window.setsense === 'undefined') return
+    window.setsense
+      .getSettings()
+      .then((s) => setAutoTaggingEnabled(s.autoTaggingEnabled ?? true))
+      .catch(() => {})
+  }, [])
 
   // value → track count, for the facet badges.
   const countOf = useMemo(() => {
@@ -78,23 +90,24 @@ export function TagsLibraryView({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="ss-body-sm" style={{ fontWeight: 600 }}>
             {loading && !coverage
-              ? 'Reading your tags…'
+              ? t('tags.readingTags')
               : tagged === 0
-                ? 'No tags yet'
-                : `${tagged.toLocaleString()} of ${total.toLocaleString()} tracks tagged`}
+                ? t('tags.noTagsYet')
+                : t('tags.coverage', {
+                    tagged: tagged.toLocaleString(i18n.language),
+                    total: total.toLocaleString(i18n.language)
+                  })}
           </div>
           <div className="ss-caption" style={{ color: 'var(--text-tertiary)', marginTop: 2 }}>
-            {tagged === 0
-              ? 'Tags appear automatically as your library is analysed.'
-              : `Vibe, Energy, Best for and more — ${pct}% covered.`}
+            {tagged === 0 ? t('tags.noTagsCaption') : t('tags.coverageCaption', { pct })}
           </div>
         </div>
         <button
           type="button"
           className="btn btn-ghost"
           onClick={() => void retag()}
-          disabled={retagging}
-          title="Re-tag the whole library"
+          disabled={retagging || !autoTaggingEnabled}
+          title={t('tags.retagTitle')}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
         >
           <RefreshCw
@@ -104,21 +117,19 @@ export function TagsLibraryView({
           />
           {retagging
             ? progress && progress.total > 0
-              ? `Tagging ${progress.processed}/${progress.total}`
-              : 'Tagging…'
-            : 'Re-tag library'}
+              ? t('tags.tagging', { processed: progress.processed, total: progress.total })
+              : t('tags.taggingShort')
+            : t('tags.retag')}
         </button>
         <button
           type="button"
           className="btn btn-primary"
           onClick={isPro ? onSendToRekordbox : () => showUpgrade('autoTagger')}
-          title={
-            isPro ? 'Write these tags into Rekordbox' : 'Sending tags to Rekordbox is a Pro feature'
-          }
+          title={isPro ? t('tags.sendTitlePro') : t('tags.sendTitleFree')}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
         >
           <Upload size={13} strokeWidth={1.7} />
-          Send to Rekordbox
+          {t('tags.sendToRekordbox')}
         </button>
       </div>
 
@@ -150,18 +161,23 @@ export function TagsLibraryView({
             {cat.label}
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {cat.tags.map((t) => {
-              const n = countOf.get(`${cat.category}:${t.slug}`) ?? 0
+            {cat.tags.map((tag) => {
+              const n = countOf.get(`${cat.category}:${tag.slug}`) ?? 0
               return (
-                <span key={t.slug} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <span
+                  key={tag.slug}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                >
                   <TagChip
                     category={cat.category}
-                    value={t.slug}
+                    value={tag.slug}
                     size="md"
                     muted={n === 0}
-                    onClick={n > 0 ? () => onSelectTag(t.slug) : undefined}
+                    onClick={n > 0 ? () => onSelectTag(tag.slug) : undefined}
                     title={
-                      n > 0 ? `Browse ${n} tracks tagged ${t.label}` : `No tracks tagged ${t.label}`
+                      n > 0
+                        ? t('tags.browseTagged', { count: n, label: tag.label })
+                        : t('tags.noTracksTagged', { label: tag.label })
                     }
                   />
                   {n > 0 && (

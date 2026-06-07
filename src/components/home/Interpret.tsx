@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Pencil, ChevronDown, Check, Plus, Minus, RefreshCw } from 'lucide-react'
 import type { LibrarySearchParams } from '@/types'
 import { readSummary, type HomeFilters } from '@/utils/homeQuery'
@@ -52,17 +53,22 @@ function Stepper({
   step: number
   onChange: (v: number) => void
 }): React.JSX.Element {
+  const { t } = useTranslation('home')
   return (
     <div className="stepper">
       <button
         type="button"
-        aria-label="Fewer"
+        aria-label={t('stepper.fewerAria')}
         onClick={() => onChange(Math.max(min, value - step))}
       >
         <Minus size={14} strokeWidth={1.8} />
       </button>
       <span className="val">{value}</span>
-      <button type="button" aria-label="More" onClick={() => onChange(Math.min(max, value + step))}>
+      <button
+        type="button"
+        aria-label={t('stepper.moreAria')}
+        onClick={() => onChange(Math.min(max, value + step))}
+      >
         <Plus size={14} strokeWidth={1.8} />
       </button>
     </div>
@@ -89,11 +95,11 @@ function applyEnergy(p: LibrarySearchParams, preset: string): LibrarySearchParam
   return next
 }
 
-const SORT_PILLS: { label: string; value: LibrarySearchParams['sort'] }[] = [
-  { label: 'Most played', value: 'mostPlayed' },
-  { label: 'Newest', value: 'recent' },
-  { label: 'Top rated', value: 'rating' },
-  { label: 'Surprise', value: 'random' }
+const SORT_PILLS: { labelKey: string; value: LibrarySearchParams['sort'] }[] = [
+  { labelKey: 'interpret.sort.mostPlayed', value: 'mostPlayed' },
+  { labelKey: 'interpret.sort.newest', value: 'recent' },
+  { labelKey: 'interpret.sort.topRated', value: 'rating' },
+  { labelKey: 'interpret.sort.surprise', value: 'random' }
 ]
 
 /**
@@ -102,6 +108,7 @@ const SORT_PILLS: { label: string; value: LibrarySearchParams['sort'] }[] = [
  * result, and "Update" re-runs the real query in place.
  */
 export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Element {
+  const { t } = useTranslation('home')
   const [open, setOpen] = useState(false)
   // Draft is seeded from the incoming filters. The parent remounts this
   // component (keyed on the turn's summary) whenever a re-run changes the
@@ -133,14 +140,14 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
           }
         }}
       >
-        <span className="lead">I read that as</span>
+        <span className="lead">{t('interpret.lead')}</span>
         <span className="read" aria-live="polite" aria-atomic="true">
           {readSummary(draft)}
         </span>
         {editable && (
           <span className="refine">
             <Pencil size={13} strokeWidth={1.7} />
-            refine
+            {t('interpret.refine')}
           </span>
         )}
         <ChevronDown className="chev" size={14} strokeWidth={1.7} />
@@ -149,15 +156,13 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
       {open && (
         <div className="refine-panel glass-2">
           {!editable ? (
-            <span className="note">
-              I used my full understanding for this one. Try rephrasing if it’s not quite right.
-            </span>
+            <span className="note">{t('interpret.modelNote')}</span>
           ) : (
             <>
               <div className="refine-grid">
                 {draft.kind === 'forgotten' && (
                   <>
-                    <Field label="Not played in">
+                    <Field label={t('interpret.fields.notPlayedIn')}>
                       <div className="refine-pills">
                         {(['3 months', '6 months', '12 months'] as const).map((o) => (
                           <Pill
@@ -165,12 +170,12 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
                             on={draft.window === o}
                             onClick={() => setDraft({ ...draft, window: o })}
                           >
-                            {o}
+                            {t(`interpret.window.${o}`)}
                           </Pill>
                         ))}
                       </div>
                     </Field>
-                    <Field label="Never played live">
+                    <Field label={t('interpret.fields.neverPlayedLive')}>
                       <Pill
                         on={draft.neverLive}
                         onClick={() => setDraft({ ...draft, neverLive: !draft.neverLive })}
@@ -180,10 +185,10 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
                         ) : (
                           <Plus size={13} strokeWidth={2} />
                         )}
-                        {draft.neverLive ? 'on' : 'off'}
+                        {draft.neverLive ? t('interpret.toggle.on') : t('interpret.toggle.off')}
                       </Pill>
                     </Field>
-                    <Field label="How many">
+                    <Field label={t('interpret.fields.howMany')}>
                       <Stepper
                         value={draft.count}
                         min={5}
@@ -197,7 +202,7 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
 
                 {draft.kind === 'warmup' && (
                   <>
-                    <Field label="Builds toward">
+                    <Field label={t('interpret.fields.buildsToward')}>
                       <div className="refine-pills">
                         {[120, 124, 128].map((o) => (
                           <Pill
@@ -210,7 +215,7 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
                         ))}
                       </div>
                     </Field>
-                    <Field label="Length">
+                    <Field label={t('interpret.fields.length')}>
                       <div className="refine-pills">
                         {[60, 90, 120].map((o) => (
                           <Pill
@@ -218,12 +223,12 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
                             on={draft.length === o}
                             onClick={() => setDraft({ ...draft, length: o })}
                           >
-                            {o} min
+                            {t('interpret.lengthValue', { count: o })}
                           </Pill>
                         ))}
                       </div>
                     </Field>
-                    <Field label="Shape">
+                    <Field label={t('interpret.fields.shape')}>
                       <div className="refine-pills">
                         {(['Slow burn', 'Steady'] as const).map((o) => (
                           <Pill
@@ -231,7 +236,9 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
                             on={draft.shape === o}
                             onClick={() => setDraft({ ...draft, shape: o })}
                           >
-                            {o}
+                            {o === 'Slow burn'
+                              ? t('interpret.shape.slowBurn')
+                              : t('interpret.shape.steady')}
                           </Pill>
                         ))}
                       </div>
@@ -241,10 +248,10 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
 
                 {draft.kind === 'after' && (
                   <>
-                    <Field label="Mixing out of">
+                    <Field label={t('interpret.fields.mixingOutOf')}>
                       <span className="fpill on">{draft.source}</span>
                     </Field>
-                    <Field label="Keep in key">
+                    <Field label={t('interpret.fields.keepInKey')}>
                       <Pill
                         on={draft.inKey}
                         onClick={() => setDraft({ ...draft, inKey: !draft.inKey })}
@@ -254,10 +261,10 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
                         ) : (
                           <Plus size={13} strokeWidth={2} />
                         )}
-                        harmonic only
+                        {t('interpret.harmonicOnly')}
                       </Pill>
                     </Field>
-                    <Field label="Energy">
+                    <Field label={t('interpret.fields.energy')}>
                       <div className="refine-pills">
                         {(['Hold', 'Lift'] as const).map((o) => (
                           <Pill
@@ -265,7 +272,9 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
                             on={draft.energy === o}
                             onClick={() => setDraft({ ...draft, energy: o })}
                           >
-                            {o}
+                            {o === 'Hold'
+                              ? t('interpret.energyPreset.hold')
+                              : t('interpret.energyPreset.lift')}
                           </Pill>
                         ))}
                       </div>
@@ -275,7 +284,7 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
 
                 {draft.kind === 'duplicates' && (
                   <>
-                    <Field label="Match on">
+                    <Field label={t('interpret.fields.matchOn')}>
                       <div className="refine-pills">
                         {(['Audio', 'Tags'] as const).map((o) => (
                           <Pill
@@ -283,12 +292,12 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
                             on={draft.match === o}
                             onClick={() => setDraft({ ...draft, match: o })}
                           >
-                            {o}
+                            {o === 'Audio' ? t('interpret.match.audio') : t('interpret.match.tags')}
                           </Pill>
                         ))}
                       </div>
                     </Field>
-                    <Field label="Keep">
+                    <Field label={t('interpret.fields.keep')}>
                       <div className="refine-pills">
                         {(['Highest quality', 'Newest'] as const).map((o) => (
                           <Pill
@@ -296,7 +305,9 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
                             on={draft.keep === o}
                             onClick={() => setDraft({ ...draft, keep: o })}
                           >
-                            {o}
+                            {o === 'Highest quality'
+                              ? t('interpret.keepOption.highestQuality')
+                              : t('interpret.keepOption.newest')}
                           </Pill>
                         ))}
                       </div>
@@ -306,9 +317,9 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
 
                 {draft.kind === 'generic' && !draft.ask && (
                   <>
-                    <Field label="Energy">
+                    <Field label={t('interpret.fields.energy')}>
                       <div className="refine-pills">
-                        {['Any', 'Chill', 'Groovy', 'Peak'].map((o) => (
+                        {(['Any', 'Chill', 'Groovy', 'Peak'] as const).map((o) => (
                           <Pill
                             key={o}
                             on={energyPreset(draft.params) === o}
@@ -316,27 +327,27 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
                               setDraft({ ...draft, params: applyEnergy(draft.params, o) })
                             }
                           >
-                            {o}
+                            {t(`interpret.energyLevel.${o.toLowerCase()}`)}
                           </Pill>
                         ))}
                       </div>
                     </Field>
-                    <Field label="Order by">
+                    <Field label={t('interpret.fields.orderBy')}>
                       <div className="refine-pills">
                         {SORT_PILLS.map((s) => (
                           <Pill
-                            key={s.label}
+                            key={s.value}
                             on={(draft.params.sort ?? 'mostPlayed') === s.value}
                             onClick={() =>
                               setDraft({ ...draft, params: { ...draft.params, sort: s.value } })
                             }
                           >
-                            {s.label}
+                            {t(s.labelKey)}
                           </Pill>
                         ))}
                       </div>
                     </Field>
-                    <Field label="How many">
+                    <Field label={t('interpret.fields.howMany')}>
                       <Stepper
                         value={draft.params.limit ?? 25}
                         min={5}
@@ -352,12 +363,10 @@ export function Interpret({ filters, onRerun }: InterpretProps): React.JSX.Eleme
               </div>
 
               <div className="refine-foot">
-                <span className="note">
-                  Change anything that looks off — results update instantly.
-                </span>
+                <span className="note">{t('interpret.footNote')}</span>
                 <button type="button" className="btn btn-secondary" onClick={update}>
                   <RefreshCw size={14} strokeWidth={1.7} />
-                  Update
+                  {t('interpret.update')}
                 </button>
               </div>
             </>

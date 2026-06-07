@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation, Trans } from 'react-i18next'
 import {
   GraduationCap,
   RefreshCw,
@@ -8,23 +9,36 @@ import {
   Crown,
   Download,
   Upload,
-  Trash2
+  Trash2,
+  Sliders,
+  Library,
+  Languages,
+  Accessibility,
+  Mic,
+  Sprout,
+  Headphones,
+  type LucideIcon
 } from 'lucide-react'
 import { APP_NAME } from '@/utils/constants'
-import type { CDJModel, ImportSource } from '@/types'
+import type { CDJModel, ImportSource, LanguagePreference, LicenseActivationError } from '@/types'
 import type {
   InspectResult as BackupInspectResult,
   RelinkReport
 } from '../../../electron/services/backupService'
+import { SUPPORTED_LANGUAGES } from '@/i18n/config'
 import { Button } from '@/components/shared/Button'
 import { IconButton } from '@/components/shared/IconButton'
 import { RangeSlider } from '@/components/shared/RangeSlider'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import { Toggle } from '@/components/shared/Toggle'
 import { Modal } from '@/components/shared/Modal'
+import { motion, AnimatePresence, slideUp } from '@/components/shared/Motion'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
+import { usePlaybackStore } from '@/stores/playbackStore'
+import { setWaveformQuality as applyWaveformQuality } from '@/utils/waveformPeaksCache'
+import { getPreferredInputId, setPreferredInputId } from '@/components/live/liveDevice'
 import { useLicenseStore } from '@/stores/licenseStore'
 import { useCoachmarkStore } from '@/stores/coachmarkStore'
 import { useToastStore } from '@/stores/toastStore'
@@ -33,9 +47,53 @@ import { FreshStartOverlay } from '@/components/FreshStartOverlay'
 
 const HARDWARE_OPTIONS: CDJModel[] = ['CDJ-2000NXS2', 'CDJ-3000', 'XDJ-RX3', 'XDJ-XZ', 'CDJ-2000']
 
-function formatDate(iso: string | null): string | null {
+/** Maps an activation error to its i18n message key (settings namespace). */
+const ACTIVATION_ERROR_KEY: Record<LicenseActivationError, string> = {
+  malformed: 'license.activationError.malformed',
+  'bad-signature': 'license.activationError.badSignature',
+  expired: 'license.activationError.expired',
+  'device-mismatch': 'license.activationError.deviceMismatch',
+  revoked: 'license.activationError.revoked',
+  unknown: 'license.activationError.unknown'
+}
+
+type SettingsTab =
+  | 'general'
+  | 'plan'
+  | 'memory'
+  | 'mixing'
+  | 'playback'
+  | 'library'
+  | 'data'
+  | 'reset'
+
+/**
+ * Left-rail sub-tabs. Icon + i18n label (keyed by `tabs.<id>.*`), with an
+ * animated active indicator that mirrors the main app switcher. `danger` tints
+ * the Reset rail item.
+ */
+const SETTINGS_TABS: ReadonlyArray<{ id: SettingsTab; icon: LucideIcon; danger?: boolean }> = [
+  { id: 'general', icon: Languages },
+  { id: 'plan', icon: Crown },
+  { id: 'memory', icon: Sparkles },
+  { id: 'mixing', icon: Sliders },
+  { id: 'playback', icon: Headphones },
+  { id: 'library', icon: Library },
+  { id: 'data', icon: Shield },
+  { id: 'reset', icon: Trash2, danger: true }
+]
+
+function formatBytes(bytes: number | null): string {
+  if (bytes == null) return '…'
+  if (bytes < 1024) return `${bytes} B`
+  const kb = bytes / 1024
+  if (kb < 1024) return `${Math.round(kb)} KB`
+  return `${(kb / 1024).toFixed(1)} MB`
+}
+
+function formatDate(iso: string | null, locale?: string): string | null {
   if (!iso) return null
-  return new Date(iso).toLocaleDateString(undefined, {
+  return new Date(iso).toLocaleDateString(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric'
@@ -44,12 +102,19 @@ function formatDate(iso: string | null): string | null {
 
 /** Current-plan summary + activate / deactivate / restore controls. */
 function LicenseSection(): React.JSX.Element {
+  const { t, i18n } = useTranslation('settings')
   const license = useLicenseStore((s) => s.license)
   const deactivate = useLicenseStore((s) => s.deactivate)
+  const activate = useLicenseStore((s) => s.activate)
+  const refresh = useLicenseStore((s) => s.refresh)
   const showUpgrade = useUiStore((s) => s.showUpgrade)
   const closeModal = useUiStore((s) => s.closeModal)
   const toast = useToastStore()
   const [working, setWorking] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [showKeyEntry, setShowKeyEntry] = useState(false)
+  const [keyInput, setKeyInput] = useState('')
+  const [activating, setActivating] = useState(false)
 
   const isPro = license.tier === 'pro'
 
@@ -57,26 +122,56 @@ function LicenseSection(): React.JSX.Element {
   // brick the app — they explain what happened and what to do next.
   const statusNotice: string | null =
     license.status === 'device-mismatch'
-      ? 'This licence is activated on another device. Deactivate it there, or contact support to move it — your key is otherwise valid.'
+      ? t('license.status.deviceMismatch')
       : license.status === 'revoked'
-        ? 'This licence was cancelled or refunded. If that’s unexpected, contact support and we’ll help.'
+        ? t('license.status.revoked')
         : license.status === 'expired'
-          ? 'Your subscription has lapsed. Renew to restore Pro — your settings and library are untouched.'
+          ? t('license.status.expired')
           : license.status === 'invalid'
-            ? 'This stored key couldn’t be verified. Re-paste it, or contact support.'
+            ? t('license.status.invalid')
             : license.clockWarning
-              ? 'Your system clock looks like it moved backwards. Pro still works; just check your date & time so subscription dates stay accurate.'
+              ? t('license.status.clockWarning')
               : null
 
   const handleDeactivate = async (): Promise<void> => {
     setWorking(true)
     try {
       await deactivate()
-      toast.info('License removed from this device.')
+      toast.info(t('license.removed'))
     } catch {
-      toast.error('Could not deactivate the license.')
+      toast.error(t('license.deactivateError'))
     } finally {
       setWorking(false)
+    }
+  }
+
+  const handleActivate = async (): Promise<void> => {
+    const key = keyInput.trim()
+    if (!key) return
+    setActivating(true)
+    try {
+      const result = await activate(key)
+      if (result.ok) {
+        toast.success(t('license.activateSuccess'))
+        setKeyInput('')
+        setShowKeyEntry(false)
+      } else {
+        toast.error(t(ACTIVATION_ERROR_KEY[result.error ?? 'unknown']))
+      }
+    } catch {
+      toast.error(t(ACTIVATION_ERROR_KEY.unknown))
+    } finally {
+      setActivating(false)
+    }
+  }
+
+  const handleRefresh = async (): Promise<void> => {
+    setRefreshing(true)
+    try {
+      await refresh()
+      toast.info(t('license.refreshDone'))
+    } finally {
+      setRefreshing(false)
     }
   }
 
@@ -97,11 +192,13 @@ function LicenseSection(): React.JSX.Element {
             aria-hidden="true"
           />
           <div>
-            <div className="ss-label">{isPro ? `${APP_NAME} Pro` : 'Free plan'}</div>
+            <div className="ss-label">
+              {isPro ? t('license.proPlan', { app: APP_NAME }) : t('license.freePlan')}
+            </div>
             <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.45 }}>
               {isPro ? (
                 <>
-                  {license.plan === 'lifetime' ? 'Lifetime licence' : 'Monthly subscription'}
+                  {license.plan === 'lifetime' ? t('license.lifetime') : t('license.subscription')}
                   {license.keyMasked && (
                     <>
                       {' · '}
@@ -113,17 +210,19 @@ function LicenseSection(): React.JSX.Element {
                   )}
                   {license.plan === 'subscription' && license.expiresAt && (
                     <div style={{ marginTop: 2 }}>
-                      Renews / expires {formatDate(license.expiresAt)}
+                      {t('license.renews', { date: formatDate(license.expiresAt, i18n.language) })}
                     </div>
                   )}
                   {license.activatedAt && (
                     <div style={{ opacity: 0.6, marginTop: 2 }}>
-                      Activated {formatDate(license.activatedAt)}
+                      {t('license.activated', {
+                        date: formatDate(license.activatedAt, i18n.language)
+                      })}
                     </div>
                   )}
                 </>
               ) : (
-                'Import, browse and build sets manually. Unlock suggestions, Set Architect, Recall and export with Pro.'
+                t('license.freeBlurb')
               )}
             </div>
           </div>
@@ -147,27 +246,74 @@ function LicenseSection(): React.JSX.Element {
       )}
       {isPro && license.deviceBound && (
         <div className="ss-caption" style={{ opacity: 0.6, marginTop: 6 }}>
-          Bound to this device.
+          {t('license.boundToDevice')}
         </div>
       )}
-      <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div
+        style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}
+      >
         {isPro ? (
-          <Button variant="secondary" onClick={() => void handleDeactivate()} disabled={working}>
-            {working ? 'Removing…' : 'Deactivate on this device'}
-          </Button>
+          <>
+            <Button variant="secondary" onClick={() => void handleDeactivate()} disabled={working}>
+              {working ? t('license.removing') : t('license.deactivate')}
+            </Button>
+            <Button
+              variant="secondary"
+              icon={RefreshCw}
+              onClick={() => void handleRefresh()}
+              disabled={refreshing}
+            >
+              {refreshing ? t('license.refreshing') : t('license.refresh')}
+            </Button>
+          </>
         ) : (
-          <Button
-            variant="primary"
-            icon={Sparkles}
-            onClick={() => {
-              closeModal()
-              showUpgrade()
-            }}
-          >
-            Upgrade to Pro
-          </Button>
+          <>
+            <Button
+              variant="primary"
+              icon={Sparkles}
+              onClick={() => {
+                closeModal()
+                showUpgrade()
+              }}
+            >
+              {t('license.upgrade')}
+            </Button>
+            <button
+              type="button"
+              className="settings-link-btn"
+              onClick={() => setShowKeyEntry((s) => !s)}
+            >
+              {t('license.enterKey')}
+            </button>
+          </>
         )}
       </div>
+      {!isPro && showKeyEntry && (
+        <div
+          style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}
+        >
+          <input
+            className="feedback-input"
+            type="text"
+            placeholder={t('license.keyPlaceholder')}
+            value={keyInput}
+            onChange={(e) => setKeyInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void handleActivate()
+            }}
+            style={{ maxWidth: 240 }}
+            aria-label={t('license.enterKey')}
+            autoFocus
+          />
+          <Button
+            variant="primary"
+            onClick={() => void handleActivate()}
+            disabled={activating || !keyInput.trim()}
+          >
+            {activating ? t('license.activating') : t('license.activate')}
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
@@ -179,6 +325,7 @@ function LicenseSection(): React.JSX.Element {
  * never touching local file paths. No accounts, no cloud.
  */
 function BackupSection(): React.JSX.Element {
+  const { t } = useTranslation('settings')
   const toast = useToastStore()
   const hasBridge = typeof window.setsense !== 'undefined'
 
@@ -207,7 +354,11 @@ function BackupSection(): React.JSX.Element {
       const r = await window.setsense.backupExport(exportPass || undefined)
       if (r.success) {
         toast.success(
-          `Backup saved — ${r.counts?.tracks ?? 0} tracks, ${r.counts?.sets ?? 0} sets, ${r.counts?.sessions ?? 0} gigs.`
+          t('backup.exportSuccess', {
+            tracks: r.counts?.tracks ?? 0,
+            sets: r.counts?.sets ?? 0,
+            sessions: r.counts?.sessions ?? 0
+          })
         )
         setExportPass('')
       } else if (r.error && r.error !== 'cancelled') {
@@ -226,11 +377,11 @@ function BackupSection(): React.JSX.Element {
       if (res.needsPassphrase) {
         setNeedsPass(true)
         setInspect(null)
-        if (pass) toast.error('Wrong passphrase — try again.')
+        if (pass) toast.error(t('backup.wrongPassphrase'))
         return
       }
       if (!res.ok) {
-        toast.error(res.error ?? 'Could not read that backup.')
+        toast.error(res.error ?? t('backup.readError'))
         resetImport()
         return
       }
@@ -261,11 +412,11 @@ function BackupSection(): React.JSX.Element {
       )
       if (r.success && r.report) {
         setReport(r.report)
-        toast.success('Backup imported — your library has been updated.')
+        toast.success(t('backup.importSuccess'))
         await useLibraryStore.getState().loadLibrary()
         await useSetStore.getState().loadSets()
       } else {
-        toast.error(r.error ?? 'Import failed.')
+        toast.error(r.error ?? t('backup.importError'))
       }
     } finally {
       setBusy(false)
@@ -276,11 +427,13 @@ function BackupSection(): React.JSX.Element {
     <div className="field-group" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Export */}
       <div>
-        <div className="ss-label">Export a backup</div>
+        <div className="ss-label">{t('backup.exportTitle')}</div>
         <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.45 }}>
-          Saves your tags, sets, play history, lifecycle and smart crates to a single{' '}
-          <span className="ss-mono">.setsense</span> file. Keep it safe, or import it on another Mac
-          to move your work across. Your audio files and license stay put — nothing is uploaded.
+          <Trans
+            t={t}
+            i18nKey="backup.exportCaption"
+            components={[<span key="mono" className="ss-mono" />]}
+          />
         </div>
         <div
           style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}
@@ -288,11 +441,11 @@ function BackupSection(): React.JSX.Element {
           <input
             className="feedback-input"
             type="password"
-            placeholder="Passphrase (recommended)"
+            placeholder={t('backup.passphrasePlaceholder')}
             value={exportPass}
             onChange={(e) => setExportPass(e.target.value)}
             style={{ maxWidth: 220 }}
-            aria-label="Backup passphrase"
+            aria-label={t('backup.passphraseAria')}
           />
           <Button
             variant="secondary"
@@ -300,13 +453,11 @@ function BackupSection(): React.JSX.Element {
             onClick={handleExport}
             disabled={exporting || !hasBridge}
           >
-            {exporting ? 'Exporting…' : 'Export backup'}
+            {exporting ? t('backup.exporting') : t('backup.exportButton')}
           </Button>
         </div>
         <div className="ss-caption" style={{ opacity: 0.5, marginTop: 6, lineHeight: 1.4 }}>
-          {exportPass
-            ? 'Encrypted with your passphrase — you’ll need it to import. There’s no recovery if it’s lost.'
-            : 'Backups are encrypted by default. Leave this blank and we’ll ask you to confirm before saving an unencrypted file anyone could read.'}
+          {exportPass ? t('backup.encryptedNote') : t('backup.unencryptedNote')}
         </div>
       </div>
 
@@ -314,11 +465,13 @@ function BackupSection(): React.JSX.Element {
 
       {/* Import */}
       <div>
-        <div className="ss-label">Import a backup</div>
+        <div className="ss-label">{t('backup.importTitle')}</div>
         <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.45 }}>
-          Import a <span className="ss-mono">.setsense</span> file from another Mac. Import your
-          Rekordbox/Serato library first — a backup carries your work, not the audio, and re-links
-          to the tracks already on this machine.
+          <Trans
+            t={t}
+            i18nKey="backup.importCaption"
+            components={[<span key="mono" className="ss-mono" />]}
+          />
         </div>
 
         <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -328,11 +481,11 @@ function BackupSection(): React.JSX.Element {
             onClick={handlePick}
             disabled={busy || !hasBridge}
           >
-            Choose backup…
+            {t('backup.chooseButton')}
           </Button>
           {importPath && (
             <button type="button" className="settings-link-btn" onClick={resetImport}>
-              Clear
+              {t('clear', { ns: 'common' })}
             </button>
           )}
         </div>
@@ -351,18 +504,18 @@ function BackupSection(): React.JSX.Element {
             <input
               className="feedback-input"
               type="password"
-              placeholder="Enter backup passphrase"
+              placeholder={t('backup.enterPassphrase')}
               value={importPass}
               onChange={(e) => setImportPass(e.target.value)}
               style={{ maxWidth: 240 }}
-              aria-label="Enter backup passphrase"
+              aria-label={t('backup.enterPassphrase')}
             />
             <Button
               variant="secondary"
               onClick={() => runInspect(importPath, importPass)}
               disabled={busy || !importPass}
             >
-              Unlock
+              {t('backup.unlock')}
             </Button>
           </div>
         )}
@@ -380,18 +533,26 @@ function BackupSection(): React.JSX.Element {
             }}
           >
             <div>
-              From <span className="ss-mono">{inspect.sourceMachine ?? 'another Mac'}</span> ·{' '}
-              {inspect.counts?.tracks ?? 0} tracks · {inspect.counts?.sets ?? 0} sets ·{' '}
-              {inspect.counts?.sessions ?? 0} gigs
+              <Trans
+                t={t}
+                i18nKey="backup.fromMachine"
+                values={{
+                  machine: inspect.sourceMachine ?? t('backup.anotherMac'),
+                  tracks: inspect.counts?.tracks ?? 0,
+                  sets: inspect.counts?.sets ?? 0,
+                  sessions: inspect.counts?.sessions ?? 0
+                }}
+                components={[<span key="mono" className="ss-mono" />]}
+              />
             </div>
             <div style={{ opacity: 0.7, marginTop: 4 }}>
               {inspect.suggestedMode === 'restore'
-                ? 'This library is empty — import your Rekordbox/Serato library first, then re-run for best results.'
-                : 'Will merge onto your current library — your local cues, ratings and tags are never overwritten.'}
+                ? t('backup.restoreHint')
+                : t('backup.mergeHint')}
             </div>
             <div style={{ marginTop: 10 }}>
               <Button variant="primary" onClick={handleImport} disabled={busy}>
-                {busy ? 'Importing…' : 'Import backup'}
+                {busy ? t('backup.importing') : t('backup.importButton')}
               </Button>
             </div>
           </div>
@@ -410,22 +571,26 @@ function BackupSection(): React.JSX.Element {
             }}
           >
             <div className="ss-label" style={{ marginBottom: 4 }}>
-              Import complete
+              {t('backup.complete')}
             </div>
             <div>
-              Re-linked <strong>{report.matched}</strong> tracks · {report.setsImported} sets ·{' '}
-              {report.sessionsImported} gigs · {report.tagsApplied} tags
+              {t('backup.relinkSummary', {
+                matched: report.matched,
+                sets: report.setsImported,
+                sessions: report.sessionsImported,
+                tags: report.tagsApplied
+              })}
             </div>
             {(report.unmatched > 0 || report.ambiguous > 0) && (
               <div style={{ opacity: 0.7, marginTop: 4 }}>
-                {report.unmatched} not found on this Mac
-                {report.ambiguous > 0 ? `, ${report.ambiguous} ambiguous` : ''}. Import the missing
-                audio and re-run to link them.
+                {t('backup.notFound', { count: report.unmatched })}
+                {report.ambiguous > 0 ? t('backup.ambiguous', { count: report.ambiguous }) : ''}
+                {t('backup.notFoundHint')}
               </div>
             )}
             {report.setsPartial.length > 0 && (
               <div style={{ opacity: 0.7, marginTop: 4 }}>
-                {report.setsPartial.length} set(s) imported with some tracks missing.
+                {t('backup.partialSets', { count: report.setsPartial.length })}
               </div>
             )}
           </div>
@@ -442,6 +607,7 @@ function BackupSection(): React.JSX.Element {
  * keychain, so Pro survives; only library/settings/history/caches are cleared.
  */
 function DangerZoneSection(): React.JSX.Element {
+  const { t } = useTranslation('settings')
   const [confirming, setConfirming] = useState(false)
   const [wiping, setWiping] = useState(false)
   const hasBridge = typeof window.setsense !== 'undefined'
@@ -459,22 +625,21 @@ function DangerZoneSection(): React.JSX.Element {
 
   return (
     <div className="field-group">
-      <div className="ss-label">Reset SetSense</div>
+      <div className="ss-label">{t('dangerZone.label', { app: APP_NAME })}</div>
       <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.45 }}>
-        Erase your library, settings and play history and return SetSense to how it looked the very
-        first time you opened it. Your music files and your Pro licence stay put.
+        {t('dangerZone.caption', { app: APP_NAME })}
       </div>
 
       <div style={{ marginTop: 12 }}>
         {!confirming ? (
           <Button
             variant="secondary"
+            className="btn-danger-outline"
             icon={Trash2}
             onClick={() => setConfirming(true)}
             disabled={!hasBridge || wiping}
-            style={{ color: 'var(--semantic-danger)' }}
           >
-            Erase everything…
+            {t('dangerZone.eraseButton')}
           </Button>
         ) : (
           <div
@@ -487,27 +652,22 @@ function DangerZoneSection(): React.JSX.Element {
             }}
           >
             <div style={{ color: 'var(--semantic-danger)', fontWeight: 600 }}>
-              This can’t be undone.
+              {t('dangerZone.cantUndo')}
             </div>
             <div style={{ opacity: 0.75, marginTop: 4 }}>
-              Permanently deletes your library, settings and play history, and restarts SetSense at
-              first launch. Your audio files and Pro licence are untouched.
+              {t('dangerZone.confirmDetail', { app: APP_NAME })}
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
               <Button variant="secondary" onClick={() => setConfirming(false)} disabled={wiping}>
-                Cancel
+                {t('cancel', { ns: 'common' })}
               </Button>
               <Button
                 variant="primary"
+                className="btn-danger-solid"
                 onClick={handleConfirm}
                 disabled={wiping || !hasBridge}
-                style={{
-                  background: 'var(--semantic-danger)',
-                  borderColor: 'var(--semantic-danger)',
-                  color: '#fff'
-                }}
               >
-                Erase everything &amp; restart
+                {t('dangerZone.eraseConfirm')}
               </Button>
             </div>
           </div>
@@ -520,10 +680,24 @@ function DangerZoneSection(): React.JSX.Element {
 }
 
 export function SettingsModal(): React.JSX.Element {
+  const { t, i18n } = useTranslation('settings')
   const { closeModal, showModal } = useUiStore()
   const setLearnModeEnabled = useUiStore((s) => s.setLearnModeEnabled)
   const keyNotation = useUiStore((s) => s.keyNotation)
   const setKeyNotation = useUiStore((s) => s.setKeyNotation)
+  const language = useUiStore((s) => s.language)
+  const setLanguage = useUiStore((s) => s.setLanguage)
+  const reducedMotion = useUiStore((s) => s.reducedMotion)
+  const setReducedMotion = useUiStore((s) => s.setReducedMotion)
+  const libraryDensity = useUiStore((s) => s.libraryDensity)
+  const setLibraryDensity = useUiStore((s) => s.setLibraryDensity)
+  const launchMode = useUiStore((s) => s.launchMode)
+  const setLaunchMode = useUiStore((s) => s.setLaunchMode)
+  const isBeginner = useUiStore((s) => s.isBeginner)
+  const setIsBeginner = useUiStore((s) => s.setIsBeginner)
+  const voiceInputEnabled = useUiStore((s) => s.voiceInputEnabled)
+  const setVoiceInputEnabled = useUiStore((s) => s.setVoiceInputEnabled)
+  const showOnboarding = useUiStore((s) => s.showOnboarding)
   const startImportFlow = useLibraryStore((s) => s.startImportFlow)
   const libraryStale = useLibraryStore((s) => s.libraryStale)
   const toast = useToastStore()
@@ -538,11 +712,39 @@ export function SettingsModal(): React.JSX.Element {
   const [crashReportingEnabled, setCrashReportingEnabled] = useState(false)
   const [saving, setSaving] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const [tab, setTab] = useState<SettingsTab>('general')
   // Library source state
   const [lastImportSource, setLastImportSource] = useState<ImportSource | null>(null)
   const [lastImportPath, setLastImportPath] = useState<string | null>(null)
   const [lastImportAt, setLastImportAt] = useState<string | null>(null)
   const [autoDetectRekordbox, setAutoDetectRekordbox] = useState(true)
+  // Library / tagging
+  const [autoTaggingEnabled, setAutoTaggingEnabled] = useState(true)
+  const [defaultTagExportRoute, setDefaultTagExportRoute] = useState<'xml' | 'native'>('xml')
+  const [rekordboxDbConsent, setRekordboxDbConsent] = useState(false)
+  // Updates / network
+  const [updateAutoCheck, setUpdateAutoCheck] = useState(true)
+  const [updateFrequency, setUpdateFrequency] = useState<'daily' | 'weekly' | 'manual'>('daily')
+  const [updatePreRelease, setUpdatePreRelease] = useState(false)
+  const [offlineMode, setOfflineMode] = useState(false)
+  // Playback
+  const [previewMaxSeconds, setPreviewMaxSeconds] = useState(60)
+  const [previewVolume, setPreviewVolume] = useState(1)
+  const [previewFade, setPreviewFade] = useState(false)
+  const [outputDeviceId, setOutputDeviceId] = useState<string | null>(null)
+  // Waveform / export
+  const [waveformQuality, setWaveformQuality] = useState<'low' | 'standard' | 'high'>('standard')
+  const [defaultExportFormat, setDefaultExportFormat] = useState<'engine' | 'beatport' | 'ask'>(
+    'ask'
+  )
+  // Audio device pickers (Playback tab), enumerated lazily when the tab opens.
+  const [outputDevices, setOutputDevices] = useState<MediaDeviceInfo[]>([])
+  const [inputDevices, setInputDevices] = useState<MediaDeviceInfo[]>([])
+  const [liveInputId, setLiveInputId] = useState(() => getPreferredInputId() ?? '')
+  // Privacy/data actions
+  const [checkingUpdate, setCheckingUpdate] = useState(false)
+  const [clearingArtwork, setClearingArtwork] = useState(false)
+  const [artworkCacheBytes, setArtworkCacheBytes] = useState<number | null>(null)
 
   useEffect(() => {
     if (typeof window.setsense === 'undefined') return
@@ -558,9 +760,44 @@ export function SettingsModal(): React.JSX.Element {
       setLastImportAt(s.lastImportAt ?? null)
       setAutoDetectRekordbox(s.autoDetectRekordbox ?? true)
       setCrashReportingEnabled(s.crashReportingEnabled ?? false)
+      setAutoTaggingEnabled(s.autoTaggingEnabled ?? true)
+      setDefaultTagExportRoute(s.defaultTagExportRoute ?? 'xml')
+      setRekordboxDbConsent(s.rekordboxDbConsent ?? false)
+      setUpdateAutoCheck(s.updateAutoCheck ?? true)
+      setUpdateFrequency(s.updateFrequency ?? 'daily')
+      setUpdatePreRelease(s.updatePreRelease ?? false)
+      setOfflineMode(s.offlineMode ?? false)
+      setPreviewMaxSeconds(s.previewMaxSeconds ?? 60)
+      setPreviewVolume(s.previewVolume ?? 1)
+      setPreviewFade(s.previewFade ?? false)
+      setOutputDeviceId(s.outputDeviceId ?? null)
+      setWaveformQuality(s.waveformQuality ?? 'standard')
+      setDefaultExportFormat(s.defaultExportFormat ?? 'ask')
       setLoaded(true)
     })
   }, [])
+
+  // Enumerate audio devices when the Playback tab is opened.
+  useEffect(() => {
+    if (tab !== 'playback') return
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.enumerateDevices) return
+    navigator.mediaDevices
+      .enumerateDevices()
+      .then((devices) => {
+        setOutputDevices(devices.filter((d) => d.kind === 'audiooutput'))
+        setInputDevices(devices.filter((d) => d.kind === 'audioinput'))
+      })
+      .catch(() => {})
+  }, [tab])
+
+  // Load artwork-cache size when the Privacy & data tab opens.
+  useEffect(() => {
+    if (tab !== 'data' || typeof window.setsense === 'undefined') return
+    window.setsense
+      .artworkCacheStats()
+      .then((st) => setArtworkCacheBytes(st.bytes))
+      .catch(() => {})
+  }, [tab])
 
   async function handleSave(): Promise<void> {
     setSaving(true)
@@ -572,432 +809,1122 @@ export function SettingsModal(): React.JSX.Element {
         harmonicMixingDefault: harmonicMixing,
         learnModeEnabled: learnMode,
         autoDetectRekordbox,
-        crashReportingEnabled
+        crashReportingEnabled,
+        autoTaggingEnabled,
+        defaultTagExportRoute,
+        updateAutoCheck,
+        updateFrequency,
+        updatePreRelease,
+        offlineMode,
+        previewMaxSeconds,
+        previewVolume,
+        previewFade,
+        outputDeviceId,
+        waveformQuality,
+        defaultExportFormat
       })
     } catch (err) {
-      toast.error('Could not save settings. Try again or restart the app.')
+      toast.error(t('saveError'))
       console.error('[settings] save failed', err)
       setSaving(false)
       return
     }
 
     setLearnModeEnabled(learnMode)
+    // Apply playback prefs to the live preview engine immediately.
+    usePlaybackStore.getState().applyPlaybackSettings({
+      previewVolume,
+      previewMaxSeconds,
+      previewFade,
+      outputDeviceId
+    })
+    applyWaveformQuality(waveformQuality)
     setSaving(false)
     closeModal()
+  }
+
+  async function handleRevokeConsent(): Promise<void> {
+    if (typeof window.setsense === 'undefined') return
+    await window.setsense.setSettings({ rekordboxDbConsent: false })
+    setRekordboxDbConsent(false)
+    toast.info(t('rbConsent.revoked'))
+  }
+
+  async function handleCheckUpdates(): Promise<void> {
+    if (typeof window.setsense === 'undefined') return
+    setCheckingUpdate(true)
+    try {
+      const result = await window.setsense.checkForUpdatesNow()
+      const key =
+        result === 'updated'
+          ? 'updates.resultUpdated'
+          : result === 'up-to-date'
+            ? 'updates.resultCurrent'
+            : result === 'offline'
+              ? 'updates.resultOffline'
+              : 'updates.resultUnavailable'
+      toast.info(t(key))
+    } finally {
+      setCheckingUpdate(false)
+    }
+  }
+
+  async function handleClearArtwork(): Promise<void> {
+    if (typeof window.setsense === 'undefined') return
+    setClearingArtwork(true)
+    try {
+      const res = await window.setsense.artworkClearCache()
+      setArtworkCacheBytes(0)
+      toast.success(t('artworkCache.cleared', { count: res.removed }))
+    } finally {
+      setClearingArtwork(false)
+    }
   }
 
   return (
     <Modal
       onClose={closeModal}
-      ariaLabel="Settings"
+      ariaLabel={t('title')}
       className="settings-modal"
-      style={{ maxWidth: 480, width: '100%' }}
+      style={{ width: 760, maxWidth: 'calc(100vw - 48px)' }}
       closeOnBackdrop={false}
     >
       {/* Header — pinned above scroll */}
       <div className="modal-header">
-        <div className="ss-h2">Settings</div>
-        <IconButton icon={X} aria-label="Close settings" onClick={closeModal} />
+        <div className="ss-h2">{t('title')}</div>
+        <IconButton icon={X} aria-label={t('closeAria')} onClick={closeModal} />
       </div>
 
-      {/* Scrollable body */}
-      <div className="settings-scroll-body">
-        {loaded && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '0 0 8px' }}>
-            {/* SetSense Pro — plan + activation */}
-            <div
-              className="settings-section-header ss-caption"
-              style={{ opacity: 0.6, textTransform: 'uppercase', letterSpacing: 0.5 }}
-            >
-              Plan
-            </div>
-            <LicenseSection />
-
-            {/* Learn Mode */}
-            <div className="field-group">
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: 16
-                }}
+      {/* Two-column body: left rail of sub-tabs + animated content panel */}
+      <div className="settings-layout">
+        <nav className="settings-rail" aria-label={t('title')}>
+          {SETTINGS_TABS.map(({ id, icon: Icon, danger }) => {
+            const active = tab === id
+            return (
+              <button
+                key={id}
+                type="button"
+                className={`settings-rail-item${active ? ' is-active' : ''}${
+                  danger ? ' is-danger' : ''
+                }`}
+                onClick={() => setTab(id)}
+                aria-current={active ? 'true' : undefined}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <GraduationCap
-                    size={18}
-                    strokeWidth={1.6}
-                    style={{ marginTop: 2, opacity: 0.8 }}
+                {active && (
+                  <motion.span
+                    layoutId="settings-rail-indicator"
+                    className="settings-rail-indicator"
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                     aria-hidden="true"
                   />
-                  <div>
-                    <div className="ss-label">Learn Mode</div>
-                    <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2 }}>
-                      Adds in-line explanations + diagrams to every recommendation. Great for
-                      picking up harmonic mixing, BPM transitions, and energy arcs.
-                    </div>
-                  </div>
+                )}
+                <Icon size={17} strokeWidth={1.7} aria-hidden="true" />
+                <span>{t(`tabs.${id}.label`)}</span>
+              </button>
+            )
+          })}
+        </nav>
+
+        <div className="settings-panel">
+          {loaded && (
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={tab}
+                className="settings-tab"
+                variants={slideUp}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <div className="settings-tab-head">
+                  <div className="settings-tab-title">{t(`tabs.${tab}.title`)}</div>
+                  <div className="settings-tab-desc ss-caption">{t(`tabs.${tab}.desc`)}</div>
                 </div>
-                <Toggle on={learnMode} onChange={setLearnMode} aria-label="Toggle Learn Mode" />
-              </div>
-              {learnMode && (
-                <button
-                  type="button"
-                  className="settings-link-btn"
-                  style={{ marginTop: 10, marginLeft: 28 }}
-                  onClick={() => useCoachmarkStore.getState().reset()}
-                >
-                  Replay first-time tips
-                </button>
-              )}
-            </div>
 
-            {/* Plain-English search — local natural-language layer on top of keyword search */}
-            <div className="field-group">
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: 16
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <Sparkles
-                    size={18}
-                    strokeWidth={1.6}
-                    style={{ marginTop: 2, opacity: 0.8 }}
-                    aria-hidden="true"
-                  />
-                  <div>
-                    <div className="ss-label">Plain-English search</div>
-                    <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2 }}>
-                      Understands looser, messier phrasing on top of the built-in search — so
-                      “something chilled around 120” just works. Runs entirely on your Mac, offline
-                      and private. Turn off to keep it out of memory.
-                    </div>
-                  </div>
-                </div>
-                <Toggle
-                  on={memoryAi}
-                  onChange={(v) => {
-                    setMemoryAi(v)
-                    if (typeof window.setsense !== 'undefined')
-                      void window.setsense.recallAiEnable(v)
-                  }}
-                  aria-label="Toggle plain-English search"
-                />
-              </div>
-            </div>
-
-            {/* Key notation */}
-            <div className="field-group">
-              <div
-                className="ss-label"
-                id="settings-key-notation-label"
-                style={{ display: 'block', marginBottom: 8 }}
-              >
-                Key notation
-              </div>
-              <SegmentedControl
-                options={['Camelot (9A)', 'Open Key (Am)']}
-                value={keyNotation === 'camelot' ? 'Camelot (9A)' : 'Open Key (Am)'}
-                onChange={(v) => setKeyNotation(v === 'Open Key (Am)' ? 'standard' : 'camelot')}
-                ariaLabelledby="settings-key-notation-label"
-              />
-              <div className="ss-caption" style={{ opacity: 0.55, marginTop: 6 }}>
-                Controls how keys are shown on track rows and key chips throughout the app.
-              </div>
-            </div>
-
-            {/* Target hardware */}
-            <div className="field-group">
-              <label className="ss-label">
-                <LearnTooltip
-                  explanation={{
-                    summary: 'Default target hardware',
-                    detail:
-                      'Sets the Pioneer CDJ model used during export validation — controls allowed file formats, max bitrate, hot-cue count, and folder layout. Pick the model your booth uses.'
-                  }}
-                  iconLabel="What is target hardware?"
-                >
-                  Default target hardware
-                </LearnTooltip>
-              </label>
-              <div style={{ marginTop: 8 }}>
-                <SegmentedControl
-                  options={HARDWARE_OPTIONS}
-                  value={targetHardware}
-                  onChange={(v) => setTargetHardware(v as CDJModel)}
-                  ariaLabel="Default target hardware"
-                />
-              </div>
-            </div>
-
-            {/* Default BPM range */}
-            <div className="field-group">
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline'
-                }}
-              >
-                <label className="ss-label">
-                  <LearnTooltip
-                    explanation={{
-                      summary: 'Default BPM range',
-                      detail:
-                        'The tempo window Set Architect and Suggestions stay within. Narrower = more cohesive flow; wider = more candidate tracks. 8–10 BPM is a typical club range.'
-                    }}
-                    iconLabel="What is the BPM range?"
-                  >
-                    Default BPM range
-                  </LearnTooltip>
-                </label>
-                <span className="ss-mono ss-caption" style={{ opacity: 0.7 }}>
-                  {bpmLow}–{bpmHigh} BPM
-                </span>
-              </div>
-              <div style={{ marginTop: 8 }}>
-                <RangeSlider
-                  min={60}
-                  max={200}
-                  step={1}
-                  low={bpmLow}
-                  high={bpmHigh}
-                  onChange={(low, high) => {
-                    setBpmLow(low)
-                    setBpmHigh(high)
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* YouTube API key — hidden from UI (YouTube Discover tab not in navigation) */}
-
-            {/* Harmonic mixing default */}
-            <div className="field-group">
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-              >
-                <div>
-                  <div className="ss-label">
-                    <LearnTooltip
-                      explanation={{
-                        summary: 'Harmonic mixing',
-                        detail:
-                          'When on, Set Architect prefers adjacent or same-letter Camelot keys, keeping the harmonic colour consistent and avoiding key clashes. Turn off if you intentionally want jarring key shifts.'
-                      }}
-                      iconLabel="What is harmonic mixing?"
-                    >
-                      Harmonic mixing
-                    </LearnTooltip>
-                  </div>
-                  <div className="ss-caption" style={{ opacity: 0.6, marginTop: 2 }}>
-                    On by default in Set Architect
-                  </div>
-                </div>
-                <Toggle on={harmonicMixing} onChange={setHarmonicMixing} />
-              </div>
-            </div>
-
-            {/* Library source — Rekordbox auto-detect + re-sync */}
-            <div
-              className="settings-section-header ss-caption"
-              style={{
-                opacity: 0.6,
-                textTransform: 'uppercase',
-                letterSpacing: 0.5,
-                marginTop: 8
-              }}
-            >
-              Library source
-            </div>
-
-            <div className="field-group">
-              <div className="ss-label">Where {APP_NAME} reads your library from</div>
-              <div className="ss-caption" style={{ opacity: 0.65, marginTop: 4, lineHeight: 1.45 }}>
-                {lastImportSource ? (
-                  <>
-                    {lastImportSource === 'rekordbox-db'
-                      ? 'Read directly from Rekordbox database'
-                      : 'Imported from Rekordbox XML export'}
-                    {lastImportAt && (
-                      <>
-                        {' · last imported '}
-                        <span className="ss-mono">
-                          {new Date(lastImportAt).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </span>
-                      </>
-                    )}
-                    {lastImportPath && (
-                      <div
-                        style={{ opacity: 0.5, marginTop: 4, wordBreak: 'break-all' }}
-                        className="ss-mono"
-                      >
-                        {lastImportPath}
+                <div className="settings-tab-body">
+                  {/* ── General: language + key notation ── */}
+                  {tab === 'general' && (
+                    <>
+                      <div className="field-group">
+                        <label
+                          className="ss-label"
+                          htmlFor="settings-language"
+                          style={{ display: 'block', marginBottom: 8 }}
+                        >
+                          {t('language.label')}
+                        </label>
+                        <select
+                          id="settings-language"
+                          className="feedback-input"
+                          value={language}
+                          onChange={(e) => setLanguage(e.target.value as LanguagePreference)}
+                          style={{ width: '100%' }}
+                        >
+                          <option value="system">{t('language.system')}</option>
+                          {SUPPORTED_LANGUAGES.map((l) => (
+                            <option key={l.code} value={l.code}>
+                              {l.nativeName}
+                            </option>
+                          ))}
+                        </select>
+                        <div
+                          className="ss-caption"
+                          style={{ opacity: 0.55, marginTop: 6, lineHeight: 1.45 }}
+                        >
+                          {t('language.caption')}
+                        </div>
                       </div>
-                    )}
-                  </>
-                ) : (
-                  'No library imported yet.'
-                )}
-              </div>
-              <div
-                style={{
-                  marginTop: 12,
-                  display: 'flex',
-                  gap: 8,
-                  alignItems: 'center',
-                  flexWrap: 'wrap'
-                }}
-              >
-                <Button
-                  variant={libraryStale ? 'primary' : 'secondary'}
-                  icon={RefreshCw}
-                  onClick={() => {
-                    void startImportFlow()
-                    closeModal()
-                    showModal('import')
-                  }}
-                >
-                  {libraryStale ? 'Re-sync now' : 'Re-sync library'}
-                </Button>
-                {libraryStale && (
-                  <span className="ss-caption" style={{ color: 'var(--accent)' }}>
-                    Source updated — re-sync recommended.
-                  </span>
-                )}
-              </div>
-            </div>
 
-            <div className="field-group">
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-              >
-                <div>
-                  <div className="ss-label">Auto-detect Rekordbox</div>
-                  <div className="ss-caption" style={{ opacity: 0.6, marginTop: 2 }}>
-                    On launch, look for Rekordbox on this Mac so import is one click.
-                  </div>
+                      <div className="field-group">
+                        <div
+                          className="ss-label"
+                          id="settings-key-notation-label"
+                          style={{ display: 'block', marginBottom: 8 }}
+                        >
+                          {t('keyNotation.label')}
+                        </div>
+                        <SegmentedControl
+                          options={[t('keyNotation.camelot'), t('keyNotation.openKey')]}
+                          value={
+                            keyNotation === 'camelot'
+                              ? t('keyNotation.camelot')
+                              : t('keyNotation.openKey')
+                          }
+                          onChange={(v) =>
+                            setKeyNotation(v === t('keyNotation.openKey') ? 'standard' : 'camelot')
+                          }
+                          ariaLabelledby="settings-key-notation-label"
+                        />
+                        <div className="ss-caption" style={{ opacity: 0.55, marginTop: 6 }}>
+                          {t('keyNotation.caption')}
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          className="ss-label"
+                          id="settings-density-label"
+                          style={{ display: 'block', marginBottom: 8 }}
+                        >
+                          {t('density.label')}
+                        </div>
+                        <SegmentedControl
+                          options={[t('density.standard'), t('density.compact')]}
+                          value={
+                            libraryDensity === 'compact'
+                              ? t('density.compact')
+                              : t('density.standard')
+                          }
+                          onChange={(v) =>
+                            setLibraryDensity(v === t('density.compact') ? 'compact' : 'standard')
+                          }
+                          ariaLabelledby="settings-density-label"
+                        />
+                        <div className="ss-caption" style={{ opacity: 0.55, marginTop: 6 }}>
+                          {t('density.caption')}
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          className="ss-label"
+                          id="settings-launch-label"
+                          style={{ display: 'block', marginBottom: 8 }}
+                        >
+                          {t('launch.label')}
+                        </div>
+                        <SegmentedControl
+                          options={[
+                            t('launch.last'),
+                            t('launch.home'),
+                            t('launch.library'),
+                            t('launch.build')
+                          ]}
+                          value={
+                            launchMode === 'Home'
+                              ? t('launch.home')
+                              : launchMode === 'Library'
+                                ? t('launch.library')
+                                : launchMode === 'Build'
+                                  ? t('launch.build')
+                                  : t('launch.last')
+                          }
+                          onChange={(v) =>
+                            setLaunchMode(
+                              v === t('launch.home')
+                                ? 'Home'
+                                : v === t('launch.library')
+                                  ? 'Library'
+                                  : v === t('launch.build')
+                                    ? 'Build'
+                                    : 'last'
+                            )
+                          }
+                          ariaLabelledby="settings-launch-label"
+                        />
+                        <div className="ss-caption" style={{ opacity: 0.55, marginTop: 6 }}>
+                          {t('launch.caption')}
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 16
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                            <Accessibility
+                              size={18}
+                              strokeWidth={1.6}
+                              style={{ marginTop: 2, opacity: 0.8 }}
+                              aria-hidden="true"
+                            />
+                            <div>
+                              <div className="ss-label">{t('reducedMotion.label')}</div>
+                              <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2 }}>
+                                {t('reducedMotion.caption')}
+                              </div>
+                            </div>
+                          </div>
+                          <Toggle
+                            on={reducedMotion}
+                            onChange={setReducedMotion}
+                            aria-label={t('reducedMotion.toggleAria')}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div className="ss-label">{t('replayOnboarding.label')}</div>
+                        <div
+                          className="ss-caption"
+                          style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.45 }}
+                        >
+                          {t('replayOnboarding.caption')}
+                        </div>
+                        <div style={{ marginTop: 12 }}>
+                          <Button
+                            variant="secondary"
+                            onClick={() => {
+                              closeModal()
+                              showOnboarding()
+                            }}
+                          >
+                            {t('replayOnboarding.button')}
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* ── Plan ── */}
+                  {tab === 'plan' && <LicenseSection />}
+
+                  {/* ── Memory: plain-English search + learn mode ── */}
+                  {tab === 'memory' && (
+                    <>
+                      <div className="field-group">
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 16
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                            <Sparkles
+                              size={18}
+                              strokeWidth={1.6}
+                              style={{ marginTop: 2, opacity: 0.8 }}
+                              aria-hidden="true"
+                            />
+                            <div>
+                              <div className="ss-label">{t('plainSearch.label')}</div>
+                              <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2 }}>
+                                {t('plainSearch.caption')}
+                              </div>
+                            </div>
+                          </div>
+                          <Toggle
+                            on={memoryAi}
+                            onChange={(v) => {
+                              setMemoryAi(v)
+                              if (typeof window.setsense !== 'undefined')
+                                void window.setsense.recallAiEnable(v)
+                            }}
+                            aria-label={t('plainSearch.toggleAria')}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 16
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                            <GraduationCap
+                              size={18}
+                              strokeWidth={1.6}
+                              style={{ marginTop: 2, opacity: 0.8 }}
+                              aria-hidden="true"
+                            />
+                            <div>
+                              <div className="ss-label">{t('learnMode.label')}</div>
+                              <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2 }}>
+                                {t('learnMode.caption')}
+                              </div>
+                            </div>
+                          </div>
+                          <Toggle
+                            on={learnMode}
+                            onChange={setLearnMode}
+                            aria-label={t('learnMode.toggleAria')}
+                          />
+                        </div>
+                        {learnMode && (
+                          <button
+                            type="button"
+                            className="settings-link-btn"
+                            style={{ marginTop: 10, marginLeft: 28 }}
+                            onClick={() => useCoachmarkStore.getState().reset()}
+                          >
+                            {t('learnMode.replayTips')}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 16
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                            <Sprout
+                              size={18}
+                              strokeWidth={1.6}
+                              style={{ marginTop: 2, opacity: 0.8 }}
+                              aria-hidden="true"
+                            />
+                            <div>
+                              <div className="ss-label">{t('beginnerMode.label')}</div>
+                              <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2 }}>
+                                {t('beginnerMode.caption')}
+                              </div>
+                            </div>
+                          </div>
+                          <Toggle
+                            on={isBeginner}
+                            onChange={setIsBeginner}
+                            aria-label={t('beginnerMode.toggleAria')}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 16
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                            <Mic
+                              size={18}
+                              strokeWidth={1.6}
+                              style={{ marginTop: 2, opacity: 0.8 }}
+                              aria-hidden="true"
+                            />
+                            <div>
+                              <div className="ss-label">{t('voiceInput.label')}</div>
+                              <div className="ss-caption" style={{ opacity: 0.65, marginTop: 2 }}>
+                                {t('voiceInput.caption')}
+                              </div>
+                            </div>
+                          </div>
+                          <Toggle
+                            on={voiceInputEnabled}
+                            onChange={setVoiceInputEnabled}
+                            aria-label={t('voiceInput.toggleAria')}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* ── Mixing: hardware + bpm range + harmonic mixing ── */}
+                  {tab === 'mixing' && (
+                    <>
+                      <div className="field-group">
+                        <label className="ss-label">
+                          <LearnTooltip
+                            explanation={{
+                              summary: t('targetHardware.label'),
+                              detail: t('targetHardware.detail')
+                            }}
+                            iconLabel={t('targetHardware.iconLabel')}
+                          >
+                            {t('targetHardware.label')}
+                          </LearnTooltip>
+                        </label>
+                        <div style={{ marginTop: 8 }}>
+                          <SegmentedControl
+                            options={HARDWARE_OPTIONS}
+                            value={targetHardware}
+                            onChange={(v) => setTargetHardware(v as CDJModel)}
+                            ariaLabel={t('targetHardware.label')}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'baseline'
+                          }}
+                        >
+                          <label className="ss-label">
+                            <LearnTooltip
+                              explanation={{
+                                summary: t('bpmRange.label'),
+                                detail: t('bpmRange.detail')
+                              }}
+                              iconLabel={t('bpmRange.iconLabel')}
+                            >
+                              {t('bpmRange.label')}
+                            </LearnTooltip>
+                          </label>
+                          <span className="ss-mono ss-caption" style={{ opacity: 0.7 }}>
+                            {t('bpmRange.value', { low: bpmLow, high: bpmHigh })}
+                          </span>
+                        </div>
+                        <div style={{ marginTop: 8 }}>
+                          <RangeSlider
+                            min={60}
+                            max={200}
+                            step={1}
+                            low={bpmLow}
+                            high={bpmHigh}
+                            onChange={(low, high) => {
+                              setBpmLow(low)
+                              setBpmHigh(high)
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <div>
+                            <div className="ss-label">
+                              <LearnTooltip
+                                explanation={{
+                                  summary: t('harmonicMixing.label'),
+                                  detail: t('harmonicMixing.detail')
+                                }}
+                                iconLabel={t('harmonicMixing.iconLabel')}
+                              >
+                                {t('harmonicMixing.label')}
+                              </LearnTooltip>
+                            </div>
+                            <div className="ss-caption" style={{ opacity: 0.6, marginTop: 2 }}>
+                              {t('harmonicMixing.caption')}
+                            </div>
+                          </div>
+                          <Toggle on={harmonicMixing} onChange={setHarmonicMixing} />
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          className="ss-label"
+                          id="settings-export-format-label"
+                          style={{ display: 'block', marginBottom: 8 }}
+                        >
+                          {t('exportFormat.label')}
+                        </div>
+                        <SegmentedControl
+                          options={[
+                            t('exportFormat.ask'),
+                            t('exportFormat.engine'),
+                            t('exportFormat.beatport')
+                          ]}
+                          value={
+                            defaultExportFormat === 'engine'
+                              ? t('exportFormat.engine')
+                              : defaultExportFormat === 'beatport'
+                                ? t('exportFormat.beatport')
+                                : t('exportFormat.ask')
+                          }
+                          onChange={(v) =>
+                            setDefaultExportFormat(
+                              v === t('exportFormat.engine')
+                                ? 'engine'
+                                : v === t('exportFormat.beatport')
+                                  ? 'beatport'
+                                  : 'ask'
+                            )
+                          }
+                          ariaLabelledby="settings-export-format-label"
+                        />
+                        <div className="ss-caption" style={{ opacity: 0.55, marginTop: 6 }}>
+                          {t('exportFormat.caption')}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* ── Playback: preview + devices + waveform ── */}
+                  {tab === 'playback' && (
+                    <>
+                      <div className="field-group">
+                        <div
+                          className="ss-label"
+                          id="settings-preview-len-label"
+                          style={{ display: 'block', marginBottom: 8 }}
+                        >
+                          {t('playback.lengthLabel')}
+                        </div>
+                        <SegmentedControl
+                          options={[
+                            t('playback.len30'),
+                            t('playback.len1m'),
+                            t('playback.len2m'),
+                            t('playback.len5m'),
+                            t('playback.lenFull')
+                          ]}
+                          value={
+                            previewMaxSeconds === 30
+                              ? t('playback.len30')
+                              : previewMaxSeconds === 120
+                                ? t('playback.len2m')
+                                : previewMaxSeconds === 300
+                                  ? t('playback.len5m')
+                                  : previewMaxSeconds === 0
+                                    ? t('playback.lenFull')
+                                    : t('playback.len1m')
+                          }
+                          onChange={(v) =>
+                            setPreviewMaxSeconds(
+                              v === t('playback.len30')
+                                ? 30
+                                : v === t('playback.len2m')
+                                  ? 120
+                                  : v === t('playback.len5m')
+                                    ? 300
+                                    : v === t('playback.lenFull')
+                                      ? 0
+                                      : 60
+                            )
+                          }
+                          ariaLabelledby="settings-preview-len-label"
+                        />
+                        <div className="ss-caption" style={{ opacity: 0.55, marginTop: 6 }}>
+                          {t('playback.lengthCaption')}
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'baseline'
+                          }}
+                        >
+                          <div className="ss-label">{t('playback.volumeLabel')}</div>
+                          <span className="ss-mono ss-caption" style={{ opacity: 0.7 }}>
+                            {Math.round(previewVolume * 100)}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={Math.round(previewVolume * 100)}
+                          onChange={(e) => setPreviewVolume(Number(e.target.value) / 100)}
+                          aria-label={t('playback.volumeLabel')}
+                          style={{ width: '100%', marginTop: 8, accentColor: 'var(--accent)' }}
+                        />
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 16
+                          }}
+                        >
+                          <div>
+                            <div className="ss-label">{t('playback.fadeLabel')}</div>
+                            <div className="ss-caption" style={{ opacity: 0.6, marginTop: 2 }}>
+                              {t('playback.fadeCaption')}
+                            </div>
+                          </div>
+                          <Toggle
+                            on={previewFade}
+                            onChange={setPreviewFade}
+                            aria-label={t('playback.fadeLabel')}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <label
+                          className="ss-label"
+                          htmlFor="settings-output-device"
+                          style={{ display: 'block', marginBottom: 8 }}
+                        >
+                          {t('playback.outputLabel')}
+                        </label>
+                        <select
+                          id="settings-output-device"
+                          className="feedback-input"
+                          value={outputDeviceId ?? ''}
+                          onChange={(e) => setOutputDeviceId(e.target.value || null)}
+                          style={{ width: '100%' }}
+                        >
+                          <option value="">{t('playback.systemDefault')}</option>
+                          {outputDevices.map((d) => (
+                            <option key={d.deviceId} value={d.deviceId}>
+                              {d.label || t('playback.unnamedDevice')}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="ss-caption" style={{ opacity: 0.55, marginTop: 6 }}>
+                          {t('playback.outputCaption')}
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <label
+                          className="ss-label"
+                          htmlFor="settings-input-device"
+                          style={{ display: 'block', marginBottom: 8 }}
+                        >
+                          {t('playback.inputLabel')}
+                        </label>
+                        <select
+                          id="settings-input-device"
+                          className="feedback-input"
+                          value={liveInputId}
+                          onChange={(e) => {
+                            const id = e.target.value
+                            setLiveInputId(id)
+                            setPreferredInputId(id || undefined)
+                          }}
+                          style={{ width: '100%' }}
+                        >
+                          <option value="">{t('playback.systemDefault')}</option>
+                          {inputDevices.map((d) => (
+                            <option key={d.deviceId} value={d.deviceId}>
+                              {d.label || t('playback.unnamedDevice')}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="ss-caption" style={{ opacity: 0.55, marginTop: 6 }}>
+                          {t('playback.inputCaption')}
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          className="ss-label"
+                          id="settings-waveform-label"
+                          style={{ display: 'block', marginBottom: 8 }}
+                        >
+                          {t('playback.waveformLabel')}
+                        </div>
+                        <SegmentedControl
+                          options={[
+                            t('playback.wfLow'),
+                            t('playback.wfStandard'),
+                            t('playback.wfHigh')
+                          ]}
+                          value={
+                            waveformQuality === 'low'
+                              ? t('playback.wfLow')
+                              : waveformQuality === 'high'
+                                ? t('playback.wfHigh')
+                                : t('playback.wfStandard')
+                          }
+                          onChange={(v) =>
+                            setWaveformQuality(
+                              v === t('playback.wfLow')
+                                ? 'low'
+                                : v === t('playback.wfHigh')
+                                  ? 'high'
+                                  : 'standard'
+                            )
+                          }
+                          ariaLabelledby="settings-waveform-label"
+                        />
+                        <div className="ss-caption" style={{ opacity: 0.55, marginTop: 6 }}>
+                          {t('playback.waveformCaption')}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* ── Library: source + auto-detect ── */}
+                  {tab === 'library' && (
+                    <>
+                      <div className="field-group">
+                        <div className="ss-label">
+                          {t('librarySource.label', { app: APP_NAME })}
+                        </div>
+                        <div
+                          className="ss-caption"
+                          style={{ opacity: 0.65, marginTop: 4, lineHeight: 1.45 }}
+                        >
+                          {lastImportSource ? (
+                            <>
+                              {lastImportSource === 'rekordbox-db'
+                                ? t('librarySource.fromDb')
+                                : t('librarySource.fromXml')}
+                              {lastImportAt && (
+                                <>
+                                  {' · '}
+                                  <span className="ss-mono">
+                                    {t('librarySource.lastImported', {
+                                      date: formatDate(lastImportAt, i18n.language)
+                                    })}
+                                  </span>
+                                </>
+                              )}
+                              {lastImportPath && (
+                                <div
+                                  style={{ opacity: 0.5, marginTop: 4, wordBreak: 'break-all' }}
+                                  className="ss-mono"
+                                >
+                                  {lastImportPath}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            t('librarySource.none')
+                          )}
+                        </div>
+                        <div
+                          style={{
+                            marginTop: 12,
+                            display: 'flex',
+                            gap: 8,
+                            alignItems: 'center',
+                            flexWrap: 'wrap'
+                          }}
+                        >
+                          <Button
+                            variant={libraryStale ? 'primary' : 'secondary'}
+                            icon={RefreshCw}
+                            onClick={() => {
+                              void startImportFlow()
+                              closeModal()
+                              showModal('import')
+                            }}
+                          >
+                            {libraryStale
+                              ? t('librarySource.resyncNow')
+                              : t('librarySource.resync')}
+                          </Button>
+                          {libraryStale && (
+                            <span className="ss-caption" style={{ color: 'var(--accent)' }}>
+                              {t('librarySource.staleHint')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <div>
+                            <div className="ss-label">{t('autoDetect.label')}</div>
+                            <div className="ss-caption" style={{ opacity: 0.6, marginTop: 2 }}>
+                              {t('autoDetect.caption')}
+                            </div>
+                          </div>
+                          <Toggle
+                            on={autoDetectRekordbox}
+                            onChange={setAutoDetectRekordbox}
+                            aria-label={t('autoDetect.toggleAria')}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 16
+                          }}
+                        >
+                          <div>
+                            <div className="ss-label">{t('autoTagging.label')}</div>
+                            <div className="ss-caption" style={{ opacity: 0.6, marginTop: 2 }}>
+                              {t('autoTagging.caption')}
+                            </div>
+                          </div>
+                          <Toggle
+                            on={autoTaggingEnabled}
+                            onChange={setAutoTaggingEnabled}
+                            aria-label={t('autoTagging.label')}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          className="ss-label"
+                          id="settings-tagroute-label"
+                          style={{ display: 'block', marginBottom: 8 }}
+                        >
+                          {t('tagRoute.label')}
+                        </div>
+                        <SegmentedControl
+                          options={[t('tagRoute.xml'), t('tagRoute.native')]}
+                          value={
+                            defaultTagExportRoute === 'native'
+                              ? t('tagRoute.native')
+                              : t('tagRoute.xml')
+                          }
+                          onChange={(v) =>
+                            setDefaultTagExportRoute(v === t('tagRoute.native') ? 'native' : 'xml')
+                          }
+                          ariaLabelledby="settings-tagroute-label"
+                        />
+                        <div className="ss-caption" style={{ opacity: 0.55, marginTop: 6 }}>
+                          {t('tagRoute.caption')}
+                        </div>
+                      </div>
+
+                      {rekordboxDbConsent && (
+                        <div className="field-group">
+                          <div className="ss-label">{t('rbConsent.label')}</div>
+                          <div
+                            className="ss-caption"
+                            style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.45 }}
+                          >
+                            {t('rbConsent.caption')}
+                          </div>
+                          <div style={{ marginTop: 12 }}>
+                            <Button variant="secondary" onClick={() => void handleRevokeConsent()}>
+                              {t('rbConsent.button')}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* ── Privacy & Backup: crash reporting + backup/migration ── */}
+                  {tab === 'data' && (
+                    <>
+                      <div className="field-group">
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            gap: 16
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                            <Shield
+                              size={18}
+                              strokeWidth={1.6}
+                              style={{ marginTop: 2, opacity: 0.8, flexShrink: 0 }}
+                              aria-hidden="true"
+                            />
+                            <div>
+                              <div className="ss-label">{t('crashReporting.label')}</div>
+                              <div
+                                className="ss-caption"
+                                style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.5 }}
+                              >
+                                {t('crashReporting.caption')}
+                              </div>
+                              <div
+                                className="ss-caption"
+                                style={{ opacity: 0.5, marginTop: 6, lineHeight: 1.45 }}
+                              >
+                                {t('crashReporting.privacyNote', { app: APP_NAME })}
+                              </div>
+                            </div>
+                          </div>
+                          <Toggle
+                            on={crashReportingEnabled}
+                            onChange={setCrashReportingEnabled}
+                            aria-label={t('crashReporting.toggleAria')}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 16
+                          }}
+                        >
+                          <div>
+                            <div className="ss-label">{t('updates.label')}</div>
+                            <div className="ss-caption" style={{ opacity: 0.6, marginTop: 2 }}>
+                              {t('updates.caption')}
+                            </div>
+                          </div>
+                          <Toggle
+                            on={updateAutoCheck}
+                            onChange={setUpdateAutoCheck}
+                            aria-label={t('updates.label')}
+                          />
+                        </div>
+                        {updateAutoCheck && (
+                          <div style={{ marginTop: 12 }}>
+                            <SegmentedControl
+                              options={[t('updates.daily'), t('updates.weekly')]}
+                              value={
+                                updateFrequency === 'weekly'
+                                  ? t('updates.weekly')
+                                  : t('updates.daily')
+                              }
+                              onChange={(v) =>
+                                setUpdateFrequency(v === t('updates.weekly') ? 'weekly' : 'daily')
+                              }
+                              ariaLabel={t('updates.frequency')}
+                            />
+                          </div>
+                        )}
+                        <div
+                          style={{
+                            marginTop: 12,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 16
+                          }}
+                        >
+                          <div>
+                            <div className="ss-label">{t('updates.preReleaseLabel')}</div>
+                            <div className="ss-caption" style={{ opacity: 0.6, marginTop: 2 }}>
+                              {t('updates.preReleaseCaption')}
+                            </div>
+                          </div>
+                          <Toggle
+                            on={updatePreRelease}
+                            onChange={setUpdatePreRelease}
+                            aria-label={t('updates.preReleaseLabel')}
+                          />
+                        </div>
+                        <div style={{ marginTop: 12 }}>
+                          <Button
+                            variant="secondary"
+                            icon={RefreshCw}
+                            onClick={() => void handleCheckUpdates()}
+                            disabled={checkingUpdate}
+                          >
+                            {checkingUpdate ? t('updates.checking') : t('updates.checkNow')}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 16
+                          }}
+                        >
+                          <div>
+                            <div className="ss-label">{t('offline.label')}</div>
+                            <div className="ss-caption" style={{ opacity: 0.6, marginTop: 2 }}>
+                              {t('offline.caption')}
+                            </div>
+                          </div>
+                          <Toggle
+                            on={offlineMode}
+                            onChange={setOfflineMode}
+                            aria-label={t('offline.label')}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div className="ss-label">{t('artworkCache.label')}</div>
+                        <div
+                          className="ss-caption"
+                          style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.45 }}
+                        >
+                          {t('artworkCache.caption', { size: formatBytes(artworkCacheBytes) })}
+                        </div>
+                        <div style={{ marginTop: 12 }}>
+                          <Button
+                            variant="secondary"
+                            icon={Trash2}
+                            onClick={() => void handleClearArtwork()}
+                            disabled={clearingArtwork || artworkCacheBytes === 0}
+                          >
+                            {clearingArtwork ? t('artworkCache.clearing') : t('artworkCache.clear')}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <BackupSection />
+                    </>
+                  )}
+
+                  {/* ── Reset ── */}
+                  {tab === 'reset' && <DangerZoneSection />}
                 </div>
-                <Toggle
-                  on={autoDetectRekordbox}
-                  onChange={setAutoDetectRekordbox}
-                  aria-label="Toggle auto-detect Rekordbox"
-                />
-              </div>
-            </div>
-
-            {/* Privacy — crash reporting */}
-            <div
-              className="settings-section-header ss-caption"
-              style={{
-                opacity: 0.6,
-                textTransform: 'uppercase',
-                letterSpacing: 0.5,
-                marginTop: 8
-              }}
-            >
-              Privacy
-            </div>
-
-            <div className="field-group">
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  gap: 16
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <Shield
-                    size={18}
-                    strokeWidth={1.6}
-                    style={{ marginTop: 2, opacity: 0.8, flexShrink: 0 }}
-                    aria-hidden="true"
-                  />
-                  <div>
-                    <div className="ss-label">Crash reporting</div>
-                    <div
-                      className="ss-caption"
-                      style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.5 }}
-                    >
-                      Opt in to send anonymous crash reports when the app unexpectedly quits.
-                      Reports include only the error type, a redacted stack trace (filenames, no
-                      paths), your OS version, and the app version.
-                    </div>
-                    <div
-                      className="ss-caption"
-                      style={{ opacity: 0.5, marginTop: 6, lineHeight: 1.45 }}
-                    >
-                      Your library, track titles, file paths, your device name, and personal data
-                      are never included. Off by default. Turning it off stops reporting
-                      immediately; turning it on takes effect after restarting {APP_NAME}.
-                    </div>
-                  </div>
-                </div>
-                <Toggle
-                  on={crashReportingEnabled}
-                  onChange={setCrashReportingEnabled}
-                  aria-label="Toggle crash reporting"
-                />
-              </div>
-            </div>
-
-            {/* Backup & migration — backendless export/import */}
-            <div
-              className="settings-section-header ss-caption"
-              style={{
-                opacity: 0.6,
-                textTransform: 'uppercase',
-                letterSpacing: 0.5,
-                marginTop: 8
-              }}
-            >
-              Backup &amp; migration
-            </div>
-            <BackupSection />
-
-            {/* Danger zone — wipe to first-launch */}
-            <div
-              className="settings-section-header ss-caption"
-              style={{
-                opacity: 0.6,
-                textTransform: 'uppercase',
-                letterSpacing: 0.5,
-                marginTop: 8,
-                color: 'var(--semantic-danger)'
-              }}
-            >
-              Danger zone
-            </div>
-            <DangerZoneSection />
-          </div>
-        )}
+              </motion.div>
+            </AnimatePresence>
+          )}
+        </div>
       </div>
 
       {/* Footer — pinned below scroll */}
       <div className="modal-footer">
         <Button variant="secondary" onClick={closeModal}>
-          Cancel
+          {t('cancel', { ns: 'common' })}
         </Button>
         <Button variant="primary" onClick={handleSave} disabled={saving || !loaded}>
-          {saving ? 'Saving…' : 'Save settings'}
+          {saving ? t('saving') : t('save')}
         </Button>
       </div>
     </Modal>

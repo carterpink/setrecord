@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react'
 import type { Track } from '@/types'
 import { toMediaUrl } from '@/utils/mediaUrl'
@@ -23,20 +24,16 @@ export function TrackArt({ track }: { track: Track }): React.JSX.Element {
 }
 
 /** The "+" add-to-set button used across the bespoke result rows. */
-export function AddButton({
-  track,
-  title = 'Add to current set'
-}: {
-  track: Track
-  title?: string
-}): React.JSX.Element {
+export function AddButton({ track, title }: { track: Track; title?: string }): React.JSX.Element {
+  const { t } = useTranslation('home')
   const addTrackAndToast = useSetStore((s) => s.addTrackAndToast)
+  const label = title ?? t('shared.addToCurrentSet')
   return (
     <button
       type="button"
       className="row-add"
-      title={title}
-      aria-label={title}
+      title={label}
+      aria-label={label}
       onClick={(e) => {
         e.stopPropagation()
         addTrackAndToast(track)

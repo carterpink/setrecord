@@ -7,7 +7,8 @@ import {
   ArrowLeftRight,
   HeartPulse,
   Tag,
-  MapPin
+  MapPin,
+  Building2
 } from 'lucide-react'
 import type { RecallSection } from '@/types'
 import { useRecallStore } from '@/stores/recallStore'
@@ -22,6 +23,7 @@ import { CratesSection } from './CratesSection'
 import { IdentitySection } from './IdentitySection'
 import { CombosSection } from './CombosSection'
 import { GigsSection } from './GigsSection'
+import { VenuesSection } from './VenuesSection'
 import { HealthSection } from './HealthSection'
 import { TagsSection } from './TagsSection'
 
@@ -32,6 +34,7 @@ const NAV: { id: RecallSection; labelKey: string; icon: typeof Sparkles }[] = [
   { id: 'rediscover', labelKey: 'nav.rediscover', icon: Sparkles },
   { id: 'combos', labelKey: 'nav.combos', icon: ArrowLeftRight },
   { id: 'gigs', labelKey: 'nav.gigs', icon: MapPin },
+  { id: 'venues', labelKey: 'nav.venues', icon: Building2 },
   { id: 'identity', labelKey: 'nav.identity', icon: Fingerprint },
   { id: 'health', labelKey: 'nav.health', icon: HeartPulse }
 ]
@@ -98,6 +101,7 @@ export function RecallPanel(): React.JSX.Element {
                   {section === 'identity' && <IdentitySection />}
                   {section === 'combos' && <CombosSection />}
                   {section === 'gigs' && <GigsSection />}
+                  {section === 'venues' && <VenuesSection />}
                   {section === 'health' && <HealthSection />}
                 </div>
               )}

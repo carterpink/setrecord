@@ -37,6 +37,21 @@ import {
 import { getGateway } from './licensing/gateway'
 import { getTrialStartedAt } from './licensing/trialStore'
 
+const DEV_PRO_STATE: LicenseState = {
+  tier: 'pro',
+  plan: 'lifetime',
+  status: 'active',
+  keyMasked: 'DEV·••••·MODE',
+  buyerEmail: 'dev@setsense.app',
+  activatedAt: null,
+  expiresAt: null,
+  deviceBound: false,
+  portable: true,
+  clockWarning: false,
+  trialEndsAt: null,
+  trialDaysRemaining: null
+}
+
 const FREE_STATE: LicenseState = {
   tier: 'free',
   plan: null,
@@ -277,6 +292,7 @@ function applyTrial(base: LicenseState): LicenseState {
 
 /** Current entitlement, derived fresh from the stored key (or the free trial). Never throws. */
 export function getLicenseState(): LicenseState {
+  if (process.env.NODE_ENV === 'development') return DEV_PRO_STATE
   const key = getLicenseKey()
   const base = key ? evaluateLicense(key, liveContext()).state : FREE_STATE
   // Advance the clock high-water mark on every read (only ever moves forward).
@@ -286,6 +302,7 @@ export function getLicenseState(): LicenseState {
 
 /** True when the user is entitled to Pro right now — used for IPC enforcement. */
 export function isProEntitled(): boolean {
+  if (process.env.NODE_ENV === 'development') return true
   return getLicenseState().tier === 'pro'
 }
 
@@ -365,6 +382,17 @@ export async function refreshLicenseOnline(): Promise<LicenseState> {
         revoked: res.revoked === true,
         expiresAtOverride: res.expiresAt ?? null
       })
+      // A renewed subscription comes back as a re-issued, longer-dated key. Swap
+      // it in so the offline signature itself carries the new expiry — the
+      // override above can only ever *tighten*. Verify first and only replace
+      // when it's valid, for THIS license, and actually different from what we
+      // hold, so a hostile/garbled response can never downgrade or churn the key.
+      if (res.key && res.key.trim() !== key.trim()) {
+        const reissued = verifyKey(res.key)
+        if (reissued.ok && reissued.payload.id === verified.payload.id) {
+          await setLicenseKey(res.key.trim())
+        }
+      }
     }
   } catch {
     // Keep the cached verdict; never lock out on a failed refresh.

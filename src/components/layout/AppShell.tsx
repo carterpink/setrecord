@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { usePreviewAudio } from '@/hooks/usePreviewAudio'
 import { useKeyboard } from '@/hooks/useKeyboard'
 import {
@@ -25,6 +26,7 @@ import { IdentityReadyModal } from '@/components/modals/IdentityReadyModal'
 import { PostGigPromptModal } from '@/components/modals/PostGigPromptModal'
 import { UpgradeModal } from '@/components/modals/UpgradeModal'
 import { RecallPanel } from '@/components/recall/RecallPanel'
+import { CollabLayer } from '@/components/collab/CollabLayer'
 import { HomeSurface } from '@/components/home/HomeSurface'
 import { SuggestionsPanel } from '@/components/suggestions/SuggestionsPanel'
 import { TimelinePanel } from '@/components/timeline/TimelinePanel'
@@ -35,6 +37,8 @@ import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useLicenseStore } from '@/stores/licenseStore'
 import { useProgressStore } from '@/stores/progressStore'
+import { usePlaybackStore } from '@/stores/playbackStore'
+import { setWaveformQuality } from '@/utils/waveformPeaksCache'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { ToastContainer } from '@/components/shared/ToastContainer'
 import { AnimatePresence } from 'framer-motion'
@@ -47,11 +51,11 @@ type ActiveDrag =
   | null
 
 export function AppShell(): React.JSX.Element {
+  const { t } = useTranslation('layout')
   const {
     openModal,
     onboardingVisible,
     showOnboarding,
-    lightMode,
     setEnergyAnalysis,
     mode,
     hydrateFromSettings
@@ -60,22 +64,8 @@ export function AppShell(): React.JSX.Element {
     useLibraryStore()
   const { loadSets, addTrack, addTrackAt, reorderTracks } = useSetStore()
   const hydrateLicense = useLicenseStore((s) => s.hydrate)
-  const themeHasMounted = useRef(false)
-
   usePreviewAudio()
   useKeyboard()
-
-  useEffect(() => {
-    const root = document.documentElement
-    root.setAttribute('data-theme', lightMode ? 'light' : 'dark')
-    if (!themeHasMounted.current) {
-      themeHasMounted.current = true
-      return
-    }
-    root.classList.add('theme-transitioning')
-    const t = setTimeout(() => root.classList.remove('theme-transitioning'), 650)
-    return () => clearTimeout(t)
-  }, [lightMode])
 
   // Subscribe to background file-health push events from main process
   useEffect(() => {
@@ -88,13 +78,25 @@ export function AppShell(): React.JSX.Element {
   // Hydrate Learn Mode from persisted AppSettings on boot
   useEffect(() => {
     if (typeof window.setsense === 'undefined') return
-    void window.setsense.getSettings().then((s) =>
+    void window.setsense.getSettings().then((s) => {
       hydrateFromSettings({
         learnModeEnabled: s.learnModeEnabled,
         isBeginner: s.isBeginner,
-        hasCompletedOnboarding: s.hasCompletedOnboarding
+        hasCompletedOnboarding: s.hasCompletedOnboarding,
+        language: s.language,
+        keyNotation: s.keyNotation,
+        reducedMotion: s.reducedMotion,
+        launchMode: s.launchMode,
+        voiceInputEnabled: s.voiceInputEnabled
       })
-    )
+      usePlaybackStore.getState().applyPlaybackSettings({
+        previewVolume: s.previewVolume,
+        previewMaxSeconds: s.previewMaxSeconds,
+        previewFade: s.previewFade,
+        outputDeviceId: s.outputDeviceId
+      })
+      setWaveformQuality(s.waveformQuality)
+    })
   }, [hydrateFromSettings])
 
   // Hydrate license entitlement from the main process (source of truth) on boot
@@ -199,19 +201,22 @@ export function AppShell(): React.JSX.Element {
     onDragStart({ active }: { active: { id: string | number; data: { current?: unknown } } }) {
       const data = active.data.current as ActiveDrag
       if (data?.source === 'library' && data.track) {
-        return `Picked up ${data.track.title} by ${data.track.artist}. Drop it on the timeline to add it to the set.`
+        return t('dnd.pickedUpLibrary', { title: data.track.title, artist: data.track.artist })
       }
       if (data?.source === 'timeline' && data.setTrack) {
-        return `Picked up ${data.setTrack.track.title} from position ${data.setTrack.position + 1}.`
+        return t('dnd.pickedUpTimeline', {
+          title: data.setTrack.track.title,
+          position: data.setTrack.position + 1
+        })
       }
-      return 'Picked up a track.'
+      return t('dnd.pickedUpGeneric')
     },
     onDragOver({ over }: { over: { id: string | number; data: { current?: unknown } } | null }) {
-      if (!over) return 'Track is over an empty area.'
+      if (!over) return t('dnd.overEmpty')
       const overData = over.data.current as { source?: string; setTrack?: SetTrack } | undefined
-      if (over.id === 'timeline-droppable') return 'Hovering the timeline drop zone.'
+      if (over.id === 'timeline-droppable') return t('dnd.overDropZone')
       if (overData?.source === 'timeline' && overData.setTrack) {
-        return `Hovering position ${overData.setTrack.position + 1}.`
+        return t('dnd.overPosition', { position: overData.setTrack.position + 1 })
       }
       return ''
     },
@@ -222,19 +227,22 @@ export function AppShell(): React.JSX.Element {
       active: { data: { current?: unknown } }
       over: { id: string | number; data: { current?: unknown } } | null
     }) {
-      if (!over) return 'Drag cancelled — no drop target.'
+      if (!over) return t('dnd.cancelledNoTarget')
       const activeData = active.data.current as ActiveDrag
       const overData = over.data.current as { source?: string; setTrack?: SetTrack } | undefined
       if (activeData?.source === 'library' && activeData.track) {
-        return `Added ${activeData.track.title} to the set.`
+        return t('dnd.added', { title: activeData.track.title })
       }
       if (activeData?.source === 'timeline' && overData?.setTrack) {
-        return `Moved ${activeData.setTrack.track.title} to position ${overData.setTrack.position + 1}.`
+        return t('dnd.moved', {
+          title: activeData.setTrack.track.title,
+          position: overData.setTrack.position + 1
+        })
       }
-      return 'Drag complete.'
+      return t('dnd.complete')
     },
     onDragCancel() {
-      return 'Drag cancelled.'
+      return t('dnd.cancelled')
     }
   }
 
@@ -381,6 +389,7 @@ export function AppShell(): React.JSX.Element {
           </ErrorBoundary>
         )}
       </AnimatePresence>
+      <CollabLayer />
       <ToastContainer />
     </>
   )

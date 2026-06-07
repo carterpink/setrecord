@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from 'lucide-react'
 import { motion } from '@/components/shared/Motion'
 import { useToastStore, type Toast as ToastType } from '@/stores/toastStore'
@@ -25,6 +26,7 @@ function SetMovePicker({
   fromSetId: string
   onDone: () => void
 }): React.JSX.Element | null {
+  const { t } = useTranslation('shared')
   const savedSets = useSetStore((s) => s.savedSets)
   const currentSet = useSetStore((s) => s.currentSet)
   const moveTrackToSet = useSetStore((s) => s.moveTrackToSet)
@@ -40,7 +42,7 @@ function SetMovePicker({
     <select
       className="toast-set-select"
       value={fromSetId}
-      aria-label="Move to a different set"
+      aria-label={t('toast.moveAria')}
       onClick={(e) => e.stopPropagation()}
       onChange={(e) => {
         const toId = e.target.value
@@ -50,7 +52,7 @@ function SetMovePicker({
     >
       {sets.map((s) => (
         <option key={s.id} value={s.id}>
-          {s.id === fromSetId ? s.name : `Move to ${s.name}`}
+          {s.id === fromSetId ? s.name : t('toast.moveToSet', { name: s.name })}
         </option>
       ))}
     </select>
@@ -58,6 +60,7 @@ function SetMovePicker({
 }
 
 export function Toast({ toast }: Props): React.JSX.Element {
+  const { t } = useTranslation('shared')
   const dismiss = useToastStore((s) => s.dismiss)
   const Icon = ICONS[toast.kind]
 
@@ -91,7 +94,7 @@ export function Toast({ toast }: Props): React.JSX.Element {
       <button
         type="button"
         className="toast-close"
-        aria-label="Dismiss"
+        aria-label={t('toast.dismiss')}
         onClick={() => dismiss(toast.id)}
       >
         <X size={14} strokeWidth={1.7} />

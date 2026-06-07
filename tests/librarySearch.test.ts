@@ -24,8 +24,8 @@ describe('searchLibrary', () => {
 
   it('filters by plain-language tags (substring-tolerant, any-of)', () => {
     const tagged = [
-      makeTrack({ id: 't1', tags: [{ category: 'mood', value: 'dark', source: 'auto' }] }),
-      makeTrack({ id: 't2', tags: [{ category: 'mood', value: 'vocals', source: 'auto' }] }),
+      makeTrack({ id: 't1', tags: [{ category: 'vibe', value: 'dark', source: 'auto' }] }),
+      makeTrack({ id: 't2', tags: [{ category: 'vibe', value: 'vocals', source: 'auto' }] }),
       makeTrack({ id: 't3', tags: [{ category: 'energy', value: 'punchy', source: 'auto' }] })
     ]
     // "vocal" should match "vocals"; "dark" matches "dark" — t3 excluded.

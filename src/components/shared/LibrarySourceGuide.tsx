@@ -1,29 +1,8 @@
 import { AppWindow, Download, FolderOpen } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { APP_NAME } from '@/utils/constants'
 
-interface Step {
-  icon: typeof AppWindow
-  title: string
-  body: string
-}
-
-const STEPS: Step[] = [
-  {
-    icon: AppWindow,
-    title: 'Open Rekordbox',
-    body: 'Launch the app on this Mac if it isn’t already running.'
-  },
-  {
-    icon: Download,
-    title: 'File › Export Collection in xml format',
-    body: 'In the menu bar. Save the file anywhere — Desktop is fine.'
-  },
-  {
-    icon: FolderOpen,
-    title: 'Choose the file below',
-    body: `${APP_NAME} reads the export read‑only — Rekordbox stays untouched.`
-  }
-]
+const STEP_ICONS = [AppWindow, Download, FolderOpen] as const
 
 /**
  * 3-step walkthrough for the manual Rekordbox XML export path. Pure
@@ -32,6 +11,24 @@ const STEPS: Step[] = [
  * who want to refresh the steps.
  */
 export function LibrarySourceGuide(): React.JSX.Element {
+  const { t } = useTranslation('shared')
+  const steps = [
+    {
+      icon: STEP_ICONS[0],
+      title: t('librarySourceGuide.step1.title'),
+      body: t('librarySourceGuide.step1.body')
+    },
+    {
+      icon: STEP_ICONS[1],
+      title: t('librarySourceGuide.step2.title'),
+      body: t('librarySourceGuide.step2.body')
+    },
+    {
+      icon: STEP_ICONS[2],
+      title: t('librarySourceGuide.step3.title'),
+      body: t('librarySourceGuide.step3.body', { app: APP_NAME })
+    }
+  ]
   return (
     <div
       style={{
@@ -42,7 +39,7 @@ export function LibrarySourceGuide(): React.JSX.Element {
       }}
     >
       <div className="ss-body-sm" style={{ opacity: 0.7 }}>
-        Takes about 30 seconds.
+        {t('librarySourceGuide.duration')}
       </div>
       <ol
         style={{
@@ -54,9 +51,9 @@ export function LibrarySourceGuide(): React.JSX.Element {
           gap: 12
         }}
       >
-        {STEPS.map((step, idx) => (
+        {steps.map((step, idx) => (
           <li
-            key={step.title}
+            key={idx}
             style={{
               display: 'flex',
               alignItems: 'flex-start',

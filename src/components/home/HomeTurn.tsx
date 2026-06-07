@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useRecallStore } from '@/stores/recallStore'
 import type { HomeTurn as HomeTurnT } from '@/stores/homeStore'
 import type { HomeFilters } from '@/utils/homeQuery'
@@ -41,6 +42,7 @@ function ResultBody({ turn }: { turn: HomeTurnT }): React.JSX.Element | null {
 }
 
 export function HomeTurn({ turn, onRerun, onFollow }: HomeTurnProps): React.JSX.Element {
+  const { t } = useTranslation('home')
   const aiStatus = useRecallStore((s) => s.aiStatus)
 
   if (turn.pending) {
@@ -55,9 +57,7 @@ export function HomeTurn({ turn, onRerun, onFollow }: HomeTurnProps): React.JSX.
             <span />
             <span />
           </span>
-          {warming
-            ? 'Getting ready — this happens once, then it’s instant.'
-            : 'Reading your library…'}
+          {warming ? t('turn.warming') : t('turn.reading')}
         </div>
       </div>
     )
@@ -66,10 +66,12 @@ export function HomeTurn({ turn, onRerun, onFollow }: HomeTurnProps): React.JSX.
   return (
     <div className="turn">
       <div className="user-line">{turn.query}</div>
-      <div className="answer" role="region" aria-label="Answer">
+      <div className="answer" role="region" aria-label={t('turn.answerAria')}>
         {/* Concise SR announcement that the answer is ready — avoids reading the whole list aloud */}
         <span className="sr-only" role="status" aria-live="polite">
-          {turn.summary ? `Results ready: ${turn.summary}` : 'Results ready'}
+          {turn.summary
+            ? t('turn.resultsReady', { summary: turn.summary })
+            : t('turn.resultsReadyBare')}
         </span>
         <Interpret key={turn.summary} filters={turn.filters} onRerun={(f) => onRerun(turn.id, f)} />
         <ResultBody turn={turn} />

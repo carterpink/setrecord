@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 import { formatBpm } from '@/utils/format'
 import { LearnTooltip } from '@/components/learn/LearnTooltip'
 import { Coachmark } from '@/components/learn/Coachmark'
@@ -19,14 +20,15 @@ interface BpmChipProps {
  * keeps the caller's class so existing layouts are untouched.
  */
 export function BpmChip({ children, className }: BpmChipProps): React.JSX.Element {
+  const { t } = useTranslation('shared')
   return (
     <Coachmark concept="bpm">
       <LearnTooltip
         explanation={explainBpmView()}
         basic={BEGINNER_TOOLTIP_COPY.bpm}
-        iconLabel="What is BPM?"
+        iconLabel={t('bpm.iconLabel')}
       >
-        <span className={clsx(className)} aria-label={`${formatBpm(children)} BPM`}>
+        <span className={clsx(className)} aria-label={t('bpm.value', { bpm: formatBpm(children) })}>
           {formatBpm(children)}
         </span>
       </LearnTooltip>

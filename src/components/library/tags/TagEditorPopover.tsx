@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, Lock } from 'lucide-react'
 import type { TagCategory, Track } from '@/types'
 import { allCategories } from '@/utils/tagging/taxonomy'
@@ -19,6 +20,7 @@ interface TagEditorPopoverProps {
  * it user-owned so re-tagging won't overwrite it. Pro-gated.
  */
 export function TagEditorPopover({ track, onClose }: TagEditorPopoverProps): React.ReactPortal {
+  const { t } = useTranslation('library')
   const isPro = useIsPro()
   const showUpgrade = useUiStore((s) => s.showUpgrade)
   const setTrackTags = useLibraryStore((s) => s.setTrackTags)
@@ -59,7 +61,7 @@ export function TagEditorPopover({ track, onClose }: TagEditorPopoverProps): Rea
     <div
       className="combos-overlay"
       role="dialog"
-      aria-label={`Edit tags for ${track.title}`}
+      aria-label={t('tagEditor.dialogAria', { title: track.title })}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
@@ -79,13 +81,17 @@ export function TagEditorPopover({ track, onClose }: TagEditorPopoverProps): Rea
                 letterSpacing: '0.08em'
               }}
             >
-              Tags
+              {t('tagEditor.heading')}
             </div>
             <div className="ss-body-sm" style={{ fontWeight: 500 }}>
               {track.title}
             </div>
           </div>
-          <button className="smart-filter-dismiss" onClick={onClose} aria-label="Close">
+          <button
+            className="smart-filter-dismiss"
+            onClick={onClose}
+            aria-label={t('tagEditor.close')}
+          >
             <X size={12} strokeWidth={2} />
           </button>
         </div>
@@ -110,7 +116,7 @@ export function TagEditorPopover({ track, onClose }: TagEditorPopoverProps): Rea
             }}
           >
             <Lock size={12} strokeWidth={1.7} />
-            Editing tags is a Pro feature — upgrade to customise.
+            {t('tagEditor.proUpsell')}
           </button>
         )}
 
@@ -150,7 +156,7 @@ export function TagEditorPopover({ track, onClose }: TagEditorPopoverProps): Rea
                       fontSize: 10
                     }}
                   >
-                    Reset to auto
+                    {t('tagEditor.resetToAuto')}
                   </button>
                 )}
               </div>

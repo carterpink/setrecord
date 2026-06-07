@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Trash2, CircleCheck } from 'lucide-react'
 import type { DupeGroupView } from '@/stores/homeStore'
 import { useLibraryStore } from '@/stores/libraryStore'
@@ -11,6 +12,7 @@ interface DuplicatesResultProps {
 const MAX_SHOWN = 3
 
 export function DuplicatesResult({ groups }: DuplicatesResultProps): React.JSX.Element {
+  const { t } = useTranslation('home')
   const [cleared, setCleared] = useState<Set<string>>(new Set())
 
   const remaining = groups.filter((g) => !cleared.has(g.normalisedKey))
@@ -28,7 +30,7 @@ export function DuplicatesResult({ groups }: DuplicatesResultProps): React.JSX.E
       setCleared((prev) => new Set(prev).add(g.normalisedKey))
       void useLibraryStore.getState().loadLibrary()
     } catch {
-      useToastStore.getState().push({ kind: 'error', message: 'Couldn’t clear that group.' })
+      useToastStore.getState().push({ kind: 'error', message: t('duplicates.clearGroupError') })
     }
   }
 
@@ -53,35 +55,35 @@ export function DuplicatesResult({ groups }: DuplicatesResultProps): React.JSX.E
       void useLibraryStore.getState().loadLibrary()
       useToastStore
         .getState()
-        .push({ kind: 'success', message: `Cleared ${keys.length} duplicate groups` })
+        .push({ kind: 'success', message: t('duplicates.clearedToast', { count: keys.length }) })
     } catch {
-      useToastStore.getState().push({ kind: 'error', message: 'Couldn’t clear all duplicates.' })
+      useToastStore.getState().push({ kind: 'error', message: t('duplicates.clearAllError') })
     }
   }
 
   if (remaining.length === 0) {
-    return <div className="answer-note">All clear — those duplicates are gone.</div>
+    return <div className="answer-note">{t('duplicates.allClear')}</div>
   }
 
   return (
     <div className="answer">
       <div className="res-head">
-        <span className="res-title">{remaining.length} duplicates worth clearing</span>
-        <span className="res-meta">keeping the best copy of each</span>
+        <span className="res-title">{t('duplicates.title', { count: remaining.length })}</span>
+        <span className="res-meta">{t('duplicates.meta')}</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {shown.map((g) => (
           <div className="dup-group glass-1" key={g.normalisedKey}>
             <div className="dup-pair">
               <div className="dup-keep">
-                <span className="dup-tag keep">keep</span>
+                <span className="dup-tag keep">{t('duplicates.keep')}</span>
                 <div className="track-meta">
                   <div className="t">
                     {g.keep.title} — {g.keep.artist}
                   </div>
                   <div className="a" style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>
                     {[
-                      g.keep.bitrate ? `${g.keep.bitrate} kbps` : null,
+                      g.keep.bitrate ? t('duplicates.kbps', { count: g.keep.bitrate }) : null,
                       g.keep.format?.toUpperCase()
                     ]
                       .filter(Boolean)
@@ -94,10 +96,13 @@ export function DuplicatesResult({ groups }: DuplicatesResultProps): React.JSX.E
             {g.drop.map((d) => (
               <div className="dup-pair" key={d.id}>
                 <div className="dup-keep">
-                  <span className="dup-tag drop">drop</span>
+                  <span className="dup-tag drop">{t('duplicates.drop')}</span>
                   <div className="track-meta">
                     <div className="a" style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>
-                      {[d.bitrate ? `${d.bitrate} kbps` : null, d.format?.toUpperCase()]
+                      {[
+                        d.bitrate ? t('duplicates.kbps', { count: d.bitrate }) : null,
+                        d.format?.toUpperCase()
+                      ]
                         .filter(Boolean)
                         .join(' · ')}
                     </div>
@@ -109,8 +114,8 @@ export function DuplicatesResult({ groups }: DuplicatesResultProps): React.JSX.E
               <button
                 type="button"
                 className="row-add"
-                title="Remove the lower copies"
-                aria-label="Remove the lower copies"
+                title={t('duplicates.removeLower')}
+                aria-label={t('duplicates.removeLower')}
                 style={{ borderColor: 'var(--border-default)', color: 'var(--text-secondary)' }}
                 onClick={() => void clearGroup(g)}
               >
@@ -121,11 +126,11 @@ export function DuplicatesResult({ groups }: DuplicatesResultProps): React.JSX.E
         ))}
         <div className="build-head" style={{ marginTop: 2 }}>
           <span className="res-meta">
-            {more > 0 ? `${more} more grouped the same way.` : 'That’s all of them.'}
+            {more > 0 ? t('duplicates.moreGrouped', { count: more }) : t('duplicates.thatsAll')}
           </span>
           <button type="button" className="btn btn-primary" onClick={() => void clearAll()}>
             <CircleCheck size={15} strokeWidth={1.7} />
-            Clear all {remaining.length}
+            {t('duplicates.clearAll', { count: remaining.length })}
           </button>
         </div>
       </div>

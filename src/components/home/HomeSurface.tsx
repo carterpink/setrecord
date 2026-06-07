@@ -137,6 +137,7 @@ export function HomeSurface(): React.JSX.Element {
   const loadAiStatus = useRecallStore((s) => s.loadAiStatus)
   const subscribeAiProgress = useRecallStore((s) => s.subscribeAiProgress)
   const showUpgrade = useUiStore((s) => s.showUpgrade)
+  const voiceInputEnabled = useUiStore((s) => s.voiceInputEnabled)
   const canUse = useCanUse('recall')
   const tracks = useLibraryStore((s) => s.tracks)
 
@@ -242,6 +243,7 @@ export function HomeSurface(): React.JSX.Element {
       onChange={setValue}
       onSubmit={() => submit(value)}
       onMicToggle={onMicToggle}
+      showMic={voiceInputEnabled}
       level={voice.listening ? voice.level : undefined}
       compact={active}
       focused={focused}

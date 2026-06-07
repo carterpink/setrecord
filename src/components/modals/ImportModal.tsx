@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { APP_NAME } from '@/utils/constants'
 import {
   CheckCircle,
@@ -23,10 +25,10 @@ import { formatTotalDuration } from '@/utils/format'
 
 const numberFmt = new Intl.NumberFormat('en-US')
 
-function formatLastModified(epochMs: number | null): string {
+function formatLastModified(epochMs: number | null, locale?: string): string {
   if (!epochMs) return ''
   try {
-    return new Date(epochMs).toLocaleDateString(undefined, {
+    return new Date(epochMs).toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -47,6 +49,7 @@ function formatLastModified(epochMs: number | null): string {
  * Settings → Re-sync opens it in 'detecting' too — the flow is identical.
  */
 export function ImportModal(): React.JSX.Element {
+  const { t } = useTranslation('modals')
   const { closeModal } = useUiStore()
   const {
     importProgress,
@@ -134,14 +137,14 @@ export function ImportModal(): React.JSX.Element {
   return (
     <Modal
       onClose={handleClose}
-      ariaLabel="Import library"
+      ariaLabel={t('import.ariaLabel')}
       style={{ minWidth: 460, maxWidth: 520 }}
     >
       <div className="modal-header">
         <span className="ss-h2">
-          {libraryStale && importState === 'detected' ? 'Re-sync library' : 'Import library'}
+          {libraryStale && importState === 'detected' ? t('import.resyncTitle') : t('import.title')}
         </span>
-        <IconButton icon={X} size="sm" aria-label="Close" onClick={handleClose} />
+        <IconButton icon={X} size="sm" aria-label={t('common.close')} onClick={handleClose} />
       </div>
 
       {/* ── Detecting ──────────────────────────────────────────────── */}
@@ -157,7 +160,7 @@ export function ImportModal(): React.JSX.Element {
             aria-hidden="true"
           />
           <div className="ss-body-sm" style={{ opacity: 0.7 }}>
-            Looking for your DJ library…
+            {t('import.looking')}
           </div>
         </div>
       )}
@@ -213,14 +216,18 @@ export function ImportModal(): React.JSX.Element {
       {isImporting && importProgress && (
         <div className="modal-body">
           <div className="ss-caption" style={{ marginBottom: 8, color: 'var(--text-secondary)' }}>
-            {importProgress.phase === 'parsing' ? 'Reading library…' : 'Saving your library…'}
+            {importProgress.phase === 'parsing'
+              ? t('import.readingLibrary')
+              : t('import.savingLibrary')}
           </div>
           <div className="progress-track glass-2">
             <div className="progress-fill" style={{ width: `${pct}%` }} />
           </div>
           <div className="ss-caption" style={{ marginTop: 8 }}>
-            {numberFmt.format(importProgress.processed)} of {numberFmt.format(importProgress.total)}{' '}
-            tracks
+            {t('import.progressTracks', {
+              processed: numberFmt.format(importProgress.processed),
+              total: numberFmt.format(importProgress.total)
+            })}
           </div>
         </div>
       )}
@@ -248,14 +255,21 @@ function DetectedState({
   onUseXml,
   onRetry
 }: DetectedStateProps): React.JSX.Element {
-  const lastModified = formatLastModified(detection.dbMtime)
+  const { t, i18n } = useTranslation('modals')
+  const lastModified = formatLastModified(detection.dbMtime, i18n.language)
   const trackText =
     detection.trackCount != null
-      ? `${numberFmt.format(detection.trackCount)} tracks`
-      : 'Tracks ready'
+      ? t('import.tracksReadyCount', {
+          count: detection.trackCount,
+          display: numberFmt.format(detection.trackCount)
+        })
+      : t('import.tracksReady')
   const playlistText =
     detection.playlistCount != null && detection.playlistCount > 0
-      ? ` · ${numberFmt.format(detection.playlistCount)} playlists`
+      ? t('import.playlistsSuffix', {
+          count: detection.playlistCount,
+          display: numberFmt.format(detection.playlistCount)
+        })
       : ''
 
   // If the cipher couldn't open the DB, show a contextual error rather than the import CTA.
@@ -264,16 +278,16 @@ function DetectedState({
       <div className="modal-body">
         <PreviewCard
           icon={Lock}
-          title="Rekordbox is open"
-          body={`Quit Rekordbox so ${APP_NAME} can read its library, then try again.`}
+          title={t('import.rekordboxOpenTitle')}
+          body={t('import.rekordboxOpenBody', { app: APP_NAME })}
           accent="warning"
         />
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
           <Button variant="secondary" onClick={onUseXml}>
-            Use XML file instead
+            {t('import.useXmlInstead')}
           </Button>
           <Button variant="primary" icon={RefreshCw} onClick={onRetry}>
-            Try again
+            {t('import.tryAgain')}
           </Button>
         </div>
       </div>
@@ -285,8 +299,8 @@ function DetectedState({
       <div className="modal-body">
         <PreviewCard
           icon={ShieldAlert}
-          title="Couldn't read your Rekordbox database"
-          body="This may be a newer Rekordbox version we don't yet support. Use the XML export below — same result, takes 30 seconds."
+          title={t('import.dbReadErrorTitle')}
+          body={t('import.dbReadErrorBody')}
           accent="warning"
         />
         <div style={{ marginTop: 16 }}>
@@ -294,7 +308,7 @@ function DetectedState({
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
           <Button variant="primary" icon={FolderOpen} onClick={onUseXml}>
-            Choose XML file
+            {t('import.chooseXml')}
           </Button>
         </div>
       </div>
@@ -306,8 +320,8 @@ function DetectedState({
       <div className="modal-body">
         <PreviewCard
           icon={FileText}
-          title="Your Rekordbox library is empty"
-          body="Add some tracks in Rekordbox first, then come back here."
+          title={t('import.emptyTitle')}
+          body={t('import.emptyBody')}
           accent="info"
         />
       </div>
@@ -319,16 +333,17 @@ function DetectedState({
     <div className="modal-body">
       <PreviewCard
         icon={CheckCircle}
-        title="Rekordbox library found"
-        body={`${trackText}${playlistText}${lastModified ? ` · last modified ${lastModified}` : ''}`}
+        title={t('import.foundTitle')}
+        body={`${trackText}${playlistText}${
+          lastModified ? t('import.lastModifiedSuffix', { date: lastModified }) : ''
+        }`}
         accent="accent"
       />
       <div className="ss-caption" style={{ opacity: 0.55, marginTop: 12 }}>
-        {APP_NAME} reads your Rekordbox library read-only. Your Rekordbox file is never modified.
+        {t('import.readOnlyNote', { app: APP_NAME })}
       </div>
       <div className="ss-caption" style={{ opacity: 0.45, marginTop: 6 }}>
-        Re-importing updates existing tracks and adds new ones. Energy analysis and cue points
-        you&apos;ve set in {APP_NAME} are preserved.
+        {t('import.reimportNote', { app: APP_NAME })}
       </div>
       <div
         style={{
@@ -340,10 +355,10 @@ function DetectedState({
         }}
       >
         <Button variant="secondary" onClick={onUseXml}>
-          Use XML file instead
+          {t('import.useXmlInstead')}
         </Button>
         <Button variant="primary" onClick={onImport}>
-          {libraryStale ? 'Re-sync now' : 'Import library'}
+          {libraryStale ? t('import.resyncNow') : t('import.title')}
         </Button>
       </div>
     </div>
@@ -357,16 +372,17 @@ interface ConsentGateProps {
 }
 
 function ConsentGate({ onAccept, onCancel, onUseXml }: ConsentGateProps): React.JSX.Element {
+  const { t } = useTranslation('modals')
   return (
     <div className="modal-body">
       <PreviewCard
         icon={ShieldAlert}
-        title="One quick confirmation"
-        body={`${APP_NAME} will read your Rekordbox library directly. It opens master.db read-only, never writes to it, and never sends your data anywhere.`}
+        title={t('import.consentTitle')}
+        body={t('import.consentBody', { app: APP_NAME })}
         accent="info"
       />
       <div className="ss-caption" style={{ opacity: 0.55, marginTop: 12 }}>
-        You&apos;ll only see this once. You can switch to XML import any time.
+        {t('import.consentNote')}
       </div>
       <div
         style={{
@@ -378,13 +394,13 @@ function ConsentGate({ onAccept, onCancel, onUseXml }: ConsentGateProps): React.
         }}
       >
         <Button variant="secondary" onClick={onUseXml}>
-          Use XML file instead
+          {t('import.useXmlInstead')}
         </Button>
         <Button variant="secondary" onClick={onCancel}>
-          Back
+          {t('common.back')}
         </Button>
         <Button variant="primary" onClick={onAccept}>
-          I understand, import
+          {t('import.consentAccept')}
         </Button>
       </div>
     </div>
@@ -402,17 +418,17 @@ function NotDetectedState({
   onChooseXml,
   onRetry
 }: NotDetectedStateProps): React.JSX.Element {
+  const { t } = useTranslation('modals')
   return (
     <div className="modal-body">
       {importError === 'GENERIC' && (
         <div className="ss-caption" style={{ color: 'var(--semantic-warning)', marginBottom: 12 }}>
-          Something went wrong with the last import. Try again or use a different file.
+          {t('import.genericError')}
         </div>
       )}
 
       <div className="ss-body-sm" style={{ marginBottom: 6 }}>
-        We couldn&apos;t find Rekordbox automatically — no problem. You can connect your library in
-        about 30 seconds.
+        {t('import.notFoundBody')}
       </div>
 
       {/* Power-user shortcut: skip the guide and go straight to the picker. */}
@@ -430,7 +446,7 @@ function NotDetectedState({
           textAlign: 'left'
         }}
       >
-        Already have an export? Choose your XML file →
+        {t('import.alreadyHaveExport')}
       </button>
 
       {/* First-timer explainer — what an export actually is and why it's safe. */}
@@ -453,12 +469,10 @@ function NotDetectedState({
         />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="ss-label" style={{ marginBottom: 4 }}>
-            What&apos;s a Rekordbox export?
+            {t('import.whatsExportTitle')}
           </div>
           <div className="ss-caption" style={{ opacity: 0.7 }}>
-            It&apos;s a single file that lists every track in your collection — BPM, key, cue points
-            and all. {APP_NAME} reads it to map out your music. It stays on your Mac, and your
-            Rekordbox library is never changed.
+            {t('import.whatsExportBody', { app: APP_NAME })}
           </div>
         </div>
       </div>
@@ -475,10 +489,10 @@ function NotDetectedState({
         }}
       >
         <Button variant="secondary" icon={RefreshCw} onClick={onRetry}>
-          Try detection again
+          {t('import.tryDetectionAgain')}
         </Button>
         <Button variant="primary" icon={FolderOpen} onClick={onChooseXml}>
-          Choose XML file
+          {t('import.chooseXml')}
         </Button>
       </div>
     </div>
@@ -491,20 +505,21 @@ interface DoneStateProps {
 }
 
 function DoneState({ stats, onClose }: DoneStateProps): React.JSX.Element {
+  const { t } = useTranslation('modals')
   return (
     <div className="modal-body">
       <div className="import-stats">
         <div className="stat-row">
-          <span className="ss-body-sm">Tracks imported</span>
+          <span className="ss-body-sm">{t('import.statTracksImported')}</span>
           <span className="ss-mono">{numberFmt.format(stats.totalTracks)}</span>
         </div>
         <div className="stat-row">
-          <span className="ss-body-sm">Total duration</span>
+          <span className="ss-body-sm">{t('import.statTotalDuration')}</span>
           <span className="ss-mono">{formatTotalDuration(stats.totalDuration)}</span>
         </div>
         {stats.missingFiles > 0 && (
           <div className="stat-row warning">
-            <span className="ss-body-sm">Missing files (not on disk)</span>
+            <span className="ss-body-sm">{t('import.statMissingFiles')}</span>
             <span className="ss-mono" style={{ color: 'var(--semantic-warning)' }}>
               {numberFmt.format(stats.missingFiles)}
             </span>
@@ -512,13 +527,13 @@ function DoneState({ stats, onClose }: DoneStateProps): React.JSX.Element {
         )}
         {stats.unknownSize > 0 && (
           <div className="stat-row">
-            <span className="ss-body-sm">Unknown file size</span>
+            <span className="ss-body-sm">{t('import.statUnknownSize')}</span>
             <span className="ss-mono">{numberFmt.format(stats.unknownSize)}</span>
           </div>
         )}
         {stats.tracksWithoutBpm > 0 && (
           <div className="stat-row warning">
-            <span className="ss-body-sm">Without BPM</span>
+            <span className="ss-body-sm">{t('import.statWithoutBpm')}</span>
             <span className="ss-mono" style={{ color: 'var(--semantic-warning)' }}>
               {numberFmt.format(stats.tracksWithoutBpm)}
             </span>
@@ -526,7 +541,7 @@ function DoneState({ stats, onClose }: DoneStateProps): React.JSX.Element {
         )}
         {stats.tracksWithoutKey > 0 && (
           <div className="stat-row warning">
-            <span className="ss-body-sm">Without key</span>
+            <span className="ss-body-sm">{t('import.statWithoutKey')}</span>
             <span className="ss-mono" style={{ color: 'var(--semantic-warning)' }}>
               {numberFmt.format(stats.tracksWithoutKey)}
             </span>
@@ -534,7 +549,7 @@ function DoneState({ stats, onClose }: DoneStateProps): React.JSX.Element {
         )}
       </div>
       <Button variant="primary" onClick={onClose} style={{ marginTop: 20 }}>
-        Done
+        {t('common.done')}
       </Button>
     </div>
   )
@@ -557,25 +572,40 @@ interface SourcePickerProps {
   onUseXml: () => void | Promise<void>
 }
 
-function sourceSubtitle(s: SourceDetection): string {
-  if (s.readError === 'locked') return 'Close the app and try again'
-  if (s.readError === 'unsupported') return 'Not available on this platform yet'
-  if (!s.installed) return 'Not found on this Mac'
+function sourceSubtitle(s: SourceDetection, t: TFunction<'modals'>): string {
+  if (s.readError === 'locked') return t('import.source.closeAndRetry')
+  if (s.readError === 'unsupported') return t('import.source.unsupported')
+  if (!s.installed) return t('import.source.notFound')
   if (s.meta?.beta === true && s.trackCount != null) {
-    return `${numberFmt.format(s.trackCount)} tracks · Beta (untested)`
+    return t('import.source.tracksBeta', {
+      count: s.trackCount,
+      display: numberFmt.format(s.trackCount)
+    })
   }
   if (s.trackCount != null) {
-    const tracks = `${numberFmt.format(s.trackCount)} tracks`
+    const tracks = t('import.source.tracks', {
+      count: s.trackCount,
+      display: numberFmt.format(s.trackCount)
+    })
     const crates =
       s.playlistCount != null && s.playlistCount > 0
-        ? ` · ${numberFmt.format(s.playlistCount)} ${s.sourceId === 'serato' ? 'crates' : 'playlists'}`
+        ? s.sourceId === 'serato'
+          ? t('import.source.cratesSuffix', {
+              count: s.playlistCount,
+              display: numberFmt.format(s.playlistCount)
+            })
+          : t('import.source.playlistsSuffix', {
+              count: s.playlistCount,
+              display: numberFmt.format(s.playlistCount)
+            })
         : ''
     return `${tracks}${crates}`
   }
-  return 'Ready to import'
+  return t('import.source.readyToImport')
 }
 
 function SourcePicker({ sources, onSelect, onUseXml }: SourcePickerProps): React.JSX.Element {
+  const { t } = useTranslation('modals')
   // Order: detected/usable sources first, then unavailable ones.
   const ordered = [...sources].sort(
     (a, b) => Number(b.installed && !b.readError) - Number(a.installed && !a.readError)
@@ -584,7 +614,7 @@ function SourcePicker({ sources, onSelect, onUseXml }: SourcePickerProps): React
   return (
     <div className="modal-body">
       <div className="ss-body-sm" style={{ marginBottom: 12, opacity: 0.8 }}>
-        Which DJ software do you use? {APP_NAME} reads your library read-only.
+        {t('import.source.which', { app: APP_NAME })}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {ordered.map((s) => {
@@ -621,7 +651,7 @@ function SourcePicker({ sources, onSelect, onUseXml }: SourcePickerProps): React
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="ss-label">{s.label}</div>
                 <div className="ss-caption" style={{ opacity: 0.7 }}>
-                  {sourceSubtitle(s)}
+                  {sourceSubtitle(s, t)}
                 </div>
               </div>
               {selectable && (
@@ -649,7 +679,7 @@ function SourcePicker({ sources, onSelect, onUseXml }: SourcePickerProps): React
           textAlign: 'left'
         }}
       >
-        Or import a Rekordbox XML file →
+        {t('import.orImportXml')}
       </button>
     </div>
   )
@@ -666,46 +696,55 @@ function SourceDetectedState({
   onImport,
   onBack
 }: SourceDetectedStateProps): React.JSX.Element {
-  const label = detection?.label ?? 'Library'
+  const { t } = useTranslation('modals')
+  const label = detection?.label ?? t('import.source.libraryFallback')
   const isSerato = detection?.sourceId === 'serato'
   const isBeta = detection?.meta?.beta === true
   const trackText =
     detection?.trackCount != null
-      ? `${numberFmt.format(detection.trackCount)} tracks`
-      : 'Tracks ready'
+      ? t('import.tracksReadyCount', {
+          count: detection.trackCount,
+          display: numberFmt.format(detection.trackCount)
+        })
+      : t('import.tracksReady')
   const listText =
     detection?.playlistCount != null && detection.playlistCount > 0
-      ? ` · ${numberFmt.format(detection.playlistCount)} ${isSerato ? 'crates' : 'playlists'}`
+      ? isSerato
+        ? t('import.source.cratesSuffix', {
+            count: detection.playlistCount,
+            display: numberFmt.format(detection.playlistCount)
+          })
+        : t('import.source.playlistsSuffix', {
+            count: detection.playlistCount,
+            display: numberFmt.format(detection.playlistCount)
+          })
       : ''
 
   return (
     <div className="modal-body">
       <PreviewCard
         icon={CheckCircle}
-        title={`${label} library found`}
+        title={t('import.source.foundTitle', { label })}
         body={`${trackText}${listText}`}
         accent="accent"
       />
       <div className="ss-caption" style={{ opacity: 0.55, marginTop: 12 }}>
-        {APP_NAME} reads your {label} library read-only. Cue points, hot cues and beatgrids are
-        imported in a background pass shortly after.
+        {t('import.source.readOnlyNote', { app: APP_NAME, label })}
       </div>
       {isBeta && (
         <div
           className="ss-caption"
           style={{ marginTop: 10, color: 'var(--semantic-warning)', opacity: 0.9 }}
         >
-          {label} import is in beta and hasn&apos;t been tested on real Denon hardware. Cues,
-          beatgrids and musical keys aren&apos;t imported yet — please report anything that looks
-          off.
+          {t('import.source.betaNote', { label })}
         </div>
       )}
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
         <Button variant="secondary" onClick={onBack}>
-          Back
+          {t('common.back')}
         </Button>
         <Button variant="primary" onClick={onImport}>
-          Import library
+          {t('import.title')}
         </Button>
       </div>
     </div>

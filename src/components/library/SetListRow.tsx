@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 import type { Set as DJSet } from '@/types'
 import { formatDuration } from '@/utils/format'
 
@@ -9,8 +10,9 @@ interface SetListRowProps {
 }
 
 export function SetListRow({ set, isActive, onLoad }: SetListRowProps): React.JSX.Element {
+  const { t, i18n } = useTranslation('library')
   const totalSeconds = set.tracks.reduce((s, st) => s + st.track.duration, 0)
-  const updatedDate = new Date(set.updatedAt).toLocaleDateString('en-GB', {
+  const updatedDate = new Date(set.updatedAt).toLocaleDateString(i18n.language, {
     day: '2-digit',
     month: 'short'
   })
@@ -38,8 +40,11 @@ export function SetListRow({ set, isActive, onLoad }: SetListRowProps): React.JS
           {set.name}
         </div>
         <div className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-          {set.tracks.length} track{set.tracks.length !== 1 ? 's' : ''} ·{' '}
-          {formatDuration(totalSeconds)} · {updatedDate}
+          {t('sets.meta', {
+            count: set.tracks.length,
+            duration: formatDuration(totalSeconds),
+            date: updatedDate
+          })}
         </div>
       </div>
     </div>

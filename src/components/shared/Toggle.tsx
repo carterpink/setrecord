@@ -8,7 +8,8 @@ interface ToggleProps {
 }
 
 /**
- * 36×20 pill with a sliding 16px knob. On = chartreuse.
+ * 40×24 liquid-glass pill with a sliding, springy 18px knob. On = chartreuse.
+ * Styling/animation live in `.toggle` (globals.css).
  */
 export function Toggle({
   on,

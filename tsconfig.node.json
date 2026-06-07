@@ -3,14 +3,24 @@
   "include": [
     "electron.vite.config.*",
     "electron/**/*",
+    "electron/preload.d.ts",
+    "src/env.d.ts",
     "tests/**/*",
     "bench/**/*.ts",
     "vitest.config.ts",
     "vitest.bench.config.ts"
   ],
+  "exclude": [
+    "electron/preload.ts"
+  ],
   "compilerOptions": {
     "composite": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["electron-vite/node"],
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   }
 }

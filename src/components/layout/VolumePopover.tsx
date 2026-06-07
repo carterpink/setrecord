@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Volume1, Volume2, VolumeX } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { motion, AnimatePresence } from '@/components/shared/Motion'
 import { usePlaybackStore } from '@/stores/playbackStore'
@@ -11,6 +12,7 @@ import { usePlaybackStore } from '@/stores/playbackStore'
  * (mute and fine volume) is preserved inside the popover.
  */
 export function VolumePopover(): React.JSX.Element {
+  const { t } = useTranslation('layout')
   const volume = usePlaybackStore((s) => s.volume)
   const setVolume = usePlaybackStore((s) => s.setVolume)
   const [open, setOpen] = useState(false)
@@ -40,10 +42,10 @@ export function VolumePopover(): React.JSX.Element {
       <button
         type="button"
         className={clsx('volume-popover-trigger', open && 'volume-popover-trigger--open')}
-        aria-label={`Volume ${pct}%`}
+        aria-label={t('volume.triggerAria', { pct })}
         aria-haspopup="dialog"
         aria-expanded={open}
-        title={`Preview volume — ${pct}%`}
+        title={t('volume.triggerTitle', { pct })}
         onClick={() => setOpen((o) => !o)}
       >
         <VolumeIcon size={16} strokeWidth={1.7} aria-hidden="true" />
@@ -53,7 +55,7 @@ export function VolumePopover(): React.JSX.Element {
           <motion.div
             className="volume-popover-panel glass-3"
             role="dialog"
-            aria-label="Volume"
+            aria-label={t('volume.panelAria')}
             initial={{ opacity: 0, y: -8, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
@@ -62,7 +64,7 @@ export function VolumePopover(): React.JSX.Element {
             <button
               type="button"
               className="volume-icon-btn"
-              aria-label={volume === 0 ? 'Unmute' : 'Mute'}
+              aria-label={volume === 0 ? t('volume.unmute') : t('volume.mute')}
               onClick={() => setVolume(volume === 0 ? 1 : 0)}
             >
               <VolumeIcon size={15} strokeWidth={1.7} />
@@ -74,7 +76,7 @@ export function VolumePopover(): React.JSX.Element {
               max={1}
               step={0.01}
               value={volume}
-              aria-label="Volume"
+              aria-label={t('volume.panelAria')}
               style={{ '--_pct': `${volume * 100}%` } as React.CSSProperties}
               onChange={(e) => setVolume(parseFloat(e.target.value))}
             />

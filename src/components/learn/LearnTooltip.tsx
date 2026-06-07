@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { Info } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useUiStore } from '@/stores/uiStore'
@@ -48,9 +49,10 @@ export function LearnTooltip({
   explanation,
   children,
   hideIcon,
-  iconLabel = 'Show explanation',
+  iconLabel,
   basic
 }: LearnTooltipProps): React.JSX.Element {
+  const { t } = useTranslation('learn')
   const learnModeEnabled = useUiStore((s) => s.learnModeEnabled)
   const isBeginner = useUiStore((s) => s.isBeginner)
   const [open, setOpen] = useState(false)
@@ -119,7 +121,7 @@ export function LearnTooltip({
           ref={btnRef}
           type="button"
           className="learn-info-btn"
-          aria-label={iconLabel}
+          aria-label={iconLabel ?? t('tooltip.iconLabel')}
           aria-expanded={open}
           onClick={(e) => {
             e.stopPropagation()
@@ -144,7 +146,7 @@ export function LearnTooltip({
             <motion.div
               ref={popRef}
               role="dialog"
-              aria-label="Explanation"
+              aria-label={t('tooltip.dialogAria')}
               className="learn-pop glass-3"
               style={{
                 position: 'fixed',
@@ -161,9 +163,7 @@ export function LearnTooltip({
               onPointerDown={(e) => e.stopPropagation()}
             >
               {proLocked ? (
-                <div className="ss-body-sm">
-                  Learn Mode is a Pro feature. Upgrade to unlock explanations.
-                </div>
+                <div className="ss-body-sm">{t('tooltip.proLocked')}</div>
               ) : beginnerBasic ? (
                 <>
                   <div className="ss-body-sm" style={{ fontWeight: 600, marginBottom: 4 }}>

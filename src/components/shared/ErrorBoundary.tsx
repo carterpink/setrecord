@@ -1,6 +1,15 @@
 import { Component } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
+import i18n from '@/i18n'
 import { reportRendererError } from '@/utils/reportError'
+
+/** Translate a `shared` namespace key. ErrorBoundary must stay a plain class
+ * (error boundaries can't use hooks), so it reads the global i18n instance
+ * directly rather than via the react-i18next HOC. The fallback only renders on
+ * a crash, so it doesn't need to re-render reactively on a language switch. */
+function tr(key: string, opts?: Record<string, unknown>): string {
+  return i18n.t(key, { ns: 'shared', ...opts })
+}
 
 type Variant = 'panel' | 'chrome' | 'section'
 
@@ -95,15 +104,17 @@ export class ErrorBoundary extends Component<Props, State> {
           }}
         >
           <span className="ss-body-sm" style={{ opacity: 0.7 }}>
-            {label ? `${label} unavailable.` : 'This toolbar is unavailable.'}
+            {label
+              ? tr('errorBoundary.chromeLabelled', { label })
+              : tr('errorBoundary.chromeGeneric')}
           </span>
           {exhausted ? (
             <button className="btn btn-secondary" onClick={() => window.location.reload()}>
-              Reload app
+              {tr('errorBoundary.reload')}
             </button>
           ) : (
             <button className="btn btn-secondary" onClick={this.retry}>
-              Retry
+              {tr('errorBoundary.retry')}
             </button>
           )}
         </div>
@@ -125,13 +136,11 @@ export class ErrorBoundary extends Component<Props, State> {
         }}
       >
         <div className="ss-h3" style={{ color: 'var(--semantic-danger)' }}>
-          Something went wrong
+          {tr('errorBoundary.title')}
         </div>
         <div className="ss-body-sm" style={{ opacity: 0.6, maxWidth: 360 }}>
-          {label ? `The ${label} panel ran into an error.` : 'A panel ran into an error.'}{' '}
-          {exhausted
-            ? 'Reloading the app should clear it.'
-            : 'You can try again, or switch to another view.'}
+          {label ? tr('errorBoundary.bodyLabelled', { label }) : tr('errorBoundary.bodyGeneric')}{' '}
+          {exhausted ? tr('errorBoundary.exhaustedHint') : tr('errorBoundary.recoverHint')}
         </div>
         {exhausted ? (
           <button
@@ -139,11 +148,11 @@ export class ErrorBoundary extends Component<Props, State> {
             style={{ marginTop: 8 }}
             onClick={() => window.location.reload()}
           >
-            Reload app
+            {tr('errorBoundary.reload')}
           </button>
         ) : (
           <button className="btn btn-secondary" style={{ marginTop: 8 }} onClick={this.retry}>
-            Try again
+            {tr('errorBoundary.tryAgain')}
           </button>
         )}
       </div>

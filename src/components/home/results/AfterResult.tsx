@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import type { Track } from '@/types'
 import { formatBpm } from '@/utils/format'
 import { KeyChip } from '@/components/shared/KeyChip'
@@ -15,30 +17,38 @@ interface Chip {
   accent?: boolean
 }
 
-function chipsFor(source: Track, t: Track, count: number, best: boolean): Chip[] {
+function chipsFor(source: Track, track: Track, count: number, best: boolean, t: TFunction): Chip[] {
   const chips: Chip[] = []
-  if (t.key && source.key && t.key === source.key) chips.push({ text: 'Same key', accent: best })
-  const delta = Math.round((t.bpm ?? 0) - (source.bpm ?? 0))
-  if (delta !== 0) chips.push({ text: `${delta > 0 ? '+' : ''}${delta} bpm` })
-  const e = (t.energy ?? 0) - (source.energy ?? 0)
-  chips.push({ text: e > 1 ? 'Lifts energy' : e < -1 ? 'Eases down' : 'Energy holds' })
-  if (count > 0) chips.push({ text: `You’ve done this ${count}×` })
+  if (track.key && source.key && track.key === source.key)
+    chips.push({ text: t('after.chips.sameKey'), accent: best })
+  const delta = Math.round((track.bpm ?? 0) - (source.bpm ?? 0))
+  if (delta !== 0)
+    chips.push({ text: t('after.chips.bpmDelta', { delta: `${delta > 0 ? '+' : ''}${delta}` }) })
+  const e = (track.energy ?? 0) - (source.energy ?? 0)
+  chips.push({
+    text: e > 1 ? t('after.chips.lifts') : e < -1 ? t('after.chips.eases') : t('after.chips.holds')
+  })
+  if (count > 0) chips.push({ text: t('after.chips.doneThis', { count }) })
   return chips
 }
 
 export function AfterResult({ source, candidates, harmonic }: AfterResultProps): React.JSX.Element {
+  const { t } = useTranslation('home')
   const startPreview = usePlaybackStore((s) => s.startPreview)
-  if (!source) return <div className="answer-note">I couldn’t find that track in your library.</div>
+  if (!source) return <div className="answer-note">{t('after.notFound')}</div>
 
   const n = candidates.length
-  const title = n === 1 ? `One way out of ${source.title}` : `${n} ways out of ${source.title}`
+  const title =
+    n === 1
+      ? t('after.titleOne', { title: source.title })
+      : t('after.titleOther', { count: n, title: source.title })
 
   return (
     <div className="answer">
       <div className="res-head">
         <span className="res-title">{title}</span>
         <span className="res-meta">
-          {harmonic ? 'harmonic from ' : 'from your sets · '}
+          {harmonic ? t('after.harmonicFrom') : t('after.fromSets')}
           <span style={{ fontFamily: 'var(--font-mono)' }}>
             {source.key || '—'} · {formatBpm(source.bpm)}
           </span>
@@ -55,7 +65,7 @@ export function AfterResult({ source, candidates, harmonic }: AfterResultProps):
               tabIndex={0}
               onClick={() => startPreview(c.track)}
             >
-              {best && <span className="best-badge">Best match</span>}
+              {best && <span className="best-badge">{t('after.bestMatch')}</span>}
               <div className="sugg-row" style={{ marginTop: best ? 6 : 0 }}>
                 <div>
                   <div className="sugg-title">{c.track.title}</div>
@@ -71,7 +81,7 @@ export function AfterResult({ source, candidates, harmonic }: AfterResultProps):
                 </div>
               </div>
               <div className="reason-chips">
-                {chipsFor(source, c.track, c.count, best).map((chip, j) => (
+                {chipsFor(source, c.track, c.count, best, t).map((chip, j) => (
                   <span key={j} className={`reason-chip${chip.accent ? ' accent' : ''}`}>
                     {chip.text}
                   </span>

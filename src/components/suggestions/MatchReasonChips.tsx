@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 import { History } from 'lucide-react'
 import type { MatchReason, Track } from '@/types'
 import { LearnTooltip } from '@/components/learn/LearnTooltip'
@@ -24,6 +25,7 @@ export function MatchReasonChips({
   fromTrack,
   toTrack
 }: MatchReasonChipsProps): React.JSX.Element {
+  const { t } = useTranslation('suggestions')
   const learnModeEnabled = useUiStore((s) => s.learnModeEnabled)
   const canExplain = learnModeEnabled && fromTrack && toTrack
 
@@ -37,7 +39,7 @@ export function MatchReasonChips({
               reason.quality === 'positive' && 'accent',
               reason.type === 'combo' && 'combo'
             )}
-            title={reason.type === 'combo' ? 'You have played this transition before' : undefined}
+            title={reason.type === 'combo' ? t('chips.comboTitle') : undefined}
           >
             {reason.type === 'combo' && (
               <History size={10} strokeWidth={1.7} style={{ marginRight: 3, verticalAlign: -1 }} />
@@ -52,7 +54,7 @@ export function MatchReasonChips({
           <LearnTooltip
             key={`${reason.label}-${i}`}
             explanation={explainMatchReason(reason, fromTrack, toTrack)}
-            iconLabel={`Explain ${reason.label}`}
+            iconLabel={t('chips.explainAria', { label: reason.label })}
           >
             {chip}
           </LearnTooltip>

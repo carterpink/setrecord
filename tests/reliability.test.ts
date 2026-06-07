@@ -89,7 +89,6 @@ describe('setStore auto-save', () => {
   // Provide a minimal window.setsense bridge
   const mockSaveSet = vi.fn()
   beforeEach(() => {
-    // @ts-expect-error -- vitest node env; simulate renderer global
     global.window = {
       setsense: {
         saveSet: mockSaveSet,
@@ -260,7 +259,6 @@ describe('crashReporter', () => {
       breadcrumbs: { values: [{ message: '/home/user/music' }] },
       extra: { localPath: '/home/user' }
     }
-    // @ts-expect-error -- partial event is enough for the filter
     const result = cfg.beforeSend(event)
     expect(result).not.toBeNull()
     expect(result.user).toBeUndefined()
@@ -286,7 +284,6 @@ describe('crashReporter', () => {
         ]
       }
     }
-    // @ts-expect-error
     const result = cfg.beforeSend(event)
     const frame = result.exception.values[0].stacktrace.frames[0]
     expect(frame.filename).toBe('main.ts')
@@ -308,7 +305,6 @@ describe('crashReporter', () => {
         os: { name: 'macOS', version: '15.3' }
       }
     }
-    // @ts-expect-error -- partial event is enough for the filter
     const result = cfg.beforeSend(event)
     expect(result.server_name).toBeUndefined()
     expect(result.contexts.device).toBeUndefined()

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, Trash2, MessageSquare, ArrowRight, ListPlus, Save } from 'lucide-react'
 import type { RecallMessage, Track } from '@/types'
 import { useRecallStore } from '@/stores/recallStore'
@@ -6,13 +7,13 @@ import { useLibraryStore } from '@/stores/libraryStore'
 import { useSetStore } from '@/stores/setStore'
 import { RecallTrackLine } from './RecallTrackLine'
 
-const STARTERS = [
-  '15 UK garage tracks I play the most',
-  '10 peak-hour tech house bangers',
-  'deep house around 122 bpm',
-  'melodic techno 124–128 bpm, never played live',
-  'my forgotten gems',
-  'highest-rated drum & bass'
+const STARTER_KEYS = [
+  'conversations.starters.0',
+  'conversations.starters.1',
+  'conversations.starters.2',
+  'conversations.starters.3',
+  'conversations.starters.4',
+  'conversations.starters.5'
 ]
 
 function ResultTracks({
@@ -22,27 +23,30 @@ function ResultTracks({
   tracks: Track[]
   precedingQuery: string
 }): React.JSX.Element | null {
+  const { t } = useTranslation('recall')
   const createSetFromTracks = useSetStore((s) => s.createSetFromTracks)
   const addTracksToCurrent = useSetStore((s) => s.addTracksToCurrent)
   if (tracks.length === 0) return null
-  const name = precedingQuery.slice(0, 48) || 'Library picks'
+  const name = precedingQuery.slice(0, 48) || t('conversations.defaultSetName')
   return (
     <div className="recall-conv-result">
       <div className="recall-conv-actions">
-        <span className="recall-conv-count">{tracks.length} tracks</span>
+        <span className="recall-conv-count">
+          {t('conversations.trackCount', { count: tracks.length })}
+        </span>
         <button
           type="button"
           className="recall-conv-save"
           onClick={() => createSetFromTracks(name, tracks)}
         >
-          <Save size={13} strokeWidth={1.7} /> Save as set
+          <Save size={13} strokeWidth={1.7} /> {t('conversations.saveAsSet')}
         </button>
         <button
           type="button"
           className="recall-conv-save"
           onClick={() => addTracksToCurrent(tracks)}
         >
-          <ListPlus size={13} strokeWidth={1.7} /> Add to current set
+          <ListPlus size={13} strokeWidth={1.7} /> {t('conversations.addToCurrentSet')}
         </button>
       </div>
       <div className="recall-list">
@@ -63,6 +67,7 @@ function AssistantMessage({
   trackMap: Map<string, Track>
   precedingQuery: string
 }): React.JSX.Element {
+  const { t } = useTranslation('recall')
   const hydrate = (ids: string[]): Track[] =>
     ids.map((id) => trackMap.get(id)).filter((t): t is Track => t !== undefined)
 
@@ -77,12 +82,16 @@ function AssistantMessage({
       {msg.kind === 'combos' && (
         <div className="recall-list">
           {(msg.combos ?? []).map((c) => {
-            const t = trackMap.get(c.trackId)
-            return t ? (
+            const track = trackMap.get(c.trackId)
+            return track ? (
               <RecallTrackLine
                 key={c.trackId}
-                track={t}
-                badge={<span className="recall-combo-count">{c.count}×</span>}
+                track={track}
+                badge={
+                  <span className="recall-combo-count">
+                    {t('conversations.count', { count: c.count })}
+                  </span>
+                }
               />
             ) : null
           })}
@@ -104,7 +113,11 @@ function AssistantMessage({
                   )
                 })}
               </span>
-              {seq.count > 0 && <span className="recall-combo-count">{seq.count}×</span>}
+              {seq.count > 0 && (
+                <span className="recall-combo-count">
+                  {t('conversations.count', { count: seq.count })}
+                </span>
+              )}
             </div>
           ))}
         </div>
@@ -125,6 +138,7 @@ function AssistantMessage({
 }
 
 export function ConversationsSection(): React.JSX.Element {
+  const { t } = useTranslation('recall')
   const conversations = useRecallStore((s) => s.conversations)
   const currentId = useRecallStore((s) => s.currentConversationId)
   const asking = useRecallStore((s) => s.asking)
@@ -146,11 +160,11 @@ export function ConversationsSection(): React.JSX.Element {
     <div className="recall-convos">
       <aside className="recall-convo-list glass-1">
         <button type="button" className="recall-convo-new" onClick={newConversation}>
-          <Plus size={15} strokeWidth={1.7} /> New conversation
+          <Plus size={15} strokeWidth={1.7} /> {t('conversations.newConversation')}
         </button>
         <div className="recall-convo-items">
           {conversations.length === 0 && (
-            <span className="recall-convo-empty">No conversations yet.</span>
+            <span className="recall-convo-empty">{t('conversations.empty')}</span>
           )}
           {conversations.map((c) => (
             <div
@@ -171,7 +185,7 @@ export function ConversationsSection(): React.JSX.Element {
               <button
                 type="button"
                 className="recall-convo-del"
-                aria-label="Delete conversation"
+                aria-label={t('conversations.deleteAria')}
                 onClick={(e) => {
                   e.stopPropagation()
                   deleteConversation(c.id)
@@ -188,18 +202,21 @@ export function ConversationsSection(): React.JSX.Element {
         {!conv || conv.messages.length === 0 ? (
           <div className="recall-convo-welcome">
             <MessageSquare size={28} strokeWidth={1.3} />
-            <h3 className="ss-h3">Ask for tracks, refine, repeat</h3>
+            <h3 className="ss-h3">{t('conversations.welcomeTitle')}</h3>
             <div className="recall-convo-starters">
-              {STARTERS.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className="recall-convo-starter"
-                  onClick={() => void ask(s)}
-                >
-                  {s}
-                </button>
-              ))}
+              {STARTER_KEYS.map((key) => {
+                const text = t(key)
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className="recall-convo-starter"
+                    onClick={() => void ask(text)}
+                  >
+                    {text}
+                  </button>
+                )
+              })}
             </div>
           </div>
         ) : (
@@ -218,7 +235,7 @@ export function ConversationsSection(): React.JSX.Element {
                 />
               )
             )}
-            {asking && <div className="recall-conv-thinking">Searching your library…</div>}
+            {asking && <div className="recall-conv-thinking">{t('conversations.thinking')}</div>}
           </>
         )}
       </div>

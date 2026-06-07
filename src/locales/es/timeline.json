@@ -1,0 +1,73 @@
+{
+  "saveStatus": {
+    "saving": "Guardando…",
+    "unsaved": "Cambios sin guardar",
+    "retryAria": "Reintentar guardado",
+    "failed": "Error al guardar"
+  },
+  "header": {
+    "namePlaceholder": "Nombre del set",
+    "noSetLoaded": "Ningún set cargado",
+    "trackCount_one": "{{count}} pista",
+    "trackCount_other": "{{count}} pistas",
+    "bpmStats": "media {{avg}} BPM ({{min}}–{{max}})",
+    "bpmSingle": "{{bpm}} BPM",
+    "markPerformedTitle": "Registrar este set como tocado en un bolo",
+    "markPerformed": "Marcar como tocado",
+    "logging": "Registrando…",
+    "curveHelpAria": "¿Qué muestra este gráfico?"
+  },
+  "performed": {
+    "logged": "“{{name}}” registrado como tocado.",
+    "markError": "No se pudo marcar este set como tocado.",
+    "markFailed": "Algo salió mal al marcar el set como tocado."
+  },
+  "empty": {
+    "readyTitle": "“{{name}}” — listo cuando quieras.",
+    "blankTitle": "Un set nuevo y vacío.",
+    "subtitle": "Arrastra pistas, desliza para descubrir o pídeme que lo monte.",
+    "browse": "Explorar biblioteca",
+    "discover": "Desliza para descubrir",
+    "buildForMe": "Móntalo por mí"
+  },
+  "curve": {
+    "trackLabel": "Pista {{position}}",
+    "seriesEnergy": "Energía",
+    "seriesBpm": "BPM",
+    "seriesTarget": "Objetivo"
+  },
+  "card": {
+    "phantomAria": "Pista fantasma — todavía no está en tu biblioteca",
+    "fileNotFoundAria": "Archivo no encontrado",
+    "pauseAria": "Pausar {{title}}",
+    "previewAria": "Previsualizar {{title}}",
+    "phantomBuyTitle": "Compra o descarga esta pista para habilitar la previsualización",
+    "fileNotFoundTitle": "Archivo no encontrado: {{path}}",
+    "fileNotFound": "Archivo no encontrado",
+    "scoreTitle": "Puntuación {{score}}/100 · {{reasons}} — verde = mezcla limpia, ámbar = desordenada, rojo = desastre",
+    "explainTransitionAria": "Explicar transición: {{label}}",
+    "unlockAria": "Desbloquear {{title}}",
+    "lockAria": "Bloquear {{title}} en su lugar",
+    "lockedTitle": "Bloqueada en su lugar — Set Architect conservará esta posición",
+    "unlockedTitle": "Bloquear en su lugar — Set Architect no reemplazará esta pista",
+    "removeAria": "Eliminar {{title}}",
+    "moreActionsAria": "Más acciones",
+    "moreActionsTitle": "Más acciones"
+  },
+  "menu": {
+    "playHistory": "Historial de reproducción",
+    "editCues": "Editar puntos de cue"
+  },
+  "combos": {
+    "dialogAria": "Pistas reproducidas después de {{title}}",
+    "after": "Después de",
+    "closeAria": "Cerrar",
+    "loading": "Cargando…",
+    "empty": "Aún no hay historial de reproducción. Importa tus datos de actuación de Rekordbox para ver esto.",
+    "count": "{{plays}}×"
+  },
+  "ghost": {
+    "bestSuggestion": "Mejor sugerencia",
+    "addAria": "Añadir {{title}} al set"
+  }
+}

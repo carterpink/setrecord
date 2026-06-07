@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ChevronDown, ListMusic, Music2, PanelLeftClose, PanelLeftOpen, Folder } from 'lucide-react'
 import clsx from 'clsx'
 import type { Playlist } from '@/types'
@@ -154,6 +155,7 @@ function PlaylistRow({ node, depth, expanded, onToggle }: RowProps): React.JSX.E
 // ───────── PlaylistSidebar ─────────
 
 export function PlaylistSidebar(): React.JSX.Element | null {
+  const { t } = useTranslation('library')
   const playlists = useLibraryStore((s) => s.playlists)
   const tracks = useLibraryStore((s) => s.tracks)
   const selectedPlaylistId = useUiStore((s) => s.selectedPlaylistId)
@@ -232,8 +234,8 @@ export function PlaylistSidebar(): React.JSX.Element | null {
             <button
               className="playlist-sidebar-toggle"
               onClick={togglePlaylistSidebar}
-              aria-label="Show playlists"
-              title="Show playlists"
+              aria-label={t('playlistSidebar.show')}
+              title={t('playlistSidebar.show')}
             >
               <PanelLeftOpen size={14} strokeWidth={1.5} />
             </button>
@@ -260,13 +262,13 @@ export function PlaylistSidebar(): React.JSX.Element | null {
                   color: 'var(--text-tertiary)'
                 }}
               >
-                Playlists
+                {t('playlistSidebar.heading')}
               </span>
               <button
                 className="playlist-sidebar-toggle"
                 onClick={togglePlaylistSidebar}
-                aria-label="Hide playlists"
-                title="Hide playlists"
+                aria-label={t('playlistSidebar.hide')}
+                title={t('playlistSidebar.hide')}
               >
                 <PanelLeftClose size={14} strokeWidth={1.5} />
               </button>
@@ -294,7 +296,7 @@ export function PlaylistSidebar(): React.JSX.Element | null {
                   >
                     <span style={{ width: 12, flexShrink: 0 }} />
                     <ListMusic size={13} strokeWidth={1.5} className="playlist-row-icon" />
-                    <span className="playlist-row-name">All Tracks</span>
+                    <span className="playlist-row-name">{t('playlistSidebar.allTracks')}</span>
                     <span className="playlist-row-count">{tracks.length}</span>
                   </div>
                 </motion.div>

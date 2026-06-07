@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Layers } from 'lucide-react'
 import type { SetTrack, ArchitectParams } from '@/types'
 import { formatBpm } from '@/utils/format'
@@ -38,6 +39,7 @@ export function WarmupResult({
   targetBpm,
   name
 }: WarmupResultProps): React.JSX.Element {
+  const { t } = useTranslation('home')
   const populateFromArchitect = useSetStore((s) => s.populateFromArchitect)
   const setMode = useUiStore((s) => s.setMode)
 
@@ -57,9 +59,9 @@ export function WarmupResult({
   return (
     <div className="answer">
       <div className="res-head">
-        <span className="res-title">A {params.targetDuration}-minute warm-up, drafted</span>
+        <span className="res-title">{t('warmup.title', { minutes: params.targetDuration })}</span>
         <span className="res-meta">
-          {params.energyCurveType === 'rise' ? 'slow burn' : 'steady'}
+          {params.energyCurveType === 'rise' ? t('warmup.slowBurn') : t('warmup.steady')}
         </span>
       </div>
       <div className="build-card glass-1">
@@ -67,23 +69,23 @@ export function WarmupResult({
           <div className="build-stat">
             <div className="v">
               {setTracks.length}
-              <span className="u">tracks</span>
+              <span className="u">{t('warmup.tracks')}</span>
             </div>
-            <div className="k">pulled from your library</div>
+            <div className="k">{t('warmup.pulledFrom')}</div>
           </div>
           <div className="build-stat">
             <div className="v">
               {runtimeMin}
-              <span className="u">min</span>
+              <span className="u">{t('warmup.min')}</span>
             </div>
-            <div className="k">runtime</div>
+            <div className="k">{t('warmup.runtime')}</div>
           </div>
           <div className="build-stat">
             <div className="v" style={{ fontFamily: 'var(--font-mono)' }}>
               {startBpm}
               <span className="u">→ {targetBpm}</span>
             </div>
-            <div className="k">bpm ramp</div>
+            <div className="k">{t('warmup.bpmRamp')}</div>
           </div>
         </div>
 
@@ -121,14 +123,14 @@ export function WarmupResult({
               {st.track.key && <KeyChip>{st.track.key}</KeyChip>}
             </div>
           ))}
-          {more > 0 && <div className="bp-more">…{more} more, shaped to the curve</div>}
+          {more > 0 && <div className="bp-more">{t('warmup.moreShaped', { count: more })}</div>}
         </div>
 
         <div className="build-head">
-          <span className="res-meta">Nothing’s committed yet — open it to mix and reorder.</span>
+          <span className="res-meta">{t('warmup.notCommitted')}</span>
           <button type="button" className="btn btn-primary" onClick={openInBuild}>
             <Layers size={15} strokeWidth={1.7} />
-            Open in Build
+            {t('warmup.openInBuild')}
           </button>
         </div>
       </div>

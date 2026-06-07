@@ -17,6 +17,7 @@ export type ProFeature =
   | 'cueEditor'
   | 'healthDrilldown'
   | 'autoTagger'
+  | 'hostCollab'
 
 export interface ProFeatureMeta {
   /** Sentence-case feature name for the paywall headline. */
@@ -57,6 +58,10 @@ export const PRO_FEATURES: Record<ProFeature, ProFeatureMeta> = {
   autoTagger: {
     label: 'Tags',
     blurb: 'Customise your tags and send them straight to Rekordbox.'
+  },
+  hostCollab: {
+    label: 'Live Collaboration',
+    blurb: 'Build a set together in real time — invite a back-to-back partner to join your session.'
   }
 }
 

@@ -1,0 +1,142 @@
+{
+  "bpm": {
+    "value": "{{bpm}} BPM",
+    "iconLabel": "What is BPM?"
+  },
+  "energy": {
+    "analysing": "Energy: analysing…",
+    "pendingAria": "Energy pending",
+    "editableAria": "Energy {{value}} of 10, editable",
+    "decreaseAria": "Decrease energy",
+    "increaseAria": "Increase energy",
+    "iconLabel": "What is the energy score?",
+    "titleOverride": "Energy: {{value}}/10 (manually set)",
+    "title": "Energy: {{value}}/10",
+    "valueAria": "Energy {{value}} of 10"
+  },
+  "energyBar": {
+    "aria": "Energy {{level}} of {{max}}"
+  },
+  "key": {
+    "iconLabel": "What is a Camelot key?",
+    "aria": "Key {{key}}"
+  },
+  "errorBoundary": {
+    "chromeLabelled": "{{label}} unavailable.",
+    "chromeGeneric": "This toolbar is unavailable.",
+    "reload": "Reload app",
+    "retry": "Retry",
+    "title": "Something went wrong",
+    "bodyLabelled": "The {{label}} panel ran into an error.",
+    "bodyGeneric": "A panel ran into an error.",
+    "exhaustedHint": "Reloading the app should clear it.",
+    "recoverHint": "You can try again, or switch to another view.",
+    "tryAgain": "Try again"
+  },
+  "fatalError": {
+    "title": "{{app}} failed to start",
+    "body": "The application core didn’t load. This usually means the install is damaged. Please quit and reinstall {{app}}, or reach out to support if the problem persists."
+  },
+  "inlineWaveform": {
+    "aria": "Audio waveform preview"
+  },
+  "librarySourceGuide": {
+    "duration": "Takes about 30 seconds.",
+    "step1": {
+      "title": "Open Rekordbox",
+      "body": "Launch the app on this Mac if it isn’t already running."
+    },
+    "step2": {
+      "title": "File › Export Collection in xml format",
+      "body": "In the menu bar. Save the file anywhere — Desktop is fine."
+    },
+    "step3": {
+      "title": "Choose the file below",
+      "body": "{{app}} reads the export read‑only — Rekordbox stays untouched."
+    }
+  },
+  "noLibrary": {
+    "defaultTitle": "Import your Rekordbox library to unlock this",
+    "importButton": "Import library",
+    "guideLink": "How to export Rekordbox XML"
+  },
+  "playlistSource": {
+    "allLibrary": "All library",
+    "onePlaylist": "1 playlist",
+    "manyPlaylists": "{{count}} playlists"
+  },
+  "proGate": {
+    "trialEndedPrefix": "Your Pro trial has ended. {{description}}",
+    "keepPro": "Keep Pro",
+    "unlock": "Unlock with Pro"
+  },
+  "search": {
+    "placeholder": "Search…"
+  },
+  "toast": {
+    "moveToSet": "Move to {{name}}",
+    "moveAria": "Move to a different set",
+    "dismiss": "Dismiss"
+  },
+  "usb": {
+    "never": "Never",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo": "{{count}} days ago",
+    "weeksAgo": "{{count}} weeks ago",
+    "monthsAgo": "{{count}} months ago",
+    "renamedTo": "Renamed to “{{name}}”",
+    "renameAria": "Rename USB drive",
+    "saveNameAria": "Save name",
+    "removedFromTargets": "“{{name}}” removed from export targets",
+    "setAsTarget": "“{{name}}” set as export target",
+    "speedTestFailed": "Speed test failed",
+    "removeFavorite": "Remove from favorites",
+    "addFavorite": "Add to favorites",
+    "removeTarget": "Remove export target",
+    "markTarget": "Mark as export target",
+    "defaultTarget": "Default export target",
+    "setTarget": "Set as export target",
+    "moreOptions": "More options",
+    "rename": "Rename",
+    "testingSpeed": "Testing speed…",
+    "testSpeed": "Test speed",
+    "free": "{{size}} free",
+    "totalUsed": "{{total}} total · {{percent}}% used",
+    "filesystem": "Filesystem",
+    "speed": "Speed",
+    "testing": "Testing…",
+    "speedValue": "~{{speed}} MB/s",
+    "lastExport": "Last export",
+    "exports": "Exports",
+    "forget": "Forget {{name}}",
+    "forgetTooltip": "Forget this device",
+    "forgotten": "“{{name}}” forgotten",
+    "exportsCount": "{{count}} exports",
+    "couldNotScan": "Could not scan for USB drives",
+    "trigger": "USB drives — {{count}} connected",
+    "connectedBadge": "{{count}} connected",
+    "drivesTitle": "USB Drives",
+    "refresh": "Refresh",
+    "refreshAria": "Refresh USB drives",
+    "closeAria": "Close USB panel",
+    "noneDetected": "No USB drives detected",
+    "plugInHint": "Plug in a USB drive and click refresh",
+    "pastDrives": "Past Drives",
+    "tooltip": "USB Drives"
+  },
+  "freshStart": {
+    "step.library": "Library",
+    "step.settings": "Settings",
+    "step.history": "Play history",
+    "step.artwork": "Artwork",
+    "step.caches": "Caches",
+    "resettingAria": "Resetting {{app}}",
+    "startingFresh": "Starting fresh…",
+    "clearing": "Clearing {{app}}"
+  },
+  "proWaveform": {
+    "overviewAria": "Track overview waveform. Click or drag to scrub; use the playback controls and arrow keys to navigate.",
+    "detailAria": "Detailed waveform. Click or drag to set the playhead; Space plays or pauses, left and right arrows nudge by 100ms."
+  }
+}

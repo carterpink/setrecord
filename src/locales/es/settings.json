@@ -1,0 +1,302 @@
+{
+  "title": "Ajustes",
+  "closeAria": "Cerrar ajustes",
+  "save": "Guardar ajustes",
+  "saving": "Guardando…",
+  "saveError": "No se pudieron guardar los ajustes. Inténtalo de nuevo o reinicia la aplicación.",
+  "sections": {
+    "plan": "Plan",
+    "librarySource": "Origen de la biblioteca",
+    "privacy": "Privacidad",
+    "backup": "Copia de seguridad y migración",
+    "dangerZone": "Zona de peligro"
+  },
+  "language": {
+    "label": "Idioma",
+    "system": "Predeterminado del sistema",
+    "caption": "Define el idioma de los menús, botones y etiquetas de toda la aplicación. Las respuestas de la IA se mantienen en el idioma que escribas.",
+    "followingSystem": "Siguiendo el idioma de tu sistema: {{language}}."
+  },
+  "license": {
+    "proPlan": "{{app}} Pro",
+    "freePlan": "Plan gratuito",
+    "lifetime": "Licencia de por vida",
+    "subscription": "Suscripción Pro",
+    "renews": "Se renueva / caduca {{date}}",
+    "activated": "Activada {{date}}",
+    "freeBlurb": "Importa, explora y crea sets manualmente. Desbloquea sugerencias, Set Architect, Recall y la exportación con Pro.",
+    "boundToDevice": "Vinculada a este dispositivo.",
+    "deactivate": "Desactivar en este dispositivo",
+    "removing": "Quitando…",
+    "upgrade": "Pasar a Pro",
+    "removed": "Licencia eliminada de este dispositivo.",
+    "deactivateError": "No se pudo desactivar la licencia.",
+    "status": {
+      "deviceMismatch": "Esta licencia está activada en otro dispositivo. Desactívala allí o contacta con soporte para moverla; tu clave sigue siendo válida.",
+      "revoked": "Esta licencia se canceló o se reembolsó. Si no lo esperabas, contacta con soporte y te ayudaremos.",
+      "expired": "Tu suscripción ha caducado. Renuévala para recuperar Pro; tus ajustes y tu biblioteca no se han tocado.",
+      "invalid": "No se pudo verificar esta clave guardada. Vuelve a pegarla o contacta con soporte.",
+      "clockWarning": "Parece que el reloj de tu sistema retrocedió. Pro sigue funcionando; solo revisa la fecha y hora para que las fechas de suscripción sean correctas."
+    },
+    "enterKey": "Introducir una clave de licencia",
+    "keyPlaceholder": "SES1.…",
+    "activate": "Activar",
+    "activating": "Activando…",
+    "activateSuccess": "Pro desbloqueado — ¡gracias!",
+    "refresh": "Actualizar estado",
+    "refreshing": "Comprobando…",
+    "refreshDone": "El estado de la licencia está al día.",
+    "activationError": {
+      "malformed": "Esa clave no parece correcta. Revisa los errores e inténtalo de nuevo.",
+      "badSignature": "No se pudo verificar esta clave. Cópiala de nuevo del recibo o contacta con soporte.",
+      "expired": "Esta licencia ha caducado. Renueva para restaurar Pro.",
+      "deviceMismatch": "Esta clave está activa en otro dispositivo. Desactívala allí primero o contacta con soporte.",
+      "revoked": "Esta licencia fue cancelada o reembolsada. Contacta con soporte si no lo esperabas.",
+      "unknown": "No se pudo activar esa clave. Revisa tu conexión e inténtalo de nuevo."
+    }
+  },
+  "learnMode": {
+    "label": "Modo Aprendizaje",
+    "caption": "Añade explicaciones y diagramas en línea a cada recomendación. Ideal para aprender mezcla armónica, transiciones de BPM y arcos de energía.",
+    "toggleAria": "Activar Modo Aprendizaje",
+    "replayTips": "Volver a ver los consejos iniciales"
+  },
+  "plainSearch": {
+    "label": "Búsqueda en lenguaje natural",
+    "caption": "Entiende frases más sueltas y desordenadas sobre la búsqueda integrada, así que «algo tranquilo en torno a 120» simplemente funciona. Se ejecuta por completo en tu Mac, sin conexión y de forma privada. Desactívala para liberar memoria.",
+    "toggleAria": "Activar búsqueda en lenguaje natural"
+  },
+  "keyNotation": {
+    "label": "Notación de tonalidad",
+    "camelot": "Camelot (9A)",
+    "openKey": "Open Key (Am)",
+    "caption": "Controla cómo se muestran las tonalidades en las filas de pistas y en las etiquetas de toda la aplicación."
+  },
+  "targetHardware": {
+    "label": "Hardware de destino predeterminado",
+    "detail": "Define el modelo de CDJ de Pioneer usado en la validación de exportación: controla los formatos de archivo permitidos, el bitrate máximo, el número de hot cues y la estructura de carpetas. Elige el modelo de tu cabina.",
+    "iconLabel": "¿Qué es el hardware de destino?"
+  },
+  "bpmRange": {
+    "label": "Rango de BPM predeterminado",
+    "detail": "La ventana de tempo dentro de la que se mantienen Set Architect y las Sugerencias. Más estrecho = flujo más cohesionado; más amplio = más pistas candidatas. De 8 a 10 BPM es un rango de club típico.",
+    "iconLabel": "¿Qué es el rango de BPM?",
+    "value": "{{low}}–{{high}} BPM"
+  },
+  "harmonicMixing": {
+    "label": "Mezcla armónica",
+    "detail": "Cuando está activada, Set Architect prefiere tonalidades Camelot adyacentes o de la misma letra, manteniendo un color armónico coherente y evitando choques de tonalidad. Desactívala si quieres cambios de tonalidad bruscos a propósito.",
+    "iconLabel": "¿Qué es la mezcla armónica?",
+    "caption": "Activada por defecto en Set Architect"
+  },
+  "librarySource": {
+    "label": "Desde dónde lee {{app}} tu biblioteca",
+    "fromDb": "Leída directamente de la base de datos de Rekordbox",
+    "fromXml": "Importada desde una exportación XML de Rekordbox",
+    "lastImported": "última importación {{date}}",
+    "none": "Aún no se ha importado ninguna biblioteca.",
+    "resyncNow": "Sincronizar ahora",
+    "resync": "Sincronizar biblioteca",
+    "staleHint": "El origen se ha actualizado: se recomienda sincronizar."
+  },
+  "autoDetect": {
+    "label": "Detectar Rekordbox automáticamente",
+    "caption": "Al iniciar, busca Rekordbox en este Mac para que la importación sea con un solo clic.",
+    "toggleAria": "Activar la detección automática de Rekordbox"
+  },
+  "crashReporting": {
+    "label": "Informes de fallos",
+    "caption": "Opta por enviar informes de fallos anónimos cuando la aplicación se cierra de forma inesperada. Los informes incluyen solo el tipo de error, un seguimiento de pila depurado (nombres de archivo, sin rutas), tu versión del sistema operativo y la versión de la aplicación.",
+    "privacyNote": "Tu biblioteca, los títulos de las pistas, las rutas de archivo, el nombre de tu dispositivo y los datos personales nunca se incluyen. Desactivado por defecto. Desactivarlo detiene los informes de inmediato; activarlo surte efecto tras reiniciar {{app}}.",
+    "toggleAria": "Activar informes de fallos"
+  },
+  "backup": {
+    "exportTitle": "Exportar una copia de seguridad",
+    "exportCaption": "Guarda tus etiquetas, sets, historial de reproducción, ciclo de vida y crates inteligentes en un único archivo <0>.setsense</0>. Guárdalo a buen recaudo o impórtalo en otro Mac para llevar tu trabajo. Tus archivos de audio y tu licencia se quedan donde están; no se sube nada.",
+    "passphrasePlaceholder": "Contraseña (recomendada)",
+    "passphraseAria": "Contraseña de la copia de seguridad",
+    "exportButton": "Exportar copia",
+    "exporting": "Exportando…",
+    "encryptedNote": "Cifrada con tu contraseña: la necesitarás para importar. No hay forma de recuperarla si la pierdes.",
+    "unencryptedNote": "Las copias se cifran por defecto. Deja esto en blanco y te pediremos que confirmes antes de guardar un archivo sin cifrar que cualquiera podría leer.",
+    "exportSuccess": "Copia guardada: {{tracks}} pistas, {{sets}} sets, {{sessions}} actuaciones.",
+    "importTitle": "Importar una copia de seguridad",
+    "importCaption": "Importa un archivo <0>.setsense</0> desde otro Mac. Importa antes tu biblioteca de Rekordbox/Serato: una copia lleva tu trabajo, no el audio, y se vuelve a vincular a las pistas que ya están en este equipo.",
+    "chooseButton": "Elegir copia…",
+    "enterPassphrase": "Introduce la contraseña de la copia",
+    "unlock": "Desbloquear",
+    "wrongPassphrase": "Contraseña incorrecta: inténtalo de nuevo.",
+    "readError": "No se pudo leer esa copia de seguridad.",
+    "fromMachine": "De <0>{{machine}}</0> · {{tracks}} pistas · {{sets}} sets · {{sessions}} actuaciones",
+    "anotherMac": "otro Mac",
+    "restoreHint": "Esta biblioteca está vacía: importa antes tu biblioteca de Rekordbox/Serato y vuelve a ejecutarlo para obtener mejores resultados.",
+    "mergeHint": "Se fusionará con tu biblioteca actual: tus cues, valoraciones y etiquetas locales nunca se sobrescriben.",
+    "importButton": "Importar copia",
+    "importing": "Importando…",
+    "importSuccess": "Copia importada: tu biblioteca se ha actualizado.",
+    "importError": "La importación falló.",
+    "complete": "Importación completada",
+    "relinkSummary": "Se han vuelto a vincular {{matched}} pistas · {{sets}} sets · {{sessions}} actuaciones · {{tags}} etiquetas",
+    "notFound": "{{count}} no encontradas en este Mac",
+    "ambiguous": ", {{count}} ambiguas",
+    "notFoundHint": ". Importa el audio que falta y vuelve a ejecutarlo para vincularlas.",
+    "partialSets_one": "{{count}} set importado con algunas pistas que faltan.",
+    "partialSets_other": "{{count}} sets importados con algunas pistas que faltan."
+  },
+  "dangerZone": {
+    "label": "Restablecer {{app}}",
+    "caption": "Borra tu biblioteca, ajustes e historial de reproducción y devuelve {{app}} al aspecto que tenía la primera vez que lo abriste. Tus archivos de música y tu licencia Pro se quedan como están.",
+    "eraseButton": "Borrar todo…",
+    "cantUndo": "Esto no se puede deshacer.",
+    "confirmDetail": "Elimina de forma permanente tu biblioteca, ajustes e historial de reproducción y reinicia {{app}} como en el primer inicio. Tus archivos de audio y tu licencia Pro no se tocan.",
+    "eraseConfirm": "Borrar todo y reiniciar"
+  },
+  "tabs": {
+    "general": {
+      "label": "General",
+      "title": "General",
+      "desc": "Idioma y cómo se muestran las tonalidades en la app."
+    },
+    "plan": {
+      "label": "Plan",
+      "title": "Plan",
+      "desc": "Tu licencia y lo que incluye."
+    },
+    "memory": {
+      "label": "Memoria",
+      "title": "Memoria",
+      "desc": "Cómo SetSense interpreta lo que pides y aprende sobre la marcha."
+    },
+    "mixing": {
+      "label": "Mezcla",
+      "title": "Valores de mezcla",
+      "desc": "Los valores por defecto con los que construyen Set Architect y las sugerencias."
+    },
+    "library": {
+      "label": "Biblioteca",
+      "title": "Origen de la biblioteca",
+      "desc": "De dónde lee SetSense tus pistas."
+    },
+    "data": {
+      "label": "Privacidad y copia",
+      "title": "Privacidad y copia",
+      "desc": "Qué sale de tu Mac y cómo mover tu trabajo entre equipos."
+    },
+    "reset": {
+      "label": "Restablecer",
+      "title": "Restablecer",
+      "desc": "Devuelve SetSense a su primer inicio."
+    },
+    "playback": {
+      "label": "Reproducción",
+      "title": "Reproducción",
+      "desc": "Comportamiento de la vista previa, dispositivos de audio y detalle de onda."
+    }
+  },
+  "density": {
+    "label": "Densidad de la biblioteca",
+    "standard": "Estándar",
+    "compact": "Compacta",
+    "caption": "Cómo de juntas se muestran las filas de pistas."
+  },
+  "launch": {
+    "label": "Abrir en",
+    "last": "Última usada",
+    "home": "Inicio",
+    "library": "Biblioteca",
+    "build": "Crear",
+    "caption": "A qué espacio abre SetSense al iniciarse."
+  },
+  "reducedMotion": {
+    "label": "Reducir movimiento",
+    "caption": "Congela el fondo animado y minimiza las transiciones. También respeta el ajuste de tu sistema.",
+    "toggleAria": "Alternar movimiento reducido"
+  },
+  "beginnerMode": {
+    "label": "Modo principiante",
+    "caption": "Mantén las explicaciones en lenguaje claro de la jerga de DJ, incluso al acabar la prueba.",
+    "toggleAria": "Alternar modo principiante"
+  },
+  "voiceInput": {
+    "label": "Entrada de voz",
+    "caption": "Mantén pulsado para hablarle a la caja de Inicio, transcrito en tu Mac. Desactívalo para ocultar el micrófono.",
+    "toggleAria": "Alternar entrada de voz"
+  },
+  "exportFormat": {
+    "label": "Formato de exportación predeterminado",
+    "ask": "Preguntar siempre",
+    "engine": "Engine DJ",
+    "beatport": "Beatport",
+    "caption": "Qué exportación preselecciona la ventana de exportación."
+  },
+  "playback": {
+    "lengthLabel": "Duración de la vista previa",
+    "len30": "30s",
+    "len1m": "1m",
+    "len2m": "2m",
+    "len5m": "5m",
+    "lenFull": "Completa",
+    "lengthCaption": "Cuánto suena una vista previa antes de detenerse sola.",
+    "volumeLabel": "Volumen de vista previa predeterminado",
+    "fadeLabel": "Fundido de entrada en vistas previas",
+    "fadeCaption": "Inicia las vistas previas con un breve fundido en vez de un corte seco.",
+    "outputLabel": "Dispositivo de salida",
+    "outputCaption": "Dónde suena el audio de vista previa. Por defecto, la salida del sistema.",
+    "inputLabel": "Entrada de SetSense Live",
+    "inputCaption": "La entrada de audio que escucha SetSense Live.",
+    "systemDefault": "Predeterminado del sistema",
+    "unnamedDevice": "Dispositivo sin nombre",
+    "waveformLabel": "Detalle de la onda",
+    "wfLow": "Bajo",
+    "wfStandard": "Estándar",
+    "wfHigh": "Alto",
+    "waveformCaption": "Más detalle dibuja ondas más nítidas pero decodifica algo más lento."
+  },
+  "autoTagging": {
+    "label": "Etiquetado automático",
+    "caption": "Deja que SetSense genere etiquetas en lenguaje claro a partir del sonido de cada pista."
+  },
+  "tagRoute": {
+    "label": "Exportar etiquetas a Rekordbox",
+    "xml": "Solo XML",
+    "native": "Permitir escritura en BD",
+    "caption": "Solo XML mantiene las etiquetas fuera de la base de datos activa de Rekordbox — la opción segura. Permitir escritura en BD también ofrece la opción directa MyTag."
+  },
+  "rbConsent": {
+    "label": "Acceso a la base de datos de Rekordbox",
+    "caption": "Has permitido que SetSense lea tu base de datos de Rekordbox (solo lectura). Puedes revocarlo aquí; se te volverá a preguntar la próxima vez.",
+    "button": "Revocar acceso a la base de datos",
+    "revoked": "Acceso a la base de datos de Rekordbox revocado."
+  },
+  "updates": {
+    "label": "Buscar actualizaciones",
+    "caption": "Busca nuevas versiones y te avisa — nunca instala automáticamente.",
+    "frequency": "Frecuencia de actualización",
+    "daily": "Diaria",
+    "weekly": "Semanal",
+    "preReleaseLabel": "Incluir versiones preliminares",
+    "preReleaseCaption": "Ofrece también versiones beta al comprobar.",
+    "checkNow": "Buscar ahora",
+    "checking": "Comprobando…",
+    "resultUpdated": "Hay una actualización disponible.",
+    "resultCurrent": "Tienes la última versión.",
+    "resultOffline": "No se pudo contactar con el servidor de actualizaciones.",
+    "resultUnavailable": "Las actualizaciones no están disponibles en esta versión."
+  },
+  "offline": {
+    "label": "Modo sin conexión",
+    "caption": "Bloquea todo el acceso a la red — búsqueda de actualizaciones y descargas de modelos."
+  },
+  "artworkCache": {
+    "label": "Caché de carátulas",
+    "caption": "Las carátulas en caché usan ahora {{size}}. Vaciarla libera espacio; las carátulas se vuelven a extraer al navegar.",
+    "clear": "Vaciar caché de carátulas",
+    "clearing": "Vaciando…",
+    "cleared": "Se vaciaron {{count}} carátulas en caché."
+  },
+  "replayOnboarding": {
+    "label": "Repetir el tutorial de bienvenida",
+    "caption": "Muestra de nuevo la introducción inicial desde el principio.",
+    "button": "Repetir introducción"
+  }
+}

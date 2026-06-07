@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Fingerprint, X } from 'lucide-react'
 import { APP_NAME } from '@/utils/constants'
 import { Modal } from '@/components/shared/Modal'
@@ -7,26 +8,21 @@ import { useUiStore } from '@/stores/uiStore'
 import { useRecallStore } from '@/stores/recallStore'
 
 export function IdentityReadyModal(): React.JSX.Element {
+  const { t } = useTranslation('modals')
   const closeModal = useUiStore((s) => s.closeModal)
   const identity = useRecallStore((s) => s.identity)
 
   return (
-    <Modal
-      onClose={closeModal}
-      ariaLabel="Your DJ fingerprint is ready"
-      className="identity-ready-modal"
-    >
+    <Modal onClose={closeModal} ariaLabel={t('identity.title')} className="identity-ready-modal">
       <div className="modal-header">
         <div className="identity-ready-heading">
           <Fingerprint size={18} strokeWidth={1.7} className="identity-ready-icon" />
           <div>
-            <span className="ss-h2">Your DJ fingerprint is ready</span>
-            <p className="identity-ready-sub">
-              {APP_NAME} has enough data to paint your sound. Share it or keep it to yourself.
-            </p>
+            <span className="ss-h2">{t('identity.title')}</span>
+            <p className="identity-ready-sub">{t('identity.sub', { app: APP_NAME })}</p>
           </div>
         </div>
-        <IconButton icon={X} size="sm" aria-label="Close" onClick={closeModal} />
+        <IconButton icon={X} size="sm" aria-label={t('common.close')} onClick={closeModal} />
       </div>
 
       <div className="modal-body identity-ready-body">
@@ -39,7 +35,7 @@ export function IdentityReadyModal(): React.JSX.Element {
 
       <div className="identity-ready-footer">
         <button type="button" className="btn btn-ghost" onClick={closeModal}>
-          Not now
+          {t('identity.notNow')}
         </button>
       </div>
     </Modal>

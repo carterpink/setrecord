@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { Copy, Download, Check } from 'lucide-react'
 import type { IdentitySnapshot } from '@/types'
 import { useToastStore } from '@/stores/toastStore'
@@ -29,10 +31,6 @@ const COLOUR_DIM = '#a3a3ad'
 const COLOUR_DIMMER = 'rgba(255, 255, 255, 0.08)'
 const COLOUR_TILE_BG = 'rgba(255, 255, 255, 0.04)'
 
-function formatBig(n: number): string {
-  return n.toLocaleString('en-US')
-}
-
 function topLabel<T extends { label: string; count: number }>(rows: T[]): T | null {
   return rows[0] ?? null
 }
@@ -49,7 +47,7 @@ function topEnergy(snap: IdentitySnapshot): number | null {
 }
 
 /** Render the share card to the provided canvas context. */
-function drawCard(ctx: CanvasRenderingContext2D, snap: IdentitySnapshot): void {
+function drawCard(ctx: CanvasRenderingContext2D, snap: IdentitySnapshot, t: TFunction): void {
   ctx.save()
   ctx.scale(SCALE, SCALE)
 
@@ -93,22 +91,22 @@ function drawCard(ctx: CanvasRenderingContext2D, snap: IdentitySnapshot): void {
   ctx.textBaseline = 'alphabetic'
   // Letter-spacing isn't directly settable on canvas; approximate via wider tracking
   // by inserting hair spaces — but Space Grotesk reads cleanly without it.
-  ctx.fillText('SETSENSE · YOUR SOUND', 60, 80)
+  ctx.fillText(t('share.card.eyebrow'), 60, 80)
 
   ctx.fillStyle = COLOUR_TEXT
   ctx.font = `700 48px ${FONT_SANS}`
-  ctx.fillText(`${formatBig(snap.totalTracks)} tracks`, 60, 134)
+  ctx.fillText(t('share.card.totalTracks', { count: snap.totalTracks }), 60, 134)
 
   ctx.fillStyle = COLOUR_DIM
   ctx.font = `400 16px ${FONT_SANS}`
-  ctx.fillText('in your library', 60, 162)
+  ctx.fillText(t('share.card.inYourLibrary'), 60, 162)
 
   // ── Stat tiles (three across)
   const tiles: Array<{ label: string; value: string; valueSuffix?: string }> = [
-    { label: 'TOP BPM ZONE', value: topBpmZone(snap) },
-    { label: 'TOP KEY', value: topLabel(snap.keyDistribution)?.label ?? '—' },
+    { label: t('share.card.topBpmZone'), value: topBpmZone(snap) },
+    { label: t('share.card.topKey'), value: topLabel(snap.keyDistribution)?.label ?? '—' },
     {
-      label: 'PEAK ENERGY',
+      label: t('share.card.peakEnergy'),
       value: topEnergy(snap) !== null ? String(topEnergy(snap)) : '—',
       valueSuffix: topEnergy(snap) !== null ? '/ 10' : undefined
     }
@@ -150,7 +148,7 @@ function drawCard(ctx: CanvasRenderingContext2D, snap: IdentitySnapshot): void {
   const topGenre = topLabel(snap.genreDistribution)
   ctx.fillStyle = COLOUR_DIM
   ctx.font = `500 12px ${FONT_SANS}`
-  ctx.fillText('DEFINING SOUND', 60, 380)
+  ctx.fillText(t('share.card.definingSound'), 60, 380)
 
   ctx.fillStyle = COLOUR_TEXT
   ctx.font = `300 56px ${FONT_SANS}`
@@ -160,13 +158,13 @@ function drawCard(ctx: CanvasRenderingContext2D, snap: IdentitySnapshot): void {
   ctx.font = `400 14px ${FONT_SANS}`
   if (topGenre) {
     const pct = Math.round((topGenre.count / Math.max(1, snap.totalTracks)) * 100)
-    ctx.fillText(`${formatBig(topGenre.count)} tracks · ${pct}% of library`, 60, 462)
+    ctx.fillText(t('share.card.genreShare', { count: topGenre.count, pct }), 60, 462)
   }
 
   // ── Top artists
   ctx.fillStyle = COLOUR_DIM
   ctx.font = `500 12px ${FONT_SANS}`
-  ctx.fillText('TOP ARTISTS', 60, 522)
+  ctx.fillText(t('share.card.topArtistsHeading'), 60, 522)
 
   const artists = snap.topArtists.slice(0, 5)
   ctx.font = `500 22px ${FONT_SANS}`
@@ -188,7 +186,7 @@ function drawCard(ctx: CanvasRenderingContext2D, snap: IdentitySnapshot): void {
   // ── Energy bars
   ctx.fillStyle = COLOUR_DIM
   ctx.font = `500 12px ${FONT_SANS}`
-  ctx.fillText('ENERGY PROFILE', 60, 720)
+  ctx.fillText(t('share.card.energyProfileHeading'), 60, 720)
 
   const energies = snap.energyDistribution
   if (energies.length > 0) {
@@ -217,12 +215,13 @@ function drawCard(ctx: CanvasRenderingContext2D, snap: IdentitySnapshot): void {
   }
 
   // ── Footer
+  const madeWith = t('share.card.madeWith')
   ctx.fillStyle = COLOUR_DIM
   ctx.font = `400 13px ${FONT_SANS}`
-  ctx.fillText('made with', 60, CARD_H - 50)
+  ctx.fillText(madeWith, 60, CARD_H - 50)
   ctx.fillStyle = COLOUR_ACCENT
   ctx.font = `600 13px ${FONT_SANS}`
-  ctx.fillText('setsense', 60 + ctx.measureText('made with ').width, CARD_H - 50)
+  ctx.fillText('setsense', 60 + ctx.measureText(`${madeWith} `).width, CARD_H - 50)
 
   ctx.restore()
 }
@@ -264,6 +263,7 @@ async function ensureFontsReady(): Promise<void> {
 }
 
 export function IdentityShareCard({ identity }: { identity: IdentitySnapshot }): React.JSX.Element {
+  const { t } = useTranslation('recall')
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [copied, setCopied] = useState(false)
   const toast = useToastStore()
@@ -281,12 +281,12 @@ export function IdentityShareCard({ identity }: { identity: IdentitySnapshot }):
       // Reset + draw
       ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.clearRect(0, 0, canvas.width, canvas.height)
-      drawCard(ctx, identity)
+      drawCard(ctx, identity, t)
     })()
     return () => {
       cancelled = true
     }
-  }, [identity])
+  }, [identity, t])
 
   const exportPng = (): Promise<Blob> => {
     return new Promise((resolve, reject) => {
@@ -307,10 +307,14 @@ export function IdentityShareCard({ identity }: { identity: IdentitySnapshot }):
       const png = await exportPng()
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })])
       setCopied(true)
-      toast.success('Card copied to clipboard')
+      toast.success(t('share.copiedToast'))
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
-      toast.error('Could not copy: ' + (err instanceof Error ? err.message : 'unknown'))
+      toast.error(
+        t('share.copyError', {
+          error: err instanceof Error ? err.message : t('share.errorUnknown')
+        })
+      )
     }
   }
 
@@ -325,9 +329,13 @@ export function IdentityShareCard({ identity }: { identity: IdentitySnapshot }):
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-      toast.success('Card downloaded')
+      toast.success(t('share.downloadedToast'))
     } catch (err) {
-      toast.error('Could not download: ' + (err instanceof Error ? err.message : 'unknown'))
+      toast.error(
+        t('share.downloadError', {
+          error: err instanceof Error ? err.message : t('share.errorUnknown')
+        })
+      )
     }
   }
 
@@ -344,11 +352,11 @@ export function IdentityShareCard({ identity }: { identity: IdentitySnapshot }):
       <div className="identity-share-actions">
         <button type="button" className="identity-share-btn primary" onClick={() => void copy()}>
           {copied ? <Check size={14} strokeWidth={1.7} /> : <Copy size={14} strokeWidth={1.7} />}
-          {copied ? 'Copied' : 'Copy as image'}
+          {copied ? t('share.copied') : t('share.copyAsImage')}
         </button>
         <button type="button" className="identity-share-btn" onClick={() => void download()}>
           <Download size={14} strokeWidth={1.7} />
-          Download PNG
+          {t('share.downloadPng')}
         </button>
       </div>
     </div>

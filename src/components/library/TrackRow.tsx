@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { useTranslation } from 'react-i18next'
 import { useDraggable } from '@dnd-kit/core'
 import { AlertCircle, History, ShoppingCart, Volume2 } from 'lucide-react'
 import type { Track } from '@/types'
@@ -39,6 +40,7 @@ export function TrackRow({
   onMenuKey,
   onShowCombos
 }: TrackRowProps): React.JSX.Element {
+  const { t } = useTranslation('library')
   const isPhantom = track.phantom === true
   const missing = track.missingFile === true && !isPhantom
   const unavailable = missing || isPhantom
@@ -46,10 +48,10 @@ export function TrackRow({
   // Screen-reader-only status — the playing / in-set / unavailable states are
   // otherwise conveyed by colour or icon alone (WCAG 1.4.1 / 1.3.3).
   const srStatus = [
-    playing && !missing ? 'Now playing.' : '',
-    inSet ? 'Already in your set.' : '',
-    isPhantom ? 'Phantom — not in your library.' : missing ? 'File not found.' : '',
-    selected ? 'Selected.' : ''
+    playing && !missing ? t('trackRow.nowPlaying') : '',
+    inSet ? t('trackRow.alreadyInSet') : '',
+    isPhantom ? t('trackRow.phantomStatus') : missing ? t('trackRow.fileNotFoundStatus') : '',
+    selected ? t('trackRow.selectedStatus') : ''
   ]
     .filter(Boolean)
     .join(' ')
@@ -104,7 +106,11 @@ export function TrackRow({
         onContextMenu={unavailable ? undefined : onContextMenu}
         onKeyDown={handleKeyDown}
         title={
-          isPhantom ? 'Phantom track' : missing ? `File not found: ${track.filePath}` : undefined
+          isPhantom
+            ? t('trackRow.phantomTrackCompact')
+            : missing
+              ? t('trackRow.fileNotFoundPath', { path: track.filePath })
+              : undefined
         }
         aria-current={playing && !missing ? 'true' : undefined}
         {...(unavailable ? {} : { ...listeners, ...attributes })}
@@ -129,8 +135,8 @@ export function TrackRow({
                 onShowCombos()
               }}
               onPointerDown={(e) => e.stopPropagation()}
-              aria-label="What have I played after this?"
-              title="What have I played after this?"
+              aria-label={t('trackRow.playedAfter')}
+              title={t('trackRow.playedAfter')}
             >
               <History size={12} strokeWidth={1.5} />
             </button>
@@ -166,9 +172,9 @@ export function TrackRow({
       onKeyDown={handleKeyDown}
       title={
         isPhantom
-          ? 'Phantom track — buy or download to enable'
+          ? t('trackRow.phantomTrackTitle')
           : missing
-            ? `File not found: ${track.filePath}`
+            ? t('trackRow.fileNotFoundPath', { path: track.filePath })
             : undefined
       }
       aria-current={playing && !missing ? 'true' : undefined}
@@ -253,10 +259,12 @@ export function TrackRow({
         <div className="a">
           {isPhantom ? (
             <span style={{ color: 'var(--text-secondary)', fontSize: 10 }}>
-              {track.artist} · Phantom — not in library
+              {t('trackRow.phantomArtist', { artist: track.artist })}
             </span>
           ) : missing ? (
-            <span style={{ color: 'var(--semantic-warning)', fontSize: 10 }}>File not found</span>
+            <span style={{ color: 'var(--semantic-warning)', fontSize: 10 }}>
+              {t('trackRow.fileNotFound')}
+            </span>
           ) : (
             track.artist
           )}
@@ -310,8 +318,8 @@ export function TrackRow({
               onShowCombos()
             }}
             onPointerDown={(e) => e.stopPropagation()}
-            aria-label="What have I played after this?"
-            title="What have I played after this?"
+            aria-label={t('trackRow.playedAfter')}
+            title={t('trackRow.playedAfter')}
           >
             <History size={12} strokeWidth={1.5} />
           </button>

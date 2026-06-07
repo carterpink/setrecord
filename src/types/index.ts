@@ -902,6 +902,7 @@ export type RecallSection =
   | 'identity'
   | 'combos'
   | 'gigs'
+  | 'venues'
   | 'health'
 
 /** Where an Uncover card was sourced from — drives its pill colour + label. */
@@ -1165,4 +1166,53 @@ export interface SetReaction {
    */
   source: 'blackbox' | 'derived' | 'user'
   createdAt: string
+}
+
+/** A logged gig as consumed by the Brief / résumé compute (subset of PlaySession). */
+export interface BriefSession {
+  id: string
+  performedAt: string
+  venue?: string
+  city?: string
+  eventType?: string
+  setSlot?: string
+  durationSec?: number
+  trackIds: string[]
+}
+
+/** A measured reaction row consumed by the Brief (subset of SetReaction). */
+export interface BriefReactionRow {
+  sessionId: string
+  trackId: string
+  reactionScore?: number
+  confidence?: number
+}
+
+export interface BriefProfile {
+  bpmLow?: number
+  bpmHigh?: number
+  avgEnergy?: number
+  topGenres: string[]
+  typicalSetLength?: string
+}
+
+/** The pre-gig "Brief" game plan (electron/algorithms/memory/brief.ts). */
+export interface BriefAnswer {
+  kind: 'brief'
+  venueLabel: string
+  /** How many past sessions the brief is built from. 0 = first time here. */
+  timesPlayed: number
+  lastPlayedAt?: string
+  /** True when matched on event type because the named venue had no history. */
+  fromEventType: boolean
+  profile?: BriefProfile
+  /** Tracks that have landed here before. */
+  proven: Track[]
+  /** Flagged / fresh tracks that fit the room and haven't been tried here. */
+  bring: Track[]
+  /** Honest caveats and reaction-derived insights. */
+  notes: string[]
+  /** Whether any matched session carries crowd-reaction data. */
+  hasReactionData: boolean
+  narration: string
 }

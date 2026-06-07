@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation, Trans } from 'react-i18next'
 import {
   Telescope,
   Heart,
@@ -22,11 +23,11 @@ import { tagLabel } from '@/utils/tagging/taxonomy'
 
 type Action = 'dismiss' | 'keep' | 'set'
 
-const SOURCE_META: Record<UncoverSource, { label: string; icon: typeof Flame }> = {
-  heater: { label: 'Forgotten heater', icon: Flame },
-  gem: { label: 'Forgotten gem', icon: Sparkles },
-  untested: { label: 'Never tested live', icon: FlaskConical },
-  audition: { label: 'Worth auditioning', icon: Disc3 }
+const SOURCE_META: Record<UncoverSource, { labelKey: string; icon: typeof Flame }> = {
+  heater: { labelKey: 'uncover.source.heater', icon: Flame },
+  gem: { labelKey: 'uncover.source.gem', icon: Sparkles },
+  untested: { labelKey: 'uncover.source.untested', icon: FlaskConical },
+  audition: { labelKey: 'uncover.source.audition', icon: Disc3 }
 }
 
 // Pixels past which a release commits the swipe.
@@ -36,6 +37,7 @@ const EXIT_MS = 260
 const STACK_DEPTH = 3
 
 export function UncoverSection(): React.JSX.Element {
+  const { t } = useTranslation('recall')
   const deck = useRecallStore((s) => s.uncoverDeck)
   const loading = useRecallStore((s) => s.uncoverLoading)
   const loadUncover = useRecallStore((s) => s.loadUncover)
@@ -189,7 +191,7 @@ export function UncoverSection(): React.JSX.Element {
         <div className="uncover-stage">
           <div className="uncover-empty">
             <Telescope size={28} strokeWidth={1.4} />
-            <span>Digging up forgotten tracks…</span>
+            <span>{t('uncover.digging')}</span>
           </div>
         </div>
       </div>
@@ -204,18 +206,19 @@ export function UncoverSection(): React.JSX.Element {
           <div className="uncover-empty">
             <Telescope size={28} strokeWidth={1.4} />
             {deck.length === 0 ? (
-              <span>
-                Nothing buried right now — every heater, gem and untested track has surfaced. Import
-                more or check back as your history grows.
-              </span>
+              <span>{t('uncover.emptyNothing')}</span>
             ) : (
               <span>
-                That’s the whole stack. You saved <strong>{saved}</strong> and skipped{' '}
-                <strong>{skipped}</strong>.
+                <Trans
+                  t={t}
+                  i18nKey="uncover.emptySummary"
+                  values={{ saved, skipped }}
+                  components={[<strong key="0" />, <strong key="1" />]}
+                />
               </span>
             )}
             <button type="button" className="btn-primary" onClick={() => void resetUncover()}>
-              <RotateCcw size={15} strokeWidth={1.6} /> Start a fresh dig
+              <RotateCcw size={15} strokeWidth={1.6} /> {t('uncover.freshDig')}
             </button>
           </div>
         </div>
@@ -293,8 +296,8 @@ export function UncoverSection(): React.JSX.Element {
         <button
           type="button"
           className="uncover-btn undo"
-          title="Undo (Z)"
-          aria-label="Undo last swipe"
+          title={t('uncover.undoTitle')}
+          aria-label={t('uncover.undoAria')}
           onClick={undo}
           disabled={history.length === 0}
         >
@@ -305,8 +308,8 @@ export function UncoverSection(): React.JSX.Element {
           <button
             type="button"
             className="uncover-btn dismiss"
-            title="Skip (←)"
-            aria-label="Skip"
+            title={t('uncover.skipTitle')}
+            aria-label={t('uncover.skipAria')}
             onClick={() => commit('dismiss')}
           >
             <X size={24} strokeWidth={2.2} />
@@ -314,8 +317,8 @@ export function UncoverSection(): React.JSX.Element {
           <button
             type="button"
             className="uncover-btn set"
-            title="Add to current set (↑)"
-            aria-label="Add to current set"
+            title={t('uncover.addToSetTitle')}
+            aria-label={t('uncover.addToSetAria')}
             onClick={() => commit('set')}
           >
             <Plus size={22} strokeWidth={2.2} />
@@ -323,8 +326,8 @@ export function UncoverSection(): React.JSX.Element {
           <button
             type="button"
             className="uncover-btn keep"
-            title="Test at next gig (→)"
-            aria-label="Test at next gig"
+            title={t('uncover.testTitle')}
+            aria-label={t('uncover.testAria')}
             onClick={() => commit('keep')}
           >
             <Heart size={24} strokeWidth={2.2} />
@@ -336,8 +339,17 @@ export function UncoverSection(): React.JSX.Element {
       </div>
 
       <p className="uncover-hint">
-        <kbd>←</kbd> skip · <kbd>↑</kbd> add to set · <kbd>→</kbd> test at gig · <kbd>space</kbd>{' '}
-        play/pause · <kbd>Z</kbd> undo
+        <Trans
+          t={t}
+          i18nKey="uncover.hint"
+          components={[
+            <kbd key="0" />,
+            <kbd key="1" />,
+            <kbd key="2" />,
+            <kbd key="3" />,
+            <kbd key="4" />
+          ]}
+        />
       </p>
     </div>
   )
@@ -352,29 +364,29 @@ function UncoverHeader({
   skipped: number
   remaining: number
 }): React.JSX.Element {
+  const { t } = useTranslation('recall')
   return (
     <header className="recall-section-head uncover-head">
       <div>
-        <h2 className="ss-h2">Uncover</h2>
-        <p className="recall-section-sub">
-          Swipe through the tracks your library forgot. Right to test at your next gig, left to move
-          on.
-        </p>
+        <h2 className="ss-h2">{t('uncover.title')}</h2>
+        <p className="recall-section-sub">{t('uncover.subtitle')}</p>
       </div>
       <div className="uncover-stats">
-        <span className="uncover-stat saved">{saved} saved</span>
-        <span className="uncover-stat skipped">{skipped} skipped</span>
-        <span className="uncover-stat">{remaining} left</span>
+        <span className="uncover-stat saved">{t('uncover.stats.saved', { count: saved })}</span>
+        <span className="uncover-stat skipped">
+          {t('uncover.stats.skipped', { count: skipped })}
+        </span>
+        <span className="uncover-stat">{t('uncover.stats.left', { count: remaining })}</span>
       </div>
     </header>
   )
 }
 
 const DIR_ICON: Record<Action, typeof Heart> = { keep: Heart, dismiss: X, set: Plus }
-const DIR_LABEL: Record<Action, string> = {
-  keep: 'Test at gig',
-  dismiss: 'Skip',
-  set: 'Add to set'
+const DIR_LABEL_KEY: Record<Action, string> = {
+  keep: 'uncover.dir.keep',
+  dismiss: 'uncover.dir.dismiss',
+  set: 'uncover.dir.set'
 }
 
 function UncoverCardView({
@@ -400,6 +412,7 @@ function UncoverCardView({
   onPointerCancel?: () => void
   onTogglePreview: () => void
 }): React.JSX.Element {
+  const { t } = useTranslation('recall')
   const { track } = card
   const meta = SOURCE_META[card.source]
   const SourceIcon = meta.icon
@@ -421,12 +434,12 @@ function UncoverCardView({
       {isTop && DirIcon && (
         <div className={`uncover-cue ${swipeDir}`} style={{ opacity: swipeStrength }}>
           <DirIcon size={26} strokeWidth={2.4} />
-          <span>{DIR_LABEL[swipeDir as Action]}</span>
+          <span>{t(DIR_LABEL_KEY[swipeDir as Action])}</span>
         </div>
       )}
 
       <span className={`uncover-source ${card.source}`}>
-        <SourceIcon size={12} strokeWidth={1.8} /> {meta.label}
+        <SourceIcon size={12} strokeWidth={1.8} /> {t(meta.labelKey)}
       </span>
 
       <div className="uncover-art" style={{ background: gradient }}>
@@ -439,8 +452,8 @@ function UncoverCardView({
           <button
             type="button"
             className={`uncover-play${playing ? ' playing' : ''}`}
-            title={playing ? 'Pause' : 'Play'}
-            aria-label={playing ? 'Pause' : 'Play'}
+            title={playing ? t('uncover.card.pause') : t('uncover.card.play')}
+            aria-label={playing ? t('uncover.card.pause') : t('uncover.card.play')}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation()
@@ -467,19 +480,21 @@ function UncoverCardView({
 
         <div className="uncover-stats-grid">
           <div className="uncover-stat-cell">
-            <span className="uncover-stat-label">Key</span>
+            <span className="uncover-stat-label">{t('uncover.card.key')}</span>
             <span className="uncover-stat-val">{track.key || '—'}</span>
           </div>
           <div className="uncover-stat-cell">
-            <span className="uncover-stat-label">BPM</span>
+            <span className="uncover-stat-label">{t('uncover.card.bpm')}</span>
             <span className="uncover-stat-val">{formatBpm(track.bpm)}</span>
           </div>
           <div className="uncover-stat-cell">
-            <span className="uncover-stat-label">Energy</span>
-            <span className="uncover-stat-val">{track.energy}/10</span>
+            <span className="uncover-stat-label">{t('uncover.card.energy')}</span>
+            <span className="uncover-stat-val">
+              {t('uncover.card.energyValue', { value: track.energy })}
+            </span>
           </div>
           <div className="uncover-stat-cell">
-            <span className="uncover-stat-label">Length</span>
+            <span className="uncover-stat-label">{t('uncover.card.length')}</span>
             <span className="uncover-stat-val">{formatDuration(track.duration)}</span>
           </div>
         </div>

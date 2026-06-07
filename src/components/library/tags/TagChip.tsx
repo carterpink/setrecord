@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { TagCategory } from '@/types'
 import { tagAccent, tagLabel } from '@/utils/tagging/taxonomy'
 
@@ -28,6 +29,7 @@ export function TagChip({
   title,
   muted
 }: TagChipProps): React.JSX.Element {
+  const { t } = useTranslation('library')
   const accent = tagAccent(category)
   const label = tagLabel(category, value)
   const pad = size === 'md' ? '4px 9px' : '3px 6px'
@@ -64,7 +66,7 @@ export function TagChip({
       {onRemove && (
         <button
           type="button"
-          aria-label={`Remove ${label}`}
+          aria-label={t('tagChip.remove', { label })}
           onClick={(e) => {
             e.stopPropagation()
             onRemove()

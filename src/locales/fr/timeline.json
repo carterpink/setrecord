@@ -1,0 +1,73 @@
+{
+  "saveStatus": {
+    "saving": "Enregistrement…",
+    "unsaved": "Modifications non enregistrées",
+    "retryAria": "Réessayer l’enregistrement",
+    "failed": "Échec de l’enregistrement"
+  },
+  "header": {
+    "namePlaceholder": "Nom du set",
+    "noSetLoaded": "Aucun set chargé",
+    "trackCount_one": "{{count}} titre",
+    "trackCount_other": "{{count}} titres",
+    "bpmStats": "moy. {{avg}} BPM ({{min}}–{{max}})",
+    "bpmSingle": "{{bpm}} BPM",
+    "markPerformedTitle": "Enregistrer ce set comme joué lors d’un gig",
+    "markPerformed": "Marquer comme joué",
+    "logging": "Enregistrement…",
+    "curveHelpAria": "Que montre ce graphique ?"
+  },
+  "performed": {
+    "logged": "« {{name}} » enregistré comme joué.",
+    "markError": "Impossible de marquer ce set comme joué.",
+    "markFailed": "Une erreur est survenue lors du marquage du set comme joué."
+  },
+  "empty": {
+    "readyTitle": "« {{name}} » — prêt quand tu veux.",
+    "blankTitle": "Un set neuf et vide.",
+    "subtitle": "Glisse des titres, balaye pour découvrir, ou demande-moi de le construire.",
+    "browse": "Parcourir la bibliothèque",
+    "discover": "Balayer pour découvrir",
+    "buildForMe": "Construis-le pour moi"
+  },
+  "curve": {
+    "trackLabel": "Titre {{position}}",
+    "seriesEnergy": "Énergie",
+    "seriesBpm": "BPM",
+    "seriesTarget": "Cible"
+  },
+  "card": {
+    "phantomAria": "Titre fantôme — pas encore dans ta bibliothèque",
+    "fileNotFoundAria": "Fichier introuvable",
+    "pauseAria": "Mettre en pause {{title}}",
+    "previewAria": "Prévisualiser {{title}}",
+    "phantomBuyTitle": "Achète ou télécharge ce titre pour activer la prévisualisation",
+    "fileNotFoundTitle": "Fichier introuvable : {{path}}",
+    "fileNotFound": "Fichier introuvable",
+    "scoreTitle": "Score {{score}}/100 · {{reasons}} — vert = mix propre, ambre = brouillon, rouge = catastrophe",
+    "explainTransitionAria": "Expliquer la transition : {{label}}",
+    "unlockAria": "Déverrouiller {{title}}",
+    "lockAria": "Verrouiller {{title}} en place",
+    "lockedTitle": "Verrouillé en place — Set Architect conservera cette position",
+    "unlockedTitle": "Verrouiller en place — Set Architect ne remplacera pas ce titre",
+    "removeAria": "Supprimer {{title}}",
+    "moreActionsAria": "Plus d’actions",
+    "moreActionsTitle": "Plus d’actions"
+  },
+  "menu": {
+    "playHistory": "Historique de lecture",
+    "editCues": "Modifier les points de cue"
+  },
+  "combos": {
+    "dialogAria": "Titres joués après {{title}}",
+    "after": "Après",
+    "closeAria": "Fermer",
+    "loading": "Chargement…",
+    "empty": "Aucun historique de lecture pour l’instant. Importe tes données de performance Rekordbox pour le voir.",
+    "count": "{{plays}}×"
+  },
+  "ghost": {
+    "bestSuggestion": "Meilleure suggestion",
+    "addAria": "Ajouter {{title}} au set"
+  }
+}
