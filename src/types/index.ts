@@ -1135,3 +1135,34 @@ export interface SessionTrack {
   /** Full track object, joined from the tracks table. */
   track: Track
 }
+
+/**
+ * A measured crowd reaction to one track within one logged gig — the output of
+ * the Black Box "set flight recorder". Scores are OPTIONAL: they stay undefined
+ * until a reaction is actually measured (i.e. every gig until Black Box capture
+ * ships), so every consumer MUST degrade gracefully when reaction data is absent.
+ */
+export interface SetReaction {
+  id: string
+  sessionId: string
+  trackId: string
+  /** 0..1 crowd reaction, normalised against the rest of that night. Undefined until measured. */
+  reactionScore?: number
+  /**
+   * 0..1 confidence in the measurement — how cleanly the crowd was isolated from
+   * the music. Low confidence (enclosed booth, loud monitors) means treat the
+   * score sceptically; the UI should down-weight or hide low-confidence reactions.
+   */
+  confidence?: number
+  /** ms offsets into the track of detected cheer/roar transients. */
+  peakMs: number[]
+  /** ms offsets into the track of detected energy dips (crowd disengaged). */
+  dipMs: number[]
+  /**
+   * Where the score came from: 'blackbox' = mic-derived crowd isolation,
+   * 'derived' = the room-energy-delta fallback when isolation is unreliable,
+   * 'user' = a manual rating the DJ entered after the gig.
+   */
+  source: 'blackbox' | 'derived' | 'user'
+  createdAt: string
+}

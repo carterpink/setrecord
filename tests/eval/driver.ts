@@ -42,6 +42,8 @@ import { computeKeyBpm } from '../../electron/algorithms/memory/keyBpm'
 import { detectClarify } from '../../src/utils/clarifyIntent'
 import { detectVenue } from '../../src/utils/venueIntent'
 import { computeVenue } from '../../electron/algorithms/memory/venue'
+import { detectBrief } from '../../src/utils/briefIntent'
+import { computeBrief } from '../../electron/algorithms/memory/brief'
 import { detectAction } from '../../src/utils/actionIntent'
 import { searchLibrary } from '../../electron/algorithms/memory/librarySearch'
 import { parseQuery, type ParsedQuery } from '../../electron/algorithms/memory/queryParser'
@@ -255,6 +257,21 @@ export function resolveQuery(query: string, ctx: EvalCtx): EngineResult {
       kind: a.kind,
       tracks: a.tracks,
       sessions: a.sessionIds ? ctx.sessions.filter((s) => a.sessionIds!.includes(s.id)) : undefined,
+      narration: a.narration
+    }
+  }
+
+  // Forward-looking pre-gig Brief ("what should I play at Fabric"). After the
+  // backward-looking venue lookup, before gig recall, so "what did I play" stays
+  // recall and "what should I play at X" becomes a game plan.
+  const briefHit = detectBrief(query)
+  if (briefHit) {
+    const a = computeBrief(briefHit, ctx.tracks, ctx.sessions, ctx.now)
+    const tracks = [...a.proven, ...a.bring]
+    return {
+      intent: `brief:${briefHit.venue ?? briefHit.eventType ?? 'gig'}`,
+      kind: tracks.length ? 'tracks' : 'empty',
+      tracks,
       narration: a.narration
     }
   }

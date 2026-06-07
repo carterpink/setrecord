@@ -234,6 +234,22 @@ function createSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_track_tags_value ON track_tags(value);
     CREATE INDEX IF NOT EXISTS idx_track_tags_track ON track_tags(track_id);
 
+    CREATE TABLE IF NOT EXISTS set_reactions (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL REFERENCES play_sessions(id) ON DELETE CASCADE,
+      track_id TEXT NOT NULL REFERENCES tracks(id),
+      reaction_score REAL,
+      confidence REAL,
+      peak_ts TEXT NOT NULL DEFAULT '[]',
+      dip_ts TEXT NOT NULL DEFAULT '[]',
+      source TEXT NOT NULL DEFAULT 'blackbox',
+      created_at TEXT NOT NULL,
+      UNIQUE(session_id, track_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_set_reactions_session ON set_reactions(session_id);
+    CREATE INDEX IF NOT EXISTS idx_set_reactions_track ON set_reactions(track_id);
+
     CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY);
     INSERT OR IGNORE INTO schema_version VALUES (1);
   `)

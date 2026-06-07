@@ -16,6 +16,7 @@ import type {
   SessionTrack,
   SessionFilter,
   SessionMetadataPatch,
+  SetReaction,
   LifecycleState,
   TrackTag,
   TagCategory,
@@ -1256,6 +1257,94 @@ export function getSessionsForTrack(db: Database.Database, trackId: string): Pla
 
 export function deleteSession(db: Database.Database, sessionId: string): void {
   db.prepare('DELETE FROM play_sessions WHERE id = ?').run(sessionId)
+}
+
+// ───────── Crowd reactions (Black Box "set flight recorder") ─────────
+
+/** Tolerant JSON-array parse for the peak_ts / dip_ts columns — never throws. */
+function reactionTimestamps(v: unknown): number[] {
+  if (typeof v !== 'string' || !v) return []
+  try {
+    const parsed = JSON.parse(v)
+    return Array.isArray(parsed) ? (parsed.filter((n) => typeof n === 'number') as number[]) : []
+  } catch {
+    return []
+  }
+}
+
+function rowToReaction(row: Record<string, unknown>): SetReaction {
+  return {
+    id: row.id as string,
+    sessionId: row.session_id as string,
+    trackId: row.track_id as string,
+    reactionScore: row.reaction_score == null ? undefined : (row.reaction_score as number),
+    confidence: row.confidence == null ? undefined : (row.confidence as number),
+    peakMs: reactionTimestamps(row.peak_ts),
+    dipMs: reactionTimestamps(row.dip_ts),
+    source: (row.source as SetReaction['source']) ?? 'blackbox',
+    createdAt: row.created_at as string
+  }
+}
+
+/**
+ * Insert or update the measured crowd reaction for one track in one gig. Keyed on
+ * (session_id, track_id) so re-analysing a recording overwrites the prior score
+ * rather than duplicating it. created_at is preserved on update.
+ */
+export function upsertReaction(
+  db: Database.Database,
+  reaction: Omit<SetReaction, 'id' | 'createdAt'> & { id?: string; createdAt?: string }
+): void {
+  db.prepare(
+    `
+    INSERT INTO set_reactions
+      (id, session_id, track_id, reaction_score, confidence, peak_ts, dip_ts, source, created_at)
+    VALUES
+      (@id, @sessionId, @trackId, @reactionScore, @confidence, @peakTs, @dipTs, @source, @createdAt)
+    ON CONFLICT(session_id, track_id) DO UPDATE SET
+      reaction_score = excluded.reaction_score,
+      confidence     = excluded.confidence,
+      peak_ts        = excluded.peak_ts,
+      dip_ts         = excluded.dip_ts,
+      source         = excluded.source
+  `
+  ).run({
+    id: reaction.id ?? crypto.randomUUID(),
+    sessionId: reaction.sessionId,
+    trackId: reaction.trackId,
+    reactionScore: reaction.reactionScore ?? null,
+    confidence: reaction.confidence ?? null,
+    peakTs: JSON.stringify(reaction.peakMs ?? []),
+    dipTs: JSON.stringify(reaction.dipMs ?? []),
+    source: reaction.source ?? 'blackbox',
+    createdAt: reaction.createdAt ?? new Date().toISOString()
+  })
+}
+
+/** Every measured reaction for one gig (unordered; caller joins to play order). */
+export function getReactionsForSession(db: Database.Database, sessionId: string): SetReaction[] {
+  const rows = db
+    .prepare('SELECT * FROM set_reactions WHERE session_id = ?')
+    .all(sessionId) as Record<string, unknown>[]
+  return rows.map(rowToReaction)
+}
+
+/**
+ * Every reaction a track has ever drawn, newest gig first — the raw material for
+ * the Track Résumé ("kills at 1am warehouse, died at weddings").
+ */
+export function getReactionsForTrack(db: Database.Database, trackId: string): SetReaction[] {
+  const rows = db
+    .prepare(
+      `
+      SELECT sr.* FROM set_reactions sr
+      JOIN play_sessions ps ON ps.id = sr.session_id
+      WHERE sr.track_id = ?
+      ORDER BY ps.performed_at DESC, ps.created_at DESC
+    `
+    )
+    .all(trackId) as Record<string, unknown>[]
+  return rows.map(rowToReaction)
 }
 
 /**

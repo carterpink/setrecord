@@ -350,4 +350,31 @@ export function runMigrations(db: Database.Database): void {
   }
 
   db.prepare('INSERT OR REPLACE INTO schema_version VALUES (20)').run()
+
+  // v21: crowd-reaction layer — the Black Box "set flight recorder".
+  // One row per (session, track): a normalised reaction_score, a confidence
+  // (how trustworthy the crowd-from-mic isolation was), and JSON arrays of
+  // cheer/dip timestamps. reaction_score + confidence are NULLABLE — features
+  // that consume reactions (The Brief, Track Résumé) must degrade gracefully
+  // when a gig has none, which is every gig until Black Box capture ships.
+  // UNIQUE(session_id, track_id) lets a re-analysis overwrite cleanly (upsert).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS set_reactions (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL REFERENCES play_sessions(id) ON DELETE CASCADE,
+      track_id TEXT NOT NULL REFERENCES tracks(id),
+      reaction_score REAL,
+      confidence REAL,
+      peak_ts TEXT NOT NULL DEFAULT '[]',
+      dip_ts TEXT NOT NULL DEFAULT '[]',
+      source TEXT NOT NULL DEFAULT 'blackbox',
+      created_at TEXT NOT NULL,
+      UNIQUE(session_id, track_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_set_reactions_session ON set_reactions(session_id);
+    CREATE INDEX IF NOT EXISTS idx_set_reactions_track ON set_reactions(track_id);
+  `)
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (21)').run()
 }
