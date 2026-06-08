@@ -26,6 +26,7 @@ import { CompletenessMeter } from '@/components/onboarding/CompletenessMeter'
 import { StreakChip } from '@/components/onboarding/StreakChip'
 import { Composer, type ComposerPhase } from './Composer'
 import { HomeTurn } from './HomeTurn'
+import GrainBloom from '@/components/atmosphere/GrainBloom'
 import { BriefPanel } from '@/components/recall/BriefPanel'
 import { motion, AnimatePresence, fadeScale } from '@/components/shared/Motion'
 import type { VenueType } from '@/types'
@@ -297,6 +298,9 @@ export function HomeSurface(): React.JSX.Element {
   return (
     <div className="home">
       <div className="home-aurora" aria-hidden="true" />
+      {/* Grit: a single brain grain-bloom is the home backdrop (lime light over
+          stippled grain). Interactive — the light pools toward the pointer. */}
+      <GrainBloom className="home-bloom" icon="brain" tone="lime" interactive seed={11} />
       <div className="home-vignette" aria-hidden="true" />
 
       <div className="home-top">

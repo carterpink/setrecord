@@ -1,19 +1,29 @@
 /* ============================================================
    SetRecord — Design Tokens
-   "A 2am dancefloor rendered as software."
-   Lifted verbatim from the Claude Design handoff (colors_and_type.css).
+
+   Default theme = "Grit" — the landing-page "State of Sites" register:
+   a flat near-black canvas, neon that lives in BACKGROUND grain blooms (not
+   chrome), flat editorial glass, and Fraunces serif for display heads only.
+
+   The previous glossy "Aurora" look (drifting teal/indigo/magenta gradients +
+   heavy frosted glass) is preserved VERBATIM under [data-theme='aurora'] as a
+   one-line, full-app visual rollback. [data-theme='light'] is the papery theme.
    ============================================================ */
 
-/* Fonts: Space Grotesk loaded via Google Fonts in index.html — single typeface system. */
+/* Fonts: Space Grotesk (body / UI) + Fraunces (display heads) — self-hosted via
+   @fontsource, imported in the renderer entry (src/main.tsx, src/overlay-entry.tsx). */
 
 :root {
-  /* -------- Aurora gradient anchors (background only) -------- */
+  /* -------- Canvas (flat near-black — the gallery) -------- */
+  --ink-0: #050507;
+  --ink-1: #08080e;
+  /* Body bg + the gated .aurora element both read --aurora-black. */
+  --aurora-black: #050507;
   --aurora-teal: #0a1f2e;
   --aurora-indigo: #1a1438;
   --aurora-magenta: #2e0f2e;
-  --aurora-black: #060309;
 
-  /* -------- Accent (electric lime) -------- */
+  /* -------- Accent (electric lime) — identical across themes -------- */
   --accent: #CFFF04;
   --accent-hover: #B8E600;
   --accent-dim-12: rgba(207, 255, 4, 0.12);
@@ -25,16 +35,24 @@
   /* Brand gradient — logo mark */
   --grad-brand: linear-gradient(135deg, #CFFF04 0%, #4FD7FF 50%, #FF3D9A 100%);
 
-  /* -------- Surface ramp (glass over aurora) -------- */
-  --surface-0: transparent;
-  --surface-1: rgba(15, 18, 28, 0.6);
-  --surface-2: rgba(22, 26, 38, 0.7);
-  --surface-3: rgba(30, 34, 48, 0.8);
+  /* -------- Neon ramp triples — BACKGROUND grain blooms only -------- */
+  /* (foreground stays near-monochrome; neon lives behind, in the blooms) */
+  --lime: 207, 255, 4;
+  --cyan: 79, 215, 255;
+  --magenta: 240, 70, 170;
+  --violet: 150, 104, 250;
+  --mint: 94, 234, 212;
 
-  /* -------- Borders -------- */
+  /* -------- Surface ramp (flat editorial dark) -------- */
+  --surface-0: transparent;
+  --surface-1: rgba(13, 15, 22, 0.55);
+  --surface-2: rgba(16, 18, 26, 0.7);
+  --surface-3: rgba(20, 22, 32, 0.82);
+
+  /* -------- Borders (hairlines) -------- */
   --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-default: rgba(255, 255, 255, 0.1);
-  --border-emphasis: rgba(255, 255, 255, 0.16);
+  --border-default: rgba(255, 255, 255, 0.09);
+  --border-emphasis: rgba(255, 255, 255, 0.14);
 
   /* -------- Scrollbars -------- */
   --scrollbar-thumb: rgba(255, 255, 255, 0.16);
@@ -43,7 +61,7 @@
   /* -------- Text -------- */
   --text-primary: rgba(255, 255, 255, 0.95);
   --text-secondary: rgba(255, 255, 255, 0.65);
-  --text-tertiary: rgba(255, 255, 255, 0.55); /* WCAG AA: ≥4.5:1 on glass-over-aurora (was 0.4 ≈ 3.6:1, failed) */
+  --text-tertiary: rgba(255, 255, 255, 0.55); /* WCAG AA ≥4.5:1 on near-black */
   --text-disabled: rgba(255, 255, 255, 0.25);
   --text-on-accent: #0a1f12; /* dark on chartreuse */
 
@@ -53,10 +71,10 @@
   --semantic-danger: #f87171; /* trainwreck / export error */
   --semantic-info: #60a5fa; /* library health */
 
-  /* -------- Typography — single typeface system -------- */
+  /* -------- Typography -------- */
   --font-sans: 'Space Grotesk', 'SF Pro Display', -apple-system, system-ui, sans-serif;
-  /* Aliases kept for backward compat — both resolve to the same face */
-  --font-display: var(--font-sans);
+  /* Editorial serif — display heads only. See the authoritative rule in grit.css. */
+  --font-display: 'Fraunces Variable', 'Fraunces', 'Newsreader', Georgia, 'Times New Roman', serif;
   --font-mono: var(--font-sans);
 
   /* Type scale — size / line-height / weight via shorthand */
@@ -94,19 +112,19 @@
   --radius-xl: 28px;
   --radius-full: 9999px;
 
-  /* -------- Glass treatments -------- */
-  --glass-1-bg: rgba(15, 18, 28, 0.4);
-  --glass-1-blur: blur(20px) saturate(140%);
-  --glass-1-border: 0.5px solid rgba(255, 255, 255, 0.06);
+  /* -------- Glass treatments — flat editorial (hairline + deep soft shadow) -------- */
+  --glass-1-bg: rgba(11, 13, 20, 0.34);
+  --glass-1-blur: blur(8px) saturate(120%);
+  --glass-1-border: 0.5px solid rgba(255, 255, 255, 0.07);
 
-  --glass-2-bg: rgba(22, 26, 38, 0.55);
-  --glass-2-blur: blur(28px) saturate(160%);
-  --glass-2-border: 0.5px solid rgba(255, 255, 255, 0.1);
+  --glass-2-bg: rgba(11, 13, 20, 0.42);
+  --glass-2-blur: blur(8px) saturate(125%);
+  --glass-2-border: 0.5px solid rgba(255, 255, 255, 0.09);
 
-  --glass-3-bg: rgba(30, 34, 48, 0.7);
-  --glass-3-blur: blur(40px) saturate(180%);
-  --glass-3-border: 0.5px solid rgba(255, 255, 255, 0.14);
-  --glass-3-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --glass-3-bg: rgba(10, 11, 17, 0.5);
+  --glass-3-blur: blur(10px) saturate(120%);
+  --glass-3-border: 0.5px solid rgba(255, 255, 255, 0.1);
+  --glass-3-shadow: 0 36px 90px -46px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
   /* -------- Motion -------- */
   --ease-expo: cubic-bezier(0.32, 0.72, 0, 1);
@@ -132,11 +150,52 @@
 
 
 /* ============================================================
-   Light theme overrides
+   Aurora theme — the previous glossy look, preserved VERBATIM as a full-app
+   rollback. Set document.documentElement.dataset.theme = 'aurora' (or
+   localStorage.theme='aurora' on boot) to restore every surface instantly.
+   Only the tokens that Grit changed are restated here.
+   ============================================================ */
+
+[data-theme='aurora'] {
+  /* Aurora gradient anchors (background only) */
+  --aurora-black: #060309;
+
+  /* Surface ramp (glass over aurora) — original bluish */
+  --surface-1: rgba(15, 18, 28, 0.6);
+  --surface-2: rgba(22, 26, 38, 0.7);
+  --surface-3: rgba(30, 34, 48, 0.8);
+
+  /* Borders — original */
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-emphasis: rgba(255, 255, 255, 0.16);
+
+  /* No serif in the aurora look — display heads revert to the geometric sans. */
+  --font-display: var(--font-sans);
+
+  /* Glass — original heavy frosted */
+  --glass-1-bg: rgba(15, 18, 28, 0.4);
+  --glass-1-blur: blur(20px) saturate(140%);
+  --glass-1-border: 0.5px solid rgba(255, 255, 255, 0.06);
+
+  --glass-2-bg: rgba(22, 26, 38, 0.55);
+  --glass-2-blur: blur(28px) saturate(160%);
+  --glass-2-border: 0.5px solid rgba(255, 255, 255, 0.1);
+
+  --glass-3-bg: rgba(30, 34, 48, 0.7);
+  --glass-3-blur: blur(40px) saturate(180%);
+  --glass-3-border: 0.5px solid rgba(255, 255, 255, 0.14);
+  --glass-3-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+
+/* ============================================================
+   Light theme overrides (papery)
    ============================================================ */
 
 [data-theme='light'] {
-  /* Papery aurora — warm cream, no blue tint */
+  /* Papery canvas — warm cream, no blue tint */
+  --ink-0: #F4F1EA;
+  --ink-1: #F0EBE0;
   --aurora-teal: #F4F1EA;
   --aurora-indigo: #F0EBE0;
   --aurora-magenta: #EFE9DC;
@@ -148,6 +207,8 @@
   --accent-dim-12: rgba(207, 255, 4, 0.18);
   --accent-dim-30: rgba(207, 255, 4, 0.4);
   --text-on-accent: #0B0B10;
+
+  /* Serif display heads carry over to light too. */
 
   /* Surfaces — paper + paper-dim */
   --surface-0: transparent;

@@ -4,9 +4,18 @@
 import { StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MotionConfig } from 'framer-motion'
+import '@fontsource/space-grotesk/400.css'
+import '@fontsource/space-grotesk/500.css'
+import '@fontsource/space-grotesk/600.css'
+import '@fontsource/space-grotesk/700.css'
+import '@fontsource-variable/fraunces/full.css'
 import './styles/globals.css'
+import './styles/grit.css' // editorial layer — loaded LAST so it wins
+import { initTheme } from '@/utils/theme'
 import { useLiveStore } from '@/stores/liveStore'
 import { LiveOverlay } from '@/components/live/LiveOverlay'
+
+initTheme()
 
 /**
  * Renderer entry for the transparent always-on-top SetRecord Live window.

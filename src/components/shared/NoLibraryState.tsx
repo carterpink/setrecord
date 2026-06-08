@@ -3,6 +3,7 @@ import { Upload } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { motion } from '@/components/shared/Motion'
 import { Button } from '@/components/shared/Button'
+import GrainBloom from '@/components/atmosphere/GrainBloom'
 import { useUiStore } from '@/stores/uiStore'
 
 interface NoLibraryStateProps {
@@ -31,6 +32,7 @@ export function NoLibraryState({
 
   return (
     <motion.div
+      className="grit-bloomhost"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.32, 0.72, 0.12, 1] }}
@@ -44,6 +46,13 @@ export function NoLibraryState({
         gap: 10
       }}
     >
+      <GrainBloom
+        className="grainbloom--watermark"
+        icon="library"
+        tone="lime"
+        opacity={0.6}
+        seed={5}
+      />
       <Icon size={32} strokeWidth={1.5} style={{ color: 'var(--accent)', marginBottom: 4 }} />
       <div className="ss-h3" style={{ maxWidth: 320 }}>
         {title ?? t('noLibrary.defaultTitle')}

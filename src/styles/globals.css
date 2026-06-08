@@ -50,7 +50,8 @@
 .is-backgrounded .aurora,
 .is-backgrounded .home-aurora,
 .is-backgrounded .home .neural,
-.is-backgrounded .home .neural .blob {
+.is-backgrounded .home .neural .blob,
+.is-backgrounded .filmgrain {
   animation-play-state: paused !important;
 }
 
@@ -128,7 +129,16 @@
    ============================================================ */
 
 @layer components {
+  /* The aurora wash belongs to the legacy look only. Under the default "grit"
+     theme it is hidden — the canvas is flat near-black (<Atmosphere/> + body bg)
+     and the colour lives in discrete background grain blooms instead. Flipping
+     to [data-theme='aurora'] re-enables it for a full visual rollback. */
   .aurora {
+    display: none;
+  }
+
+  [data-theme='aurora'] .aurora {
+    display: block;
     position: fixed;
     inset: 0;
     z-index: -1;

@@ -35,7 +35,7 @@ function SelectedDot(
 ): React.JSX.Element | null {
   const { cx, cy, payload, selectedPosition } = props
   if (!payload || payload.position !== selectedPosition) return null
-  return <circle cx={cx} cy={cy} r={4} fill="#C8FF3D" stroke="none" />
+  return <circle cx={cx} cy={cy} r={4} fill="#CFFF04" stroke="none" />
 }
 
 export function EnergyCurveGraph({
@@ -96,7 +96,7 @@ export function EnergyCurveGraph({
           {selectedPosition != null && (
             <ReferenceLine
               x={selectedPosition}
-              stroke="#C8FF3D"
+              stroke="#CFFF04"
               strokeOpacity={0.4}
               strokeWidth={1}
             />
@@ -115,7 +115,7 @@ export function EnergyCurveGraph({
           <Line
             type="monotone"
             dataKey="actual"
-            stroke="#C8FF3D"
+            stroke="#CFFF04"
             strokeWidth={1.5}
             dot={(props: DotRenderProps) => (
               <SelectedDot
@@ -124,7 +124,7 @@ export function EnergyCurveGraph({
                 selectedPosition={selectedPosition}
               />
             )}
-            activeDot={{ r: 4, fill: '#C8FF3D', stroke: 'none' }}
+            activeDot={{ r: 4, fill: '#CFFF04', stroke: 'none' }}
             isAnimationActive={false}
           />
         </LineChart>

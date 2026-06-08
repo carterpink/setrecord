@@ -16,7 +16,7 @@ const ACCENT = '#CFFF04' // lime — tracks + mixed threads (Past)
 const ACCENT_ALT = '#5eead4' // teal — compatible threads (Future/Diff) + selection ring
 const PRESENT = '#ffd166' // gold — the live path you're on right now (Present)
 const GIG = 'rgba(255,255,255,0.82)' // platinum — gig hubs
-const BG = '#06070A'
+const BG = '#050507' // grit near-black canvas (matches --ink-0)
 
 /** Node as the force sim sees it — our node plus the x/y the layout writes in. */
 type FGNode = GraphNode & { x?: number; y?: number }
@@ -242,7 +242,7 @@ export function ForceGraphCanvas({
       // Legibility plate behind the text.
       if (isSel || isHover) {
         const w = ctx.measureText(text).width
-        ctx.fillStyle = 'rgba(6,7,10,0.7)'
+        ctx.fillStyle = 'rgba(5,5,7,0.7)'
         ctx.fillRect(x - w / 2 - 3 / scale, y + r + 2 / scale, w + 6 / scale, fontSize + 3 / scale)
       }
       ctx.fillStyle = isGig ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.82)'

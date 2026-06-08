@@ -53,7 +53,9 @@ const config: Config = {
       },
       fontFamily: {
         sans: 'var(--font-sans)',
-        mono: 'var(--font-mono)'
+        mono: 'var(--font-mono)',
+        // Fraunces serif — display heads only (font-display utility).
+        display: 'var(--font-display)'
       },
       borderRadius: {
         xs: 'var(--radius-xs)',

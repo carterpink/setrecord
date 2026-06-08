@@ -8,7 +8,7 @@ import { HOT_CUE_COLORS } from '@/utils/constants'
 
 const LOW_C: [number, number, number] = [56, 128, 255] // bass — blue
 const MID_C: [number, number, number] = [150, 110, 246] // mid — violet
-const HIGH_C: [number, number, number] = [200, 255, 61] // treble — lime accent
+const HIGH_C: [number, number, number] = [207, 255, 4] // treble — lime accent (#CFFF04, brand)
 
 const CUE_COLOR = '#22C55E'
 const MEMORY_COLOR = '#F97316'

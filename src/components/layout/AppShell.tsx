@@ -27,6 +27,7 @@ import { PostGigPromptModal } from '@/components/modals/PostGigPromptModal'
 import { UpgradeModal } from '@/components/modals/UpgradeModal'
 import { RecallPanel } from '@/components/recall/RecallPanel'
 import { CollabLayer } from '@/components/collab/CollabLayer'
+import Atmosphere from '@/components/atmosphere/Atmosphere'
 import { HomeSurface } from '@/components/home/HomeSurface'
 import { SuggestionsPanel } from '@/components/suggestions/SuggestionsPanel'
 import { TimelinePanel } from '@/components/timeline/TimelinePanel'
@@ -283,7 +284,10 @@ export function AppShell(): React.JSX.Element {
 
   return (
     <>
+      {/* Legacy aurora wash — hidden unless [data-theme='aurora'] (rollback). */}
       <div className="aurora" aria-hidden="true" />
+      {/* Grit canvas: flat near-black backdrop + global film grain. */}
+      <Atmosphere />
       <div className="app">
         <ErrorBoundary label="Toolbar" variant="chrome">
           <TopBar />

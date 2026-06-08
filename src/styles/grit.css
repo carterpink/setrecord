@@ -1,0 +1,196 @@
+/* ============================================================
+   grit.css — SetRecord, in the "State of Sites" register.
+   Loaded LAST (after globals.css) — the authoritative editorial layer.
+
+   - Flat near-black canvas; a global film-grain rides on top of all content.
+   - Neon lives in the BACKGROUND, in discrete grain blooms (GrainBloom), never
+     smeared across chrome. Foreground stays near-monochrome + one lime accent.
+   - Fraunces serif for display heads only; Space Grotesk everywhere else.
+
+   Everything here is additive (new classes) or a deliberate override of the
+   display-head font. Under [data-theme='aurora'] the serif reverts to the sans
+   automatically (that theme sets --font-display: var(--font-sans)).
+   ============================================================ */
+
+::selection {
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+/* ============================================================
+   Atmosphere — flat backdrop + global film grain (the vintage layer).
+   ============================================================ */
+
+/* Flat near-black canvas behind everything. The neon no longer washes the
+   screen — it lives in per-surface <GrainBloom>s. */
+.atmos {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  background: var(--ink-0, #050507);
+  pointer-events: none;
+}
+
+/* Global film grain — rides on TOP of content. Opacity is dialled below the
+   landing page's 0.16 because the app's UI is far denser and we protect text. */
+.filmgrain {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.1;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 170px 170px;
+  animation: grain-shift 0.55s steps(4) infinite;
+}
+@keyframes grain-shift {
+  0% {
+    background-position: 0 0;
+  }
+  25% {
+    background-position: -42px 18px;
+  }
+  50% {
+    background-position: 30px -36px;
+  }
+  75% {
+    background-position: -20px 28px;
+  }
+  100% {
+    background-position: 24px 12px;
+  }
+}
+
+/* The grit atmosphere is a no-op in the legacy look — the .aurora wash takes
+   over (see globals.css), so hide the flat canvas + grain under that theme. */
+[data-theme='aurora'] .atmos,
+[data-theme='aurora'] .filmgrain {
+  display: none;
+}
+
+/* ============================================================
+   GrainBloom — one contained neon glow per surface, shaped by an app icon.
+   z-index:0 + a positioned, content-above-it parent keeps it behind in-flow
+   content. It blends `screen` against the page black → the dust reads as
+   emitted neon light. Placement comes from a modifier class on the bloom.
+   ============================================================ */
+.grainbloom {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  will-change: opacity;
+}
+.grainbloom canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Surfaces that host a bloom: stack so the bloom sits behind their content. */
+.grit-bloomhost {
+  position: relative;
+  isolation: isolate;
+}
+.grit-bloomhost > :not(.grainbloom) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Placement helpers (square so the icon isn't distorted). */
+.grainbloom--fill {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.grainbloom--hero {
+  width: min(46vw, 520px);
+  height: min(46vw, 520px);
+  right: -4%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.grainbloom--corner {
+  width: min(40vw, 460px);
+  height: min(40vw, 460px);
+  right: -8%;
+  top: -12%;
+}
+.grainbloom--center {
+  width: min(64%, 560px);
+  height: min(64%, 560px);
+  left: 50%;
+  top: 44%;
+  transform: translate(-50%, -50%);
+}
+.grainbloom--watermark {
+  width: min(52%, 360px);
+  height: min(52%, 360px);
+  left: 50%;
+  top: 38%;
+  transform: translate(-50%, -50%);
+  opacity: 0.8;
+}
+
+/* Under the legacy theme, blooms are silent (the aurora carries the colour). */
+[data-theme='aurora'] .grainbloom {
+  display: none;
+}
+
+/* ============================================================
+   Single-lime accent word (matches the landing page's "accent" treatment).
+   ============================================================ */
+.accent {
+  color: var(--accent);
+  text-shadow: 0 0 38px rgba(var(--lime), 0.28);
+}
+
+/* ============================================================
+   Fraunces display register — AUTHORITATIVE (loaded last). Display heads only;
+   `font-optical-sizing: auto` maxes the serif's contrast at large sizes, and a
+   sub-semibold weight keeps the hairlines elegant. Opt in with `.grit-serif`
+   (or the Tailwind `font-display` utility); `.ss-display` is serif by default.
+   ============================================================ */
+.ss-display,
+.grit-serif {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 440;
+  font-style: normal;
+  letter-spacing: -0.02em;
+}
+
+/* The very biggest heads carry more contrast + a tighter set. */
+.grit-serif--xl {
+  font-weight: 408;
+  letter-spacing: -0.026em;
+  line-height: 1;
+}
+
+/* Display-tier heads that already exist in the app, promoted to the serif:
+   modal titles + recall section heroes. Scoped tightly so dense .ss-h2 chrome
+   elsewhere stays on the geometric sans. Reverts to sans under aurora. */
+.modal-header > .ss-h2,
+.modal-header > .ss-h1,
+.recall-section-head .ss-h2,
+.recall-section-head-row .ss-h2 {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 460;
+  letter-spacing: -0.015em;
+}
+
+/* ============================================================
+   Reduced motion — freeze the grain (the bloom engine self-freezes to a single
+   static frame; see Bloom.tsx). Mirrors globals.css's reduced-motion blocks.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .filmgrain {
+    animation: none !important;
+  }
+}
+.ss-reduce-motion .filmgrain {
+  animation: none !important;
+}

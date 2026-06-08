@@ -24,8 +24,15 @@
   line-height: 0;
 }
 
-/* ---------- Aurora backdrop (richer than the global one) ---------- */
+/* ---------- Aurora backdrop (legacy look only) ----------
+   Under the default grit theme the home canvas is flat near-black (the global
+   <Atmosphere/> + body bg) and the colour comes from a brain grain-bloom; this
+   blue/purple wash only paints under [data-theme='aurora'] (rollback). */
 .home-aurora {
+  display: none;
+}
+[data-theme='aurora'] .home-aurora {
+  display: block;
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -37,6 +44,22 @@
   transform: scale(1.08);
   will-change: transform;
   animation: home-aurora-drift 75s ease-in-out infinite alternate;
+}
+
+/* ---------- Grit backdrop: a single brain grain-bloom behind the stage ---------- */
+.home-bloom {
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  top: 45%;
+  transform: translate(-50%, -50%);
+  width: min(58vw, 640px);
+  height: min(58vw, 640px);
+  opacity: 0.85;
+  pointer-events: none;
+}
+[data-theme='aurora'] .home-bloom {
+  display: none;
 }
 /* Composited transform drift — see globals.css `aurora-drift` for the rationale
    (avoids a full-screen `background-position` repaint + `hue-rotate` pass every
@@ -158,12 +181,15 @@
 }
 .home .greeting h1 {
   margin: 0;
-  font: 300 42px/1.08 var(--font-sans);
-  letter-spacing: -0.025em;
+  /* Fraunces display serif (reverts to the geometric sans under [data-theme='aurora']
+     since that theme aliases --font-display back to --font-sans). */
+  font: 430 clamp(40px, 4.6vw, 50px)/1.05 var(--font-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
   color: var(--text-primary);
 }
 .home .greeting h1 b {
-  font-weight: 500;
+  font-weight: 560;
 }
 .home .greeting .sub {
   margin-top: 12px;
@@ -257,7 +283,7 @@
   height: 300px;
   left: 18%;
   top: 58%;
-  background: radial-gradient(circle, rgba(80, 150, 255, 0.95), transparent 66%);
+  background: radial-gradient(circle, rgba(var(--cyan), 0.9), transparent 66%);
   animation: home-drift1 14s ease-in-out infinite alternate;
 }
 .home .neural .b2 {
@@ -265,7 +291,7 @@
   height: 340px;
   left: 80%;
   top: 42%;
-  background: radial-gradient(circle, rgba(155, 95, 255, 0.95), transparent 66%);
+  background: radial-gradient(circle, rgba(var(--violet), 0.9), transparent 66%);
   animation: home-drift2 17s ease-in-out infinite alternate;
 }
 .home .neural .b3 {
@@ -273,7 +299,7 @@
   height: 300px;
   left: 50%;
   top: 80%;
-  background: radial-gradient(circle, rgba(232, 100, 220, 0.9), transparent 66%);
+  background: radial-gradient(circle, rgba(var(--magenta), 0.85), transparent 66%);
   animation: home-drift3 12s ease-in-out infinite alternate;
 }
 .home .neural .b4 {
@@ -281,7 +307,7 @@
   height: 240px;
   left: 38%;
   top: 26%;
-  background: radial-gradient(circle, rgba(120, 110, 255, 0.82), transparent 68%);
+  background: radial-gradient(circle, rgba(var(--lime), 0.6), transparent 68%);
   animation: home-drift1 10s ease-in-out infinite alternate-reverse;
 }
 .home .neural .b5 {
@@ -289,7 +315,7 @@
   height: 260px;
   left: 64%;
   top: 70%;
-  background: radial-gradient(circle, rgba(208, 120, 255, 0.78), transparent 68%);
+  background: radial-gradient(circle, rgba(var(--mint), 0.7), transparent 68%);
   animation: home-drift2 15s ease-in-out infinite alternate-reverse;
 }
 @keyframes home-hue {
@@ -330,7 +356,7 @@
   opacity: calc((0.62 + 0.35 * var(--lvl, 0)) * var(--neural));
 }
 .home .composer.listening .neural .b4 {
-  background: radial-gradient(circle, rgba(190, 110, 255, 0.85), transparent 70%);
+  background: radial-gradient(circle, rgba(var(--lime), 0.7), transparent 70%);
 }
 .home .composer.listening .neural {
   animation: home-neural-breathe 2.4s var(--ease-expo) infinite;
@@ -342,7 +368,7 @@
   animation: home-neural-spin 6s ease-in-out infinite alternate;
 }
 .home .composer.thinking .neural .b4 {
-  background: radial-gradient(circle, rgba(190, 110, 255, 0.7), transparent 72%);
+  background: radial-gradient(circle, rgba(var(--lime), 0.55), transparent 72%);
 }
 @keyframes home-neural-breathe {
   0%,

@@ -22,9 +22,9 @@ const SCALE = 2
 
 const FONT_SANS = "'Space Grotesk', 'SF Pro Display', -apple-system, system-ui, sans-serif"
 
-const COLOUR_BG = '#060309'
-const COLOUR_BG_TOP = '#1a0a2e'
-const COLOUR_BG_MID = '#0a0612'
+const COLOUR_BG = '#050507'
+const COLOUR_BG_TOP = '#0d0d10'
+const COLOUR_BG_MID = '#080809'
 const COLOUR_ACCENT = '#CFFF04'
 const COLOUR_TEXT = '#f5f5f7'
 const COLOUR_DIM = '#a3a3ad'
@@ -67,8 +67,8 @@ function drawCard(ctx: CanvasRenderingContext2D, snap: IdentitySnapshot, t: TFun
     CARD_H * 0.2,
     CARD_W * 0.8
   )
-  aurora1.addColorStop(0, 'rgba(58, 26, 94, 0.6)')
-  aurora1.addColorStop(1, 'rgba(10, 6, 18, 0)')
+  aurora1.addColorStop(0, 'rgba(207, 255, 4, 0.07)')
+  aurora1.addColorStop(1, 'rgba(5, 5, 7, 0)')
   ctx.fillStyle = aurora1
   ctx.fillRect(0, 0, CARD_W, CARD_H)
 
@@ -80,8 +80,8 @@ function drawCard(ctx: CanvasRenderingContext2D, snap: IdentitySnapshot, t: TFun
     CARD_H * 0.7,
     CARD_W * 0.6
   )
-  aurora2.addColorStop(0, 'rgba(14, 48, 80, 0.5)')
-  aurora2.addColorStop(1, 'rgba(10, 6, 18, 0)')
+  aurora2.addColorStop(0, 'rgba(255, 255, 255, 0.04)')
+  aurora2.addColorStop(1, 'rgba(5, 5, 7, 0)')
   ctx.fillStyle = aurora2
   ctx.fillRect(0, 0, CARD_W, CARD_H)
 
