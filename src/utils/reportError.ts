@@ -6,7 +6,7 @@
  * Today it logs to the console (matching prior behaviour).
  *
  * NFR-802 (renderer crash reporting): swap the body of this function to forward
- * the error over a `window.setsense.reportError(...)` IPC channel into the
+ * the error over a `window.setrecord.reportError(...)` IPC channel into the
  * main-process Sentry pipeline (electron/services/crashReporter.ts), gated on
  * the user's `crashReportingEnabled` setting. No ErrorBoundary call site needs
  * to change when that lands — only this function.

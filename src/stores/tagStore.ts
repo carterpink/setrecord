@@ -30,7 +30,7 @@ export const useTagStore = create<TagState>((set, get) => ({
   loadCoverage: async () => {
     set({ loadingCoverage: true })
     try {
-      const coverage = await window.setsense.tagsCoverage()
+      const coverage = await window.setrecord.tagsCoverage()
       set({ coverage, loadingCoverage: false })
     } catch {
       set({ loadingCoverage: false })
@@ -40,7 +40,7 @@ export const useTagStore = create<TagState>((set, get) => ({
   retag: async () => {
     set({ retagging: true, progress: { processed: 0, total: 0 } })
     try {
-      await window.setsense.tagsRetag()
+      await window.setrecord.tagsRetag()
     } catch {
       set({ retagging: false, progress: null })
     }

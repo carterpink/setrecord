@@ -1,5 +1,5 @@
-appId: com.setsense.app
-productName: SetSense
+appId: com.setrecord.app
+productName: SetRecord
 directories:
   buildResources: build
 files:
@@ -45,7 +45,7 @@ asarUnpack:
   # Inert when not installed; powers on-device voice in Home when present.
   - node_modules/smart-whisper/**
 win:
-  executableName: SetSense
+  executableName: SetRecord
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
@@ -65,16 +65,16 @@ mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: SetSense uses the microphone for voice input — your speech is transcribed on-device and never leaves your Mac.
+    - NSMicrophoneUsageDescription: SetRecord uses the microphone for voice input — your speech is transcribed on-device and never leaves your Mac.
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
-    # License activation deep-links: setsense://activate?key=… After checkout the
+    # License activation deep-links: setrecord://activate?key=… After checkout the
     # backend redirects here so the app self-activates. Rename note: the scheme
     # also lives in electron/services/licensing/signingKey.ts (ACTIVATION_SCHEME).
     - CFBundleURLTypes:
-        - CFBundleURLName: com.setsense.app.activation
+        - CFBundleURLName: com.setrecord.app.activation
           CFBundleURLSchemes:
-            - setsense
+            - setrecord
   # Notarization runs via Apple's notarytool. Credentials are read from the
   # environment at build time — never hardcode them here. Required env vars:
   #   APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID
@@ -106,5 +106,5 @@ npmRebuild: false
 publish:
   provider: github
   owner: carterpink
-  repo: setsensensev2
+  repo: setrecordv2
   releaseType: release

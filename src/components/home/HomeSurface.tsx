@@ -10,7 +10,9 @@ import {
   X,
   Trash2,
   MessageSquare,
-  Sparkles
+  Sparkles,
+  Building2,
+  ClipboardList
 } from 'lucide-react'
 import { useHomeStore } from '@/stores/homeStore'
 import { useRecallStore } from '@/stores/recallStore'
@@ -24,6 +26,9 @@ import { CompletenessMeter } from '@/components/onboarding/CompletenessMeter'
 import { StreakChip } from '@/components/onboarding/StreakChip'
 import { Composer, type ComposerPhase } from './Composer'
 import { HomeTurn } from './HomeTurn'
+import { BriefPanel } from '@/components/recall/BriefPanel'
+import { motion, AnimatePresence, fadeScale } from '@/components/shared/Motion'
+import type { VenueType } from '@/types'
 
 const PLACEHOLDER_KEYS = ['placeholders.talk', 'placeholders.build', 'placeholders.tonight']
 
@@ -140,6 +145,15 @@ export function HomeSurface(): React.JSX.Element {
   const voiceInputEnabled = useUiStore((s) => s.voiceInputEnabled)
   const canUse = useCanUse('recall')
   const tracks = useLibraryStore((s) => s.tracks)
+  const gigs = useRecallStore((s) => s.gigs)
+  const loadGigs = useRecallStore((s) => s.loadGigs)
+  const loadBrief = useRecallStore((s) => s.loadBrief)
+  const activeBrief = useRecallStore((s) => s.activeBrief)
+  const briefOpen = useRecallStore((s) => s.briefOpen)
+  const briefLoading = useRecallStore((s) => s.briefLoading)
+  const clearBrief = useRecallStore((s) => s.clearBrief)
+  const setSection = useRecallStore((s) => s.setSection)
+  const setMode = useUiStore((s) => s.setMode)
 
   const [value, setValue] = useState('')
   const [focused, setFocused] = useState(false)
@@ -174,6 +188,33 @@ export function HomeSurface(): React.JSX.Element {
     ],
     [sampleTitle, t]
   )
+
+  // Top venues for the "heading to a gig?" nudge (front-door discoverability).
+  const topVenues = useMemo(() => {
+    const m = new Map<string, { venue: string; count: number; eventType?: VenueType }>()
+    for (const g of gigs) {
+      const v = g.venue?.trim()
+      if (!v) continue
+      const k = v.toLowerCase()
+      const cur = m.get(k) ?? { venue: v, count: 0, eventType: g.eventType }
+      cur.count += 1
+      if (!cur.eventType && g.eventType) cur.eventType = g.eventType
+      m.set(k, cur)
+    }
+    return Array.from(m.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3)
+  }, [gigs])
+
+  const goToVenues = (): void => {
+    setMode('Library')
+    setSection('venues')
+  }
+
+  // Load gig history so the venue nudge can populate.
+  useEffect(() => {
+    void loadGigs()
+  }, [loadGigs])
 
   // Load + subscribe to model status so the "happens once" framing can appear.
   useEffect(() => {
@@ -291,6 +332,58 @@ export function HomeSurface(): React.JSX.Element {
                 )
               })}
             </div>
+            {topVenues.length > 0 && (
+              <motion.div
+                className="glass-2"
+                variants={fadeScale}
+                initial="hidden"
+                animate="visible"
+                style={{
+                  width: '100%',
+                  marginTop: 20,
+                  padding: '14px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <ClipboardList size={16} strokeWidth={1.6} />
+                  <strong>Heading to a gig?</strong>
+                  <button
+                    type="button"
+                    onClick={goToVenues}
+                    style={{
+                      marginLeft: 'auto',
+                      fontSize: 12,
+                      opacity: 0.75,
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'inherit'
+                    }}
+                  >
+                    See all venues →
+                  </button>
+                </div>
+                <div style={{ fontSize: 13, opacity: 0.7 }}>
+                  Tap a room for a game plan from your history there.
+                </div>
+                <div className="examples" style={{ marginTop: 0 }}>
+                  {topVenues.map((v) => (
+                    <button
+                      type="button"
+                      key={v.venue.toLowerCase()}
+                      className="example"
+                      onClick={() => void loadBrief(v.venue, v.eventType)}
+                    >
+                      <Building2 size={15} strokeWidth={1.6} />
+                      {v.venue}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
             <div
               style={{
                 display: 'flex',
@@ -330,6 +423,12 @@ export function HomeSurface(): React.JSX.Element {
       </div>
 
       {historyOpen && <HistoryDrawer onClose={() => setHistoryOpen(false)} />}
+
+      <AnimatePresence>
+        {briefOpen && (
+          <BriefPanel brief={activeBrief} loading={briefLoading} onClose={clearBrief} />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

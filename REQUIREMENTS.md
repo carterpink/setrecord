@@ -1,4 +1,4 @@
-# SetSense — Requirements Specification (Starter)
+# SetRecord — Requirements Specification (Starter)
 
 *A lightweight, living first draft. Not exhaustive — a real foundation to build on.*
 *Companion to the plain-English audit in [`REQUIREMENTS-AUDIT.md`](REQUIREMENTS-AUDIT.md).*
@@ -161,7 +161,7 @@
 |---|---|---|---|
 | NFR-701 | Every push runs typecheck, lint, unit tests and a build in CI before merge. | Implemented | `.github/workflows/ci.yml` |
 | NFR-702 | Build artifacts exclude source, tests, secrets (`*.pem`), docs and lockfiles. | Implemented | `electron-builder.yml` |
-| NFR-703 | User data lives in a standard macOS location (`~/Library/Application Support/SetSense/`). | Implemented | `README.md`, `PRD.md` |
+| NFR-703 | User data lives in a standard macOS location (`~/Library/Application Support/SetRecord/`). | Implemented | `README.md`, `PRD.md` |
 
 ### 2.8 Observability (ISO 25010: Maintainability / operability)
 | ID | Requirement | Status | Source |
@@ -188,7 +188,7 @@ Spotify integration · external AI/cloud API calls · cloud sync or user account
 mobile version · collaboration features · beat detection from audio (metadata only) · automatic BPM
 correction · social sharing.
 
-Implication: **scalability/backend NFRs are N/A by design** — SetSense is fully local and offline,
+Implication: **scalability/backend NFRs are N/A by design** — SetRecord is fully local and offline,
 so it could have many users and run zero servers.
 
 ---

@@ -9,7 +9,7 @@ import type {
 } from '../../src/types'
 
 // Pioneer CDJ format support differs by era; Engine OS (Denon) plays everything
-// SetSense knows about, so its only hard block is an unidentifiable format.
+// SetRecord knows about, so its only hard block is an unidentifiable format.
 const LEGACY_FORMATS = new Set(['mp3', 'aiff', 'wav'])
 const CDJ3000_FORMATS = new Set(['mp3', 'aiff', 'wav', 'flac', 'm4a'])
 const ENGINE_FORMATS = new Set(['mp3', 'aiff', 'wav', 'flac', 'm4a'])

@@ -11,8 +11,9 @@
 
 import type { LibrarySearchParams } from '@/types'
 import { interpretTurn } from '@/utils/recallQuery'
+import { detectReverseShazam, type ShazamHit } from '@/utils/reverseShazamIntent'
 
-export type HomeKind = 'forgotten' | 'warmup' | 'after' | 'duplicates' | 'generic'
+export type HomeKind = 'forgotten' | 'warmup' | 'after' | 'duplicates' | 'shazam' | 'generic'
 
 export interface ForgottenFilters {
   kind: 'forgotten'
@@ -41,6 +42,13 @@ export interface DuplicatesFilters {
   match: 'Audio' | 'Tags'
   keep: 'Highest quality' | 'Newest'
 }
+export interface ShazamFilters {
+  kind: 'shazam'
+  /** The detected moment anchor (occasion / position / clock hour). */
+  hit: ShazamHit
+  /** The raw query, for the "I read that as" line + re-runs. */
+  query: string
+}
 export interface GenericFilters {
   kind: 'generic'
   params: LibrarySearchParams
@@ -57,6 +65,7 @@ export type HomeFilters =
   | WarmupFilters
   | AfterFilters
   | DuplicatesFilters
+  | ShazamFilters
   | GenericFilters
 
 export interface HomeInterpretation {
@@ -156,7 +165,20 @@ export function interpretHome(raw: string): HomeInterpretation {
     }
   }
 
-  // 2) Build a set (warm-up or any timed set)
+  // 2) Reverse-Shazam: recall a track by the MOMENT it was played (occasion /
+  //    position / clock anchor). Fires before the generic path; the detector
+  //    self-guards so plain gig recall ("what did I play last Saturday") falls
+  //    through to the deterministic interpreter below.
+  const shazamHit = detectReverseShazam(raw)
+  if (shazamHit) {
+    return {
+      kind: 'shazam',
+      filters: { kind: 'shazam', hit: shazamHit, query: raw },
+      followups: ['Show the whole set', 'What did I open with', 'What did I close with']
+    }
+  }
+
+  // 3) Build a set (warm-up or any timed set)
   if (isBuildRequest(q)) {
     const bpm = parseTargetBpm(q) ?? 124
     const length = parseMinutes(q) ?? 90
@@ -268,6 +290,14 @@ export function readSummary(f: HomeFilters): string {
       return `mixing out of ${f.source}, ${f.inKey ? 'harmonic' : 'any key'}, energy ${f.energy.toLowerCase()}`
     case 'duplicates':
       return `matched on ${f.match.toLowerCase()}, keeping the ${f.keep.toLowerCase()}`
+    case 'shazam': {
+      const parts: string[] = []
+      if (f.hit.occasion) parts.push(f.hit.occasion.toUpperCase())
+      if (typeof f.hit.position === 'number') parts.push(`track #${f.hit.position}`)
+      else if (f.hit.position) parts.push(`the ${f.hit.position} track`)
+      if (f.hit.clockHour !== undefined) parts.push(`around ${f.hit.clockHour}:00`)
+      return `recalling ${parts.join(', ') || 'a moment'} from your sets`
+    }
     case 'generic':
       return f.ask ? 'reading your whole library' : f.narration.replace(/^Here(?:’s| are)\s*/i, '')
   }

@@ -1,7 +1,7 @@
 /**
- * SetSense AI eval harness runner.
+ * SetRecord AI eval harness runner.
  *
- * Runs every encoded prompt from setsense_ai_eval_matrix.md through the headless
+ * Runs every encoded prompt from setrecord_ai_eval_matrix.md through the headless
  * engine driver and scores it against its "Pass when" predicate. Writes a
  * scorecard (tests/eval/scorecard.md) on every run.
  *
@@ -69,7 +69,7 @@ function scorecard(rows: Row[]): string {
   const total = rows.length
   const passed = rows.filter((r) => r.pass).length
   const lines: string[] = []
-  lines.push('# SetSense AI Eval Scorecard')
+  lines.push('# SetRecord AI Eval Scorecard')
   lines.push('')
   lines.push(
     `**Overall: ${passed}/${total} (${pct(passed, total)})** · ${ALL_CASES.length} encoded`
@@ -115,7 +115,7 @@ function scorecard(rows: Row[]): string {
   return lines.join('\n')
 }
 
-describe('SetSense AI eval matrix', () => {
+describe('SetRecord AI eval matrix', () => {
   it('runs every encoded case and writes a scorecard', () => {
     const rows = run()
     const card = scorecard(rows)

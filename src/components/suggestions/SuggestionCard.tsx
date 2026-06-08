@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from '@/components/shared/Motion'
 import type { Variants } from 'framer-motion'
 import { useClickOrDoubleClick } from '@/hooks/useClickOrDoubleClick'
 import { usePlaybackStore } from '@/stores/playbackStore'
+import { useTrackInspectStore } from '@/stores/trackInspectStore'
 import { BpmChip } from '@/components/shared/BpmChip'
 import { MatchReasonChips } from './MatchReasonChips'
 
@@ -84,6 +85,11 @@ export function SuggestionCard({
       }}
       onClick={unavailable ? undefined : onClick}
       onDoubleClick={unavailable ? undefined : onDoubleClick}
+      onContextMenu={(e) => {
+        // Right-click → Track Résumé (lived reputation) for this suggestion.
+        e.preventDefault()
+        void useTrackInspectStore.getState().openResume(track)
+      }}
       {...listeners}
       {...attributes}
     >

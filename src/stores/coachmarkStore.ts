@@ -15,7 +15,7 @@ import { create } from 'zustand'
  */
 export type CoachmarkKey = 'camelot' | 'bpm' | 'energy' | 'transition' | 'energyCurve'
 
-const STORAGE_KEY = 'setsense-coachmarks-seen'
+const STORAGE_KEY = 'setrecord-coachmarks-seen'
 
 function loadSeen(): Record<string, boolean> {
   if (typeof window === 'undefined') return {}

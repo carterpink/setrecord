@@ -92,9 +92,11 @@
     "actionsAria": "Actions for {{title}}",
     "preview": "Preview",
     "findSimilar": "Find similar tracks",
+    "courage": "Dare something different",
     "addToSet": "Add to set",
     "editCues": "Edit cue points",
     "playedAfter": "What have I played after this?",
+    "trackResume": "Track résumé",
     "editTags": "Edit tags…"
   },
   "trackRow": {
@@ -146,8 +148,8 @@
     "directTitle": "Write directly to Rekordbox",
     "advanced": "Advanced",
     "directDetail": "Real, filterable MyTags. Takes a backup first; Rekordbox must be closed.",
-    "warning": "This writes directly into your Rekordbox library. <0>Close Rekordbox first.</0> SetSense saves a timestamped backup of your database before writing, and rolls back if anything goes wrong.",
-    "bullet1": "Creates a “SetSense” MyTag group with your tags",
+    "warning": "This writes directly into your Rekordbox library. <0>Close Rekordbox first.</0> SetRecord saves a timestamped backup of your database before writing, and rolls back if anything goes wrong.",
+    "bullet1": "Creates a “SetRecord” MyTag group with your tags",
     "bullet2": "Tags only tracks that came from your Rekordbox library",
     "bullet3": "Won’t duplicate tags a track already has",
     "back": "Back",

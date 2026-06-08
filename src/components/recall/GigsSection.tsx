@@ -9,13 +9,16 @@ import {
   Layers,
   Sparkles,
   ChevronDown,
-  ClipboardList
+  ClipboardList,
+  Copy
 } from 'lucide-react'
-import type { PlaySession, SessionMetadataPatch, VenueType, SetSlot } from '@/types'
+import type { PlaySession, SessionMetadataPatch, SessionTrack, VenueType, SetSlot } from '@/types'
 import { useRecallStore } from '@/stores/recallStore'
 import { useLibraryStore } from '@/stores/libraryStore'
+import { useToastStore } from '@/stores/toastStore'
 import { NoLibraryState } from '@/components/shared/NoLibraryState'
 import { RecallTrackLine } from './RecallTrackLine'
+import { SetPlayer } from './SetPlayer'
 import { BriefPanel } from './BriefPanel'
 import { AnimatePresence } from '@/components/shared/Motion'
 
@@ -27,6 +30,36 @@ function formatDate(iso: string | undefined, locale: string, undated: string): s
   const d = new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso)
   if (isNaN(d.getTime())) return iso
   return d.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+/** ms offset from set start → "m:ss" (or "h:mm:ss" past an hour). */
+function offsetLabel(ms: number): string {
+  const total = Math.max(0, Math.round(ms / 1000))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  const mm = h > 0 ? String(m).padStart(2, '0') : String(m)
+  return `${h > 0 ? `${h}:` : ''}${mm}:${String(s).padStart(2, '0')}`
+}
+
+/**
+ * A plain-text, copy-pasteable tracklist — the artefact every DJ gets asked for
+ * ("track ID?"). Each line is "N. Artist — Title [m:ss]", with the timestamp shown
+ * only when a per-track played_at is known (Flight-Recorder sets); imported sets
+ * without per-track timing just list the order.
+ */
+function formatTracklistText(session: PlaySession, tracks: SessionTrack[]): string {
+  const startMs = session.performedAt ? new Date(session.performedAt).getTime() : NaN
+  const lines = tracks.map((st, i) => {
+    let stamp = ''
+    if (st.playedAt && !isNaN(startMs)) {
+      const off = new Date(st.playedAt).getTime() - startMs
+      if (off >= 0) stamp = ` [${offsetLabel(off)}]`
+    }
+    return `${i + 1}. ${st.track.artist} — ${st.track.title}${stamp}`
+  })
+  const header = session.venue ? `${session.name} · ${session.venue}` : session.name
+  return `${header}\n${lines.join('\n')}`
 }
 
 /** A single editable gig row. */
@@ -309,6 +342,16 @@ export function GigsSection(): React.JSX.Element {
     void loadGigs()
   }, [loadGigs])
 
+  const copyTracklist = async (): Promise<void> => {
+    if (!tracklist) return
+    try {
+      await navigator.clipboard.writeText(formatTracklistText(tracklist.session, tracklist.tracks))
+      useToastStore.getState().success(t('gigs.tracklistCopied'))
+    } catch {
+      /* clipboard blocked — non-fatal */
+    }
+  }
+
   const filterLabel = useMemo(() => {
     if (!gigFilter) return null
     const bits: string[] = []
@@ -373,21 +416,37 @@ export function GigsSection(): React.JSX.Element {
                   {tracklist.session.venue ? ` · ${tracklist.session.venue}` : ''}
                 </span>
               </div>
-              <button type="button" onClick={clearGigTracklist}>
-                <X size={18} strokeWidth={1.5} />
-              </button>
+              <div className="gig-tracklist-actions">
+                <button
+                  type="button"
+                  className="gig-tracklist-copy"
+                  onClick={() => void copyTracklist()}
+                  title={t('gigs.copyTracklist')}
+                >
+                  <Copy size={15} strokeWidth={1.6} /> {t('gigs.copyTracklist')}
+                </button>
+                <button type="button" onClick={clearGigTracklist}>
+                  <X size={18} strokeWidth={1.5} />
+                </button>
+              </div>
             </header>
-            <div className="recall-list">
-              {tracklist.tracks.map((st) => (
-                <RecallTrackLine key={st.id} track={st.track} compact />
-              ))}
-            </div>
+            {tracklist.recording ? (
+              <SetPlayer recording={tracklist.recording} tracks={tracklist.tracks} />
+            ) : (
+              <div className="recall-list">
+                {tracklist.tracks.map((st) => (
+                  <RecallTrackLine key={st.id} track={st.track} compact />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
 
       <AnimatePresence>
-        {briefOpen && <BriefPanel brief={activeBrief} loading={briefLoading} onClose={clearBrief} />}
+        {briefOpen && (
+          <BriefPanel brief={activeBrief} loading={briefLoading} onClose={clearBrief} />
+        )}
       </AnimatePresence>
     </div>
   )

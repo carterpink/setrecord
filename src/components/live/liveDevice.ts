@@ -1,4 +1,4 @@
-/** Persisted choice of which audio input feeds SetSense Live. */
+/** Persisted choice of which audio input feeds SetRecord Live. */
 const KEY = 'ss-live-input-device'
 
 export function getPreferredInputId(): string | undefined {

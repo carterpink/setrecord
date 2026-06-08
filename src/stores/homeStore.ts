@@ -27,7 +27,7 @@ import {
 import { useLibraryStore } from '@/stores/libraryStore'
 import { isProUser } from '@/utils/premium'
 
-const CONVO_KEY = 'setsense-home-convos'
+const CONVO_KEY = 'setrecord-home-convos'
 const MAX_CONVOS = 50
 
 /** A duplicate group resolved into keep/drop tracks for the cleanup card. */
@@ -103,8 +103,8 @@ interface HomeConversation {
 
 const uid = (): string => crypto.randomUUID()
 
-function api(): Window['setsense'] | undefined {
-  return typeof window !== 'undefined' ? window.setsense : undefined
+function api(): Window['setrecord'] | undefined {
+  return typeof window !== 'undefined' ? window.setrecord : undefined
 }
 
 function trackMap(): Map<string, Track> {
@@ -282,6 +282,17 @@ async function runDuplicates(f: HomeFilters & { kind: 'duplicates' }): Promise<H
   return { kind: 'duplicates', groups, total: groups.length }
 }
 
+async function runShazam(f: HomeFilters & { kind: 'shazam' }): Promise<HomeResult> {
+  const s = api()
+  if (!s) return { kind: 'empty', note: 'Memory engine unavailable in preview.' }
+  const ans = await s.historyReverseShazam(f.hit)
+  const tracks = ans.tracks ?? []
+  // Reuse the generic 'tracks' card: a single pick or the whole set, with the
+  // moment-aware narration. 'empty' carries the honest "no such set" note.
+  if (ans.kind === 'empty' || tracks.length === 0) return { kind: 'empty', note: ans.narration }
+  return { kind: 'tracks', tracks, narration: ans.narration }
+}
+
 async function runGeneric(f: HomeFilters & { kind: 'generic' }): Promise<HomeResult> {
   const s = api()
   if (!s) return { kind: 'empty', note: 'Library engine unavailable in preview.' }
@@ -304,6 +315,8 @@ async function execute(filters: HomeFilters): Promise<HomeResult> {
       return runAfter(filters)
     case 'duplicates':
       return runDuplicates(filters)
+    case 'shazam':
+      return runShazam(filters)
     case 'generic':
       return runGeneric(filters)
   }

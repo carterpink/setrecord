@@ -1,5 +1,5 @@
 <!--
-  SetSense glyph — the monochrome, 1-colour cut of the brand mark.
+  SetRecord glyph — the monochrome, 1-colour cut of the brand mark.
   Use for favicon, embroidery, watermarks, and wordmark lockups where the
   squircle tile is not wanted. `currentColor` so it inherits text colour;
   override `stroke` as needed. A solid letterform survives in one ink.

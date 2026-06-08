@@ -2,7 +2,7 @@
  * The eval "ground-truth world".
  *
  * A compact but deliberately-shaped library + gig history that makes every
- * entity-specific prompt in setsense_ai_eval_matrix.md objectively checkable.
+ * entity-specific prompt in setrecord_ai_eval_matrix.md objectively checkable.
  * Dates are derived relative to a captured `now` so time-relative prompts
  * ("added this week", "last Saturday", "this year") have deterministic answers.
  *

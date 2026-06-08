@@ -12,7 +12,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, existsSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 
-const USER_DATA = mkdtempSync(join(tmpdir(), 'setsense-reset-'))
+const USER_DATA = mkdtempSync(join(tmpdir(), 'setrecord-reset-'))
 const ARTWORK_DIR = join(USER_DATA, 'artwork')
 const ENERGY_CACHE = join(USER_DATA, 'energy-cache.json')
 

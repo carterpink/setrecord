@@ -147,8 +147,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       // Fetch tracks + playlists in parallel — both come from the same DB but the
       // round trips overlap, and the index can build while React rerenders the list.
       const [raw, playlists] = await Promise.all([
-        window.setsense.getLibrary(),
-        window.setsense.getPlaylists().catch(() => [] as Playlist[])
+        window.setrecord.getLibrary(),
+        window.setrecord.getPlaylists().catch(() => [] as Playlist[])
       ])
       const tracks = withGradient(raw)
       set({
@@ -214,7 +214,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         t.id === trackId ? { ...t, energy: clamped, energySource: 'user' as EnergySource } : t
       )
     set((s) => ({ tracks: patch(s.tracks), searchResults: patch(s.searchResults) }))
-    await window.setsense.setTrackEnergy(trackId, clamped)
+    await window.setrecord.setTrackEnergy(trackId, clamped)
   },
 
   patchTrackTags: (trackId, tags) => {
@@ -223,12 +223,12 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   },
 
   setTrackTags: async (trackId, category, values) => {
-    const updated = await window.setsense.tagsSetOverride(trackId, category, values)
+    const updated = await window.setrecord.tagsSetOverride(trackId, category, values)
     if (updated) get().patchTrackTags(trackId, updated)
   },
 
   resetTrackTagsToAuto: async (trackId, category) => {
-    const updated = await window.setsense.tagsResetToAuto(trackId, category)
+    const updated = await window.setrecord.tagsResetToAuto(trackId, category)
     if (updated) get().patchTrackTags(trackId, updated)
   },
 
@@ -244,11 +244,11 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
           : t
       )
     set((s) => ({ tracks: patch(s.tracks), searchResults: patch(s.searchResults) }))
-    await window.setsense.updateTrackMeta(trackId, fields)
+    await window.setrecord.updateTrackMeta(trackId, fields)
   },
 
   relinkTrackFile: async (trackId) => {
-    const filePath = await window.setsense.relinkTrackFile(trackId)
+    const filePath = await window.setrecord.relinkTrackFile(trackId)
     if (filePath) {
       const patch = (arr: Track[]): Track[] =>
         arr.map((t) => (t.id === trackId ? { ...t, filePath, missingFile: false } : t))
@@ -266,7 +266,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   },
 
   refreshFileHealth: async () => {
-    await window.setsense.triggerHealthCheck()
+    await window.setrecord.triggerHealthCheck()
   },
 
   startImportFlow: async () => {
@@ -279,7 +279,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       importError: null
     })
     try {
-      const sources = await window.setsense.detectImportSources()
+      const sources = await window.setrecord.detectImportSources()
       set({ availableSources: sources, importState: 'source-picker' })
     } catch (err) {
       console.error('[libraryStore] detectImportSources failed', err)
@@ -312,14 +312,14 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     if (!source?.libraryPath) return
 
     set({ importState: 'importing', importProgress: null, importError: null })
-    const unsubscribe = window.setsense.onImportProgress((p) => set({ importProgress: p }))
+    const unsubscribe = window.setrecord.onImportProgress((p) => set({ importProgress: p }))
     try {
-      const result = await window.setsense.runImport(id, source.libraryPath)
+      const result = await window.setrecord.runImport(id, source.libraryPath)
       set({ stats: result.stats, importState: 'done', libraryStale: false })
       void useLicenseStore.getState().hydrate()
       await get().loadLibrary()
       // Cues/beatgrids stream in via a background pass — reload when it finishes.
-      const stop = window.setsense.onPostImportProgress((p) => {
+      const stop = window.setrecord.onPostImportProgress((p) => {
         if (p.phase === 'done') {
           stop()
           void get().loadLibrary()
@@ -342,7 +342,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       importError: null
     })
     try {
-      const detection = await window.setsense.detectRekordbox()
+      const detection = await window.setrecord.detectRekordbox()
       // 'detected' covers anything where master.db exists (even if locked or
       // key-mismatched) — the modal renders a contextual CTA. Only fall back
       // to the not-detected XML guide when there's no master.db at all.
@@ -362,11 +362,11 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     if (!detection?.dbPath) return
 
     set({ importState: 'importing', importProgress: null, importError: null })
-    const unsubscribe = window.setsense.onImportProgress((p) => {
+    const unsubscribe = window.setrecord.onImportProgress((p) => {
       set({ importProgress: p })
     })
     try {
-      const result = await window.setsense.importFromRekordboxDb(detection.dbPath)
+      const result = await window.setrecord.importFromRekordboxDb(detection.dbPath)
       set({ stats: result.stats, importState: 'done', libraryStale: false })
       // A successful import may have armed the free Pro trial — re-read entitlement.
       void useLicenseStore.getState().hydrate()
@@ -386,15 +386,15 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   },
 
   triggerXmlImport: async () => {
-    const xmlPath = await window.setsense.selectXmlFile()
+    const xmlPath = await window.setrecord.selectXmlFile()
     if (!xmlPath) return
 
     set({ importState: 'importing', importProgress: null, importError: null })
-    const unsubscribe = window.setsense.onImportProgress((p) => {
+    const unsubscribe = window.setrecord.onImportProgress((p) => {
       set({ importProgress: p })
     })
     try {
-      const result = await window.setsense.importLibrary(xmlPath)
+      const result = await window.setrecord.importLibrary(xmlPath)
       set({ stats: result.stats, importState: 'done', libraryStale: false })
       // A successful import may have armed the free Pro trial — re-read entitlement.
       void useLicenseStore.getState().hydrate()
@@ -431,7 +431,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
   checkStale: async () => {
     try {
-      const status = await window.setsense.checkRekordboxStale()
+      const status = await window.setrecord.checkRekordboxStale()
       set({ libraryStale: status.stale })
     } catch (err) {
       console.error('[libraryStore] checkStale failed', err)

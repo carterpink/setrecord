@@ -75,7 +75,7 @@ phase('Triage')
 log(`Branch: ${BRANCH} (base: ${BASE}) — clear pre-existing typecheck/lint so the logging stack is green`)
 
 const triage = await agent(
-  `SetSense (Electron 33 / TS / React / better-sqlite3 / Vitest / ESLint). Repo: /Users/samcarter/Documents/SetSenseV2
+  `SetRecord (Electron 33 / TS / React / better-sqlite3 / Vitest / ESLint). Repo: /Users/samcarter/Documents/SetRecordV2
 You are in a FRESH ISOLATED git worktree. TRIAGE ONLY — do not edit code yet.
 
 1. git fetch origin ${BASE} --depth=1 ; git checkout -b ${BRANCH} origin/${BASE}
@@ -106,7 +106,7 @@ if (wip.length) log(`⚠ ${wip.length} file(s) look like incomplete WIP: ${wip.m
 phase('Fix')
 
 const fix = await agent(
-  `SetSense. Repo: /Users/samcarter/Documents/SetSenseV2. You are in a FRESH ISOLATED git worktree.
+  `SetRecord. Repo: /Users/samcarter/Documents/SetRecordV2. You are in a FRESH ISOLATED git worktree.
 GOAL: make \`npm run typecheck\`, \`npm run lint\`, \`npm test\`, and \`npm run build\` ALL pass on branch ${BRANCH},
 so the NFR-801 logging stack underneath it goes green in CI. These are PRE-EXISTING errors, not from the logging work.
 

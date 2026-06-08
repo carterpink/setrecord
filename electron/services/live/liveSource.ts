@@ -1,5 +1,5 @@
 /**
- * Live deck-state input for SetSense Live.
+ * Live deck-state input for SetRecord Live.
  *
  * A `LiveSource` is a provider that tells the app what's playing right now. The
  * UI and recommendation engine depend only on this interface and the

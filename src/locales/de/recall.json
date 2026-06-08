@@ -9,7 +9,8 @@
     "venues": "Locations",
     "identity": "Identität",
     "health": "Zustand",
-    "fallback": "Recall"
+    "fallback": "Recall",
+    "graph": "Konstellation"
   },
   "panel": {
     "noLibrary": "Recall liest deine gesamte Sammlung — entdeckt vergessene Schätze wieder, kartiert deinen Sound und zeichnet die Übergänge nach, zu denen du greifst. Importiere deine Bibliothek, um es zum Leben zu erwecken."
@@ -164,6 +165,10 @@
     "noMatch": "Keine Gigs passen zu diesem Filter.",
     "noSessions": "Noch keine gespielten Sessions — importiere den Rekordbox-Verlauf oder markiere ein Set als gespielt.",
     "viewTracklist": "Tracklist ansehen",
+    "copyTracklist": "Tracklist kopieren",
+    "tracklistCopied": "Tracklist kopiert",
+    "recordingLabel": "Set-Aufnahme",
+    "jumpToTrack": "Zu diesem Track in der Aufnahme springen",
     "editGig": "Gig bearbeiten",
     "addVenue": "Venue hinzufügen",
     "autoBadge": "auto",
@@ -322,7 +327,7 @@
     "title": "Wiederentdecken",
     "subtitle": "Tracks, die du früher gespielt hast und die jetzt verstauben. Hol einen zurück in die Rotation.",
     "noLibraryTitle": "Vergessene Schätze tauchen auf, während du spielst",
-    "noLibraryBody": "Importiere deine Bibliothek und SetSense bringt Tracks wieder hoch, die du einst geliebt, aber eine Weile nicht angerührt hast.",
+    "noLibraryBody": "Importiere deine Bibliothek und SetRecord bringt Tracks wieder hoch, die du einst geliebt, aber eine Weile nicht angerührt hast.",
     "digging": "Wühle durch deine Crates…",
     "empty": "Noch keine vergessenen Schätze — der Wiedergabeverlauf lässt das mit der Zeit wachsen."
   },
@@ -373,5 +378,86 @@
       "energyValue": "{{value}}/10",
       "length": "Länge"
     }
+  },
+  "graph": {
+    "title": "Konstellation",
+    "lensLabel": "Zeit-Linse",
+    "loading": "Deine Bibliothek wird kartiert…",
+    "error": "Karte konnte nicht erstellt werden.",
+    "centeredOn": "Zentriert auf",
+    "trackCount": "{{count}} Tracks",
+    "mode": {
+      "past": "Vergangenheit",
+      "future": "Zukunft",
+      "diff": "Differenz",
+      "present": "Gegenwart"
+    },
+    "tagline": {
+      "past": "Jeder Track, den du gemixt hast – kartiert",
+      "future": "Jeder Mix, den du machen könntest",
+      "diff": "Kompatibel – aber nie ausprobiert",
+      "present": "Das Set, das du gerade baust"
+    },
+    "empty": {
+      "past": {
+        "title": "Noch keine Mixe kartiert",
+        "body": "Zeichne ein Set auf oder baue eines, dann verbinden sich deine Tracks zu einer Konstellation der Übergänge, die du wirklich gespielt hast."
+      },
+      "future": {
+        "title": "Keine kompatiblen Nachbarn",
+        "body": "Rund um diesen Track tauchte harmonisch oder rhythmisch nichts Kompatibles auf. Versuche einen anderen Ausgangstrack."
+      },
+      "diff": {
+        "title": "Du hast sie alle gemixt",
+        "body": "Jeder kompatible Track in der Nähe steht schon in deiner Historie – hier gibt es keine unentdeckten Paare. Versuche einen anderen Track."
+      },
+      "present": {
+        "title": "Kein Set in Arbeit",
+        "body": "Öffne ein Set in Build (oder geh live), dann leuchtet es hier als glühender Pfad auf — jeder Track in Spielreihenfolge."
+      }
+    },
+    "lock": {
+      "future": {
+        "title": "Sieh, wohin jeder Track führen kann",
+        "body": "Zukunft kartiert die harmonisch und im BPM passenden Mixe, die in deiner Bibliothek schlummern. Mit Pro freischalten."
+      },
+      "diff": {
+        "title": "Finde Mixe, die du nie probiert hast",
+        "body": "Differenz zeigt kompatible Paare, die du nie gespielt hast – dein nächster typischer Übergang. Mit Pro freischalten."
+      }
+    },
+    "legend": {
+      "mixed": "Schon gemixt",
+      "gig": "Bei einem Gig gespielt",
+      "path": "Dein Set, der Reihe nach",
+      "compatible": "Könntest du mixen",
+      "novel": "Nie ausprobiert"
+    },
+    "scrub": {
+      "title": "Gemixt in",
+      "all": "Alle"
+    },
+    "scopeLabel": "Umfang",
+    "scope": {
+      "neighborhood": "Umfeld",
+      "library": "Galaxie",
+      "context": "Dieses Set"
+    },
+    "path": {
+      "toggle": "Set bauen",
+      "title": "Pfad",
+      "hint": "Klicke Tracks an, um sie der Reihe nach zu einem Set zu verketten.",
+      "route": "Auto-Route",
+      "add": "Zum Set",
+      "save": "Als Set speichern",
+      "remove": "Entfernen",
+      "clear": "Leeren",
+      "exit": "Pfadmodus verlassen",
+      "setName": "Konstellations-Pfad"
+    },
+    "search": {
+      "placeholder": "Track finden…"
+    },
+    "genreCount": "{{count}} Genres"
   }
 }

@@ -1,5 +1,5 @@
 /* global React */
-/* SetSense Home — answers: interpretation line + result renderers + follow-ups */
+/* SetRecord Home — answers: interpretation line + result renderers + follow-ups */
 const { useState: useStateRes } = React;
 
 // ---------- shared bits ----------

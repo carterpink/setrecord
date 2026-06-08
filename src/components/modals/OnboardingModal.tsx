@@ -32,8 +32,8 @@ export function OnboardingModal(): React.JSX.Element {
     // Learn Mode mirrors it as the default for the richer Pro overlay.
     setIsBeginner(isBeginner)
     setLearnModeEnabled(isBeginner)
-    if (typeof window !== 'undefined' && window.setsense) {
-      void window.setsense.setSettings({ hasSeenProficiencyAsk: true })
+    if (typeof window !== 'undefined' && window.setrecord) {
+      void window.setrecord.setSettings({ hasSeenProficiencyAsk: true })
     }
     setStep('import')
   }

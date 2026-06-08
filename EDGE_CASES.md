@@ -1,4 +1,4 @@
-# SetSense — Edge Case Catalogue
+# SetRecord — Edge Case Catalogue
 
 > **Purpose.** A stress-test map of the "wildly unimaginable" inputs and states this app can hit, across the four risk areas: **Import/parsers**, **Export/USB**, **Memory/recall/AI**, **Licensing/DB/core**. Each case states the scenario, the expected behaviour, and how it is verified.
 >
@@ -237,7 +237,7 @@ Export is the highest-stakes path: a bad USB means a dead deck mid-set. Rule of 
 - EC-EXP-035 📝 USB ejected mid-export → clean failure, no half-written DB.
 - EC-EXP-036 📝 Read-only USB → permission error surfaced.
 - EC-EXP-037 📝 10k-track export → progress callback monotonic, completes.
-- EC-EXP-038 📝 Two SetSense exports to same USB → second merges/coexists, doesn't clobber first.
+- EC-EXP-038 📝 Two SetRecord exports to same USB → second merges/coexists, doesn't clobber first.
 - EC-EXP-039 📝 Source audio file deleted between validate and copy → blocking error, not silent skip.
 
 ## 2.4 Rekordbox XML export (`exportSet`, `formatTagsComment`, `encodeFilePath`, `buildPositionMarks`)

@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation, Trans } from 'react-i18next'
 import {
+  Building2,
   Download,
   Home,
   Library,
@@ -13,7 +14,7 @@ import {
   TimerReset,
   Upload
 } from 'lucide-react'
-import type { AppMode, TransitionDotKind } from '@/types'
+import type { AppMode, RecordedSetSummary, TransitionDotKind } from '@/types'
 import { Badge } from '@/components/shared/Badge'
 import { Button } from '@/components/shared/Button'
 import { Logo } from '@/components/shared/Logo'
@@ -26,10 +27,14 @@ import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useLicenseStore, useTrialInfo, useRenewalInfo } from '@/stores/licenseStore'
 import { startAudioFeed, type AudioFeedHandle } from '@/components/live/audioFeed'
+import { startRoomRecorder, type RoomRecorderHandle } from '@/components/live/roomRecorder'
 import { startScreenReader, type ScreenReaderHandle } from '@/components/live/screenReader'
 import { LiveDevicePicker } from '@/components/live/LiveDevicePicker'
 import { getPreferredInputId } from '@/components/live/liveDevice'
+import { SaveSetSheet } from '@/components/live/SaveSetSheet'
 import { useToastStore } from '@/stores/toastStore'
+import { useRecallStore } from '@/stores/recallStore'
+import { Modal } from '@/components/shared/Modal'
 import { VolumePopover } from './VolumePopover'
 
 const MODES: readonly AppMode[] = ['Home', 'Library', 'Build'] as const
@@ -61,41 +66,87 @@ export function TopBar(): React.JSX.Element {
   const libraryStale = useLibraryStore((s) => s.libraryStale)
   const checkStale = useLibraryStore((s) => s.checkStale)
 
-  // SetSense Live runs in a separate transparent overlay window (main process).
+  // SetRecord Live runs in a separate transparent overlay window (main process).
   // Track open/closed here so the toggle reflects reality, including when the
   // overlay is dismissed from its own End button.
   const [isLive, setIsLive] = useState(false)
   const feedRef = useRef<AudioFeedHandle | null>(null)
   const screenRef = useRef<ScreenReaderHandle | null>(null)
+  const recorderRef = useRef<RoomRecorderHandle | null>(null)
+  const gigs = useRecallStore((s) => s.gigs)
+  const loadGigs = useRecallStore((s) => s.loadGigs)
+  const [venuePickerOpen, setVenuePickerOpen] = useState(false)
+  // When a live set ends, the main process hands us the captured tracklist for the
+  // Save/Discard decision. null = no pending recording to review.
+  const [recSummary, setRecSummary] = useState<RecordedSetSummary | null>(null)
 
   const stopSensors = (): void => {
     void feedRef.current?.stop()
     feedRef.current = null
     void screenRef.current?.stop()
     screenRef.current = null
+    if (recorderRef.current) {
+      recorderRef.current.stop()
+      recorderRef.current = null
+      window.setrecord?.liveRecordingActive(false)
+    }
   }
 
   useEffect(() => {
-    if (typeof window.setsense === 'undefined') return
+    if (typeof window.setrecord === 'undefined') return
     // If the overlay is closed from its own End button, mirror it here.
-    return window.setsense.onLiveOverlayClosed(() => {
+    return window.setrecord.onLiveOverlayClosed(() => {
       stopSensors()
       setIsLive(false)
     })
   }, [])
 
+  // A live set just ended — open the Save/Discard review sheet with its tracklist.
+  useEffect(() => {
+    if (typeof window.setrecord === 'undefined') return
+    return window.setrecord.onLiveRecordingReady((rec) => setRecSummary(rec))
+  }, [])
+
+  const saveRecordedSet = async (venue: string | null): Promise<void> => {
+    const id = await window.setrecord?.liveSaveSession({ venue })
+    setRecSummary(null)
+    if (id) {
+      useToastStore.getState().success(t('live.setSaved'))
+      void loadGigs()
+    }
+  }
+
+  const discardRecordedSet = (): void => {
+    void window.setrecord?.liveDiscardSession()
+    setRecSummary(null)
+  }
+
+  // Venues for the "which room?" prompt shown when going Live.
+  useEffect(() => {
+    void loadGigs()
+  }, [loadGigs])
+  const topVenues = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const g of gigs) {
+      const v = g.venue?.trim()
+      if (v && !m.has(v.toLowerCase())) m.set(v.toLowerCase(), v)
+    }
+    return Array.from(m.values()).slice(0, 8)
+  }, [gigs])
+
   function toggleLive(): void {
     if (isLive) {
-      void window.setsense?.liveStop()
+      void window.setrecord?.liveStop()
       stopSensors()
       setIsLive(false)
+      setVenuePickerOpen(false)
       return
     }
     setIsLive(true)
 
     // Primary sensor: read the screen (universal — Rekordbox/Serato/Spotify/etc).
     // Kicked off on the click so getDisplayMedia keeps its user gesture.
-    startScreenReader((lines) => window.setsense?.liveScreenText(lines))
+    startScreenReader((lines) => window.setrecord?.liveScreenText(lines))
       .then((h) => {
         screenRef.current = h
       })
@@ -105,22 +156,39 @@ export function TopBar(): React.JSX.Element {
       })
 
     // Open the overlay + minimise + start the metadata poll.
-    void window.setsense?.liveStart()
+    void window.setrecord?.liveStart()
 
     // Optional audio fingerprint fallback — only if a loopback/master input is
     // explicitly chosen (avoids a needless mic prompt for the default flow).
     const dev = getPreferredInputId()
     if (dev) {
-      startAudioFeed(dev, (samples) => window.setsense?.liveAudioWindow(samples))
+      startAudioFeed(dev, (samples) => window.setrecord?.liveAudioWindow(samples))
         .then((h) => {
           feedRef.current = h
         })
         .catch((err) => console.error('[live] audio capture failed', err))
     }
+
+    // Flight Recorder: capture lo-fi room-mic audio of the set, but only when the
+    // DJ has opted in (privacy-sensitive). Read the setting fresh each go-live so a
+    // toggle change takes effect without a restart. Best-effort — a mic failure
+    // never affects the tracklist.
+    void window.setrecord?.getSettings().then((s) => {
+      if (!s.flightRecorderEnabled) return
+      startRoomRecorder((chunk) => window.setrecord?.liveRecChunk(chunk))
+        .then((h) => {
+          recorderRef.current = h
+          window.setrecord?.liveRecordingActive(true)
+        })
+        .catch((err) => console.error('[live] room recorder failed', err))
+    })
+
+    // Prompt for the room so the HUD has venue context (and the Black Box later).
+    if (topVenues.length > 0) setVenuePickerOpen(true)
   }
 
   // Refresh stale flag on mount + every time the window regains focus —
-  // covers "the user just closed Rekordbox and came back to SetSense."
+  // covers "the user just closed Rekordbox and came back to SetRecord."
   useEffect(() => {
     void checkStale()
     const handler = (): void => {
@@ -395,6 +463,52 @@ export function TopBar(): React.JSX.Element {
           )}
         </motion.div>
       </motion.div>
+
+      <AnimatePresence>
+        {venuePickerOpen && (
+          <Modal
+            onClose={() => setVenuePickerOpen(false)}
+            ariaLabel="Choose your venue"
+            maxWidth={420}
+          >
+            <h3 className="ss-h3" style={{ marginTop: 0, marginBottom: 4 }}>
+              Which room are you playing?
+            </h3>
+            <p className="recall-section-sub" style={{ marginBottom: 14 }}>
+              Sets the venue for this session — powers your live context.
+            </p>
+            <div className="examples">
+              {topVenues.map((v) => (
+                <button
+                  key={v.toLowerCase()}
+                  type="button"
+                  className="example"
+                  onClick={() => {
+                    void window.setrecord?.liveSetVenue(v)
+                    setVenuePickerOpen(false)
+                  }}
+                >
+                  <Building2 size={15} strokeWidth={1.6} />
+                  {v}
+                </button>
+              ))}
+              <button type="button" className="example" onClick={() => setVenuePickerOpen(false)}>
+                No venue
+              </button>
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {recSummary && (
+          <SaveSetSheet
+            summary={recSummary}
+            onSave={(v) => void saveRecordedSet(v)}
+            onDiscard={discardRecordedSet}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

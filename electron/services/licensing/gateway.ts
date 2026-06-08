@@ -1,7 +1,7 @@
 /**
  * License gateway — the optional online layer.
  *
- * SetSense is offline-first: a license activates and keeps working with no
+ * SetRecord is offline-first: a license activates and keeps working with no
  * network. This gateway is purely additive. When a fulfilment backend exists it
  * lets us (a) bind a key to this device at activation time and (b) periodically
  * refresh revocation/expiry so refunds and charge-backs can actually revoke a
@@ -16,15 +16,15 @@
 import { net } from 'electron'
 
 /**
- * Base URL of the fulfilment Worker (the setsense-fulfilment repo), e.g.
- * https://setsense-fulfilment.<subdomain>.workers.dev. This single value turns
+ * Base URL of the fulfilment Worker (the setrecord-fulfilment repo), e.g.
+ * https://setrecord-fulfilment.<subdomain>.workers.dev. This single value turns
  * on BOTH online revocation/renewal (/v1/check, /v1/activate) AND server-side
  * checkout creation (/checkout). Null = pure offline, no purchasing.
  *
  * Set this to your deployed Worker URL after running `npm run deploy` in the
  * fulfilment repo. Leave null until the backend is live.
  */
-export const LICENSE_API_BASE: string | null = null
+export const LICENSE_API_BASE: string | null = 'https://setrecord-fulfilment.carterpinkmusic.workers.dev'
 
 const REQUEST_TIMEOUT_MS = 5000
 

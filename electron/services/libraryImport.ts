@@ -416,7 +416,7 @@ export async function importHistoryFile(xmlPath: string): Promise<HistoryImportR
 // ───────── Shared writer (both XML and master.db paths feed this) ─────────
 
 /**
- * Write a fully-built `ImportPayload` into the SetSense library DB.
+ * Write a fully-built `ImportPayload` into the SetRecord library DB.
  *
  * Steps:
  *  1. Batch insert/upsert tracks (preserves `set_tracks` FKs via ON CONFLICT).

@@ -263,7 +263,7 @@
       "validationNotFound": "Falha na validação — set não encontrado.",
       "validationFailed": "Falha na validação.",
       "usbDisconnected": "Esse pen drive USB não está mais conectado.",
-      "proRequired": "A exportação é um recurso do SetSense Pro.",
+      "proRequired": "A exportação é um recurso do SetRecord Pro.",
       "exportFailed": "Falha na exportação."
     },
     "toast": {

@@ -1,4 +1,4 @@
-// SetSense Electron REPL driver — macOS / agent use
+// SetRecord Electron REPL driver — macOS / agent use
 import { _electron as electron } from 'playwright-core';
 import * as readline from 'node:readline';
 import * as fs from 'node:fs';
@@ -25,7 +25,7 @@ async function getPage() {
 const COMMANDS = {
   async launch() {
     if (app) return console.log('already launched');
-    console.log('launching SetSense...');
+    console.log('launching SetRecord...');
     app = await electron.launch({
       executablePath: electronBin,
       args: [APP_DIR],
@@ -188,5 +188,5 @@ rl.on('line', async line => {
 });
 rl.on('close', async () => { await COMMANDS.quit(); process.exit(0); });
 
-console.log('SetSense driver — "help" for commands, "launch" to start');
+console.log('SetRecord driver — "help" for commands, "launch" to start');
 rl.prompt();

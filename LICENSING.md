@@ -1,7 +1,7 @@
-# SetSense Licensing — Founder's Runbook
+# SetRecord Licensing — Founder's Runbook
 
 This document is the single source of truth for everything you need to know
-and do as the person who sells SetSense licenses. It assumes no cryptography
+and do as the person who sells SetRecord licenses. It assumes no cryptography
 background. Skip to the section you need.
 
 ---
@@ -23,7 +23,7 @@ background. Skip to the section you need.
 
 ## 1. How a license key works
 
-SetSense works offline — no internet required at a venue. That means the app
+SetRecord works offline — no internet required at a venue. That means the app
 cannot phone home to ask "is this person allowed in?" every time it opens. Instead
 we use **cryptographic signing**: you produce a key on your laptop, the customer
 types or clicks it once, and from that point forward the app can verify it is
@@ -46,7 +46,7 @@ SES1.eyJ2IjoxLCJpZCI6IjEyMy4uLiJ9.Zm9vYmFyYmF6...
 ```
 
 Breaking it down:
-- `SES1` — the SetSense version tag. Tells the app which format to expect.
+- `SES1` — the SetRecord version tag. Tells the app which format to expect.
 - Middle segment — the payload: your customer's email, what they bought
   (`lifetime` or `subscription`), when it was issued, and optionally when it
   expires. Base64-encoded JSON — anyone can decode and read it, but that is fine
@@ -176,22 +176,22 @@ customer's receipt email, **or** redirect them to the activation deep-link
 
 ## 5. How the customer activates (one-click deep-link)
 
-SetSense is registered as the OS handler for the `setsense://` URL scheme
+SetRecord is registered as the OS handler for the `setrecord://` URL scheme
 (declared in `electron-builder.yml`). Your checkout backend should redirect
 the customer to:
 
 ```
-setsense://activate?key=SES1.<payload>.<signature>
+setrecord://activate?key=SES1.<payload>.<signature>
 ```
 
 When the customer clicks that link (in their browser, in their email client, or
-in a payment confirmation page), macOS hands the URL to SetSense, which:
+in a payment confirmation page), macOS hands the URL to SetRecord, which:
 
 1. Extracts the key from the URL.
 2. Verifies the Ed25519 signature.
 3. Calls `activateLicense()` — same code path as the manual entry field.
 4. If valid, stores the key in the macOS Keychain and switches the app to Pro.
-5. Shows an "Activated — welcome to SetSense Pro" confirmation to the user.
+5. Shows an "Activated — welcome to SetRecord Pro" confirmation to the user.
 
 **The key is still verified.** The deep-link is just convenience routing — a
 forged or malformed link is rejected by the same Ed25519 check as a manually
@@ -199,19 +199,19 @@ typed key.
 
 ### Building the redirect URL in your checkout backend
 
-The checkout URL the app opens already passes `redirect=setsense://activate` to
+The checkout URL the app opens already passes `redirect=setrecord://activate` to
 your checkout backend (built by `checkoutUrl()` in `signingKey.ts`). Your backend:
 
 1. Receives the "order paid" webhook.
 2. Mints a key (calls `mint-license.mjs` or the equivalent server-side function).
-3. URL-encodes the key and appends it: `setsense://activate?key=<encoded-key>`.
+3. URL-encodes the key and appends it: `setrecord://activate?key=<encoded-key>`.
 4. Redirects the customer's browser to that URL.
 
-The customer's browser fires the OS URL handler → SetSense opens and activates.
+The customer's browser fires the OS URL handler → SetRecord opens and activates.
 
 ### Manual fallback
 
-If the customer copies the key from their email and opens Settings → SetSense Pro
+If the customer copies the key from their email and opens Settings → SetRecord Pro
 → Activate, the text field path goes through the exact same `activateLicense()`
 function. Both routes are tested.
 
@@ -228,7 +228,7 @@ subscriptions, or a corporate seat), mint a v2 key:
 
 ```bash
 # First, find out the customer's device id. They can see it at
-# Settings → SetSense Pro → Device ID (or you can ask them via support).
+# Settings → SetRecord Pro → Device ID (or you can ask them via support).
 node scripts/mint-license.mjs \
   --plan subscription \
   --months 1 \
@@ -258,7 +258,7 @@ New users who import a Rekordbox library get a 7-day free Pro trial automaticall
 We defend against the obvious cheat (winding the macOS clock back to extend it):
 
 - Every time the app runs, it saves the current time as a "last seen at" timestamp
-  in a local file (`~/Library/Application Support/SetSense/license-state.json`).
+  in a local file (`~/Library/Application Support/SetRecord/license-state.json`).
 - This high-water mark only ever moves forward — it is never decreased.
 - Expiry for the trial (and for subscription keys) is judged against
   `max(now, last-seen-at)`, so setting the clock to yesterday accomplishes nothing
@@ -308,7 +308,7 @@ If their old key was a portable/v1 key (the default), they simply activate it
 on the new machine — it works immediately. If it was device-bound, mint a new
 key with `--device <new-device-id>`.
 
-### "SetSense says my key is expired."
+### "SetRecord says my key is expired."
 
 For a subscription key, check the `expiresAt` in the key payload (it's base64
 JSON — decode with `atob()` in any browser DevTools or `echo "PAYLOAD" | base64 -d`).

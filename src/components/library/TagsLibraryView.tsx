@@ -40,8 +40,8 @@ export function TagsLibraryView({
   }, [loadCoverage])
 
   useEffect(() => {
-    if (typeof window.setsense === 'undefined') return
-    window.setsense
+    if (typeof window.setrecord === 'undefined') return
+    window.setrecord
       .getSettings()
       .then((s) => setAutoTaggingEnabled(s.autoTaggingEnabled ?? true))
       .catch(() => {})

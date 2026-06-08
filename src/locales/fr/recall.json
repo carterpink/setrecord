@@ -9,7 +9,8 @@
     "venues": "Salles",
     "identity": "Identité",
     "health": "Santé",
-    "fallback": "Recall"
+    "fallback": "Recall",
+    "graph": "Constellation"
   },
   "panel": {
     "noLibrary": "Recall lit toute ta collection — il redécouvre des pépites oubliées, cartographie ton son et retrace les transitions que tu emploies. Importe ta bibliothèque pour lui donner vie."
@@ -164,6 +165,10 @@
     "noMatch": "Aucune date ne correspond à ce filtre.",
     "noSessions": "Aucune session jouée pour l’instant — importe l’historique Rekordbox ou marque un set comme joué.",
     "viewTracklist": "Voir la tracklist",
+    "copyTracklist": "Copier la tracklist",
+    "tracklistCopied": "Tracklist copiée",
+    "recordingLabel": "Enregistrement du set",
+    "jumpToTrack": "Aller à ce morceau dans l'enregistrement",
     "editGig": "Modifier la date",
     "addVenue": "Ajouter un lieu",
     "autoBadge": "auto",
@@ -322,7 +327,7 @@
     "title": "Redécouvrir",
     "subtitle": "Des morceaux que tu jouais et qui prennent la poussière. Remets-en un en rotation.",
     "noLibraryTitle": "Les pépites oubliées remontent à mesure que tu joues",
-    "noLibraryBody": "Importe ta bibliothèque et SetSense se met à faire remonter des morceaux que tu adorais mais que tu n’as pas touchés depuis un moment.",
+    "noLibraryBody": "Importe ta bibliothèque et SetRecord se met à faire remonter des morceaux que tu adorais mais que tu n’as pas touchés depuis un moment.",
     "digging": "Fouille dans tes bacs…",
     "empty": "Aucune pépite oubliée pour l’instant — l’historique de lecture étoffe ceci avec le temps."
   },
@@ -373,5 +378,86 @@
       "energyValue": "{{value}}/10",
       "length": "Durée"
     }
+  },
+  "graph": {
+    "title": "Constellation",
+    "lensLabel": "Lentille temporelle",
+    "loading": "Cartographie de ta bibliothèque…",
+    "error": "Impossible de créer la carte.",
+    "centeredOn": "Centré sur",
+    "trackCount": "{{count}} morceaux",
+    "mode": {
+      "past": "Passé",
+      "future": "Futur",
+      "diff": "Écart",
+      "present": "Présent"
+    },
+    "tagline": {
+      "past": "Chaque morceau que tu as mixé, cartographié",
+      "future": "Chaque mix que tu pourrais faire",
+      "diff": "Compatibles — mais jamais essayé",
+      "present": "Le set que tu construis, là maintenant"
+    },
+    "empty": {
+      "past": {
+        "title": "Aucun mix cartographié",
+        "body": "Enregistre ou crée un set et tes morceaux commenceront à se relier en une constellation des transitions que tu as réellement jouées."
+      },
+      "future": {
+        "title": "Aucun voisin compatible",
+        "body": "Rien de compatible en harmonie ou en rythme n'est apparu autour de ce morceau. Essaie un autre point de départ."
+      },
+      "diff": {
+        "title": "Tu les as tous mixés",
+        "body": "Chaque morceau compatible à proximité figure déjà dans ton historique — aucune paire à découvrir ici. Essaie un autre morceau."
+      },
+      "present": {
+        "title": "Aucun set en cours",
+        "body": "Ouvre un set dans Build (ou passe en live) et il s’illumine ici en un chemin lumineux — chaque morceau dans l’ordre de lecture."
+      }
+    },
+    "lock": {
+      "future": {
+        "title": "Vois où chaque morceau peut aller",
+        "body": "Futur cartographie les mix compatibles en harmonie et en BPM cachés dans ta bibliothèque. Débloque-le avec Pro."
+      },
+      "diff": {
+        "title": "Trouve des mix que tu n'as jamais essayés",
+        "body": "Écart révèle les paires compatibles que tu n'as jamais jouées — ta prochaine transition signature. Débloque-le avec Pro."
+      }
+    },
+    "legend": {
+      "mixed": "Déjà mixés",
+      "gig": "Joué en soirée",
+      "path": "Ton set, dans l’ordre",
+      "compatible": "Mixable",
+      "novel": "Jamais essayé"
+    },
+    "scrub": {
+      "title": "Mixé sur",
+      "all": "Tout"
+    },
+    "scopeLabel": "Portée",
+    "scope": {
+      "neighborhood": "Autour",
+      "library": "Galaxie",
+      "context": "Ce set"
+    },
+    "path": {
+      "toggle": "Créer un set",
+      "title": "Parcours",
+      "hint": "Clique sur des morceaux pour les enchaîner en un set, dans l’ordre.",
+      "route": "Auto-route",
+      "add": "Ajouter au set",
+      "save": "Enregistrer comme set",
+      "remove": "Retirer",
+      "clear": "Effacer",
+      "exit": "Quitter le mode parcours",
+      "setName": "Parcours de constellation"
+    },
+    "search": {
+      "placeholder": "Chercher un morceau…"
+    },
+    "genreCount": "{{count}} genres"
   }
 }

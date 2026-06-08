@@ -20,19 +20,21 @@ import type {
   SessionFilter,
   SessionMetadataPatch,
   BriefAnswer,
+  SetRecording,
+  SoundMirrorResult,
   VenueType
 } from '@/types'
 import { interpretTurn } from '@/utils/recallQuery'
 import { useUiStore } from '@/stores/uiStore'
 
-const IDENTITY_SHARE_SEEN_KEY = 'setsense-identity-share-seen'
+const IDENTITY_SHARE_SEEN_KEY = 'setrecord-identity-share-seen'
 const IDENTITY_SHARE_TRACK_THRESHOLD = 20
 
-const SECTION_KEY = 'setsense-recall-section'
-const CONVO_KEY = 'setsense-recall-convos'
+const SECTION_KEY = 'setrecord-recall-section'
+const CONVO_KEY = 'setrecord-recall-convos'
 const MAX_CONVOS = 50
 
-const UNCOVER_DISMISSED_KEY = 'setsense-uncover-dismissed'
+const UNCOVER_DISMISSED_KEY = 'setrecord-uncover-dismissed'
 const UNCOVER_DISMISSED_CAP = 4000
 const UNCOVER_DECK_CAP = 80
 
@@ -156,8 +158,8 @@ function resultToMessage(res: RecallAskResult | null): RecallMessage {
 }
 
 /** The IPC bridge is absent in the renderer-only browser preview. */
-function api(): Window['setsense'] | undefined {
-  return typeof window !== 'undefined' ? window.setsense : undefined
+function api(): Window['setrecord'] | undefined {
+  return typeof window !== 'undefined' ? window.setrecord : undefined
 }
 
 interface RecallState {
@@ -190,6 +192,10 @@ interface RecallState {
   identityLoading: boolean
   loadIdentity: () => Promise<void>
 
+  soundMirror: SoundMirrorResult | null
+  soundMirrorLoading: boolean
+  loadSoundMirror: () => Promise<void>
+
   health: HealthReport | null
   lifecycle: LifecycleCounts | null
   healthLoading: boolean
@@ -210,7 +216,11 @@ interface RecallState {
   gigs: PlaySession[]
   gigsLoading: boolean
   gigFilter: SessionFilter | null
-  gigTracklist: { session: PlaySession; tracks: SessionTrack[] } | null
+  gigTracklist: {
+    session: PlaySession
+    tracks: SessionTrack[]
+    recording: SetRecording | null
+  } | null
   loadGigs: () => Promise<void>
   applyGigFilter: (filter: SessionFilter | null) => Promise<void>
   updateGig: (sessionId: string, patch: SessionMetadataPatch) => Promise<void>
@@ -230,7 +240,7 @@ interface RecallState {
   flagForGig: (trackIds: string[]) => Promise<void>
   resolveFlag: (trackId: string, outcome: 'tested' | 'archive' | 'keep') => Promise<void>
 
-  // SetSense Intelligence (conversational search)
+  // SetRecord Intelligence (conversational search)
   aiStatus: RecallAiStatus | null
   asking: boolean
   conversations: RecallConversation[]
@@ -410,6 +420,20 @@ export const useRecallStore = create<RecallState>((set, get) => ({
     }
   },
 
+  soundMirror: null,
+  soundMirrorLoading: false,
+  loadSoundMirror: async () => {
+    const s = api()
+    if (!s) return
+    set({ soundMirrorLoading: true })
+    try {
+      const soundMirror = await s.historySoundMirror()
+      set({ soundMirror })
+    } finally {
+      set({ soundMirrorLoading: false })
+    }
+  },
+
   health: null,
   lifecycle: null,
   healthLoading: false,
@@ -509,8 +533,11 @@ export const useRecallStore = create<RecallState>((set, get) => ({
     const s = api()
     if (!s) return
     try {
-      const tracks = await s.historySessionTracks(session.id)
-      set({ gigTracklist: { session, tracks } })
+      const [tracks, recording] = await Promise.all([
+        s.historySessionTracks(session.id),
+        s.historyGetRecording?.(session.id) ?? Promise.resolve(null)
+      ])
+      set({ gigTracklist: { session, tracks, recording } })
     } catch {
       /* ignore */
     }

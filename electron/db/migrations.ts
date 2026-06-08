@@ -152,7 +152,7 @@ export function runMigrations(db: Database.Database): void {
   db.prepare('INSERT OR REPLACE INTO schema_version VALUES (11)').run()
 
   // v12: play history sessions layer (DJ memory / Recall feature).
-  // play_sessions records dated gig sessions (from Rekordbox, SetSense, or manual entry).
+  // play_sessions records dated gig sessions (from Rekordbox, SetRecord, or manual entry).
   // session_tracks stores the ordered tracklist for each session.
   // Two new nullable columns on tracks: lifecycle_state + lifecycle_source.
   db.exec(`
@@ -377,4 +377,42 @@ export function runMigrations(db: Database.Database): void {
   `)
 
   db.prepare('INSERT OR REPLACE INTO schema_version VALUES (21)').run()
+
+  // v22: the Flight Recorder's lo-fi reference audio + the tracklist→audio→reaction
+  // timeline bridge. `set_recordings` links ONE local audio file (room-mic webm/opus,
+  // never uploaded) to a session. `session_tracks.start_ms`/`end_ms` map each track
+  // onto that audio timeline (for playback seek), and `match_offset_sec` records how
+  // far into the track it was first identified — the seed for reconstructing the clean
+  // reference signal that Black Box reaction analysis needs (Phase 3).
+  const colsV22 = (
+    db.prepare('PRAGMA table_info(session_tracks)').all() as Array<{ name: string }>
+  ).map((c) => c.name)
+
+  if (!colsV22.includes('start_ms')) {
+    db.exec('ALTER TABLE session_tracks ADD COLUMN start_ms INTEGER')
+  }
+  if (!colsV22.includes('end_ms')) {
+    db.exec('ALTER TABLE session_tracks ADD COLUMN end_ms INTEGER')
+  }
+  if (!colsV22.includes('match_offset_sec')) {
+    db.exec('ALTER TABLE session_tracks ADD COLUMN match_offset_sec REAL')
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS set_recordings (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL REFERENCES play_sessions(id) ON DELETE CASCADE,
+      audio_file_path TEXT NOT NULL,
+      audio_format TEXT NOT NULL DEFAULT 'webm-opus',
+      audio_duration_sec REAL,
+      audio_bytes INTEGER,
+      source TEXT NOT NULL DEFAULT 'room-mic',
+      created_at TEXT NOT NULL,
+      UNIQUE(session_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_set_recordings_session ON set_recordings(session_id);
+  `)
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (22)').run()
 }

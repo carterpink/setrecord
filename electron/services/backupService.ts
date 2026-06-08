@@ -1,8 +1,8 @@
 /**
  * backupService.ts — Backendless backup & migration.
  *
- * Exports the DJ's entire SetSense overlay (tags, lifecycle, ratings, cue edits,
- * sets, play sessions, smart crates) to a single portable `.setsense` bundle, and
+ * Exports the DJ's entire SetRecord overlay (tags, lifecycle, ratings, cue edits,
+ * sets, play sessions, smart crates) to a single portable `.setrecord` bundle, and
  * imports it on another machine by RE-LINKING to that machine's own library.
  *
  * Why re-link instead of copy: every `tracks` row stores an absolute `file_path`
@@ -205,7 +205,7 @@ function deriveKey(passphrase: string, salt: Buffer): Buffer {
 }
 
 /**
- * Serialise a manifest into the `.setsense` envelope. With a passphrase, the
+ * Serialise a manifest into the `.setrecord` envelope. With a passphrase, the
  * gzipped JSON is encrypted with AES-256-GCM (key via scrypt). Without one, the
  * body is plaintext gzip — the caller is responsible for warning the user.
  */
@@ -244,12 +244,12 @@ export function encodeBundle(manifest: BackupManifest, passphrase?: string): Buf
 
 function readEnvelope(buf: Buffer): { header: EnvelopeHeader; body: Buffer } {
   if (buf.length < MAGIC.length + 5 || buf.subarray(0, MAGIC.length).toString('ascii') !== MAGIC) {
-    throw new BackupError('not_a_backup', 'This file is not a SetSense backup.')
+    throw new BackupError('not_a_backup', 'This file is not a SetRecord backup.')
   }
   if (buf[MAGIC.length] !== ENVELOPE_FORMAT) {
     throw new BackupError(
       'unsupported_envelope',
-      'This backup uses a newer file format. Please update SetSense.'
+      'This backup uses a newer file format. Please update SetRecord.'
     )
   }
   const lenOffset = MAGIC.length + 1
@@ -825,7 +825,7 @@ export interface ExportResult {
 }
 
 /**
- * Security policy for the WRITE path: a `.setsense` bundle carries the DJ's gig
+ * Security policy for the WRITE path: a `.setrecord` bundle carries the DJ's gig
  * history (venues, cities, dates), play counts, tags and whole library overlay —
  * exactly the kind of file that leaves the machine (USB stick, email, cloud
  * sync). So encryption is the DEFAULT: we refuse to write a plaintext bundle
@@ -918,7 +918,7 @@ export function inspectBackup(
       return { ok: false, needsPassphrase: true }
     }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'Not a SetSense backup.' }
+    return { ok: false, error: err instanceof Error ? err.message : 'Not a SetRecord backup.' }
   }
 
   let manifest: BackupManifest
@@ -937,13 +937,13 @@ export function inspectBackup(
   if (manifest.bundleVersion > BUNDLE_VERSION) {
     return {
       ok: false,
-      error: 'This backup was made by a newer version of SetSense. Please update.'
+      error: 'This backup was made by a newer version of SetRecord. Please update.'
     }
   }
   if (manifest.schemaVersion > opts.localSchemaVersion) {
     return {
       ok: false,
-      error: 'This backup was made by a newer version of SetSense. Please update.'
+      error: 'This backup was made by a newer version of SetRecord. Please update.'
     }
   }
 
@@ -1146,7 +1146,7 @@ export function importBackup(
   if (manifest.bundleVersion > BUNDLE_VERSION || manifest.schemaVersion > localSchema) {
     return {
       success: false,
-      error: 'This backup was made by a newer version of SetSense. Please update.'
+      error: 'This backup was made by a newer version of SetRecord. Please update.'
     }
   }
 

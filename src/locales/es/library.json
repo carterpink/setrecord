@@ -92,9 +92,11 @@
     "actionsAria": "Acciones para {{title}}",
     "preview": "Vista previa",
     "findSimilar": "Buscar pistas similares",
+    "courage": "Atrévete con algo distinto",
     "addToSet": "Añadir al set",
     "editCues": "Editar cue points",
     "playedAfter": "¿Qué he puesto después de esta?",
+    "trackResume": "Currículum del track",
     "editTags": "Editar etiquetas…"
   },
   "trackRow": {
@@ -146,8 +148,8 @@
     "directTitle": "Escribir directamente en Rekordbox",
     "advanced": "Avanzado",
     "directDetail": "MyTags reales y filtrables. Hace una copia de seguridad primero; Rekordbox debe estar cerrado.",
-    "warning": "Esto escribe directamente en tu biblioteca de Rekordbox. <0>Cierra Rekordbox primero.</0> SetSense guarda una copia de seguridad con marca de tiempo de tu base de datos antes de escribir, y revierte si algo sale mal.",
-    "bullet1": "Crea un grupo de MyTag “SetSense” con tus etiquetas",
+    "warning": "Esto escribe directamente en tu biblioteca de Rekordbox. <0>Cierra Rekordbox primero.</0> SetRecord guarda una copia de seguridad con marca de tiempo de tu base de datos antes de escribir, y revierte si algo sale mal.",
+    "bullet1": "Crea un grupo de MyTag “SetRecord” con tus etiquetas",
     "bullet2": "Solo etiqueta pistas que provienen de tu biblioteca de Rekordbox",
     "bullet3": "No duplica etiquetas que una pista ya tenga",
     "back": "Atrás",

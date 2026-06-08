@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import './liveActivation.css'
 
 /**
- * Full-screen "intelligence" activation that plays once when SetSense Live goes
+ * Full-screen "intelligence" activation that plays once when SetRecord Live goes
  * live — a luminous bloom + flowing gradient waves + edge glow, in the spirit of
  * the iOS Siri activation. Purely decorative; fades out to hand off to the HUD.
  */

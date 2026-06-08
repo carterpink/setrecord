@@ -54,10 +54,10 @@ export function useVoiceCapture({
   // so the setup chip can animate. Both are no-ops outside Electron.
   useEffect(() => {
     let alive = true
-    void window.setsense?.speechVoiceStatus?.().then((s) => {
+    void window.setrecord?.speechVoiceStatus?.().then((s) => {
       if (alive) applyStatus(s)
     })
-    const unsub = window.setsense?.onVoiceProgress?.((s) => applyStatus(s))
+    const unsub = window.setrecord?.onVoiceProgress?.((s) => applyStatus(s))
     return () => {
       alive = false
       unsub?.()
@@ -79,7 +79,7 @@ export function useVoiceCapture({
 
   const available =
     typeof window !== 'undefined' &&
-    typeof window.setsense?.speechTranscribe === 'function' &&
+    typeof window.setrecord?.speechTranscribe === 'function' &&
     typeof navigator !== 'undefined' &&
     !!navigator.mediaDevices?.getUserMedia
 
@@ -109,10 +109,10 @@ export function useVoiceCapture({
       // Surface the OS mic prompt (and a hard "denied" if blocked) before we
       // open a stream, so a blocked mic reads as actionable instead of a vague
       // getUserMedia failure.
-      const access = await window.setsense?.speechEnsureMicAccess?.()
+      const access = await window.setrecord?.speechEnsureMicAccess?.()
       if (access === 'denied') {
         onError(
-          'Microphone access is off. Turn it on for SetSense in System Settings → Privacy & Security → Microphone.'
+          'Microphone access is off. Turn it on for SetRecord in System Settings → Privacy & Security → Microphone.'
         )
         return
       }
@@ -122,7 +122,7 @@ export function useVoiceCapture({
       // streams to the setup chip via onVoiceProgress; this is near-instant once
       // the (bundled) model is loaded.
       if (statusRef.current?.state !== 'ready') {
-        const prepared = await window.setsense?.speechPrepareVoice?.()
+        const prepared = await window.setrecord?.speechPrepareVoice?.()
         if (prepared) applyStatus(prepared)
         if (prepared && prepared.state === 'error') {
           onError(prepared.error ?? 'Voice input couldn’t start. You can still type.')
@@ -174,7 +174,7 @@ export function useVoiceCapture({
           interimBusyRef.current = true
           const pcm = buildPcm(chunks, rate)
           window
-            .setsense!.speechTranscribe(pcm)
+            .setrecord!.speechTranscribe(pcm)
             .then((text) => {
               // Ignore a late interim that resolves after the user stopped.
               if (ctxRef.current && text && text.trim()) onInterim(text.trim())
@@ -197,7 +197,7 @@ export function useVoiceCapture({
         (err.name === 'NotAllowedError' || err.name === 'SecurityError')
       ) {
         onError(
-          'Microphone access is off. Turn it on for SetSense in System Settings → Privacy & Security → Microphone.'
+          'Microphone access is off. Turn it on for SetRecord in System Settings → Privacy & Security → Microphone.'
         )
       } else {
         onError(
@@ -224,10 +224,10 @@ export function useVoiceCapture({
 
     onTranscribing?.()
     try {
-      const text = await window.setsense!.speechTranscribe(pcm)
+      const text = await window.setrecord!.speechTranscribe(pcm)
       if (text && text.trim()) onResult(text.trim())
       else {
-        const status = await window.setsense!.speechVoiceStatus()
+        const status = await window.setrecord!.speechVoiceStatus()
         onError(status.error ?? 'Didn’t catch that — try again.')
       }
     } catch {

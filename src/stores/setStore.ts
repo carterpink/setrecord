@@ -119,7 +119,7 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
 
   loadSets: async () => {
     try {
-      const sets = await window.setsense.getSets()
+      const sets = await window.setrecord.getSets()
       // Auto-restore the most recently updated set so the timeline isn't blank on every launch.
       // getSets() returns sets ordered by updated_at DESC, so sets[0] is the latest.
       const { currentSet } = get()
@@ -138,7 +138,7 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
 
   loadCurrentSet: async (id: string) => {
     try {
-      const loaded = await window.setsense.getSet(id)
+      const loaded = await window.setrecord.getSet(id)
       if (loaded) set({ currentSet: loaded, selectedTrackId: null })
     } catch {
       // IPC not available
@@ -260,7 +260,7 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
     const newTo: DJSet = { ...to, tracks: reindex(newToTracks), updatedAt: now }
 
     // The source set won't be current after the move, so persist it explicitly.
-    void window.setsense.saveSet(newFrom).catch(() => {})
+    void window.setrecord.saveSet(newFrom).catch(() => {})
     let nextSaved = syncSavedSets(all, newFrom)
     nextSaved = syncSavedSets(nextSaved, newTo)
     set({ currentSet: newTo, savedSets: nextSaved, selectedTrackId: null })
@@ -467,7 +467,7 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
           // in this machine's library, so an individual lookup can fail. Don't let
           // one missing track wipe every transition score — just skip that pair.
           .map((st, i) =>
-            window.setsense.scoreTransition(sorted[i].trackId, st.trackId).catch(() => null)
+            window.setrecord.scoreTransition(sorted[i].trackId, st.trackId).catch(() => null)
           )
       )
       // Re-read state in case the set changed while we awaited
@@ -545,7 +545,7 @@ export const useSetStore = create<SetState & SetActions>((set, get) => ({
     const { currentSet, savedSets } = get()
     if (!currentSet) return
     try {
-      await window.setsense.deleteSet(currentSet.id)
+      await window.setrecord.deleteSet(currentSet.id)
     } catch {
       // IPC not available
     }
@@ -625,7 +625,7 @@ async function _flushSave(
   setState({ saveStatus: 'saving' })
 
   const attempt = async (): Promise<DJSet | null | undefined> => {
-    return await window.setsense.saveSet(currentSet)
+    return await window.setrecord.saveSet(currentSet)
   }
 
   try {

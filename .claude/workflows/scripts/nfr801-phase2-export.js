@@ -43,8 +43,8 @@ phase('Implement')
 log(`Branch: ${BRANCH} (base: ${BASE}) — Phase 2 export, gh-free`)
 
 const result = await agent(
-  `You are implementing NFR-801 Phase 2 (export) in SetSense — Electron 33 DJ app
-(TypeScript, React, better-sqlite3, Vite, Vitest, ESLint). Repo: /Users/samcarter/Documents/SetSenseV2
+  `You are implementing NFR-801 Phase 2 (export) in SetRecord — Electron 33 DJ app
+(TypeScript, React, better-sqlite3, Vite, Vitest, ESLint). Repo: /Users/samcarter/Documents/SetRecordV2
 You are inside a FRESH ISOLATED git worktree. The user's working tree on feat/memory-product must NOT be touched.
 
 === SETUP ===
@@ -70,7 +70,7 @@ A. Add export accessors to logger.ts as needed (small, additive):
    (getRingBuffer() already exists for the debug ring buffer.)
 
 B. Create electron/services/logging/exportBundle.ts exposing buildLogBundle(): Promise<string>:
-   - Builds userData/logs/export/setsense-logs-<sid>-<timestamp>.zip (sid from getSessionId();
+   - Builds userData/logs/export/setrecord-logs-<sid>-<timestamp>.zip (sid from getSessionId();
      timestamp from new Date() — allowed in app runtime, this is NOT a workflow script).
    - Bundle contents:
        * all files from listLogFiles() (already redacted, safe-by-construction)
@@ -89,12 +89,12 @@ B. Create electron/services/logging/exportBundle.ts exposing buildLogBundle(): P
 C. IPC + preload (follow the repo's existing invoke/handle + preload-facade convention):
    - electron/main.ts: ipcMain.handle('logs:export', async () => { try { const path = await buildLogBundle(); return { success: true, path } } catch (e) { return { success: false, error: String(e) } } })
    - electron/preload.ts: expose exportLogs(): Promise<{success:boolean;path?:string;error?:string}> → ipcRenderer.invoke('logs:export')
-   - electron/preload.d.ts (and any window.setsense type): add exportLogs to the typed surface.
+   - electron/preload.d.ts (and any window.setrecord type): add exportLogs to the typed surface.
 
 D. Settings UI — add an "Export diagnostic logs" action under a Settings → Advanced area:
    - Find the existing Settings component (likely src/components/ or src/components/modals/). READ it first.
    - Add an Advanced section if one does not exist (minimal, consistent with existing styles).
-   - Button calls window.setsense.exportLogs(); on success it should reveal the file in Finder
+   - Button calls window.setrecord.exportLogs(); on success it should reveal the file in Finder
      (add a tiny IPC 'logs:reveal' that calls shell.showItemInFolder(path), or reuse an existing reveal helper),
      and show a brief success/empty/error state. Copy: "Export diagnostic logs" with subtext like
      "Bundles app logs with personal details removed — attach when reporting a bug."

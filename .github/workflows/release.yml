@@ -1,0 +1,89 @@
+name: Release (signed + notarized macOS)
+
+# Builds, code-signs, NOTARIZES and publishes the macOS DMG — the thing customers
+# actually download. The everyday CI workflow (ci.yml) only does
+# typecheck/lint/test/build and never packages, so without this a non-notarized
+# build (which Gatekeeper blocks for every user) could ship undetected.
+#
+# Trigger: push a version tag — `git tag v1.0.0 && git push origin v1.0.0` — or
+# run manually from the Actions tab (workflow_dispatch).
+#
+# REQUIRED GitHub Secrets (Settings → Secrets and variables → Actions):
+#   CSC_LINK                     base64 of your "Developer ID Application" .p12
+#                                  (export from Keychain, then: base64 -i cert.p12 | pbcopy)
+#   CSC_KEY_PASSWORD             password protecting that .p12
+#   APPLE_ID                     Apple ID email used for notarization
+#   APPLE_APP_SPECIFIC_PASSWORD  app-specific password (appleid.apple.com → Sign-In & Security)
+#   APPLE_TEAM_ID                10-character Apple Developer Team ID
+#   GITHUB_TOKEN                 provided automatically; used to upload the release.
+#
+# electron-builder.yml already sets hardenedRuntime + entitlements + notarize:true,
+# so electron-builder 26 performs notarization natively from these env vars.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write # create the GitHub Release and upload the DMG
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-mac:
+    name: Build · Sign · Notarize · Publish (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Fail fast on the cheap checks BEFORE the ~1.9 GB model download + notarize.
+      - name: Gate — typecheck · lint · test
+        run: npm run typecheck && npm run lint && npm test
+
+      - name: Build, sign, notarize & publish the DMG
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm run icons
+          npm run fetch-model
+          npx electron-vite build
+          npx electron-builder --mac --publish always
+
+      # Hard proof the artifact is signed AND notarized — this step FAILS the
+      # release if Gatekeeper would reject the download on a user's clean Mac.
+      - name: Verify signature + notarization
+        run: |
+          set -euo pipefail
+          APP="$(find dist -maxdepth 2 -name 'SetRecord.app' -print -quit)"
+          DMG="$(find dist -maxdepth 1 -name '*.dmg' -print -quit)"
+          echo "App: ${APP:-<none>}"
+          echo "DMG: ${DMG:-<none>}"
+          test -n "$APP" && test -n "$DMG"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          spctl -a -t open --context context:primary-signature -vvv "$DMG"
+          xcrun stapler validate "$DMG"
+          echo "✓ Signed, notarized, and stapled."
+
+      - name: Upload DMG artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: setrecord-macos-dmg
+          path: dist/*.dmg
+          if-no-files-found: warn

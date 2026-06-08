@@ -1,7 +1,7 @@
 /**
  * Closed-set fingerprint — REAL-MUSIC accuracy/latency harness (the de-risk).
  *
- * This is the test that actually answers "will SetSense Live know what's
+ * This is the test that actually answers "will SetRecord Live know what's
  * playing?" — run against a folder of your own tracks, no DJ booth required.
  * It builds an index from real audio, then for each track cuts a short clip,
  * degrades it the way a club master-out would (EQ, level, codec, and crucially

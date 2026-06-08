@@ -1,4 +1,4 @@
-# SetSense Intelligence & Play-History Plan
+# SetRecord Intelligence & Play-History Plan
 
 Status: **ENGINE LAYER COMPLETE — eval 210/210 (100%)** · Updated: 2026-06-05 · Branch: `feat/ai-eval-harness`
 
@@ -11,7 +11,7 @@ Status: **ENGINE LAYER COMPLETE — eval 210/210 (100%)** · Updated: 2026-06-05
 > - **Logged data gap:** `Track.releaseYear` was added + is searchable, but the Rekordbox importer doesn't populate it yet (follow-up).
 
 Goal: make the in-app assistant reliably answer the 210 prompts in
-[`setsense_ai_eval_matrix.md`](setsense_ai_eval_matrix.md), regardless of wording,
+[`setrecord_ai_eval_matrix.md`](setrecord_ai_eval_matrix.md), regardless of wording,
 **100% on-device** (no external APIs), and ship a much richer Rekordbox-backed
 play-history view in Gigs.
 
@@ -185,7 +185,7 @@ Surface **all** real-world data that helps the user:
   drill-in. Show `played_at` (already stored, currently unused).
 - **Import more if it helps**: evaluate importing Rekordbox `LastPlayedTime` and
   `My Tags` (additive, backup-guarded) — only if the harness/UX shows real value.
-  Beatgrid/waveform stay out (SetSense re-analyzes).
+  Beatgrid/waveform stay out (SetRecord re-analyzes).
 
 ---
 

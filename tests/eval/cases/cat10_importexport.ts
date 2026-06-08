@@ -17,7 +17,7 @@ export const cat10: EvalCase[] = [
     type: 'KNOW',
     prompt: 'how do I import my Rekordbox library?',
     passWhen:
-      "Returns clear step-by-step instructions: export XML from Rekordbox, then import via SetSense's import flow. Does not fabricate UI paths that do not exist.",
+      "Returns clear step-by-step instructions: export XML from Rekordbox, then import via SetRecord's import flow. Does not fabricate UI paths that do not exist.",
     check: (r) =>
       (r.kind === 'knowledge' && /xml/i.test(r.narration) && /import/i.test(r.narration)) ||
       'should give knowledge steps mentioning Rekordbox XML export + import flow'

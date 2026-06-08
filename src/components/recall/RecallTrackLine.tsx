@@ -10,6 +10,7 @@ import { formatBpm } from '@/utils/format'
 import { useSetStore } from '@/stores/setStore'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { usePlaybackStore } from '@/stores/playbackStore'
+import { useTrackInspectStore } from '@/stores/trackInspectStore'
 
 interface RecallTrackLineProps {
   track: Track
@@ -37,6 +38,7 @@ export function RecallTrackLine({
 }: RecallTrackLineProps): React.JSX.Element {
   const { t } = useTranslation('recall')
   const addTrackAndToast = useSetStore((s) => s.addTrackAndToast)
+  const openResume = useTrackInspectStore((s) => s.openResume)
   const startPreview = usePlaybackStore((s) => s.startPreview)
   const playing = usePlaybackStore((s) => s.previewTrack?.id === track.id && s.isPlaying)
   const previewCurrentTime = usePlaybackStore((s) => (playing ? s.currentTime : 0))
@@ -65,6 +67,11 @@ export function RecallTrackLine({
       }
       onClick={() => {
         if (!missing) startPreview(track)
+      }}
+      onContextMenu={(e) => {
+        // Right-click any recall card → its Track Résumé (lived reputation).
+        e.preventDefault()
+        void openResume(track)
       }}
       onKeyDown={(e) => {
         if ((e.key === 'Enter' || e.key === ' ') && !missing) {

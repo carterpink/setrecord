@@ -1,5 +1,5 @@
 /* global React */
-/* SetSense Home — the neural-expressive composer */
+/* SetRecord Home — the neural-expressive composer */
 const { useRef: useRefC, useEffect: useEffectC } = React;
 
 // React-owned inline icon (bypasses the icons.js DOM-swap to avoid reconcile conflicts on toggling icons)

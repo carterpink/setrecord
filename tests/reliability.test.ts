@@ -23,7 +23,7 @@ vi.mock('electron', () => ({
 // filesystem/path logic of schema.ts without actually opening SQLite.
 describe('DB init & recovery (schema.ts)', () => {
   it('getDbPath() returns a path ending in library.db inside userData', async () => {
-    const dir = join(tmpdir(), `setsense-test-path-${Date.now()}`)
+    const dir = join(tmpdir(), `setrecord-test-path-${Date.now()}`)
     const { app } = await import('electron')
     vi.mocked(app.getPath).mockReturnValue(dir)
 
@@ -32,7 +32,7 @@ describe('DB init & recovery (schema.ts)', () => {
   })
 
   it('initDb() throws when better-sqlite3 cannot open the file (any reason)', async () => {
-    const dir = join(tmpdir(), `setsense-test-corrupt-${Date.now()}`)
+    const dir = join(tmpdir(), `setrecord-test-corrupt-${Date.now()}`)
     mkdirSync(dir, { recursive: true })
     const dbPath = join(dir, 'library.db')
     // Write garbage bytes — not a valid SQLite header
@@ -49,7 +49,7 @@ describe('DB init & recovery (schema.ts)', () => {
   })
 
   it('resetDb() removes the DB file and WAL sidecars without throwing', async () => {
-    const dir = join(tmpdir(), `setsense-test-reset-${Date.now()}`)
+    const dir = join(tmpdir(), `setrecord-test-reset-${Date.now()}`)
     mkdirSync(dir, { recursive: true })
     const dbPath = join(dir, 'library.db')
     const walPath = dbPath + '-wal'
@@ -82,15 +82,15 @@ describe('DB init & recovery (schema.ts)', () => {
 // ─── 2. setStore auto-save — retry + toast + unsaved indicator ────────────────
 
 // setStore imports zustand and toastStore (both browser-safe), plus
-// window.setsense via IPC which we provide as a global.
+// window.setrecord via IPC which we provide as a global.
 vi.mock('zustand', async (importOriginal) => importOriginal())
 
 describe('setStore auto-save', () => {
-  // Provide a minimal window.setsense bridge
+  // Provide a minimal window.setrecord bridge
   const mockSaveSet = vi.fn()
   beforeEach(() => {
     global.window = {
-      setsense: {
+      setrecord: {
         saveSet: mockSaveSet,
         getSets: vi.fn(async () => []),
         getSet: vi.fn(async () => null),
@@ -278,7 +278,7 @@ describe('crashReporter', () => {
         values: [
           {
             stacktrace: {
-              frames: [{ filename: '/home/sam/code/SetSenseV2/electron/main.ts', abs_path: '/home/sam/code/SetSenseV2/electron/main.ts' }]
+              frames: [{ filename: '/home/sam/code/SetRecordV2/electron/main.ts', abs_path: '/home/sam/code/SetRecordV2/electron/main.ts' }]
             }
           }
         ]

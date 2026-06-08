@@ -1,5 +1,5 @@
 /** Single source of truth for the product name — change here to rename everywhere. */
-export const APP_NAME = 'SetSense'
+export const APP_NAME = 'SetRecord'
 
 // Rekordbox-inspired hot cue palette: A–H (indices 0–7)
 export const HOT_CUE_COLORS: readonly string[] = [

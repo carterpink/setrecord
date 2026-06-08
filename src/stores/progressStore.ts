@@ -15,15 +15,15 @@ const DEFAULT_PROGRESS: ProgressState = {
 }
 
 /**
- * True in browser preview AND in tests/older builds where `window.setsense`
+ * True in browser preview AND in tests/older builds where `window.setrecord`
  * exists but predates the progress API. Checking for one progress method (they
  * ship together) lets every action fall back to local state instead of throwing.
  */
 function bridgeMissing(): boolean {
   return (
     typeof window === 'undefined' ||
-    typeof window.setsense === 'undefined' ||
-    typeof window.setsense.progressGet !== 'function'
+    typeof window.setrecord === 'undefined' ||
+    typeof window.setrecord.progressGet !== 'function'
   )
 }
 
@@ -57,7 +57,7 @@ export const useProgressStore = create<ProgressStoreState>((set, get) => ({
       return
     }
     try {
-      const progress = await window.setsense.progressGet()
+      const progress = await window.setrecord.progressGet()
       set({ progress, loaded: true })
     } catch {
       set({ progress: DEFAULT_PROGRESS, loaded: true })
@@ -71,13 +71,13 @@ export const useProgressStore = create<ProgressStoreState>((set, get) => ({
       set((s) => ({ progress: { ...s.progress, [FIELD_FOR[event]]: new Date().toISOString() } }))
       return
     }
-    const progress = await window.setsense.progressMarkFirst(event)
+    const progress = await window.setrecord.progressMarkFirst(event)
     set({ progress })
   },
 
   recordActivity: async () => {
     if (bridgeMissing()) return
-    const progress = await window.setsense.progressRecordActivity()
+    const progress = await window.setrecord.progressRecordActivity()
     set({ progress })
   },
 
@@ -89,7 +89,7 @@ export const useProgressStore = create<ProgressStoreState>((set, get) => ({
       }))
       return true
     }
-    const claimed = await window.setsense.progressClaimMilestone(id)
+    const claimed = await window.setrecord.progressClaimMilestone(id)
     if (claimed) {
       set((s) => ({
         progress: { ...s.progress, milestonesSeen: [...s.progress.milestonesSeen, id] }
@@ -100,7 +100,7 @@ export const useProgressStore = create<ProgressStoreState>((set, get) => ({
 
   dismissChecklist: async () => {
     set((s) => ({ progress: { ...s.progress, checklistDismissed: true } }))
-    if (!bridgeMissing()) await window.setsense.progressSet({ checklistDismissed: true })
+    if (!bridgeMissing()) await window.setrecord.progressSet({ checklistDismissed: true })
   }
 }))
 
@@ -120,7 +120,7 @@ export function useChecklistSteps(): ChecklistStep[] {
   const progress = useProgressStore((s) => s.progress)
   const hasLibrary = useLibraryStore((s) => s.hasLibrary)
   return [
-    { id: 'welcome', label: 'Welcome to SetSense', done: true },
+    { id: 'welcome', label: 'Welcome to SetRecord', done: true },
     {
       id: 'import',
       label: 'Load your library',

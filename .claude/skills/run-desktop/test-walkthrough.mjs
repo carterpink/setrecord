@@ -1,5 +1,5 @@
 /**
- * SetSense full user-journey test.
+ * SetRecord full user-journey test.
  * Launches the Electron app, walks through every major feature,
  * saves screenshots to /tmp/shots/ for review.
  */
@@ -64,7 +64,7 @@ async function evalInPage(expr) {
 }
 
 // ─── MAIN ────────────────────────────────────────────────────────────────────
-console.log('\n=== SetSense Automated User-Journey Test ===\n');
+console.log('\n=== SetRecord Automated User-Journey Test ===\n');
 
 // 1. Launch
 console.log('\n[1] Launching app...');

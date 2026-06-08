@@ -78,7 +78,7 @@ export function buildSet(
     return {
       kind: 'empty',
       narration:
-        "SetSense doesn't track a vinyl-only flag, so I can't build a strictly vinyl set. Tag your vinyl rips and I can filter on that instead."
+        "SetRecord doesn't track a vinyl-only flag, so I can't build a strictly vinyl set. Tag your vinyl rips and I can filter on that instead."
     }
   }
 

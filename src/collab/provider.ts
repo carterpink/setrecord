@@ -11,7 +11,7 @@
  *   MSG_QUERY     "send me your full state" (sent on connect / reconnect)
  *   MSG_AWARENESS y-protocols/awareness update bytes (ephemeral presence)
  *
- * This file is transport-only and deliberately knows nothing about SetSense
+ * This file is transport-only and deliberately knows nothing about SetRecord
  * stores — the bridge (session.ts) wires it to setStore.
  */
 

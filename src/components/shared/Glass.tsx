@@ -7,7 +7,7 @@ interface GlassProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 /**
- * The three SetSense glass surfaces.
+ * The three SetRecord glass surfaces.
  * Glass 1 = scrollable panels, Glass 2 = cards/dropdowns, Glass 3 = modals/dock.
  * Token values live in src/styles/tokens.css.
  */

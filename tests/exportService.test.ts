@@ -9,7 +9,7 @@ import { makeTrack } from './fixtures'
 function tmp(): string {
   return join(
     tmpdir(),
-    `setsense-export-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.xml`
+    `setrecord-export-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.xml`
   )
 }
 

@@ -27,7 +27,7 @@ import { BUDGETS, measureAsync, record } from '../budgets'
 
 // Temp userData dir handed to the mocked Electron app. Assigned before any
 // dynamic import of 'electron', so the mock's getPath() closure is safe.
-const USER_DATA = mkdtempSync(join(tmpdir(), 'setsense-bench-'))
+const USER_DATA = mkdtempSync(join(tmpdir(), 'setrecord-bench-'))
 
 vi.mock('electron', () => ({
   app: { getPath: (): string => USER_DATA }

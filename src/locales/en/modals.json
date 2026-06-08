@@ -263,7 +263,7 @@
       "validationNotFound": "Validation failed — set not found.",
       "validationFailed": "Validation failed.",
       "usbDisconnected": "That USB drive is no longer connected.",
-      "proRequired": "Exporting is a SetSense Pro feature.",
+      "proRequired": "Exporting is a SetRecord Pro feature.",
       "exportFailed": "Export failed."
     },
     "toast": {

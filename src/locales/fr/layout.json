@@ -52,7 +52,8 @@
     "goLive": "Passer en direct",
     "endTitle": "Terminer le direct — fermer la superposition flottante",
     "goLiveTitle": "Passer en direct — une superposition de verre transparent qui flotte au-dessus de Rekordbox, lit ce qui est en lecture et révèle les meilleurs enchaînements",
-    "screenPermissionError": "SetSense Live nécessite l’autorisation d’enregistrement de l’écran (Réglages système → Confidentialité)."
+    "screenPermissionError": "SetRecord Live nécessite l’autorisation d’enregistrement de l’écran (Réglages système → Confidentialité).",
+    "setSaved": "Set enregistré dans ton historique"
   },
   "energy": {
     "pill": "Analyse de l’énergie <0>{{processed}} / {{total}}</0>…",

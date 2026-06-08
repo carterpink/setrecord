@@ -1,5 +1,5 @@
 /**
- * SetSense cloud collaboration relay (v2).
+ * SetRecord cloud collaboration relay (v2).
  *
  * A standalone, room-multiplexing WebSocket broadcaster — the cloud-hosted
  * sibling of the in-app LAN relay (electron/services/collab/relayServer.ts). It
@@ -100,5 +100,5 @@ wss.on('close', () => clearInterval(heartbeat))
 
 http.listen(PORT, () => {
   // eslint-disable-next-line no-console
-  console.log(`[setsense-collab-relay] listening on :${PORT}`)
+  console.log(`[setrecord-collab-relay] listening on :${PORT}`)
 })

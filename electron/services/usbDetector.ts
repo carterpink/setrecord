@@ -186,7 +186,7 @@ const SPEED_TEST_SIZE = 10 * 1024 * 1024 // 10 MB
 export async function testUSBSpeed(
   mountPath: string
 ): Promise<{ readMBps: number; writeMBps: number } | null> {
-  const testPath = join(mountPath, '.setsense_speedtest_tmp')
+  const testPath = join(mountPath, '.setrecord_speedtest_tmp')
   // Pre-allocate buffer (zeros are fine; we're measuring IO not CPU)
   const data = Buffer.allocUnsafe(SPEED_TEST_SIZE)
 

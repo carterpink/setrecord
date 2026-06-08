@@ -4345,7 +4345,7 @@
     padding-right: 4px;
   }
 
-  /* ── SetSense Intelligence — conversations ─────────────────────────────── */
+  /* ── SetRecord Intelligence — conversations ─────────────────────────────── */
   .recall-convos {
     flex: 1;
     min-height: 0;
@@ -6077,6 +6077,198 @@
     color: var(--text-primary);
   }
 
+  /* Tracklist overlay header actions (copy + close) */
+  .gig-tracklist-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: none;
+  }
+
+  .gig-tracklist-copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .gig-tracklist-copy:hover {
+    color: var(--accent);
+  }
+
+  /* Set recording player (Flight Recorder playback) */
+  .set-player-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .set-player-icon {
+    color: var(--accent);
+    flex: none;
+  }
+
+  .set-player-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    flex: none;
+  }
+
+  .set-player-audio {
+    flex: 1;
+    height: 34px;
+    min-width: 0;
+  }
+
+  .set-player-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    text-align: left;
+    cursor: pointer;
+    transition: background 120ms;
+  }
+
+  .set-player-row:hover:not(:disabled) {
+    background: var(--accent-dim-12);
+  }
+
+  .set-player-row.is-active {
+    background: var(--accent-dim-12);
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+
+  .set-player-row:disabled {
+    cursor: default;
+    opacity: 0.7;
+  }
+
+  .set-player-time {
+    width: 48px;
+    flex: none;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .set-player-row.is-active .set-player-time {
+    color: var(--accent);
+  }
+
+  .set-player-track {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .set-player-title {
+    color: var(--text-primary);
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .set-player-artist {
+    color: var(--text-tertiary);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Live — recorded-set review sheet (decide-after) */
+  .save-set-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--accent);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .save-set-venue {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 14px;
+  }
+
+  .save-set-list {
+    max-height: 42vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 16px;
+  }
+
+  .save-set-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+  }
+
+  .save-set-row:hover {
+    background: var(--accent-dim-12);
+  }
+
+  .save-set-num {
+    width: 22px;
+    flex: none;
+    text-align: right;
+    color: var(--text-tertiary);
+    font-size: 12px;
+  }
+
+  .save-set-track {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .save-set-title {
+    color: var(--text-primary);
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .save-set-artist {
+    color: var(--text-tertiary);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .save-set-time {
+    flex: none;
+    color: var(--text-tertiary);
+    font-size: 12px;
+  }
+
+  .save-set-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
   /* Crates */
   .recall-crate-grid {
     display: grid;
@@ -7279,7 +7471,7 @@
     font-weight: 500;
   }
 
-  /* ── SetSense Pro: upgrade modal, paywall, badges ─────────────────────── */
+  /* ── SetRecord Pro: upgrade modal, paywall, badges ─────────────────────── */
   .upgrade-title {
     display: flex;
     align-items: center;

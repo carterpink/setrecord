@@ -17,6 +17,7 @@ import type {
   SessionFilter,
   SessionMetadataPatch,
   SetReaction,
+  SetRecording,
   LifecycleState,
   TrackTag,
   TagCategory,
@@ -520,7 +521,7 @@ function rowToPlaylist(row: Record<string, unknown>): Playlist {
 /**
  * Wipe the playlists table and insert the new set. Wrapped in a transaction so
  * a partial failure leaves the previous tree intact. Called after every XML
- * import — Rekordbox is the source of truth, SetSense is a mirror.
+ * import — Rekordbox is the source of truth, SetRecord is a mirror.
  */
 export function replaceAllPlaylists(db: Database.Database, playlists: Playlist[]): void {
   const insert = db.prepare(`
@@ -1185,6 +1186,91 @@ export function createSession(
   return sessionId
 }
 
+/** One played track for createLiveSession, with the absolute time it dropped. */
+export interface LiveSessionTrackInput {
+  trackId: string
+  /** Absolute ISO timestamp this track was played. */
+  playedAt: string
+  /** ms offset from set start (audio timeline); null for tracklist-only sessions. */
+  startMs?: number
+  endMs?: number
+  /** Seconds into the track when first identified — Phase 3 reaction-reference seed. */
+  matchOffsetSec?: number
+}
+
+/**
+ * Persist a Live "flight recorder" session: a play_sessions row (source='setrecord')
+ * plus its ordered, INDIVIDUALLY-timestamped tracklist, and bump play_count /
+ * last_played on each recorded track — all in one transaction. Unlike createSession
+ * (which stamps every track with the session's performed_at), each track keeps its
+ * own played_at, which is what powers the timestamped tracklist and "what did I play
+ * at 1am" recall. Returns the new session id, or null if there were no tracks.
+ */
+export function createLiveSession(
+  db: Database.Database,
+  args: {
+    name: string
+    venue?: string | null
+    performedAt: string
+    durationSec?: number | null
+    tracks: LiveSessionTrackInput[]
+  }
+): string | null {
+  if (args.tracks.length === 0) return null
+  const sessionId = crypto.randomUUID()
+  const now = new Date().toISOString()
+
+  const insertSession = db.prepare(`
+    INSERT INTO play_sessions
+      (id, name, source, performed_at, venue, duration, set_id, created_at, venue_source)
+    VALUES
+      (@id, @name, 'setrecord', @performedAt, @venue, @duration, NULL, @createdAt, 'user')
+  `)
+  const insertTrack = db.prepare(`
+    INSERT INTO session_tracks
+      (id, session_id, track_id, play_order, played_at, start_ms, end_ms, match_offset_sec)
+    VALUES
+      (@id, @sessionId, @trackId, @playOrder, @playedAt, @startMs, @endMs, @matchOffsetSec)
+  `)
+  const bumpPlayCount = db.prepare(`
+    UPDATE tracks
+    SET
+      play_count = play_count + 1,
+      last_played = CASE
+        WHEN last_played IS NULL OR last_played < @playedAt THEN @playedAt
+        ELSE last_played
+      END
+    WHERE id = @trackId
+  `)
+
+  const tx = db.transaction(() => {
+    insertSession.run({
+      id: sessionId,
+      name: args.name,
+      performedAt: args.performedAt,
+      venue: args.venue ?? null,
+      duration: args.durationSec ?? null,
+      createdAt: now
+    })
+    for (let i = 0; i < args.tracks.length; i++) {
+      const tk = args.tracks[i]
+      insertTrack.run({
+        id: crypto.randomUUID(),
+        sessionId,
+        trackId: tk.trackId,
+        playOrder: i,
+        playedAt: tk.playedAt,
+        startMs: tk.startMs ?? null,
+        endMs: tk.endMs ?? null,
+        matchOffsetSec: tk.matchOffsetSec ?? null
+      })
+      bumpPlayCount.run({ trackId: tk.trackId, playedAt: tk.playedAt })
+    }
+  })
+  tx()
+  return sessionId
+}
+
 /**
  * All sessions, newest performed_at first, with a track count per session.
  */
@@ -1211,6 +1297,7 @@ export function getSessionTracks(db: Database.Database, sessionId: string): Sess
       `
       SELECT
         st.id, st.session_id, st.track_id, st.play_order, st.played_at,
+        st.start_ms, st.end_ms, st.match_offset_sec,
         t.id as t_id, t.rekordbox_id, t.title, t.artist, t.album, t.genre,
         t.bpm, t.key, t.key_open, t.energy, t.energy_raw, t.energy_source,
         t.duration, t.file_path, t.file_size, t.bitrate, t.format,
@@ -1232,6 +1319,9 @@ export function getSessionTracks(db: Database.Database, sessionId: string): Sess
     trackId: row.track_id as string,
     playOrder: row.play_order as number,
     playedAt: (row.played_at as string) || undefined,
+    startMs: row.start_ms == null ? undefined : (row.start_ms as number),
+    endMs: row.end_ms == null ? undefined : (row.end_ms as number),
+    matchOffsetSec: row.match_offset_sec == null ? undefined : (row.match_offset_sec as number),
     track: rowToTrack({ ...row, id: row.t_id })
   }))
 }
@@ -1257,6 +1347,76 @@ export function getSessionsForTrack(db: Database.Database, trackId: string): Pla
 
 export function deleteSession(db: Database.Database, sessionId: string): void {
   db.prepare('DELETE FROM play_sessions WHERE id = ?').run(sessionId)
+}
+
+// ───────── Flight-recorder audio (lo-fi reference recordings) ─────────
+
+function rowToRecording(row: Record<string, unknown>): SetRecording {
+  return {
+    id: row.id as string,
+    sessionId: row.session_id as string,
+    audioFilePath: row.audio_file_path as string,
+    audioFormat: row.audio_format as string,
+    audioDurationSec:
+      row.audio_duration_sec == null ? undefined : (row.audio_duration_sec as number),
+    audioBytes: row.audio_bytes == null ? undefined : (row.audio_bytes as number),
+    source: (row.source as string) ?? 'room-mic',
+    createdAt: row.created_at as string
+  }
+}
+
+/**
+ * Link a local audio recording to a session. Keyed on session_id (UNIQUE), so
+ * re-saving overwrites rather than duplicating. The file itself lives under
+ * userData/recordings and is written by setRecorder — this only stores the path.
+ */
+export function createRecording(
+  db: Database.Database,
+  args: {
+    sessionId: string
+    audioFilePath: string
+    audioFormat?: string
+    durationSec?: number | null
+    bytes?: number | null
+    source?: string
+  }
+): string {
+  const id = crypto.randomUUID()
+  db.prepare(
+    `
+    INSERT INTO set_recordings
+      (id, session_id, audio_file_path, audio_format, audio_duration_sec, audio_bytes, source, created_at)
+    VALUES
+      (@id, @sessionId, @audioFilePath, @audioFormat, @durationSec, @bytes, @source, @createdAt)
+    ON CONFLICT(session_id) DO UPDATE SET
+      audio_file_path    = excluded.audio_file_path,
+      audio_format       = excluded.audio_format,
+      audio_duration_sec = excluded.audio_duration_sec,
+      audio_bytes        = excluded.audio_bytes,
+      source             = excluded.source
+  `
+  ).run({
+    id,
+    sessionId: args.sessionId,
+    audioFilePath: args.audioFilePath,
+    audioFormat: args.audioFormat ?? 'webm-opus',
+    durationSec: args.durationSec ?? null,
+    bytes: args.bytes ?? null,
+    source: args.source ?? 'room-mic',
+    createdAt: new Date().toISOString()
+  })
+  return id
+}
+
+/** The audio recording for a session, or null if none was saved. */
+export function getRecordingForSession(
+  db: Database.Database,
+  sessionId: string
+): SetRecording | null {
+  const row = db.prepare('SELECT * FROM set_recordings WHERE session_id = ?').get(sessionId) as
+    | Record<string, unknown>
+    | undefined
+  return row ? rowToRecording(row) : null
 }
 
 // ───────── Crowd reactions (Black Box "set flight recorder") ─────────
@@ -1485,8 +1645,8 @@ export function bulkAssignSessions(
 }
 
 /**
- * Reads the ordered set_tracks for a SetSense set, creates a play_sessions row
- * (source='setsense', set_id linked), and increments play_count / updates
+ * Reads the ordered set_tracks for a SetRecord set, creates a play_sessions row
+ * (source='setrecord', set_id linked), and increments play_count / updates
  * last_played on each track if the performed date is newer. All in one transaction.
  */
 export function markSetAsPerformed(
@@ -1522,7 +1682,7 @@ export function markSetAsPerformed(
   const existing = db
     .prepare(
       `SELECT id FROM play_sessions
-       WHERE source = 'setsense' AND set_id = ?
+       WHERE source = 'setrecord' AND set_id = ?
          AND ABS(CAST((julianday(performed_at) - julianday(?)) * 86400 AS INTEGER)) < 60
        LIMIT 1`
     )
@@ -1571,7 +1731,7 @@ export function markSetAsPerformed(
     insertSession.run({
       id: sessionId,
       name: setRow.name as string,
-      source: 'setsense',
+      source: 'setrecord',
       performedAt,
       venue: opts.venue ?? null,
       duration: null,
@@ -1599,7 +1759,7 @@ export function markSetAsPerformed(
 
 /**
  * Wipe all source='rekordbox' sessions and bulk-insert a fresh batch.
- * Never touches source='setsense' or source='manual' sessions.
+ * Never touches source='setrecord' or source='manual' sessions.
  * Idempotent — safe to call on every XML re-import.
  *
  * User-edited gig metadata is preserved across the wipe: before deleting we
@@ -1899,21 +2059,21 @@ export function undismissDuplicateGroup(db: Database.Database, normalisedKey: st
 }
 
 /**
- * Remove duplicate setsense sessions: when the same set was marked as performed
+ * Remove duplicate setrecord sessions: when the same set was marked as performed
  * multiple times in a short burst (e.g. from automated tests or a rapid UI re-click),
  * keep only the earliest session per set_id and delete the rest.
  *
  * Safe to run on every launch — idempotent, never touches rekordbox sessions.
  * Returns the number of duplicate sessions removed.
  */
-export function pruneDuplicateSetsenseSessions(db: Database.Database): number {
-  // Find set_ids that have more than one setsense session
+export function pruneDuplicateSetRecordSessions(db: Database.Database): number {
+  // Find set_ids that have more than one setrecord session
   const duplicates = db
     .prepare(
       `
       SELECT set_id, COUNT(*) AS cnt, MIN(created_at) AS keep_created_at
       FROM play_sessions
-      WHERE source = 'setsense' AND set_id IS NOT NULL
+      WHERE source = 'setrecord' AND set_id IS NOT NULL
       GROUP BY set_id
       HAVING cnt > 1
     `
@@ -1932,11 +2092,11 @@ export function pruneDuplicateSetsenseSessions(db: Database.Database): number {
         .prepare(
           `
           DELETE FROM play_sessions
-          WHERE source = 'setsense'
+          WHERE source = 'setrecord'
             AND set_id = ?
             AND id NOT IN (
               SELECT id FROM play_sessions
-              WHERE source = 'setsense' AND set_id = ?
+              WHERE source = 'setrecord' AND set_id = ?
               ORDER BY created_at ASC, rowid ASC
               LIMIT 1
             )

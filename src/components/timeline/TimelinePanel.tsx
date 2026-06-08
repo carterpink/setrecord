@@ -103,15 +103,15 @@ export function TimelinePanel(): React.JSX.Element {
   const [marking, setMarking] = useState(false)
 
   async function handleMarkPerformed(): Promise<void> {
-    if (!currentSet || tracks.length < 2 || !window.setsense) return
+    if (!currentSet || tracks.length < 2 || !window.setrecord) return
     setMarking(true)
     try {
-      const sessionId = await window.setsense.historyMarkPerformed(currentSet.id)
+      const sessionId = await window.setrecord.historyMarkPerformed(currentSet.id)
       if (!sessionId) {
         toast.error(t('performed.markError'))
         return
       }
-      const flagged = await window.setsense.lifecycleFlaggedInSession(sessionId)
+      const flagged = await window.setrecord.lifecycleFlaggedInSession(sessionId)
       if (flagged.length > 0) {
         showPostGigPrompt({ sessionId, setName: currentSet.name, tracks: flagged })
       } else {

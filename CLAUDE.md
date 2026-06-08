@@ -1,4 +1,4 @@
-# SetSense — Claude Code Guide
+# SetRecord — Claude Code Guide
 
 ## Stack
 Electron 33 · Vite · TypeScript · React · better-sqlite3 · Vitest · ESLint

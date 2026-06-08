@@ -1,17 +1,17 @@
-SetSense — Product Requirements Document v1.0
+SetRecord — Product Requirements Document v1.0
 For Claude Code. Read this entire document before writing a single line of code.
 
 0. What This Document Is
-This is the complete technical and product specification for SetSense v1.0 — a desktop DJ set planning application for macOS. Claude Code should treat this as the single source of truth. Every architectural decision, data model, feature spec, and build instruction is here. Do not improvise outside this document without flagging a conflict.
+This is the complete technical and product specification for SetRecord v1.0 — a desktop DJ set planning application for macOS. Claude Code should treat this as the single source of truth. Every architectural decision, data model, feature spec, and build instruction is here. Do not improvise outside this document without flagging a conflict.
 The companion design system artifact (generated in Claude Design) defines all visual tokens, components, and patterns. Every UI decision defers to that design system. If this PRD conflicts with the design system on a visual matter, the design system wins. If it conflicts on a functional matter, this PRD wins.
 
 1. Product Vision
-SetSense is a desktop-first DJ companion app for macOS that allows any DJ to intuitively build sets, reduce pre-gig anxiety, and guarantee their USB will work on Pioneer hardware without surprises.
+SetRecord is a desktop-first DJ companion app for macOS that allows any DJ to intuitively build sets, reduce pre-gig anxiety, and guarantee their USB will work on Pioneer hardware without surprises.
 Three core pillars:
 	1	Reliability — USB export, library health validation, CDJ compatibility checks
 	2	Intelligence — algorithmic track suggestions, Set Architect, transition risk scoring
 	3	Clarity — simple, fast, zero confusion
-What it is not: A Rekordbox competitor. A streaming app. An AI chatbot for music. SetSense fits inside the existing DJ workflow as a planning layer that sits between library management (Rekordbox) and performance (CDJs).
+What it is not: A Rekordbox competitor. A streaming app. An AI chatbot for music. SetRecord fits inside the existing DJ workflow as a planning layer that sits between library management (Rekordbox) and performance (CDJs).
 
 2. Tech Stack
 Confirmed
@@ -23,7 +23,7 @@ Confirmed
 	•	Database: SQLite via better-sqlite3 — runs in the Electron main process. Fast, local, no server, survives app restarts. This is where the parsed library lives permanently.
 	•	IPC: Electron's contextBridge + ipcRenderer/ipcMain for all main↔renderer communication. No nodeIntegration: true. Security first.
 Why SQLite and not flat JSON / localStorage
-The DJ library can be 10,000+ tracks. JSON files in memory don't scale, localStorage is a browser toy, and IndexedDB is painful. SQLite gives you fast queries (BPM range filtering, key filtering, fuzzy search across 10k rows), persistent storage, and zero network dependency. It lives at ~/Library/Application Support/SetSense/library.db.
+The DJ library can be 10,000+ tracks. JSON files in memory don't scale, localStorage is a browser toy, and IndexedDB is painful. SQLite gives you fast queries (BPM range filtering, key filtering, fuzzy search across 10k rows), persistent storage, and zero network dependency. It lives at ~/Library/Application Support/SetRecord/library.db.
 Why no AI APIs
 All suggestion and scoring logic is deterministic, algorithmic, and runs locally. No network dependency for core features. This means the app works offline, at a venue with no WiFi, on a USB-C only MacBook Air at 2am. That's the target environment.
 Key dependencies
@@ -49,7 +49,7 @@ electron-store (app preferences, not library data)
 3. Project Structure
 
 
-setsense/
+setrecord/
 ├── electron/
 │   ├── main.ts              # Electron entry, window creation, IPC handlers
 │   ├── preload.ts           # contextBridge API exposure
@@ -529,7 +529,7 @@ Flow:
 	2	If issues exist: show ExportModal with issue list. Issues are classified as "blocking" (won't export) or "warnings" (will export with caveats). User must acknowledge.
 	3	If all clear: proceed to export
 	4	Generate Rekordbox XML from current set using exportService.ts
-	5	Open macOS save dialog, default filename: [SetName]_SetSense_[date].xml
+	5	Open macOS save dialog, default filename: [SetName]_SetRecord_[date].xml
 	6	Write file, show success state in modal
 	7	Optional: show "Copy to USB" shortcut if a USB drive is detected
 Export format: Rekordbox XML v3 compatible. Include all track metadata, cue points, hot cues, playlist structure. This file can be imported directly into Rekordbox or loaded via a USB drive on supported CDJs.
@@ -548,7 +548,7 @@ Define in electron/preload.ts. These are all the calls the renderer can make to 
 
 
 typescript
-window.setsense = {
+window.setrecord = {
   // Library
   importLibrary: (xmlPath: string) => Promise<ImportResult>,
   getLibrary: (filters?: LibraryFilters) => Promise<Track[]>,

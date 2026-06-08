@@ -31,7 +31,7 @@ describe('parseActivationUrl', () => {
   })
 
   it('rejects a foreign scheme', () => {
-    expect(parseActivationUrl('https://setsense.app/activate?key=SES1.x')).toBeNull()
+    expect(parseActivationUrl('https://setrecord.app/activate?key=SES1.x')).toBeNull()
   })
 
   it('rejects the right scheme but wrong action', () => {
@@ -68,7 +68,7 @@ describe('checkoutUrl', () => {
 
 // ─── Full deep-link activation path ──────────────────────────────────────────
 // These tests exercise the complete chain:
-//   setsense://activate?key=SES1.… → parseActivationUrl → activateLicense
+//   setrecord://activate?key=SES1.… → parseActivationUrl → activateLicense
 //   → Ed25519 verify → store in keychain → return Pro state
 //
 // licenseService imports keytar, electron-store, and electron (for gateway net

@@ -12,7 +12,7 @@
 import keytar from 'keytar'
 import ElectronStore from 'electron-store'
 
-const SERVICE = 'SetSense'
+const SERVICE = 'SetRecord'
 const YT_ACCOUNT = 'youtubeApiKey'
 const LICENSE_ACCOUNT = 'licenseKey'
 

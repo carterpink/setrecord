@@ -292,8 +292,8 @@ export function HealthSection(): React.JSX.Element {
   // Stream energy-analysis progress while the user is on this panel so the
   // "Analyse all" button reflects the work happening in the main process.
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.setsense) return
-    const unsub = window.setsense.onEnergyProgress?.((p) => {
+    if (typeof window === 'undefined' || !window.setrecord) return
+    const unsub = window.setrecord.onEnergyProgress?.((p) => {
       if (p.phase === 'done') {
         setAnalysing(null)
         void loadHealth()
@@ -310,7 +310,7 @@ export function HealthSection(): React.JSX.Element {
     if (analysing) return
     setAnalysing({ processed: 0, total: 0 })
     try {
-      const res = await window.setsense.analyseEnergy()
+      const res = await window.setrecord.analyseEnergy()
       if (!res.running) {
         // Either nothing to do or already running; either way show feedback.
         toast.info(t('health.analyseInProgress'))
@@ -330,7 +330,7 @@ export function HealthSection(): React.JSX.Element {
     if (rescanning) return
     setRescanning(true)
     try {
-      await window.setsense.triggerHealthCheck()
+      await window.setrecord.triggerHealthCheck()
       // Health-check is fire-and-forget; allow a beat for the DB to settle then reload.
       setTimeout(() => {
         void loadHealth()

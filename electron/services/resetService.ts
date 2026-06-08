@@ -11,7 +11,7 @@
  *    activated; a reset is not a sign-out. The license bookkeeping JSON is
  *    cleared, but the signed key in the keychain is untouched.
  *  - The bundled/downloaded ML models in userData/models — heavy, not user data.
- *  - The user's actual audio files — SetSense never owns or moves those.
+ *  - The user's actual audio files — SetRecord never owns or moves those.
  *
  * The caller relaunches the app immediately after this returns, so we reset the
  * electron-store instances in-place (`store.clear()`) rather than deleting their
@@ -40,7 +40,7 @@ function removeIfExists(path: string): void {
 }
 
 /**
- * Wipe all SetSense state to first-launch. Synchronous and best-effort: each
+ * Wipe all SetRecord state to first-launch. Synchronous and best-effort: each
  * step is independent so a single failure can't leave the wipe half-done.
  */
 export function freshStart(): void {

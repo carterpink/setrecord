@@ -1,5 +1,5 @@
 /**
- * librarySearch.ts — Pure deterministic library search for SetSense Intelligence
+ * librarySearch.ts — Pure deterministic library search for SetRecord Intelligence
  * conversations. Turns a LibrarySearchParams object into an ordered track list,
  * instantly and offline. No model is involved: this IS the accuracy lever.
  */
@@ -133,7 +133,7 @@ export function searchLibrary(
     const needle = p.cueLabel.toLowerCase()
     out = out.filter((t) => {
       // Hot cues carry labels; CuePoint (memory/cue) currently has no label field
-      // in the SetSense schema, so we only check hot cues here.
+      // in the SetRecord schema, so we only check hot cues here.
       return t.hotCues.some((hc) => (hc.label ?? '').toLowerCase().includes(needle))
     })
   }

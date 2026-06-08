@@ -31,7 +31,7 @@ export function useSuggestions(
     }
     setIsLoading(true)
     try {
-      const results = await window.setsense.getSuggestions(
+      const results = await window.setrecord.getSuggestions(
         trackId,
         setId ?? '',
         count,

@@ -70,15 +70,15 @@ export function AppShell(): React.JSX.Element {
   // Subscribe to background file-health push events from main process
   useEffect(() => {
     // Guard for browser-only preview where IPC bridge is absent
-    if (typeof window.setsense === 'undefined') return
-    const unsub = window.setsense.onFileStatusUpdate(applyFileStatusChanges)
+    if (typeof window.setrecord === 'undefined') return
+    const unsub = window.setrecord.onFileStatusUpdate(applyFileStatusChanges)
     return unsub
   }, [applyFileStatusChanges])
 
   // Hydrate Learn Mode from persisted AppSettings on boot
   useEffect(() => {
-    if (typeof window.setsense === 'undefined') return
-    void window.setsense.getSettings().then((s) => {
+    if (typeof window.setrecord === 'undefined') return
+    void window.setrecord.getSettings().then((s) => {
       hydrateFromSettings({
         learnModeEnabled: s.learnModeEnabled,
         isBeginner: s.isBeginner,
@@ -112,17 +112,17 @@ export function AppShell(): React.JSX.Element {
       .then(() => useProgressStore.getState().recordActivity())
   }, [])
 
-  // License activation deep-links (setsense://activate?key=…). On mount we drain
+  // License activation deep-links (setrecord://activate?key=…). On mount we drain
   // any key buffered during cold start and signal the main process we're ready;
   // we also subscribe to live links that arrive while the app is open. Either
   // path opens the Upgrade modal pre-filled and auto-activates.
   useEffect(() => {
-    if (typeof window.setsense === 'undefined') return
+    if (typeof window.setrecord === 'undefined') return
     const { showUpgradeWithKey } = useUiStore.getState()
-    void window.setsense.licenseConsumePendingActivation().then((key) => {
+    void window.setrecord.licenseConsumePendingActivation().then((key) => {
       if (key) showUpgradeWithKey(key)
     })
-    const unsub = window.setsense.onLicenseActivateDeepLink((key) => {
+    const unsub = window.setrecord.onLicenseActivateDeepLink((key) => {
       if (key) showUpgradeWithKey(key)
     })
     return unsub
@@ -130,8 +130,8 @@ export function AppShell(): React.JSX.Element {
 
   // Subscribe to background energy-analysis events from main process
   useEffect(() => {
-    if (typeof window.setsense === 'undefined') return
-    const unsubProgress = window.setsense.onEnergyProgress((p) => {
+    if (typeof window.setrecord === 'undefined') return
+    const unsubProgress = window.setrecord.onEnergyProgress((p) => {
       setEnergyAnalysis(p.phase === 'done' ? null : { processed: p.processed, total: p.total })
       // The analyser writes auto-tags alongside energy; pull them in once the
       // background pass finishes so chips appear without a manual reload.
@@ -140,14 +140,14 @@ export function AppShell(): React.JSX.Element {
         void useTagStore.getState().loadCoverage()
       }
     })
-    const unsubUpdate = window.setsense.onEnergyUpdate((u) => {
+    const unsubUpdate = window.setrecord.onEnergyUpdate((u) => {
       patchTrackEnergy(u.trackId, u.energy, u.source)
     })
-    const unsubArtwork = window.setsense.onArtworkUpdate((u) => {
+    const unsubArtwork = window.setrecord.onArtworkUpdate((u) => {
       patchTrackArtwork(u.trackId, u.albumArtPath)
     })
     // Re-tag progress (manual "Re-tag library") → drive the Tags view + reload.
-    const unsubTags = window.setsense.onTagsProgress((p) => {
+    const unsubTags = window.setrecord.onTagsProgress((p) => {
       useTagStore.getState().handleProgress(p)
     })
     return () => {
@@ -163,11 +163,11 @@ export function AppShell(): React.JSX.Element {
     loadLibrary().then(() => {
       const { hasLibrary } = useLibraryStore.getState()
       // Browser-only preview (no IPC): fall back to the library-presence check.
-      if (typeof window.setsense === 'undefined') {
+      if (typeof window.setrecord === 'undefined') {
         if (!hasLibrary) showOnboarding()
         return
       }
-      void window.setsense.getSettings().then((s) => {
+      void window.setrecord.getSettings().then((s) => {
         if (s.hasCompletedOnboarding) return
         // Existing user from before this flag existed: they already imported a
         // library, so treat them as onboarded silently rather than re-nagging.

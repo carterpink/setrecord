@@ -17,6 +17,8 @@ import type {
   CuePoint,
   EnergySource,
   GemResult,
+  GraphData,
+  GraphRequest,
   HealthReport,
   HotCue,
   Loop,
@@ -35,8 +37,14 @@ import type {
   SetSlot,
   VenueType,
   BriefAnswer,
+  TrackResume,
+  SoundMirrorResult,
+  CourageResult,
+  ShazamAnswer,
   RecallAiStatus,
   RecallAskResult,
+  RecordedSetSummary,
+  SetRecording,
   RecallRoute,
   VoiceStatus,
   MicAccess,
@@ -94,8 +102,9 @@ export interface EngineExportProgress {
 }
 import type { AppSettings } from './services/settingsService'
 import type { ProgressState, FirstEvent } from './services/progressService'
+import type { ShazamHit } from '../src/utils/reverseShazamIntent'
 
-const setsense = {
+const setrecord = {
   // ── Library ──────────────────────────────────────────────────────────────
   importLibrary: (xmlPath: string) => ipcRenderer.invoke('library:import', xmlPath),
 
@@ -325,6 +334,13 @@ const setsense = {
     passphrase?: string
   ): Promise<BackupImportResult> => ipcRenderer.invoke('backup:import', filePath, mode, passphrase),
 
+  // ── Diagnostic log export (NFR-801 Phase 2) ────────────────────────────────
+  exportLogs: (): Promise<{ success: boolean; path?: string; error?: string }> =>
+    ipcRenderer.invoke('logs:export'),
+  revealLogBundle: (path: string): Promise<void> => ipcRenderer.invoke('logs:reveal', path),
+  // Per-launch session id + app version, for correlating bug reports to Sentry.
+  logSessionInfo: (): Promise<{ sid: string; version: string }> => ipcRenderer.invoke('logs:sid'),
+
   // ── Retention / activation progress (brief #22, Phase B) ───────────────────
   progressGet: () => ipcRenderer.invoke('progress:get') as Promise<ProgressState>,
   progressSet: (partial: Partial<ProgressState>) =>
@@ -336,7 +352,7 @@ const setsense = {
   progressRecordActivity: () =>
     ipcRenderer.invoke('progress:recordActivity') as Promise<ProgressState>,
 
-  // ── Licensing / SetSense Pro (Section 16) ──────────────────────────────────
+  // ── Licensing / SetRecord Pro (Section 16) ──────────────────────────────────
   licenseGet: (): Promise<LicenseState> => ipcRenderer.invoke('license:get'),
 
   licenseActivate: (key: string): Promise<LicenseActivationResult> =>
@@ -349,7 +365,7 @@ const setsense = {
   licenseCheckout: (plan: CheckoutPlan, tipAmount?: number): Promise<boolean> =>
     ipcRenderer.invoke('license:checkout', plan, tipAmount),
 
-  // Deep-link activation (setsense://activate?key=…). Called once on mount to
+  // Deep-link activation (setrecord://activate?key=…). Called once on mount to
   // drain any key buffered during cold start.
   licenseConsumePendingActivation: (): Promise<string | null> =>
     ipcRenderer.invoke('license:consume-pending-activation'),
@@ -409,11 +425,25 @@ const setsense = {
   historySessionTracks: (sessionId: string): Promise<SessionTrack[]> =>
     ipcRenderer.invoke('history:get-session-tracks', sessionId),
 
+  historyGetRecording: (sessionId: string): Promise<SetRecording | null> =>
+    ipcRenderer.invoke('history:get-recording', sessionId),
+
   historyForTrack: (trackId: string): Promise<PlaySession[]> =>
     ipcRenderer.invoke('history:get-for-track', trackId),
 
   historyBrief: (venue: string, eventType?: VenueType): Promise<BriefAnswer> =>
     ipcRenderer.invoke('history:brief', venue, eventType),
+
+  historyTrackResume: (trackId: string): Promise<TrackResume | null> =>
+    ipcRenderer.invoke('history:track-resume', trackId),
+
+  historySoundMirror: (): Promise<SoundMirrorResult> => ipcRenderer.invoke('history:sound-mirror'),
+
+  historyCourage: (trackId: string): Promise<CourageResult | null> =>
+    ipcRenderer.invoke('history:courage', trackId),
+
+  historyReverseShazam: (hit: ShazamHit): Promise<ShazamAnswer> =>
+    ipcRenderer.invoke('history:reverse-shazam', hit),
 
   historyQuerySessions: (filter: SessionFilter = {}): Promise<PlaySession[]> =>
     ipcRenderer.invoke('history:query-sessions', filter),
@@ -516,6 +546,8 @@ const setsense = {
   recallEnds: (): Promise<{ openers: ComboResult[]; closers: ComboResult[] }> =>
     ipcRenderer.invoke('recall:ends'),
 
+  buildGraph: (req: GraphRequest): Promise<GraphData> => ipcRenderer.invoke('graph:build', req),
+
   onRecallAiProgress: (cb: (s: RecallAiStatus) => void): (() => void) => {
     const handler = (_: Electron.IpcRendererEvent, s: RecallAiStatus): void => cb(s)
     ipcRenderer.on('recall:ai-progress', handler)
@@ -545,7 +577,7 @@ const setsense = {
   /** Stop the host's relay (ends the session for all peers). */
   collabHostStop: (): Promise<void> => ipcRenderer.invoke('collab:host-stop'),
 
-  // ── SetSense Live overlay ────────────────────────────────────────────────
+  // ── SetRecord Live overlay ────────────────────────────────────────────────
   liveStart: (): Promise<void> => ipcRenderer.invoke('live:start'),
   liveStop: (): Promise<void> => ipcRenderer.invoke('live:stop'),
   /** Toggle overlay click-through (false = capture clicks over glass chrome). */
@@ -558,8 +590,30 @@ const setsense = {
   },
   /** Captured probe window (mono f32 @ 22.05k) → main for identification. */
   liveAudioWindow: (samples: Float32Array): void => ipcRenderer.send('live:audio-window', samples),
+
+  /** Stream one encoded room-mic audio chunk (webm/opus) to the main-process recorder. */
+  liveRecChunk: (chunk: ArrayBuffer): void => ipcRenderer.send('live:rec-chunk', chunk),
+
+  /** Tell main the room recorder is (in)active so the overlay can show a REC indicator. */
+  liveRecordingActive: (active: boolean): void => ipcRenderer.send('live:recording-active', active),
+
+  /** Overlay subscribes: is the room mic currently being recorded? */
+  onLiveRecordingState: (cb: (active: boolean) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, active: boolean): void => cb(active)
+    ipcRenderer.on('live:recording-state', handler)
+    return () => ipcRenderer.removeListener('live:recording-state', handler)
+  },
   /** OCR'd text lines from the screen → main matches them to the library. */
   liveScreenText: (lines: string[]): void => ipcRenderer.send('live:screen-text', lines),
+  /** Set the room for this live session; main forwards it to the HUD overlay. */
+  liveSetVenue: (venue: string | null): Promise<void> =>
+    ipcRenderer.invoke('live:set-venue', venue),
+  /** Overlay subscribes to the chosen venue. */
+  onLiveVenue: (cb: (venue: string | null) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, venue: string | null): void => cb(venue)
+    ipcRenderer.on('live:venue', handler)
+    return () => ipcRenderer.removeListener('live:venue', handler)
+  },
   /** Overlay subscribes to live deck data pushed by the engine. */
   onLiveData: (cb: (data: LiveDataPayload) => void): (() => void) => {
     const handler = (_: Electron.IpcRendererEvent, d: LiveDataPayload): void => cb(d)
@@ -578,13 +632,24 @@ const setsense = {
     const handler = (_: Electron.IpcRendererEvent, s: { indexedTracks: number }): void => cb(s)
     ipcRenderer.on('live:ready', handler)
     return () => ipcRenderer.removeListener('live:ready', handler)
-  }
+  },
+  /** Main window subscribes: a live set just ended → show the Save/Discard sheet. */
+  onLiveRecordingReady: (cb: (rec: RecordedSetSummary) => void): (() => void) => {
+    const handler = (_: Electron.IpcRendererEvent, rec: RecordedSetSummary): void => cb(rec)
+    ipcRenderer.on('live:recording-ready', handler)
+    return () => ipcRenderer.removeListener('live:recording-ready', handler)
+  },
+  /** Persist the just-ended live set; returns the new session id (or null). */
+  liveSaveSession: (meta?: { venue?: string | null }): Promise<string | null> =>
+    ipcRenderer.invoke('live:save-session', meta),
+  /** Discard the just-ended live set without saving. */
+  liveDiscardSession: (): Promise<void> => ipcRenderer.invoke('live:discard-session')
 }
 
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('setsense', setsense)
+    contextBridge.exposeInMainWorld('setrecord', setrecord)
   } catch (error) {
     console.error(error)
   }
@@ -592,5 +657,5 @@ if (process.contextIsolated) {
   // @ts-expect-error declared in preload.d.ts
   window.electron = electronAPI
   // @ts-expect-error declared in preload.d.ts
-  window.setsense = setsense
+  window.setrecord = setrecord
 }

@@ -99,4 +99,31 @@ describe('buildCsv escaping', () => {
     // Length formats as m:ss.
     expect(lines[1]).toContain('3:20')
   })
+
+  it('neutralises spreadsheet formula injection in untrusted metadata fields', () => {
+    const row: BeatportRow = {
+      trackId: 't2',
+      position: 1,
+      title: "=cmd|'/c calc'!A0",
+      artist: '+SUM(1+1)',
+      label: '@evil',
+      mix: '-2+3',
+      bpm: 128,
+      key: '8A',
+      duration: 60,
+      searchUrl: 'https://beatport.com/search?q=x',
+      confidence: 'low',
+      reasons: []
+    }
+    const csv = buildCsv([row])
+    // Every formula trigger is prefixed with a single quote so Excel/Sheets treat
+    // it as text. (No comma/quote/newline in these values, so no RFC-4180 wrapping.)
+    expect(csv).toContain("'=cmd")
+    expect(csv).toContain("'+SUM(1+1)")
+    expect(csv).toContain("'@evil")
+    expect(csv).toContain("'-2+3")
+    // A benign value is left completely untouched (no spurious leading quote).
+    expect(csv).toContain('https://beatport.com/search?q=x')
+    expect(csv).not.toContain("'https://beatport")
+  })
 })

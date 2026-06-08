@@ -114,7 +114,7 @@ describe('crypto envelope', () => {
   })
 
   it('detects a non-backup file', () => {
-    expect(() => decodeBundle(Buffer.from('not a backup at all'))).toThrowError(/not a SetSense/i)
+    expect(() => decodeBundle(Buffer.from('not a backup at all'))).toThrowError(/not a SetRecord/i)
   })
 
   it('fails the auth tag when ciphertext is tampered', () => {
@@ -486,7 +486,7 @@ describe('inspectBackup', () => {
 
   it('reports counts and suggests merge vs restore', () => {
     const p = write(
-      'plain.setsense',
+      'plain.setrecord',
       emptyManifest({ counts: { tracks: 10, sets: 2, sessions: 1, tags: 5, crates: 0 } })
     )
     const merge = inspectBackup(p, { localSchemaVersion: 19, localTrackCount: 500 })
@@ -499,21 +499,21 @@ describe('inspectBackup', () => {
   })
 
   it('flags an encrypted bundle as needing a passphrase', () => {
-    const p = write('enc.setsense', emptyManifest(), 'secret')
+    const p = write('enc.setrecord', emptyManifest(), 'secret')
     const r = inspectBackup(p, { localSchemaVersion: 19, localTrackCount: 0 })
     expect(r.ok).toBe(false)
     expect(r.needsPassphrase).toBe(true)
   })
 
   it('refuses a backup from a newer schema', () => {
-    const p = write('future.setsense', emptyManifest({ schemaVersion: 99 }))
+    const p = write('future.setrecord', emptyManifest({ schemaVersion: 99 }))
     const r = inspectBackup(p, { localSchemaVersion: 19, localTrackCount: 0 })
     expect(r.ok).toBe(false)
     expect(r.error).toMatch(/newer version/i)
   })
 
   it('refuses a backup from a newer bundle version', () => {
-    const p = write('futureb.setsense', emptyManifest({ bundleVersion: BUNDLE_VERSION + 1 }))
+    const p = write('futureb.setrecord', emptyManifest({ bundleVersion: BUNDLE_VERSION + 1 }))
     const r = inspectBackup(p, { localSchemaVersion: 19, localTrackCount: 0 })
     expect(r.ok).toBe(false)
     expect(r.error).toMatch(/newer version/i)

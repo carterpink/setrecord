@@ -92,9 +92,11 @@
     "actionsAria": "Aktionen für {{title}}",
     "preview": "Vorschau",
     "findSimilar": "Ähnliche Tracks finden",
+    "courage": "Trau dich etwas anderes",
     "addToSet": "Zum Set hinzufügen",
     "editCues": "Cue Points bearbeiten",
     "playedAfter": "Was habe ich danach gespielt?",
+    "trackResume": "Track-Lebenslauf",
     "editTags": "Tags bearbeiten…"
   },
   "trackRow": {
@@ -146,8 +148,8 @@
     "directTitle": "Direkt in Rekordbox schreiben",
     "advanced": "Erweitert",
     "directDetail": "Echte, filterbare MyTags. Erstellt zuerst ein Backup; Rekordbox muss geschlossen sein.",
-    "warning": "Dies schreibt direkt in deine Rekordbox-Bibliothek. <0>Schließe zuerst Rekordbox.</0> SetSense speichert vor dem Schreiben ein Backup deiner Datenbank mit Zeitstempel und macht alles rückgängig, falls etwas schiefgeht.",
-    "bullet1": "Erstellt eine MyTag-Gruppe „SetSense“ mit deinen Tags",
+    "warning": "Dies schreibt direkt in deine Rekordbox-Bibliothek. <0>Schließe zuerst Rekordbox.</0> SetRecord speichert vor dem Schreiben ein Backup deiner Datenbank mit Zeitstempel und macht alles rückgängig, falls etwas schiefgeht.",
+    "bullet1": "Erstellt eine MyTag-Gruppe „SetRecord“ mit deinen Tags",
     "bullet2": "Taggt nur Tracks, die aus deiner Rekordbox-Bibliothek stammen",
     "bullet3": "Dupliziert keine Tags, die ein Track bereits hat",
     "back": "Zurück",

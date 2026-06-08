@@ -1,4 +1,4 @@
-# SetSense — Pricing, Tiers & Marketing Copy
+# SetRecord — Pricing, Tiers & Marketing Copy
 
 _Last updated 2026-06-04. Source of truth for prices: `electron/services/licensing/signingKey.ts` (`PRICING`) and `src/utils/entitlements.ts` (`PRO_PRICING`)._
 
@@ -6,7 +6,7 @@ _Last updated 2026-06-04. Source of truth for prices: `electron/services/licensi
 
 ## 1. Overview
 
-SetSense is a DJ **memory system** — it remembers every gig you've played, maps
+SetRecord is a DJ **memory system** — it remembers every gig you've played, maps
 your sound, and builds your next set. Pricing follows one principle:
 
 > **Give away the rear-view mirror. Charge for the windshield.**
@@ -18,7 +18,7 @@ to your CDJs, or keep your work.
 
 Positioned against the market: the closest comparable (Lexicon, a DJ library
 manager) is **$9.99/mo or $199 lifetime**; a single-purpose utility (Mixed In
-Key) is **$58–99 one-time**. SetSense does more than either, priced in between.
+Key) is **$58–99 one-time**. SetRecord does more than either, priced in between.
 
 ---
 
@@ -74,7 +74,7 @@ _The full feature matrix is in `docs/pricing_tiers.csv` (opens in any spreadshee
 
 ### Hero
 - **Headline:** *Your DJ brain, remembered.*
-- **Sub:** SetSense remembers every set you've played, maps your sound, and
+- **Sub:** SetRecord remembers every set you've played, maps your sound, and
   builds your next one. Import your library free — keep the magic with Pro.
 - **CTA:** Import your library → (secondary) See pricing
 
@@ -91,7 +91,7 @@ _The full feature matrix is in `docs/pricing_tiers.csv` (opens in any spreadshee
 ### Paywall one-liners (by moment)
 - **Trial counting down:** "Your Pro trial ends in {n} days — you'll lose Set
   Architect, AI set-building and export. Keep Pro."
-- **Saving a chat:** "Free chats clear when you close SetSense. Keep your history
+- **Saving a chat:** "Free chats clear when you close SetRecord. Keep your history
   with Pro."
 - **Building / exporting:** "Go Pro to build this set and export it to your CDJs."
 - **After a free answer (edge bar):** "Go Pro to save this conversation, build

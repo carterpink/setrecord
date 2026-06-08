@@ -176,7 +176,7 @@ function App() {
       <div className="vignette" />
 
       <div className="home-top">
-        <span className="logo"><span className="logo-mark" /><span className="logo-text">SetSense</span></span>
+        <span className="logo"><span className="logo-mark" /><span className="logo-text">SetRecord</span></span>
         <div className="home-top-right">
           <button className="workspace-link"><i className="l">history</i>History</button>
           <button className="workspace-link"><i className="l">layers</i>Workspace</button>

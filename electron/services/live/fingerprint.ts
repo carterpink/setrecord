@@ -1,5 +1,5 @@
 /**
- * Closed-set audio fingerprinting for SetSense Live.
+ * Closed-set audio fingerprinting for SetRecord Live.
  *
  * The job is NOT open-world song recognition (Shazam). It is the much easier,
  * tractable problem: "which of the user's OWN ~N pre-analysed tracks is coming

@@ -40,8 +40,8 @@ log(`Task: ${task}`)
 log(`Branch: ${branch} (base: ${base})`)
 
 const pr = await agent(
-  `You are implementing a feature in SetSense — an Electron DJ app (TypeScript, React, better-sqlite3, Vite).
-Repo: /Users/samcarter/Documents/SetSenseV2
+  `You are implementing a feature in SetRecord — an Electron DJ app (TypeScript, React, better-sqlite3, Vite).
+Repo: /Users/samcarter/Documents/SetRecordV2
 
 TASK: ${task}
 
@@ -103,7 +103,7 @@ while (!passed && fixCount <= MAX_FIXES) {
   log(`Polling CI for PR #${pr.prNumber}...`)
 
   const ci = await agent(
-    `Check the CI/checks status for PR #${pr.prNumber} in /Users/samcarter/Documents/SetSenseV2.
+    `Check the CI/checks status for PR #${pr.prNumber} in /Users/samcarter/Documents/SetRecordV2.
 
 Run: gh pr checks ${pr.prNumber}
 
@@ -152,7 +152,7 @@ Return state, failedChecks (array of check names), and a failureSummary (what sp
 
   await agent(
     `PR #${pr.prNumber} has failing CI. You need to fix it.
-Repo: /Users/samcarter/Documents/SetSenseV2
+Repo: /Users/samcarter/Documents/SetRecordV2
 Branch: ${branch}
 
 FAILED CHECKS: ${(ci.failedChecks || []).join(', ')}

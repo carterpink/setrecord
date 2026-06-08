@@ -26,7 +26,7 @@ const PREVIEW_PRO_STATE: LicenseState = {
   plan: 'lifetime',
   status: 'active',
   keyMasked: 'SES1·••••·DEMO',
-  buyerEmail: 'preview@setsense.app',
+  buyerEmail: 'preview@setrecord.app',
   activatedAt: new Date().toISOString(),
   expiresAt: null,
   deviceBound: false,
@@ -43,7 +43,7 @@ const PREVIEW_PRO_STATE: LicenseState = {
 const PREVIEW_PRO_ALLOWED = import.meta.env.DEV || import.meta.env.VITE_PREVIEW_PRO === 'true'
 
 function bridgeMissing(): boolean {
-  return typeof window === 'undefined' || typeof window.setsense === 'undefined'
+  return typeof window === 'undefined' || typeof window.setrecord === 'undefined'
 }
 
 /** True when a packaged production renderer is running without the IPC bridge —
@@ -77,7 +77,7 @@ export const useLicenseStore = create<LicenseStoreState>((set, get) => ({
       return
     }
     try {
-      const license = await window.setsense.licenseGet()
+      const license = await window.setrecord.licenseGet()
       set({ license, loaded: true })
     } catch {
       set({ license: FREE_STATE, loaded: true })
@@ -87,9 +87,9 @@ export const useLicenseStore = create<LicenseStoreState>((set, get) => ({
   },
 
   refresh: async () => {
-    if (typeof window === 'undefined' || typeof window.setsense === 'undefined') return
+    if (typeof window === 'undefined' || typeof window.setrecord === 'undefined') return
     try {
-      const license = await window.setsense.licenseRefresh()
+      const license = await window.setrecord.licenseRefresh()
       set({ license, loaded: true })
     } catch {
       // Offline / no gateway — keep whatever hydrate produced.
@@ -97,19 +97,19 @@ export const useLicenseStore = create<LicenseStoreState>((set, get) => ({
   },
 
   activate: async (key) => {
-    const result = await window.setsense.licenseActivate(key)
+    const result = await window.setrecord.licenseActivate(key)
     set({ license: result.state, loaded: true })
     return result
   },
 
   deactivate: async () => {
-    const license = await window.setsense.licenseDeactivate()
+    const license = await window.setrecord.licenseDeactivate()
     set({ license, loaded: true })
   },
 
   checkout: async (plan, tipAmount) => {
-    if (typeof window.setsense === 'undefined') return false
-    return window.setsense.licenseCheckout(plan, tipAmount)
+    if (typeof window.setrecord === 'undefined') return false
+    return window.setrecord.licenseCheckout(plan, tipAmount)
   },
 
   can: (_feature) => get().license.tier === 'pro'

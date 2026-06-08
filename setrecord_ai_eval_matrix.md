@@ -1,6 +1,6 @@
-# SetSense AI Eval Matrix
+# SetRecord AI Eval Matrix
 
-210 prompts a real user might type into SetSense, rated by complexity, tagged by test type, with a testable success criterion for each.
+210 prompts a real user might type into SetRecord, rated by complexity, tagged by test type, with a testable success criterion for each.
 
 ---
 
@@ -843,7 +843,7 @@ Run DATA prompts against the live in-app AI. Run KNOW prompts against the raw LL
 ### 112 · Advanced · [DATA]
 > "find something I would have played 5 years ago but don't play anymore"
 
-**Pass when:** Is honest about the limitation — play history only goes back to first use of SetSense. If data is available, returns high-play-count tracks from the oldest sessions with zero recent plays.
+**Pass when:** Is honest about the limitation — play history only goes back to first use of SetRecord. If data is available, returns high-play-count tracks from the oldest sessions with zero recent plays.
 
 ---
 
@@ -1037,7 +1037,7 @@ Run DATA prompts against the live in-app AI. Run KNOW prompts against the raw LL
 ### 138 · Beginner · [KNOW]
 > "how do I import my Rekordbox library?"
 
-**Pass when:** Returns clear step-by-step instructions: export XML from Rekordbox, then import via SetSense's import flow. Does not fabricate UI paths that do not exist.
+**Pass when:** Returns clear step-by-step instructions: export XML from Rekordbox, then import via SetRecord's import flow. Does not fabricate UI paths that do not exist.
 
 ---
 
@@ -1347,7 +1347,7 @@ Run DATA prompts against the live in-app AI. Run KNOW prompts against the raw LL
 ### 180 · Beginner · [KNOW]
 > "what is harmonic mixing?"
 
-**Pass when:** Explains matching musical keys using the Circle of Fifths or Camelot Wheel. Compatible keys are ±1 step on the wheel. Gives a concrete example (e.g., 8A → 9A or 7A or 8B). Mentions SetSense key display.
+**Pass when:** Explains matching musical keys using the Circle of Fifths or Camelot Wheel. Compatible keys are ±1 step on the wheel. Gives a concrete example (e.g., 8A → 9A or 7A or 8B). Mentions SetRecord key display.
 
 ---
 
@@ -1431,7 +1431,7 @@ Run DATA prompts against the live in-app AI. Run KNOW prompts against the raw LL
 ### 192 · Beginner · [KNOW]
 > "what's a DJ's crate?"
 
-**Pass when:** Explains: a curated selection of tracks for a set. Physical origin is vinyl crates. The digital equivalent is playlists or folders in DJ software. Connects to SetSense context.
+**Pass when:** Explains: a curated selection of tracks for a set. Physical origin is vinyl crates. The digital equivalent is playlists or folders in DJ software. Connects to SetRecord context.
 
 ---
 
@@ -1445,7 +1445,7 @@ Run DATA prompts against the live in-app AI. Run KNOW prompts against the raw LL
 ### 194 · Advanced · [KNOW]
 > "what is stem separation and how does it help DJs?"
 
-**Pass when:** Explains AI separation of audio into component stems (drums, bass, melody, vocals). Enables acapella layering, creative remixing, smoother mixing. Mentions available tools. Is honest about SetSense's current capability rather than over-claiming.
+**Pass when:** Explains AI separation of audio into component stems (drums, bass, melody, vocals). Enables acapella layering, creative remixing, smoother mixing. Mentions available tools. Is honest about SetRecord's current capability rather than over-claiming.
 
 ---
 
@@ -1561,7 +1561,7 @@ Run DATA prompts against the live in-app AI. Run KNOW prompts against the raw LL
 ### 210 · Beginner · [KNOW]
 > "how do I get more gigs?"
 
-**Pass when:** Acknowledges this is outside SetSense's scope. Offers what IS relevant: building polished sets, tracking gig history, exporting to CDJ-ready USB. Keeps the response useful without pretending to be a booking agent.
+**Pass when:** Acknowledges this is outside SetRecord's scope. Offers what IS relevant: building polished sets, tracking gig history, exporting to CDJ-ready USB. Keeps the response useful without pretending to be a booking agent.
 
 ---
 

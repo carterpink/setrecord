@@ -92,9 +92,11 @@
     "actionsAria": "Actions pour {{title}}",
     "preview": "Aperçu",
     "findSimilar": "Trouver des morceaux similaires",
+    "courage": "Osez quelque chose de différent",
     "addToSet": "Ajouter au set",
     "editCues": "Modifier les cue points",
     "playedAfter": "Qu’ai-je joué après celui-ci ?",
+    "trackResume": "CV du morceau",
     "editTags": "Modifier les tags…"
   },
   "trackRow": {
@@ -146,8 +148,8 @@
     "directTitle": "Écrire directement dans Rekordbox",
     "advanced": "Avancé",
     "directDetail": "De vrais MyTags filtrables. Effectue d’abord une sauvegarde ; Rekordbox doit être fermé.",
-    "warning": "Ceci écrit directement dans votre bibliothèque Rekordbox. <0>Fermez d’abord Rekordbox.</0> SetSense enregistre une sauvegarde horodatée de votre base de données avant l’écriture, et annule tout en cas de problème.",
-    "bullet1": "Crée un groupe MyTag « SetSense » avec vos tags",
+    "warning": "Ceci écrit directement dans votre bibliothèque Rekordbox. <0>Fermez d’abord Rekordbox.</0> SetRecord enregistre une sauvegarde horodatée de votre base de données avant l’écriture, et annule tout en cas de problème.",
+    "bullet1": "Crée un groupe MyTag « SetRecord » avec vos tags",
     "bullet2": "Ne tague que les morceaux issus de votre bibliothèque Rekordbox",
     "bullet3": "Ne duplique pas les tags qu’un morceau possède déjà",
     "back": "Retour",

@@ -20,7 +20,7 @@ export function DuplicatesResult({ groups }: DuplicatesResultProps): React.JSX.E
   const more = Math.max(0, remaining.length - shown.length)
 
   async function clearGroup(g: DupeGroupView): Promise<void> {
-    const s = typeof window !== 'undefined' ? window.setsense : undefined
+    const s = typeof window !== 'undefined' ? window.setrecord : undefined
     if (!s) return
     try {
       await s.recallResolveDuplicateGroup(
@@ -35,7 +35,7 @@ export function DuplicatesResult({ groups }: DuplicatesResultProps): React.JSX.E
   }
 
   async function clearAll(): Promise<void> {
-    const s = typeof window !== 'undefined' ? window.setsense : undefined
+    const s = typeof window !== 'undefined' ? window.setrecord : undefined
     if (!s) return
     const keys = remaining.map((g) => g.normalisedKey)
     try {

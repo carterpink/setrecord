@@ -9,7 +9,8 @@
     "venues": "Locais",
     "identity": "Identidade",
     "health": "Saúde",
-    "fallback": "Recall"
+    "fallback": "Recall",
+    "graph": "Constelação"
   },
   "panel": {
     "noLibrary": "O Recall lê toda a sua coleção — redescobrindo joias esquecidas, mapeando o seu som e traçando as transições que você costuma usar. Importe a sua biblioteca para dar vida a tudo isso."
@@ -164,6 +165,10 @@
     "noMatch": "Nenhum show corresponde a este filtro.",
     "noSessions": "Ainda não há sessões tocadas — importe o histórico do Rekordbox ou marque um set como tocado.",
     "viewTracklist": "Ver tracklist",
+    "copyTracklist": "Copiar tracklist",
+    "tracklistCopied": "Tracklist copiada",
+    "recordingLabel": "Gravação do set",
+    "jumpToTrack": "Ir para esta faixa na gravação",
     "editGig": "Editar show",
     "addVenue": "Adicionar local",
     "autoBadge": "auto",
@@ -322,7 +327,7 @@
     "title": "Redescobrir",
     "subtitle": "Faixas que você costumava tocar, juntando poeira. Traga uma de volta à rotação.",
     "noLibraryTitle": "As joias esquecidas vêm à tona conforme você toca",
-    "noLibraryBody": "Importe a sua biblioteca e o SetSense começa a trazer de volta faixas que você adorava, mas não toca há um tempo.",
+    "noLibraryBody": "Importe a sua biblioteca e o SetRecord começa a trazer de volta faixas que você adorava, mas não toca há um tempo.",
     "digging": "Vasculhando os seus crates…",
     "empty": "Ainda não há joias esquecidas — o histórico de reprodução faz isso crescer com o tempo."
   },
@@ -373,5 +378,86 @@
       "energyValue": "{{value}}/10",
       "length": "Duração"
     }
+  },
+  "graph": {
+    "title": "Constelação",
+    "lensLabel": "Lente temporal",
+    "loading": "Mapeando sua biblioteca…",
+    "error": "Não foi possível criar o mapa.",
+    "centeredOn": "Centrado em",
+    "trackCount": "{{count}} faixas",
+    "mode": {
+      "past": "Passado",
+      "future": "Futuro",
+      "diff": "Diferença",
+      "present": "Presente"
+    },
+    "tagline": {
+      "past": "Cada faixa que você mixou, mapeada",
+      "future": "Cada mixagem que você poderia fazer",
+      "diff": "Compatíveis — mas você nunca tentou",
+      "present": "O set que você está montando, agora"
+    },
+    "empty": {
+      "past": {
+        "title": "Nenhuma mixagem mapeada ainda",
+        "body": "Registre ou crie um set e suas faixas começarão a se conectar em uma constelação das transições que você realmente tocou."
+      },
+      "future": {
+        "title": "Sem vizinhos compatíveis",
+        "body": "Nada compatível em harmonia ou ritmo apareceu em torno desta faixa. Tente outra faixa de partida."
+      },
+      "diff": {
+        "title": "Você já mixou todas",
+        "body": "Cada faixa compatível por perto já está no seu histórico — não há pares por descobrir aqui. Tente outra faixa."
+      },
+      "present": {
+        "title": "Nenhum set em andamento",
+        "body": "Abra um set no Build (ou entre ao vivo) e ele acende aqui como um caminho brilhante — cada faixa na ordem de execução."
+      }
+    },
+    "lock": {
+      "future": {
+        "title": "Veja aonde cada faixa pode ir",
+        "body": "Futuro mapeia as mixagens compatíveis em harmonia e BPM escondidas na sua biblioteca. Desbloqueie com o Pro."
+      },
+      "diff": {
+        "title": "Encontre mixagens que você nunca tentou",
+        "body": "Diferença revela pares compatíveis que você nunca tocou — sua próxima transição marcante. Desbloqueie com o Pro."
+      }
+    },
+    "legend": {
+      "mixed": "Já mixadas",
+      "gig": "Tocada num gig",
+      "path": "Seu set, em ordem",
+      "compatible": "Pode mixar",
+      "novel": "Nunca tentou"
+    },
+    "scrub": {
+      "title": "Mixado em",
+      "all": "Tudo"
+    },
+    "scopeLabel": "Escopo",
+    "scope": {
+      "neighborhood": "Ao redor",
+      "library": "Galáxia",
+      "context": "Este set"
+    },
+    "path": {
+      "toggle": "Criar set",
+      "title": "Trajeto",
+      "hint": "Clique nas faixas para encadeá-las num set, em ordem.",
+      "route": "Auto-rota",
+      "add": "Adicionar ao set",
+      "save": "Salvar como set",
+      "remove": "Remover",
+      "clear": "Limpar",
+      "exit": "Sair do modo trajeto",
+      "setName": "Trajeto da constelação"
+    },
+    "search": {
+      "placeholder": "Buscar uma faixa…"
+    },
+    "genreCount": "{{count}} gêneros"
   }
 }

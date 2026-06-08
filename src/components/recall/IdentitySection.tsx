@@ -15,6 +15,7 @@ import { useRecallStore } from '@/stores/recallStore'
 import { getCamelotColor } from '@/utils/camelotColors'
 import { NoLibraryState } from '@/components/shared/NoLibraryState'
 import { IdentityShareCard } from './IdentityShareCard'
+import { SoundMirrorPanel } from './SoundMirrorPanel'
 import type { IdentitySnapshot } from '@/types'
 
 // Dark, glassy tooltip matching the app — recharts' default is a white box.
@@ -228,6 +229,8 @@ export function IdentitySection(): React.JSX.Element {
       </header>
 
       {showShare && <IdentityShareCard identity={identity} />}
+
+      <SoundMirrorPanel />
 
       <div className="recall-charts">
         <div className="recall-chart-card glass-2">

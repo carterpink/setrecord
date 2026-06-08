@@ -1,5 +1,5 @@
 /**
- * License service — the single source of truth for SetSense Pro entitlement.
+ * License service — the single source of truth for SetRecord Pro entitlement.
  *
  * The stored credential is an offline Ed25519-signed key (see signingKey.ts).
  * We never cache a derived "isPro" boolean: every read re-verifies the key and
@@ -18,6 +18,7 @@
  */
 
 import { createPublicKey, verify as cryptoVerify, type KeyObject } from 'crypto'
+import { app } from 'electron'
 import type { LicenseActivationError, LicenseActivationResult, LicenseState } from '../../src/types'
 import {
   LICENSE_KEY_PREFIX,
@@ -42,7 +43,7 @@ const DEV_PRO_STATE: LicenseState = {
   plan: 'lifetime',
   status: 'active',
   keyMasked: 'DEV·••••·MODE',
-  buyerEmail: 'dev@setsense.app',
+  buyerEmail: 'dev@setrecord.app',
   activatedAt: null,
   expiresAt: null,
   deviceBound: false,
@@ -290,9 +291,25 @@ function applyTrial(base: LicenseState): LicenseState {
   return { ...base, status: 'trial-expired', trialEndsAt: t.endsAt, trialDaysRemaining: 0 }
 }
 
+/**
+ * Dev-only Pro bypass. Gated on app.isPackaged, NOT NODE_ENV: a packaged build
+ * always reports isPackaged === true, so setting NODE_ENV=development in the
+ * environment of a shipped app can no longer unlock Pro. Optional-chained so the
+ * pure-logic unit tests (which mock electron without `app`) still import cleanly.
+ */
+function isUnpackagedDev(): boolean {
+  try {
+    return !app.isPackaged
+  } catch {
+    // `app` unavailable (pure-logic unit tests mock electron without it) →
+    // treat as packaged and NEVER grant the bypass. Fails closed.
+    return false
+  }
+}
+
 /** Current entitlement, derived fresh from the stored key (or the free trial). Never throws. */
 export function getLicenseState(): LicenseState {
-  if (process.env.NODE_ENV === 'development') return DEV_PRO_STATE
+  if (isUnpackagedDev()) return DEV_PRO_STATE
   const key = getLicenseKey()
   const base = key ? evaluateLicense(key, liveContext()).state : FREE_STATE
   // Advance the clock high-water mark on every read (only ever moves forward).
@@ -302,7 +319,7 @@ export function getLicenseState(): LicenseState {
 
 /** True when the user is entitled to Pro right now — used for IPC enforcement. */
 export function isProEntitled(): boolean {
-  if (process.env.NODE_ENV === 'development') return true
+  if (isUnpackagedDev()) return true
   return getLicenseState().tier === 'pro'
 }
 

@@ -1,7 +1,7 @@
 {
   "device": {
-    "title": "Entrada de audio para SetSense Live: elige tu dispositivo de máster/loopback",
-    "ariaLabel": "Entrada de audio de SetSense Live",
+    "title": "Entrada de audio para SetRecord Live: elige tu dispositivo de máster/loopback",
+    "ariaLabel": "Entrada de audio de SetRecord Live",
     "default": "Entrada predeterminada"
   },
   "strip": {

@@ -83,7 +83,7 @@ interface CollabState {
   leave: () => Promise<void>
 }
 
-const NAME_KEY = 'setsense-collab-name'
+const NAME_KEY = 'setrecord-collab-name'
 
 function initialName(): string {
   if (typeof window !== 'undefined') {
@@ -145,12 +145,12 @@ export const useCollabStore = create<CollabState>((set, get) => ({
       useToastStore.getState().push({ kind: 'info', message: 'Open or start a set first' })
       return
     }
-    if (typeof window === 'undefined' || typeof window.setsense?.collabHostStart !== 'function') {
+    if (typeof window === 'undefined' || typeof window.setrecord?.collabHostStart !== 'function') {
       useToastStore.getState().error('Live collaboration needs the desktop app.')
       return
     }
     try {
-      const info = await window.setsense.collabHostStart()
+      const info = await window.setrecord.collabHostStart()
       const room = setObj.id // LAN relay ignores room; carried for the v2 shape
       const name = get().selfName
       const color = colorForName(name)
@@ -226,9 +226,9 @@ export const useCollabStore = create<CollabState>((set, get) => ({
     const role = get().role
     leaveActiveSession()
     setLocalEditing(null)
-    if (role === 'host' && typeof window.setsense?.collabHostStop === 'function') {
+    if (role === 'host' && typeof window.setrecord?.collabHostStop === 'function') {
       try {
-        await window.setsense.collabHostStop()
+        await window.setrecord.collabHostStop()
       } catch {
         /* relay already gone */
       }

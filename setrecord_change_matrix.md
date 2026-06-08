@@ -1,4 +1,4 @@
-# SetSense — Complete Change & Feature Prioritisation Matrix
+# SetRecord — Complete Change & Feature Prioritisation Matrix
 *Synthesised from 4-persona user research simulation · May 2026*
 *Every negative signal, requested feature, and inferred gap. Nothing omitted.*
 
@@ -42,7 +42,7 @@ Features marked **NOT IN PRD** are new scope that emerged from the research. Eve
 **Re-import / incremental sync workflow** [S, I]
 - Currently completely unclear: is this a one-time import or do you re-export from Rekordbox every time you add tracks?
 - Add a "Re-sync library" button in the ImportModal, Settings, or top bar that re-runs the import on the previously selected XML path.
-- Behavior on re-import must be defined and communicated: does it merge new tracks only? Overwrite all data? Preserve cue points set in SetSense?
+- Behavior on re-import must be defined and communicated: does it merge new tracks only? Overwrite all data? Preserve cue points set in SetRecord?
 - Ideally: detect if the source XML has been modified since last import and show a badge or prompt automatically.
 
 **Progress detail during large imports** [I]
@@ -252,7 +252,7 @@ Features marked **NOT IN PRD** are new scope that emerged from the research. Eve
   - What's processed locally (everything by default)
   - What Learn Mode stores, in what format, where on disk
   - Whether anything is ever sent externally (should be: nothing)
-  - A link to a data location in Finder: "Your library data: ~/Library/Application Support/SetSense/"
+  - A link to a data location in Finder: "Your library data: ~/Library/Application Support/SetRecord/"
 - This costs nothing and de-risks the single thing most likely to produce a hostile public post.
 
 **Camelot vs open notation preference** [S, I]
@@ -464,7 +464,7 @@ Universally praised by all personas as genuinely novel. No other tool does this.
 - Marcus: "If this tab is essentially just a YouTube embed with genre filters, and it requires me to set up my own YouTube API key — I'm paying for YouTube search with extra steps."
 - Dave: "David Guetta. I'm sorry." [immediately dismisses it]
 - Jake: interested only if it could auto-detect tracklists and let him import tracks.
-- The current Discover tab is actively damaging SetSense's brand identity as a serious library intelligence tool.
+- The current Discover tab is actively damaging SetRecord's brand identity as a serious library intelligence tool.
 
 Options (choose one):
 
@@ -530,7 +530,7 @@ Options (choose one):
 
 **Multi-library / merge behaviour clearly communicated** [S, I]
 - Sarah has 8,000 tracks, Dave has 12,000. If they import a second XML, does it merge? Overwrite? The current behaviour is completely undocumented.
-- Define and communicate: "Re-importing updates existing tracks and adds new ones. Cue points set in SetSense are preserved."
+- Define and communicate: "Re-importing updates existing tracks and adds new ones. Cue points set in SetRecord are preserved."
 
 ### P3
 
@@ -549,7 +549,7 @@ Options (choose one):
 
 **Onboarding flow for first launch** [PRD Phase 8, J]
 - Jake's entire first-launch experience is defined by whether he gets his library in.
-- A proper first-launch flow: (1) explain what SetSense does in 2 sentences, (2) import library step with XML guide or auto-detect, (3) land in the library panel with their real tracks visible.
+- A proper first-launch flow: (1) explain what SetRecord does in 2 sentences, (2) import library step with XML guide or auto-detect, (3) land in the library panel with their real tracks visible.
 - This is the difference between a 90-second drop-off and a converted user.
 
 ---
@@ -577,7 +577,7 @@ Based on all 4 personas, the research report recommends a dual pricing model tha
 - Library Health score (headline number only, no drill-down)
 - This tier exists to get DJs past the import step and let them see their library in the app.
 
-**SetSense Pro — $12/month or $89 one-time**
+**SetRecord Pro — $12/month or $89 one-time**
 - Full suggestion engine (Suggested Next with reason tags)
 - Full Recall tab (NL search, Crates, Combos, Identity, Health drill-down)
 - Set Architect

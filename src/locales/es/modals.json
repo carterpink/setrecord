@@ -263,7 +263,7 @@
       "validationNotFound": "La validación falló: set no encontrado.",
       "validationFailed": "La validación falló.",
       "usbDisconnected": "Esa unidad USB ya no está conectada.",
-      "proRequired": "Exportar es una función de SetSense Pro.",
+      "proRequired": "Exportar es una función de SetRecord Pro.",
       "exportFailed": "La exportación falló."
     },
     "toast": {

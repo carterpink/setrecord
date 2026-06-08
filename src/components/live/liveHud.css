@@ -1,5 +1,5 @@
 /* ============================================================
-   SetSense Live — floating liquid-glass overlay (Cluely-style).
+   SetRecord Live — floating liquid-glass overlay (Cluely-style).
    Intentionally lighter / more "Apple" than the core app: heavier blur,
    more translucency, brighter edge highlights. Sits over Rekordbox.
    ============================================================ */
@@ -105,6 +105,34 @@
   height: 20px;
   background: rgba(255, 255, 255, 0.14);
   flex: none;
+}
+.lv-rec {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: var(--type-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--semantic-danger);
+  flex: none;
+}
+.lv-rec-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--semantic-danger);
+  animation: lv-rec-blink 1.4s ease-in-out infinite;
+  flex: none;
+}
+@keyframes lv-rec-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
 }
 .lv-strip-health {
   display: inline-flex;

@@ -1,4 +1,4 @@
-# SetSense Opening Animation — Claude Code Prompt
+# SetRecord Opening Animation — Claude Code Prompt
 
 ---
 
@@ -89,7 +89,7 @@ The animation dissolves into the app's first screen. This should not feel like a
 - Any typography that appears: use the brand font if one exists, otherwise choose a display font that matches the brand's personality. The wordmark should render with **subpixel precision** — no aliasing.
 
 ### Architecture
-- The entire animation is a single self-contained component: `SetsenseIntro` (or `AnimatedSplash`).
+- The entire animation is a single self-contained component: `SetRecordIntro` (or `AnimatedSplash`).
 - It accepts one prop: `onComplete: () => void` — called when the transition out finishes, at which point the parent can unmount it and show the app.
 - It handles its own skip logic: after 1 second, a skip affordance appears (a barely-visible "skip" label or tap-anywhere gesture). On skip: accelerate to the transition-out, call `onComplete` within 400ms.
 - It respects `prefers-reduced-motion`: if set, skip directly to the hold state for 1 second, then call `onComplete`.

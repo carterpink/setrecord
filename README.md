@@ -1,6 +1,6 @@
-# SetSense
+# SetRecord
 
-SetSense is a desktop DJ companion for macOS — set planning, harmonic mixing,
+SetRecord is a desktop DJ companion for macOS — set planning, harmonic mixing,
 and Pioneer CDJ–ready exports. It reads your existing Rekordbox library
 (collection XML or the Rekordbox database), analyses your tracks for key, energy
 and structure, and helps you build, audition and refine sets before you ever
@@ -18,7 +18,7 @@ Core capabilities:
   energy curves and embedded cover art.
 - **Recall & memory** — a searchable record of past sessions and decisions.
 
-SetSense runs entirely on your machine. Audio is never uploaded; analysis is
+SetRecord runs entirely on your machine. Audio is never uploaded; analysis is
 performed locally. The only thing that can ever leave your machine is an
 anonymous crash report, and only if you opt in — see [TELEMETRY.md](TELEMETRY.md)
 for exactly what it collects (and never collects) and how to turn it off.
@@ -62,16 +62,16 @@ npm run rebuild
 
 ## Importing a Rekordbox library
 
-SetSense supports two import sources:
+SetRecord supports two import sources:
 
 1. **Collection XML** (recommended, non-destructive)
    - In Rekordbox: **File → Library → Export Collection in xml format**.
-   - In SetSense, choose the import action and select that `.xml` file.
+   - In SetRecord, choose the import action and select that `.xml` file.
    - The importer reads the XML read-only; it never writes back to Rekordbox.
 
 2. **Rekordbox database** (`master.db`)
-   - SetSense can read the Rekordbox SQLite database directly, read-only.
-   - This requires a one-time, explicit consent in Settings before SetSense will
+   - SetRecord can read the Rekordbox SQLite database directly, read-only.
+   - This requires a one-time, explicit consent in Settings before SetRecord will
      touch the Rekordbox database.
 
 Re-importing is safe: tracks are matched by file path, so existing track IDs are
@@ -80,9 +80,9 @@ reused and your sets, cue points and history stay intact across re-imports.
 ## Audio files & path expectations
 
 - Track audio paths come from your Rekordbox library. Rekordbox stores them as
-  `file://localhost/…` / `file:///…` URIs; SetSense decodes these to absolute
+  `file://localhost/…` / `file:///…` URIs; SetRecord decodes these to absolute
   local paths.
-- **The audio files must exist at those paths.** SetSense reads audio in place —
+- **The audio files must exist at those paths.** SetRecord reads audio in place —
   it does not copy files into its own store. If you move or rename audio after
   exporting from Rekordbox, preview and analysis for those tracks will fail until
   the library is re-imported from an up-to-date source.
@@ -93,14 +93,14 @@ reused and your sets, cue points and history stay intact across re-imports.
 
 ## Where your data lives
 
-- Library database: `~/Library/Application Support/SetSense/library.db`
+- Library database: `~/Library/Application Support/SetRecord/library.db`
   (SQLite with WAL). This is local to your machine.
 - Secrets (license key, optional API keys) are stored in the **macOS Keychain**
-  under the `SetSense` service — never in the database or in plain files.
+  under the `SetRecord` service — never in the database or in plain files.
 
 ## Licensing
 
-SetSense uses a signed-license model (SetSense Pro):
+SetRecord uses a signed-license model (SetRecord Pro):
 
 - A license key has the form `<prefix>.<payload>.<signature>` and is verified
   in-app with an embedded **Ed25519 public key** — the app can verify a license
@@ -178,7 +178,7 @@ that is unsigned/un-notarized (or fail at the notarization step). Local
 development (`npm run dev`) and unpacked builds (`npm run build:unpack`) do not
 require any of these credentials.
 
-> **Auto-update (NFR-1001):** SetSense has **no in-app installer** —
+> **Auto-update (NFR-1001):** SetRecord has **no in-app installer** —
 > `electron-updater` is intentionally not wired. Releases are distributed
 > **manually** (download a new DMG). What *is* in place:
 >
@@ -206,10 +206,10 @@ Questions, bug reports, or license issues: **carterpinkmusic@gmail.com**
 
 ## Support & recovery
 
-- **Corrupted library database.** On startup SetSense validates the library DB.
+- **Corrupted library database.** On startup SetRecord validates the library DB.
   If it can't be opened or migrated, the app quarantines the file rather than
   deleting it — it is renamed to `library.db.corrupt-<timestamp>` in
-  `~/Library/Application Support/SetSense/`, and a fresh database is created.
+  `~/Library/Application Support/SetRecord/`, and a fresh database is created.
   The quarantined file is preserved so it can be inspected or sent in for
   diagnosis. WAL sidecars (`-wal`, `-shm`) are cleared as part of recovery.
 - **Re-importing from Rekordbox** rebuilds tracks, playlists and history

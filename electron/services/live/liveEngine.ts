@@ -1,5 +1,5 @@
 /**
- * SetSense Live engine (main process).
+ * SetRecord Live engine (main process).
  *
  * Owns the fingerprint index (built from the user's library by decoding each
  * track) and turns the stream of probe windows captured in the renderer into
@@ -18,7 +18,7 @@ import {
   type FingerprintIndex,
   type MatchResult
 } from './fingerprint'
-import { LiveDetector, fingerprintMatcher, type NowPlaying } from './liveSource'
+import { LiveDetector, fingerprintMatcher, LIVE_COMMIT_STREAK, type NowPlaying } from './liveSource'
 import { getLiveNextUp } from '../../algorithms/liveSuggestions'
 import { computeSetHealth } from '../../algorithms/setHealth'
 import { matchNowPlaying, type NowPlayingMatch } from '../../algorithms/nowPlayingMatch'
@@ -34,6 +34,15 @@ const BUILD_CONCURRENCY = 4
 const HEALTH_BPM_WINDOW = 8
 /** Most recent detected tracks kept for energy-smoothness scoring. */
 const RECENT_CAP = 8
+/** Probe cadence (ms): the renderer emits an audio window roughly this often. */
+const CAPTURE_HOP_MS = 1500
+/**
+ * A track is only committed LIVE_COMMIT_STREAK consistent windows after it starts,
+ * so the debounced commit lands this many ms late. We subtract it when stamping a
+ * recorded track's start time, otherwise every tracklist entry reads systematically
+ * late. Good enough for a tracklist (and for second-scale reaction windows later).
+ */
+const COMMIT_LAG_MS = LIVE_COMMIT_STREAK * CAPTURE_HOP_MS
 
 export interface LiveNextUpPayload {
   id: string
@@ -51,7 +60,14 @@ export interface LiveDataPayload {
   status: 'listening' | 'locked'
   confidence: number
   positionSec: number | null
-  current: { id: string; title: string; artist: string; bpm: number; key: string; energy: number } | null
+  current: {
+    id: string
+    title: string
+    artist: string
+    bpm: number
+    key: string
+    energy: number
+  } | null
   nextUp: LiveNextUpPayload[]
   setHealth: number
 }
@@ -120,6 +136,76 @@ let cachedHealth = 0
 
 export function isIndexReady(): boolean {
   return index !== null
+}
+
+// ───────── flight recorder (auto-tracklist of the live set) ─────────
+
+/** One track as it was committed live, with timing relative to session start. */
+export interface RecordedSetEntry {
+  trackId: string
+  title: string
+  artist: string
+  /** ms from session start to this track's (lag-corrected) commit. */
+  startMs: number
+  /** ms from session start to the next track's start (session end for the last). */
+  endMs: number
+  /** Seconds into the track when first locked — seed for Black Box reference reconstruction. */
+  matchOffsetSec: number
+}
+
+/** The ordered, timed tracklist returned when a live set is finalized. */
+export interface FinalizedSet {
+  startedAtMs: number
+  venue: string | null
+  durationMs: number
+  entries: RecordedSetEntry[]
+}
+
+interface RecordingState {
+  startedAtMs: number
+  venue: string | null
+  entries: Array<{ trackId: string; startMs: number; matchOffsetSec: number }>
+}
+
+/**
+ * The in-flight recording accumulator. Deliberately INDEPENDENT of startLive():
+ * the index-build re-wire calls startLive() a second time mid-session, and the
+ * recorder must survive that without losing the tracks captured so far.
+ */
+let recording: RecordingState | null = null
+
+/** Arm the flight recorder for a new live session. */
+export function beginRecordingSession(startedAtMs: number): void {
+  recording = { startedAtMs, venue: null, entries: [] }
+}
+
+/** Anchor the in-flight recording to the room the DJ picked. */
+export function setLiveVenue(venue: string | null): void {
+  if (recording) recording.venue = venue
+}
+
+/**
+ * Close out the recording and return the ordered, timed tracklist — or null if
+ * nothing was armed. Idempotent: a second call returns null, so the two end paths
+ * (overlay End button / Go-Live toggle) can both call it without double-saving.
+ */
+export function finalizeLiveSession(endedAtMs: number): FinalizedSet | null {
+  const r = recording
+  recording = null
+  if (!r) return null
+  const durationMs = Math.max(0, endedAtMs - r.startedAtMs)
+  const entries: RecordedSetEntry[] = r.entries.map((e, i) => {
+    const track = library.find((t) => t.id === e.trackId)
+    return {
+      trackId: e.trackId,
+      title: track?.title ?? 'Unknown track',
+      artist: track?.artist ?? 'Unknown artist',
+      startMs: e.startMs,
+      endMs: i + 1 < r.entries.length ? r.entries[i + 1].startMs : durationMs,
+      matchOffsetSec: e.matchOffsetSec
+    }
+  })
+  return { startedAtMs: r.startedAtMs, venue: r.venue, durationMs, entries }
 }
 
 /**
@@ -201,7 +287,14 @@ function buildPayload(np: NowPlaying): LiveDataPayload | null {
     lastTrackId = null
     // Emit a "listening" frame only on the transition into it.
     return wasLocked
-      ? { status: 'listening', confidence: 0, positionSec: null, current: null, nextUp: [], setHealth: cachedHealth }
+      ? {
+          status: 'listening',
+          confidence: 0,
+          positionSec: null,
+          current: null,
+          nextUp: [],
+          setHealth: cachedHealth
+        }
       : null
   }
 
@@ -213,6 +306,20 @@ function buildPayload(np: NowPlaying): LiveDataPayload | null {
     recent = [...recent, current].slice(-RECENT_CAP)
     cachedNextUp = toNextUpPayload(current)
     cachedHealth = healthFor(current)
+
+    // Flight recorder: log the newly-committed track. Skip if it's the same as
+    // the last logged entry — the index-build re-wire resets lastTrackId, which
+    // would otherwise re-log the currently-playing track.
+    if (recording) {
+      const last = recording.entries[recording.entries.length - 1]
+      if (!last || last.trackId !== np.trackId) {
+        recording.entries.push({
+          trackId: np.trackId,
+          startMs: Math.max(0, np.at - recording.startedAtMs - COMMIT_LAG_MS),
+          matchOffsetSec: np.positionSec ?? 0
+        })
+      }
+    }
   }
 
   return {

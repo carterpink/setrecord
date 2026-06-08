@@ -263,7 +263,7 @@
       "validationNotFound": "Prüfung fehlgeschlagen – Set nicht gefunden.",
       "validationFailed": "Prüfung fehlgeschlagen.",
       "usbDisconnected": "Dieser USB-Stick ist nicht mehr angeschlossen.",
-      "proRequired": "Der Export ist eine SetSense-Pro-Funktion.",
+      "proRequired": "Der Export ist eine SetRecord-Pro-Funktion.",
       "exportFailed": "Export fehlgeschlagen."
     },
     "toast": {

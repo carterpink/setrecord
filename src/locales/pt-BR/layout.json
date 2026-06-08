@@ -52,7 +52,8 @@
     "goLive": "Ficar ao vivo",
     "endTitle": "Encerrar Ao vivo — fechar a sobreposição flutuante",
     "goLiveTitle": "Ficar ao vivo — uma sobreposição de vidro transparente que flutua sobre o Rekordbox, lê o que está tocando e revela os melhores próximos movimentos",
-    "screenPermissionError": "O SetSense Live precisa de permissão de Gravação de tela (Ajustes do Sistema → Privacidade)."
+    "screenPermissionError": "O SetRecord Live precisa de permissão de Gravação de tela (Ajustes do Sistema → Privacidade).",
+    "setSaved": "Set salvo no seu histórico"
   },
   "energy": {
     "pill": "Analisando energia <0>{{processed}} / {{total}}</0>…",

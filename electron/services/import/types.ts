@@ -1,7 +1,7 @@
 /**
  * Cross-platform import layer — the source-provider abstraction.
  *
- * SetSense's memory layer (lifecycle, transition history, harmonic/energy
+ * SetRecord's memory layer (lifecycle, transition history, harmonic/energy
  * planning) is fed entirely by imported tracks + playlists. Historically that
  * meant Rekordbox only. This abstraction generalises "where a library comes
  * from" so the memory layer is platform-agnostic: every source (Rekordbox,

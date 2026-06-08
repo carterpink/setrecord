@@ -11,29 +11,15 @@
  * that, play-count-weighted library genres. Pure: no DB/electron deps.
  */
 
-import type { Track } from '../../../src/types'
+import type { Track, CourageCandidate, CourageResult } from '../../../src/types'
 import {
   camelotCompatible,
   camelotRelationship,
   type CamelotRelationship
 } from '../../../src/utils/camelot'
 
-export interface CourageCandidate {
-  track: Track
-  /** 0..1 how cleanly it mixes out of the reference (key relationship × BPM proximity). */
-  mixScore: number
-  /** 0..1 how far outside the comfort zone (genre novelty + rarity). */
-  noveltyScore: number
-  score: number
-  reason: string
-}
-
-export interface CourageResult {
-  kind: 'tracks' | 'empty'
-  comfortGenres: string[]
-  candidates: CourageCandidate[]
-  narration: string
-}
+// Re-export so existing importers (tests, main) can keep importing from here.
+export type { CourageCandidate, CourageResult }
 
 export interface CourageOptions {
   /** BPM window around the reference. Default max(6, 6% of reference BPM). */

@@ -1,5 +1,5 @@
 /**
- * Set Health — the single number behind SetSense Live's health pill.
+ * Set Health — the single number behind SetRecord Live's health pill.
  *
  * Defined up front (not a magic number): a weighted blend of four measurable
  * sub-scores, each 0–100, all computable from data the app already has.

@@ -8,7 +8,7 @@
  * (no Electron bridge), so the same components work in `?hud-preview`.
  */
 export function setOverlayInteractive(interactive: boolean): void {
-  window.setsense?.liveSetIgnoreMouse?.(!interactive)
+  window.setrecord?.liveSetIgnoreMouse?.(!interactive)
 }
 
 /** Spread onto any interactive glass element to make it clickable on hover. */

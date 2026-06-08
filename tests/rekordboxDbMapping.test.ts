@@ -60,7 +60,7 @@ describe('mapContentRow', () => {
     }
   }
 
-  it('maps a basic Rekordbox row into the SetSense Track shape', () => {
+  it('maps a basic Rekordbox row into the SetRecord Track shape', () => {
     const t = mapContentRow(row(), [])
     expect(t).not.toBeNull()
     expect(t!.title).toBe('Glue')

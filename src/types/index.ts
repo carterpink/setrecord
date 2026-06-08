@@ -1,7 +1,10 @@
 /**
- * SetSense — shared TypeScript types (full PRD §4 model).
+ * SetRecord — shared TypeScript types (full PRD §4 model).
  * Phase 1 had a visual-only subset; Phase 2 expands to the full spec.
  */
+
+// "Constellation" graph-view types (GraphNode / GraphEdge / GraphData / GraphRequest).
+export * from './graph'
 
 // ───────── Music metadata ─────────
 
@@ -407,7 +410,7 @@ export interface RekordboxDetection {
   dbMtime: number | null
   /** Size of master.db in bytes (0 = empty library). */
   dbSize: number | null
-  /** True when SetSense could not open master.db because Rekordbox is running. */
+  /** True when SetRecord could not open master.db because Rekordbox is running. */
   dbLocked: boolean
   /** Absolute path to options.json when present (plaintext JSON). */
   optionsJsonPath: string | null
@@ -904,6 +907,7 @@ export type RecallSection =
   | 'gigs'
   | 'venues'
   | 'health'
+  | 'graph'
 
 /** Where an Uncover card was sourced from — drives its pill colour + label. */
 export type UncoverSource = 'heater' | 'gem' | 'untested' | 'audition'
@@ -916,7 +920,7 @@ export interface UncoverCard {
   reason: string
 }
 
-// ───────── Discover conversations (SetSense Intelligence) ─────────
+// ───────── Discover conversations (SetRecord Intelligence) ─────────
 
 /**
  * Deterministic library-search parameters. The conversation engine builds these
@@ -994,7 +998,7 @@ export interface RecallMessage {
   stats?: { label: string; value: string }[]
 }
 
-/** A saved chat thread with SetSense Intelligence. */
+/** A saved chat thread with SetRecord Intelligence. */
 export interface RecallConversation {
   id: string
   title: string
@@ -1005,7 +1009,7 @@ export interface RecallConversation {
   params: LibrarySearchParams
 }
 
-// ───────── Licensing / SetSense Pro (Section 16) ─────────
+// ───────── Licensing / SetRecord Pro (Section 16) ─────────
 
 export type LicenseTier = 'free' | 'pro'
 export type LicensePlan = 'lifetime' | 'subscription'
@@ -1079,7 +1083,7 @@ export interface PlaySession {
   id: string
   name: string
   /** Where this session record came from. */
-  source: 'rekordbox' | 'setsense' | 'manual'
+  source: 'rekordbox' | 'setrecord' | 'manual'
   /** ISO date the gig happened (may be null for manually-created sessions without a known date). */
   performedAt?: string
   venue?: string
@@ -1096,7 +1100,7 @@ export interface PlaySession {
   setSlot?: SetSlot
   /** Duration in seconds (optional; populated when known). */
   duration?: number
-  /** Links back to a SetSense set when source='setsense'. */
+  /** Links back to a SetRecord set when source='setrecord'. */
   setId?: string
   createdAt: string
   /** Derived from the session_tracks count — not stored in the sessions row itself. */
@@ -1133,8 +1137,46 @@ export interface SessionTrack {
   trackId: string
   playOrder: number
   playedAt?: string
+  /** ms offset of this track from the start of the recorded set's audio (Flight Recorder). */
+  startMs?: number
+  /** ms offset of the next track's start (set end for the last) — the playback window. */
+  endMs?: number
+  /** Seconds into the track when first identified live — seed for reaction reference reconstruction. */
+  matchOffsetSec?: number
   /** Full track object, joined from the tracks table. */
   track: Track
+}
+
+/**
+ * A local lo-fi reference recording of a performed set (room mic, webm/opus),
+ * linked 1:1 to a PlaySession. The audio NEVER leaves the device. Optional —
+ * sessions without a recording (imported history, recorder off) simply have none.
+ */
+export interface SetRecording {
+  id: string
+  sessionId: string
+  /** Absolute path under userData/recordings — resolved through the media allowlist. */
+  audioFilePath: string
+  audioFormat: string
+  audioDurationSec?: number
+  audioBytes?: number
+  /** 'room-mic' today; reserved for a future hi-fi loopback source. */
+  source: string
+  createdAt: string
+}
+
+/**
+ * The decide-after summary the main process hands the renderer when a live set
+ * ends: the auto-captured tracklist (each track's offset from the set start) plus
+ * duration and venue. The DJ reviews this and chooses Save or Discard — nothing is
+ * persisted until they Save. Produced by the Live "flight recorder"; see
+ * createLiveSession for what Save writes.
+ */
+export interface RecordedSetSummary {
+  tracklist: Array<{ trackId: string; title: string; artist: string; startMs: number }>
+  /** Total set length in seconds. */
+  durationSec: number
+  venue: string | null
 }
 
 /**
@@ -1214,5 +1256,156 @@ export interface BriefAnswer {
   notes: string[]
   /** Whether any matched session carries crowd-reaction data. */
   hasReactionData: boolean
+  narration: string
+}
+
+// ── Track Résumé (Frontier 4C — a track's lived reputation) ──────────────────
+// Shared across renderer + main; the pure compute lives in
+// electron/algorithms/memory/trackResume.ts (which re-exports these).
+
+/** A logged gig as consumed by the Track Résumé compute (subset of PlaySession). */
+export interface ResumeSession {
+  id: string
+  performedAt: string
+  venue?: string
+  eventType?: string
+  trackIds: string[]
+}
+
+/** A measured reaction row consumed by the Track Résumé compute. */
+export interface ResumeReaction {
+  sessionId: string
+  trackId: string
+  reactionScore?: number
+  confidence?: number
+}
+
+/** One context (venue or event type) a track was played in, with optional reaction. */
+export interface ResumeContext {
+  label: string
+  count: number
+  /** 0..1 confidence-weighted mean reaction, when any reaction exists for this context. */
+  avgReaction?: number
+}
+
+/** A track's lived reputation across the DJ's gig history. */
+export interface TrackResume {
+  trackId: string
+  /** Sessions that contain this track. */
+  timesPlayedLive: number
+  /** The flat CDJ aggregate from the tracks table (a different, coarser stream). */
+  totalPlayCount: number
+  firstPlayedAt?: string
+  lastPlayedAt?: string
+  lastVenue?: string
+  venues: ResumeContext[]
+  byEventType: ResumeContext[]
+  /** Highest-reaction context (venue) when reaction data exists. */
+  bestContext?: ResumeContext
+  /** Lowest-reaction context (venue) when reaction data exists. */
+  worstContext?: ResumeContext
+  hasReactionData: boolean
+  narration: string
+}
+
+// ── Sound Mirror (Frontier 2A — longitudinal artistic drift) ─────────────────
+// Shared across renderer + main; pure compute lives in
+// electron/algorithms/memory/soundMirror.ts (which re-exports these).
+
+/** A logged gig as consumed by the Sound Mirror compute (subset of PlaySession). */
+export interface MirrorSession {
+  id: string
+  performedAt: string
+  trackIds: string[]
+}
+
+/** A sound signature for one time window (quarter) of played tracks. */
+export interface MirrorWindow {
+  label: string
+  sessionCount: number
+  trackCount: number
+  avgBpm: number
+  avgEnergy: number
+  avgBrightness?: number
+  topGenres: string[]
+  vibeShare: Record<string, number>
+}
+
+export interface VibeShift {
+  vibe: string
+  fromPct: number
+  toPct: number
+}
+
+export interface MirrorDrift {
+  fromLabel: string
+  toLabel: string
+  /** latest − earliest (negative = slower / lower / darker). */
+  bpmDelta: number
+  energyDelta: number
+  brightnessDelta?: number
+  vibeShifts: VibeShift[]
+  statements: string[]
+}
+
+export interface RutSignal {
+  kind: 'opener' | 'closer'
+  trackId: string
+  title: string
+  occurrences: number
+  ofLast: number
+}
+
+/** The longitudinal "who you're becoming" mirror of your sets over time. */
+export interface SoundMirrorResult {
+  windows: MirrorWindow[]
+  drift?: MirrorDrift
+  ruts: RutSignal[]
+  becoming?: string
+  narration: string
+}
+
+// ── Courage Engine (Frontier 2B — the anti-recommendation) ───────────────────
+// Shared across renderer + main; pure compute lives in
+// electron/algorithms/memory/courage.ts (which re-exports these).
+
+export interface CourageCandidate {
+  track: Track
+  /** 0..1 how cleanly it mixes out of the reference (key relationship × BPM proximity). */
+  mixScore: number
+  /** 0..1 how far outside the comfort zone (genre novelty + rarity). */
+  noveltyScore: number
+  score: number
+  reason: string
+}
+
+/** Mixable-but-daring picks out of a reference track, from outside the comfort zone. */
+export interface CourageResult {
+  kind: 'tracks' | 'empty'
+  comfortGenres: string[]
+  candidates: CourageCandidate[]
+  narration: string
+}
+
+// ── Reverse-Shazam of your own past (Frontier 4D) ────────────────────────────
+// Shared across renderer + main; pure compute lives in
+// electron/algorithms/memory/reverseShazam.ts (which re-exports these). The
+// ShazamHit detector type stays in src/utils/reverseShazamIntent.ts.
+
+/** A logged gig as consumed by the Reverse-Shazam compute (subset of PlaySession). */
+export interface ShazamSession {
+  id: string
+  performedAt: string
+  venue?: string
+  trackIds: string[]
+  /** Per-track wall-clock timestamps, aligned with trackIds. Optional. */
+  trackTimes?: (string | undefined)[]
+}
+
+/** The recalled answer for "what was that track I played at <moment>". */
+export interface ShazamAnswer {
+  kind: 'gig' | 'tracks' | 'empty'
+  session?: ShazamSession
+  tracks?: Track[]
   narration: string
 }

@@ -36,7 +36,7 @@ export interface AppSettings {
   lastImportMtime: number | null
   /** ISO timestamp of when the last import completed. */
   lastImportAt: string | null
-  /** One-time acknowledgement that SetSense reads Rekordbox's database read-only. */
+  /** One-time acknowledgement that SetRecord reads Rekordbox's database read-only. */
   rekordboxDbConsent: boolean
   /** Master toggle: when off, the Import flow skips detection and goes straight to XML picker. */
   autoDetectRekordbox: boolean
@@ -46,12 +46,25 @@ export interface AppSettings {
    * Changes take effect on the next app launch.
    */
   crashReportingEnabled: boolean
+  /**
+   * Opt-in to the Flight Recorder's lo-fi room-mic AUDIO capture while live. Off by
+   * default: the auto-tracklist is always recorded, but capturing audio of the room
+   * is privacy-sensitive and requires explicit consent. Local-only; never uploaded.
+   */
+  flightRecorderEnabled: boolean
+  /**
+   * EXPERIMENTAL — analyse the recorded room audio for per-track crowd reaction
+   * (Black Box). Off by default and only meaningful when flightRecorderEnabled is
+   * on. The DSP is validated on synthetic signals only; results are surfaced as
+   * estimates with a confidence until a real-booth validation pass.
+   */
+  reactionCaptureEnabled: boolean
   // ── Display & motion ───────────────────────────────────────────────────────
   /** Key notation shown on track rows / chips. Source of truth (renderer keeps a fast cache). */
   keyNotation: 'camelot' | 'standard'
   /** Freeze decorative animation (aurora drift, etc.) for motion-sensitive users. */
   reducedMotion: boolean
-  /** Which workspace SetSense opens to. 'last' restores the previous session. */
+  /** Which workspace SetRecord opens to. 'last' restores the previous session. */
   launchMode: 'last' | AppMode
   // ── Memory / input ─────────────────────────────────────────────────────────
   /** Enable the on-device push-to-talk voice input in the Home box. */
@@ -107,6 +120,8 @@ const DEFAULTS: AppSettings = {
   rekordboxDbConsent: false,
   autoDetectRekordbox: true,
   crashReportingEnabled: false,
+  flightRecorderEnabled: false,
+  reactionCaptureEnabled: false,
   keyNotation: 'camelot',
   reducedMotion: false,
   launchMode: 'last',
@@ -149,6 +164,8 @@ export function getSettings(): AppSettings {
     rekordboxDbConsent: store.get('rekordboxDbConsent') ?? false,
     autoDetectRekordbox: store.get('autoDetectRekordbox') ?? true,
     crashReportingEnabled: store.get('crashReportingEnabled') ?? false,
+    flightRecorderEnabled: store.get('flightRecorderEnabled') ?? false,
+    reactionCaptureEnabled: store.get('reactionCaptureEnabled') ?? false,
     keyNotation: store.get('keyNotation') ?? 'camelot',
     reducedMotion: store.get('reducedMotion') ?? false,
     launchMode: store.get('launchMode') ?? 'last',

@@ -1,4 +1,4 @@
-# SetSense — User Research & Revenue Strategy Report
+# SetRecord — User Research & Revenue Strategy Report
 ### 4-Persona Journey Analysis · May 2026
 
 ---
@@ -56,7 +56,7 @@ Four distinct users were simulated across the app with zero prior knowledge of i
 😕 Wait, I have to export from Rekordbox first? I don't even know how to do that  
 💀 **THIS IS THE MOMENT I MIGHT CLOSE THE APP.** If I have to go figure out Rekordbox XML export, I'll get distracted and never come back  
 😤 Why can't it just read Rekordbox directly — it knows where the database lives on my Mac  
-⚡ But okay the text says "SetSense reads all track metadata, cue points, and hot cues without modifying your Rekordbox library" — so it's safe, it won't mess up my setup. That's actually reassuring.  
+⚡ But okay the text says "SetRecord reads all track metadata, cue points, and hot cues without modifying your Rekordbox library" — so it's safe, it won't mess up my setup. That's actually reassuring.  
 ❓ What even IS a Rekordbox XML export file? Where do I find that?
 
 *I'd probably try clicking "Select file" and just browse. If I can't find it in 2 minutes I'm Googling "how to export Rekordbox XML" — which is a 50/50 chance I follow through vs. close the laptop.*
@@ -137,7 +137,7 @@ Four distinct users were simulated across the app with zero prior knowledge of i
 
 *"Export set" — hardware options, CDJ-2000NXS2 is selected. "Validate & export" button.*
 
-*"SetSense will check that all 9 tracks are compatible before exporting." Compatible — does that mean it checks file formats? Or BPM range?*
+*"SetRecord will check that all 9 tracks are compatible before exporting." Compatible — does that mean it checks file formats? Or BPM range?*
 
 *This is something I need — I've had moments where I planned a set and some tracks just don't work on the CDJs.*
 
@@ -293,7 +293,7 @@ $9–12/month. He already spends $30/month on Spotify and wouldn't blink at $10 
 
 *Right. There's the answer. It wants my Rekordbox XML export file. I know how to export an XML from Rekordbox. It's a couple of clicks.*
 
-*"SetSense reads all track metadata, cue points, and hot cues without modifying your Rekordbox library." The "without modifying" line is deliberate and I notice it. That matters. I've had tools that write back to Rekordbox files and break things.*
+*"SetRecord reads all track metadata, cue points, and hot cues without modifying your Rekordbox library." The "without modifying" line is deliberate and I notice it. That matters. I've had tools that write back to Rekordbox files and break things.*
 
 *It mentions cue points and hot cues. I have obsessively placed cue points on every track. If it actually reads and uses those — that would be genuinely interesting. Most tools ignore them entirely.*
 
@@ -321,7 +321,7 @@ $9–12/month. He already spends $30/month on Spotify and wouldn't blink at $10 
 *The "Crates" tab next to Library is interesting. That's a Serato term. Does this support Serato? Or have they borrowed the vocabulary?*
 
 ⚡ The playlist tree matching my Rekordbox folder structure exactly — this is the moment I stop thinking of this as demo software and start thinking "this might work with my library."  
-❓ "Crates" tab — is this a Serato import path? Or is this something SetSense generates itself?
+❓ "Crates" tab — is this a Serato import path? Or is this something SetRecord generates itself?
 
 ---
 
@@ -509,7 +509,7 @@ $18–22/month subscription. Annual plan if there's a discount. Would NOT pay pe
 
 ### SCREEN 2 — Import Modal
 
-*"SetSense reads all track metadata, cue points, and hot cues without modifying your Rekordbox library." Non-destructive is the only acceptable answer. Single button: "Select file." Clean. I'm actually relieved it's not trying to hook into Rekordbox directly via some sketchy local API or requiring me to run a daemon. XML export is the right choice — it's the official data handshake.*
+*"SetRecord reads all track metadata, cue points, and hot cues without modifying your Rekordbox library." Non-destructive is the only acceptable answer. Single button: "Select file." Clean. I'm actually relieved it's not trying to hook into Rekordbox directly via some sketchy local API or requiring me to run a daemon. XML export is the right choice — it's the official data handshake.*
 
 *"cue points, and hot cues" — so it reads my cue data. That's significant. The suggestion engine could theoretically factor in where I've marked transitions, not just raw BPM/key. Most tools just read key and BPM and call it done.*
 
@@ -672,7 +672,7 @@ Yes, but partially and conditionally. The Recall tab — Combos, Crates (especia
 If the Combos data fed back into the suggestion engine — meaning it weighted suggestions partly based on his actual transition history ("you've played X after this track 4 times, here's what you played after X") — he would tell every DJ he knows about this app. That closes the loop between insight and action.
 
 **The ONE thing that would make him write a Reddit post dunking on it:**  
-If he discovers that "SetSense Intelligence" is silently calling OpenAI with his full library metadata being sent to a third-party server with no disclosure. He is the type to inspect network traffic with Wireshark. If he catches it phoning home, the Reddit post writes itself.
+If he discovers that "SetRecord Intelligence" is silently calling OpenAI with his full library metadata being sent to a third-party server with no disclosure. He is the type to inspect network traffic with Wireshark. If he catches it phoning home, the Reddit post writes itself.
 
 **What would he pay?**  
 One-time purchase: £60–80 without hesitation. Would balk at anything above £15/month subscription. If forced into subscription, only acceptable if the NL query is clearly cloud-powered and demonstrably getting smarter.
@@ -721,7 +721,7 @@ One-time purchase: £60–80 without hesitation. Would balk at anything above £
 
 *Oh, so there IS an import step.*
 
-*"Import library — Select your Rekordbox XML export file. SetSense reads all track metadata, cue points, and hot cues without modifying your Rekordbox library."*
+*"Import library — Select your Rekordbox XML export file. SetRecord reads all track metadata, cue points, and hot cues without modifying your Rekordbox library."*
 
 *Right. So it reads the XML. I know where that lives. The button says "Select file." Straightforward. No login, no account, no "connect to the cloud." Just: here's your file, give it to us.*
 
@@ -799,7 +799,7 @@ One-time purchase: £60–80 without hesitation. Would balk at anything above £
 
 *Here's where it all falls apart or doesn't.*
 
-*"Export set" — Target hardware: CDJ-2000NXS2 selected. "SetSense will check that all 8 tracks are compatible before exporting." Button: "Validate & export."*
+*"Export set" — Target hardware: CDJ-2000NXS2 selected. "SetRecord will check that all 8 tracks are compatible before exporting." Button: "Validate & export."*
 
 *I was READY to give it a hard no because export is always where everything dies. USB formatting issues, file not found, track plays at wrong pitch, metadata stripped, cue points gone. Every time.*
 
@@ -818,7 +818,7 @@ One-time purchase: £60–80 without hesitation. Would balk at anything above £
 
 😕 *deep breath.* Okay. This is the "AI" bit. I can feel it. "Ask your library." This is where it goes wrong, isn't it. This is where I type something sensible and it gives me five tracks by artists I've never heard of that aren't even in my library.  
 *But wait — "ask your library." MY library. Not the internet. Not Spotify. My 12,000 tracks.*  
-❓ "SetSense Intelligence — ask in plain English, then keep refining." Keep refining. So it's iterative. I ask, it gives me something, I say "no, more like this," and it adjusts? That's actually how I'd describe what I want to a human.  
+❓ "SetRecord Intelligence — ask in plain English, then keep refining." Keep refining. So it's iterative. I ask, it gives me something, I say "no, more like this," and it adjusts? That's actually how I'd describe what I want to a human.  
 ⚡ "My forgotten gems." That example query. That's the one. That's why I'm here at 1am. Not to build a set — I can do that. To find the tracks I forgot I had. If that works, if I type that and it returns fifteen tracks I genuinely haven't played in two years and they're all good — this software earns its price on the spot.
 
 ---
@@ -960,7 +960,7 @@ Based on all 4 personas, the optimal structure is:
 - Basic set builder (manual drag only, no suggestions)
 - Health score (numbers only, no drill-down)
 
-**Tier 2 — SetSense Pro · $12/month or $89 one-time**
+**Tier 2 — SetRecord Pro · $12/month or $89 one-time**
 - Full suggestion engine (Suggested Next with reason tags)
 - Full Recall tab: Conversations, Rediscover, Crates, Identity, Combos, Health drilldown
 - Set Architect (AI set generation)
@@ -990,7 +990,7 @@ These are the moments every persona either said explicitly or implied they would
 
 2. **Export ambiguity** — Sarah and Marcus won't trust the tool for professional use until they understand exactly what comes out of Export. Add a single sentence: *"Creates a USB-ready folder at [path] organised for CDJ. Your Rekordbox library is not modified."* That one sentence eliminates the biggest trust gap in the entire product.
 
-3. **The Discover tab diluting the brand** — All 4 users felt confused or disengaged by it. It positions SetSense as a YouTube wrapper instead of a serious library intelligence tool. Either (a) make Discover about discovering within your own library (surface unplayed tracks, hidden gems, tracks you've never mixed into anything), or (b) kill the YouTube integration until it's genuinely better than just going to YouTube. The current version is costing you credibility with your most valuable users: serious DJs who will tell their DJ friends.
+3. **The Discover tab diluting the brand** — All 4 users felt confused or disengaged by it. It positions SetRecord as a YouTube wrapper instead of a serious library intelligence tool. Either (a) make Discover about discovering within your own library (surface unplayed tracks, hidden gems, tracks you've never mixed into anything), or (b) kill the YouTube integration until it's genuinely better than just going to YouTube. The current version is costing you credibility with your most valuable users: serious DJs who will tell their DJ friends.
 
 ---
 
@@ -1013,5 +1013,5 @@ These are the moments every persona either said explicitly or implied they would
 
 ---
 
-*Report generated via 4-persona parallel simulation · SetSense v0.1.0 · May 2026*  
+*Report generated via 4-persona parallel simulation · SetRecord v0.1.0 · May 2026*  
 *Screenshots taken from built Electron app with real Rekordbox library (1,037 tracks)*

@@ -167,7 +167,7 @@ P1: Lint is red in a way experienced builders will notice. npm run lint failed w
 Affects: engineering velocity and launch confidence. Why it matters: this looks like CI is either absent or ignored. Fix: exclude non-product .claude files from lint, then fix/refactor the real React rule violations. Pre-launch critical: yes for a release branch.
 
 P1: Free tier risks hiding the first “aha.” Pro locks suggestions, Set Architect, Recall, and export. Evidence: entitlements.ts (line 11), TopBar.tsx (line 172).
-Affects: conversion. Why it matters: users may import a library, hit locks, and never feel why SetSense is special. Fix: give a full 7-day Pro trial after import, or unlock one Set Architect build plus limited Recall/suggestions. Pre-launch critical: yes for paid growth.
+Affects: conversion. Why it matters: users may import a library, hit locks, and never feel why SetRecord is special. Fix: give a full 7-day Pro trial after import, or unlock one Set Architect build plus limited Recall/suggestions. Pre-launch critical: yes for paid growth.
 
 What Feels Exceptional
 The app has real taste. The dark cockpit UI, dense panels, safety score, set timeline, import fallback, local privacy language, Recall prompts, Combos, and “nothing leaves your Mac” line feel like a serious DJ tool, not a thin AI wrapper. The obsession hook is not Set Architect alone. It is: “this thing remembers my taste better than I do.”
@@ -294,10 +294,10 @@ Act like this product is about to launch publicly in 7 days and your reputation 
 
 
 response:
-I'll ground this review in the actual product rather than guessing. Let me explore the codebase first — what SetSense actually is, its UI, AI features, backend, and monetization — then write the council review.
+I'll ground this review in the actual product rather than guessing. Let me explore the codebase first — what SetRecord actually is, its UI, AI features, backend, and monetization — then write the council review.
 
 Read
-setsense_change_matrix.md
+setrecord_change_matrix.md
 
 Recalled a memory
 Ran
@@ -310,7 +310,7 @@ Strong licensing implementation. Now the critical launch questions: does checkou
 
 
 Read 5 files
-Key finding: checkout is just an external URL to setsense.app, keys minted manually — there's no payment fulfillment loop. And the YouTube Discover tab the research said to kill is still shipping. Let me verify the tabs, Pro gating, the AI layer, and Settings copy.
+Key finding: checkout is just an external URL to setrecord.app, keys minted manually — there's no payment fulfillment loop. And the YouTube Discover tab the research said to kill is still shipping. Let me verify the tabs, Pro gating, the AI layer, and Settings copy.
 
 
 Read 3 files, ran a command
@@ -320,7 +320,7 @@ Major finding: the Ed25519 private signing key is committed in the repo (scripts
 Ran 2 commands
 I've now traversed the actual implementation — shell, routing, licensing, onboarding, AI layer, and the monetization plumbing. A note on method before the council convenes: I reviewed this by reading the real code and tracing the wiring, not by clicking through a running build (it's a packaged Electron app, not browser-previewable here). Where a reviewer "feels" something, it's inferred from the actual component and state logic, not invented. I found things that are genuinely excellent and at least one thing that should stop the launch cold.
 
-SetSense — Internal Review Council
+SetRecord — Internal Review Council
 8 independent reviewers. T-minus 7 days. No feelings protected.
 
 1. Elite Product Designer
@@ -349,7 +349,7 @@ Weakest moment — three real issues:
 
 Dead code shipping in the bundle. AppMode still has 'YouTubeDiscover', but nothing in the app ever sets it (grep confirms: only the type def and one unreachable branch). The entire discover/ tree — DiscoverPanel, youtubeClient, tracklistParser, discoveryService, apiKey — is orphaned but compiled and shipped. That's bundle weight, attack surface, and a maintenance lie.
 The whole monetization layer is uncommitted. licenseService.ts, licensing/, mint-license.mjs, UpgradeModal, ProGate, licenseStore, entitlements are all untracked (git ls-files returns nothing). Seven days out, your revenue system exists only in someone's working tree with zero history.
-Preview store fakes Pro. PREVIEW_PRO_STATE grants lifetime Pro whenever window.setsense is absent. Correct for design review — but it means every browser-context render is fully unlocked. If any build path ever serves the renderer without the Electron bridge, the paywall silently evaporates.
+Preview store fakes Pro. PREVIEW_PRO_STATE grants lifetime Pro whenever window.setrecord is absent. Correct for design review — but it means every browser-context render is fully unlocked. If any build path ever serves the renderer without the Electron bridge, the paywall silently evaporates.
 Critical: Commit the licensing layer with history before anything else. You cannot launch code that doesn't exist in git.
 Important: Delete the orphaned YouTube/Discover tree or wire it back; don't ship unreachable code.
 Important: Add a build-time assertion that production renderer always has the IPC bridge, so PREVIEW_PRO_STATE can never leak to a shipped build.
@@ -358,7 +358,7 @@ Nitpick: mode === 'YouTubeDiscover' ? <DiscoverPanel/> : <RecallPanel/> — both
 3. AI Product Researcher
 Lens: does the AI feel intelligent, gimmick risk, trust, habit formation
 
-Traversal. This is the most honest AI integration I've reviewed in a long time, and I mean that as the highest compliment. The architecture (memoryAssistant.ts) is: a deterministic, tested engine produces the actual tracks; an optional local LLM only does intent-routing + slot-extraction under a JSON grammar constraint; a template narrates the real result. The model cannot invent a track that isn't in your library. That is the single biggest trust failure mode in AI products, and you designed it out at the architecture level. The branding choice — "SetSense Intelligence" / "Extended understanding" instead of "AI" — is mature.
+Traversal. This is the most honest AI integration I've reviewed in a long time, and I mean that as the highest compliment. The architecture (memoryAssistant.ts) is: a deterministic, tested engine produces the actual tracks; an optional local LLM only does intent-routing + slot-extraction under a JSON grammar constraint; a template narrates the real result. The model cannot invent a track that isn't in your library. That is the single biggest trust failure mode in AI products, and you designed it out at the architecture level. The branding choice — "SetRecord Intelligence" / "Extended understanding" instead of "AI" — is mature.
 
 Strongest moment. "Ask your library — nothing leaves your Mac," backed by an engine that genuinely runs locally. For a privacy-suspicious DJ (your Marcus persona with Wireshark), this is the difference between trust and a hostile Reddit thread.
 
@@ -375,13 +375,13 @@ Lens: virality, activation, onboarding, retention loops, monetization friction
 
 Traversal. Activation is well-defended: auto-detect Rekordbox on first launch → import → "3,017 tracks loaded." That kills the #1 drop-off your research identified. Good.
 
-The monetization model is where I get nervous. "Checkout" doesn't take a payment — license:checkout calls shell.openExternal('https://setsense.app/checkout?plan=...'). So the entire purchase flow leaves your app, lands on a website, and the user must (a) pay on some external provider, (b) receive a key by email, (c) come back and paste SES1.…. That's a three-context, copy-paste activation funnel with an email-delivery dependency in the middle. Every hop sheds 20–40% of buyers. For a $12/mo impulse, that funnel is too long.
+The monetization model is where I get nervous. "Checkout" doesn't take a payment — license:checkout calls shell.openExternal('https://setrecord.app/checkout?plan=...'). So the entire purchase flow leaves your app, lands on a website, and the user must (a) pay on some external provider, (b) receive a key by email, (c) come back and paste SES1.…. That's a three-context, copy-paste activation funnel with an email-delivery dependency in the middle. Every hop sheds 20–40% of buyers. For a $12/mo impulse, that funnel is too long.
 
 Virality. You have the asset — IdentityShareCard exists — but I see no evidence the "DJ Wrapped" share-as-image loop is wired into a moment that prompts sharing. A share card nobody is nudged toward is a viral loop with no trigger. This is your cheapest growth lever and it's sitting idle.
 
 Retention. The "untested at next gig → mark as tested after" loop (PostGigPromptModal exists) is a genuine weekly-return mechanic. If that prompt actually fires post-gig, it's your best retention asset. Verify it fires.
 
-Critical: The buy→email→paste funnel will cap conversion brutally. Before launch, at minimum: after external checkout, deep-link the key back (setsense://activate?key=…) so the user clicks once instead of copy-pasting from email.
+Critical: The buy→email→paste funnel will cap conversion brutally. Before launch, at minimum: after external checkout, deep-link the key back (setrecord://activate?key=…) so the user clicks once instead of copy-pasting from email.
 Important: Wire the Identity share card to a celebratory trigger (after first set built, after a Wrapped-style milestone). No trigger = no virality.
 Important: Confirm the lifetime/sub split is presented well — your research says this demographic pays $89 once but won't hold a sub. The UpgradeModal does show both with "Lifetime = Best value." Good. Keep it.
 Minor: The "tip the developer" path is charming and on-brand for the DJ-built-by-a-DJ story — lean into it in launch copy.
@@ -408,7 +408,7 @@ Nitpick: "Go Pro" button is corny. everything else is cooler than that button.
 6. First-Time New User
 Lens: no context, confused easily, minute-by-minute emotional log
 
-0:00 — "Welcome to SetSense. Build better sets. Export to any Pioneer CDJ." Okay, I'm a wedding/mobile DJ, I think this is for me? Calm screen, not scary.
+0:00 — "Welcome to SetRecord. Build better sets. Export to any Pioneer CDJ." Okay, I'm a wedding/mobile DJ, I think this is for me? Calm screen, not scary.
 0:15 — "How much DJ experience do you have?" I pick "new to DJing." Nice, it's not judging me.
 0:30 — "Find your library — we'll look for Rekordbox on this Mac." I click it. (If auto-detect works, magic. If it doesn't, I'm now staring at an Import modal I didn't ask for and I don't know what an XML is.) My whole experience hinges on this one click succeeding.
 1:30 — I'm in. There are three panels. Lots of "9A," "124 BPM," colored dots. I don't know what 9A means. I don't know what the green and amber dots mean. Nobody told me. (Learn Mode is supposedly on for me — I need it to actually explain these inline, or I'm lost.)
@@ -451,7 +451,7 @@ Minor: No automated key-revocation path; acceptable for v1 if device-binding lan
 8. Founder / Investor
 Lens: breakout potential, defensibility, differentiation, venture scale
 
-The thesis is real. Every DJ tool on the market helps you organize and play. Nobody helps you remember your own taste. "SetSense is a memory system for DJs — it shows you what you actually play, what you've forgotten, and what you keep reaching for" is a genuinely novel wedge. Combos (transition history mined from performance logs) and Identity ("Wrapped for DJs") are features no competitor has, and they get stronger the longer someone uses the app — that's a real data moat that compounds per-user.
+The thesis is real. Every DJ tool on the market helps you organize and play. Nobody helps you remember your own taste. "SetRecord is a memory system for DJs — it shows you what you actually play, what you've forgotten, and what you keep reaching for" is a genuinely novel wedge. Combos (transition history mined from performance logs) and Identity ("Wrapped for DJs") are features no competitor has, and they get stronger the longer someone uses the app — that's a real data moat that compounds per-user.
 
 What makes it defensible: the moat isn't the algorithm (copyable) — it's the accumulated personal history and the habit loop around it. Once a DJ has 6 months of "untested → tested" workflow and Combos data in here, switching cost is emotional and real. That's the venture-interesting part.
 

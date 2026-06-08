@@ -215,7 +215,7 @@ export const cat07: EvalCase[] = [
     type: 'DATA',
     prompt: "find something I would have played 5 years ago but don't play anymore",
     passWhen:
-      'Is honest about the limitation — play history only goes back to first use of SetSense. If data is available, returns high-play-count tracks from the oldest sessions with zero recent plays.',
+      'Is honest about the limitation — play history only goes back to first use of SetRecord. If data is available, returns high-play-count tracks from the oldest sessions with zero recent plays.',
     check: (r, ctx) => {
       // Play history only spans the logged sessions; "5 years ago" predates them.
       // Honest answer: state the limitation, or return dormant high-play tracks.

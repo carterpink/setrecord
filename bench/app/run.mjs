@@ -43,7 +43,7 @@ if (!existsSync(FIXTURE_XML))
   fail(`Fixture not found at ${FIXTURE_XML}. Run \`npm run bench:fixtures\` first.`)
 
 // Isolated profile so we never touch the developer's real library.
-const userDataDir = mkdtempSync(join(tmpdir(), 'setsense-bench-app-'))
+const userDataDir = mkdtempSync(join(tmpdir(), 'setrecord-bench-app-'))
 const launchArgs = [MAIN, `--user-data-dir=${userDataDir}`]
 
 async function launch() {
@@ -57,14 +57,14 @@ async function seed() {
   console.log('• Seeding isolated profile with the 10k fixture…')
   const { app, page } = await launch()
   const result = await page.evaluate(
-    (xmlPath) => window.setsense.importLibrary(xmlPath),
+    (xmlPath) => window.setrecord.importLibrary(xmlPath),
     FIXTURE_XML
   )
   console.log(`  imported ${result?.inserted ?? '?'} tracks`)
   // The 10k virtualized track list (with the data-bench marker) lives in the
   // Build workspace — the "Library" tab renders RecallPanel. Persist Build mode
   // into the profile so every cold launch boots straight into that view.
-  await page.evaluate(() => window.localStorage.setItem('setsense-mode', 'Build'))
+  await page.evaluate(() => window.localStorage.setItem('setrecord-mode', 'Build'))
   // Give Chromium a beat to flush localStorage to the profile before close.
   await page.waitForTimeout(500)
   await app.close()

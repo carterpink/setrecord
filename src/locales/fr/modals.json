@@ -263,7 +263,7 @@
       "validationNotFound": "Échec de la validation — set introuvable.",
       "validationFailed": "Échec de la validation.",
       "usbDisconnected": "Cette clé USB n’est plus connectée.",
-      "proRequired": "L’export est une fonctionnalité SetSense Pro.",
+      "proRequired": "L’export est une fonctionnalité SetRecord Pro.",
       "exportFailed": "Échec de l’export."
     },
     "toast": {

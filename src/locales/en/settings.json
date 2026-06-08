@@ -110,9 +110,19 @@
     "privacyNote": "Your library, track titles, file paths, your device name, and personal data are never included. Off by default. Turning it off stops reporting immediately; turning it on takes effect after restarting {{app}}.",
     "toggleAria": "Toggle crash reporting"
   },
+  "flightRecorder": {
+    "label": "Set Flight Recorder",
+    "caption": "Record a lo-fi audio reference of your set from the room mic while you're live, so you can play it back later. The tracklist is always saved — this adds the audio.",
+    "privacyNote": "Off by default. The recording stays on this device and is never uploaded. You choose to keep or discard each set when it ends, and a recording indicator shows whenever the mic is capturing.",
+    "toggleAria": "Toggle Set Flight Recorder",
+    "reactionLabel": "Crowd reaction analysis",
+    "experimental": "(experimental)",
+    "reactionCaption": "After a set, measure how the crowd reacted to each track from the recording. Early and approximate — shown as estimates with a confidence until it's proven in real rooms.",
+    "reactionToggleAria": "Toggle crowd reaction analysis"
+  },
   "backup": {
     "exportTitle": "Export a backup",
-    "exportCaption": "Saves your tags, sets, play history, lifecycle and smart crates to a single <0>.setsense</0> file. Keep it safe, or import it on another Mac to move your work across. Your audio files and license stay put — nothing is uploaded.",
+    "exportCaption": "Saves your tags, sets, play history, lifecycle and smart crates to a single <0>.setrecord</0> file. Keep it safe, or import it on another Mac to move your work across. Your audio files and license stay put — nothing is uploaded.",
     "passphrasePlaceholder": "Passphrase (recommended)",
     "passphraseAria": "Backup passphrase",
     "exportButton": "Export backup",
@@ -121,7 +131,7 @@
     "unencryptedNote": "Backups are encrypted by default. Leave this blank and we’ll ask you to confirm before saving an unencrypted file anyone could read.",
     "exportSuccess": "Backup saved — {{tracks}} tracks, {{sets}} sets, {{sessions}} gigs.",
     "importTitle": "Import a backup",
-    "importCaption": "Import a <0>.setsense</0> file from another Mac. Import your Rekordbox/Serato library first — a backup carries your work, not the audio, and re-links to the tracks already on this machine.",
+    "importCaption": "Import a <0>.setrecord</0> file from another Mac. Import your Rekordbox/Serato library first — a backup carries your work, not the audio, and re-links to the tracks already on this machine.",
     "chooseButton": "Choose backup…",
     "enterPassphrase": "Enter backup passphrase",
     "unlock": "Unlock",
@@ -165,7 +175,7 @@
     "memory": {
       "label": "Memory",
       "title": "Memory",
-      "desc": "How SetSense reads what you ask and learns as you go."
+      "desc": "How SetRecord reads what you ask and learns as you go."
     },
     "mixing": {
       "label": "Mixing",
@@ -175,7 +185,7 @@
     "library": {
       "label": "Library",
       "title": "Library source",
-      "desc": "Where SetSense reads your tracks from."
+      "desc": "Where SetRecord reads your tracks from."
     },
     "data": {
       "label": "Privacy & Backup",
@@ -185,7 +195,7 @@
     "reset": {
       "label": "Reset",
       "title": "Reset",
-      "desc": "Return SetSense to how it looked at first launch."
+      "desc": "Return SetRecord to how it looked at first launch."
     },
     "playback": {
       "label": "Playback",
@@ -205,7 +215,7 @@
     "home": "Home",
     "library": "Library",
     "build": "Build",
-    "caption": "Which workspace SetSense opens to when you launch it."
+    "caption": "Which workspace SetRecord opens to when you launch it."
   },
   "reducedMotion": {
     "label": "Reduce motion",
@@ -242,8 +252,8 @@
     "fadeCaption": "Ease previews in with a short fade instead of a hard start.",
     "outputLabel": "Output device",
     "outputCaption": "Where preview audio plays. Defaults to your system output.",
-    "inputLabel": "SetSense Live input",
-    "inputCaption": "The audio input SetSense Live listens to.",
+    "inputLabel": "SetRecord Live input",
+    "inputCaption": "The audio input SetRecord Live listens to.",
     "systemDefault": "System default",
     "unnamedDevice": "Unnamed device",
     "waveformLabel": "Waveform detail",
@@ -254,7 +264,7 @@
   },
   "autoTagging": {
     "label": "Auto-tagging",
-    "caption": "Let SetSense generate plain-language tags from each track's sound."
+    "caption": "Let SetRecord generate plain-language tags from each track's sound."
   },
   "tagRoute": {
     "label": "Rekordbox tag export",
@@ -264,7 +274,7 @@
   },
   "rbConsent": {
     "label": "Rekordbox database access",
-    "caption": "You've allowed SetSense to read your Rekordbox database (read-only). Revoke it here; you'll be asked again next time.",
+    "caption": "You've allowed SetRecord to read your Rekordbox database (read-only). Revoke it here; you'll be asked again next time.",
     "button": "Revoke database access",
     "revoked": "Rekordbox database access revoked."
   },

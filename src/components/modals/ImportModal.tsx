@@ -93,8 +93,8 @@ export function ImportModal(): React.JSX.Element {
   // Load consent + watch for changes so future imports skip the gate.
   useEffect(() => {
     let cancelled = false
-    if (typeof window.setsense !== 'undefined') {
-      void window.setsense.getSettings().then((s) => {
+    if (typeof window.setrecord !== 'undefined') {
+      void window.setrecord.getSettings().then((s) => {
         if (!cancelled) setConsentGiven(s.rekordboxDbConsent === true)
       })
     }
@@ -118,8 +118,8 @@ export function ImportModal(): React.JSX.Element {
   }
 
   async function handleConsentAccept(): Promise<void> {
-    if (typeof window.setsense !== 'undefined') {
-      await window.setsense.setSettings({ rekordboxDbConsent: true })
+    if (typeof window.setrecord !== 'undefined') {
+      await window.setrecord.setSettings({ rekordboxDbConsent: true })
     }
     setConsentGiven(true)
     setShowingConsent(false)

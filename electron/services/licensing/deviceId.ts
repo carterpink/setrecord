@@ -14,7 +14,7 @@
 import keytar from 'keytar'
 import { randomUUID } from 'crypto'
 
-const SERVICE = 'SetSense'
+const SERVICE = 'SetRecord'
 const DEVICE_ACCOUNT = 'deviceId'
 
 let _deviceId = ''

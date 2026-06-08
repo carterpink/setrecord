@@ -1,5 +1,5 @@
 /**
- * Session engine — wires a Y.Doc + CollabProvider to the SetSense stores.
+ * Session engine — wires a Y.Doc + CollabProvider to the SetRecord stores.
  *
  * The bridge is two one-way bindings guarded against feedback:
  *   • outbound: setStore.currentSet change → reconcileYDoc INSIDE a LOCAL_ORIGIN
@@ -28,7 +28,7 @@ import {
 } from './sharedTypes'
 
 /** Tags transactions we author locally so inbound projection can ignore them. */
-const LOCAL_ORIGIN = Symbol('setsense-collab-local')
+const LOCAL_ORIGIN = Symbol('setrecord-collab-local')
 
 interface ActiveSession {
   doc: Y.Doc

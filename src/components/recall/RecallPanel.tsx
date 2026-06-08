@@ -8,7 +8,8 @@ import {
   HeartPulse,
   Tag,
   MapPin,
-  Building2
+  Building2,
+  Waypoints
 } from 'lucide-react'
 import type { RecallSection } from '@/types'
 import { useRecallStore } from '@/stores/recallStore'
@@ -26,8 +27,10 @@ import { GigsSection } from './GigsSection'
 import { VenuesSection } from './VenuesSection'
 import { HealthSection } from './HealthSection'
 import { TagsSection } from './TagsSection'
+import { GraphSection } from './graph/GraphSection'
 
 const NAV: { id: RecallSection; labelKey: string; icon: typeof Sparkles }[] = [
+  { id: 'graph', labelKey: 'nav.graph', icon: Waypoints },
   { id: 'crates', labelKey: 'nav.crates', icon: Layers },
   { id: 'tags', labelKey: 'nav.tags', icon: Tag },
   { id: 'uncover', labelKey: 'nav.uncover', icon: Telescope },
@@ -90,6 +93,8 @@ export function RecallPanel(): React.JSX.Element {
                 <div className="recall-scroll">
                   <ProLock feature="smartCrates" />
                 </div>
+              ) : section === 'graph' ? (
+                <GraphSection />
               ) : section === 'tags' ? (
                 <TagsSection />
               ) : section === 'uncover' ? (

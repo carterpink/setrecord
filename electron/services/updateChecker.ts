@@ -1,7 +1,7 @@
 /**
  * updateChecker.ts — Stage-1 update delivery (NFR-1001, "Auto-update").
  *
- * SetSense has NO in-app installer: electron-updater is intentionally not wired.
+ * SetRecord has NO in-app installer: electron-updater is intentionally not wired.
  * The ~1.9 GB Recall model is bundled by design (offline from first launch), so
  * a full self-replacing update would be a ~2 GB download per release on macOS.
  * Decision (NFR-901): keep the model 100% bundled and distribute updates
@@ -21,7 +21,10 @@ import { getSettings } from './settingsService'
 
 // Update feed source. Matches the `publish` provider in electron-builder.yml.
 const REPO_OWNER = 'carterpink'
-const REPO_NAME = 'setsensensev2'
+// MUST stay in sync with the `publish.repo` in electron-builder.yml — a mismatch
+// makes the update API 404 silently, leaving every installed build unable to
+// learn about new releases (incl. security patches). Guarded by a test.
+const REPO_NAME = 'setrecordv2'
 const LATEST_RELEASE_API = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest`
 const RELEASES_LIST_API = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases?per_page=10`
 const RELEASES_PAGE = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/latest`
@@ -102,7 +105,7 @@ async function fetchLatestRelease(allowPrerelease = false): Promise<LatestReleas
       signal: controller.signal,
       headers: {
         Accept: 'application/vnd.github+json',
-        'User-Agent': `SetSense/${app.getVersion()}`
+        'User-Agent': `SetRecord/${app.getVersion()}`
       }
     })
     if (!res.ok) return null
@@ -141,7 +144,7 @@ async function promptUser(
   const options: Electron.MessageBoxOptions = {
     type: 'info',
     title: 'Update available',
-    message: `SetSense ${latest.version} is available`,
+    message: `SetRecord ${latest.version} is available`,
     detail,
     buttons: ['Download', 'Remind Me Later', 'Skip This Version'],
     defaultId: 0,

@@ -105,12 +105,12 @@ export function clearPeaksCache(): void {
 async function decodeAndCache(filePath: string): Promise<PeaksState> {
   try {
     // Renderer-only preview (no Electron bridge) — degrade gracefully.
-    if (!window.setsense?.readAudioFile) {
+    if (!window.setrecord?.readAudioFile) {
       negativeCache.set(filePath, 'missing')
       return { status: 'missing' }
     }
 
-    const buf = await window.setsense.readAudioFile(filePath)
+    const buf = await window.setrecord.readAudioFile(filePath)
     if (!buf) {
       negativeCache.set(filePath, 'missing')
       return { status: 'missing' }

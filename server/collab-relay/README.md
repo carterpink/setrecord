@@ -1,4 +1,4 @@
-# SetSense Collab Relay (cloud v2)
+# SetRecord Collab Relay (cloud v2)
 
 A tiny, stateless WebSocket relay that lets DJs run a live **Back-to-Back** set
 session across **different networks** (not just the same Wi-Fi). It's the

@@ -1,5 +1,5 @@
 /**
- * recallQuery.ts — Deterministic interpreter for SetSense Intelligence chat turns.
+ * recallQuery.ts — Deterministic interpreter for SetRecord Intelligence chat turns.
  *
  * Each turn is parsed (no model) into either a SEARCH (filter params that refine
  * across the conversation — count, sort, genre, bpm, energy, rating, dormancy)

@@ -146,7 +146,7 @@ export function populatePerformanceDatabase(db: Database.Database, uuid: string)
 
 /** Create a SQLite file at `path` via a temp file + atomic rename. */
 function writeDatabaseFile(path: string, populate: (db: Database.Database) => void): void {
-  const tmp = `${path}.setsense-tmp`
+  const tmp = `${path}.setrecord-tmp`
   try {
     if (existsSync(tmp)) rmSync(tmp)
   } catch {

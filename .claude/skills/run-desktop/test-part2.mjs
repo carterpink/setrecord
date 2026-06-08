@@ -1,5 +1,5 @@
 /**
- * SetSense walkthrough — Part 2 (picks up from step 7)
+ * SetRecord walkthrough — Part 2 (picks up from step 7)
  * Covers: timeline interactions, modals, Recall, Discover, cue points
  */
 import { _electron as electron } from 'playwright-core';
@@ -63,7 +63,7 @@ async function countEls(sel) {
 }
 
 // ── LAUNCH ──────────────────────────────────────────────────────────────────
-console.log('\n=== SetSense Walkthrough Part 2 ===\n');
+console.log('\n=== SetRecord Walkthrough Part 2 ===\n');
 app = await electron.launch({
   executablePath: electronBin,
   args: [APP_DIR],

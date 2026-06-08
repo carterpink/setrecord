@@ -62,7 +62,7 @@ uploaded as CI artifacts for trend history.
 > **Where the 10k list lives.** The virtualized track list (carrying the
 > `data-bench-library-ready` marker) renders in the **Build** workspace — the
 > "Library" tab renders `RecallPanel`, not the list. `run.mjs` persists
-> `setsense-mode=Build` into the seeded profile so cold launches boot straight
+> `setrecord-mode=Build` into the seeded profile so cold launches boot straight
 > into that view. The scroll metric estimates the frame budget from the median
 > interval (refresh-rate-agnostic: 60Hz vs 120Hz ProMotion) and counts a frame
 > as _dropped_ only when it overruns 1.5× that budget — a genuinely skipped

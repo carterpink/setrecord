@@ -1,7 +1,7 @@
 /**
  * Native Rekordbox MyTag writer (advanced, Pro).
  *
- * Writes SetSense's plain-language tags into Rekordbox's own MyTag tables
+ * Writes SetRecord's plain-language tags into Rekordbox's own MyTag tables
  * (djmdMyTag categories/tags + djmdSongMyTag associations) so they become real,
  * filterable MyTags inside Rekordbox.
  *
@@ -33,8 +33,8 @@ export interface MyTagEntry {
 
 export type MyTagWriteResult = RekordboxTagWriteResult
 
-/** Top-level MyTag category SetSense creates to hold its tags. */
-const PARENT_NAME = 'SetSense'
+/** Top-level MyTag category SetRecord creates to hold its tags. */
+const PARENT_NAME = 'SetRecord'
 
 function msg(err: unknown): string {
   return err instanceof Error ? err.message : String(err)
@@ -85,7 +85,7 @@ export async function writeMyTags(
 ): Promise<MyTagWriteResult> {
   // 1. Mandatory backup before touching anything.
   const ts = new Date().toISOString().replace(/[:.]/g, '-')
-  const backupPath = `${dbPath}.setsense-backup-${ts}`
+  const backupPath = `${dbPath}.setrecord-backup-${ts}`
   try {
     copyFileSync(dbPath, backupPath)
     for (const suffix of ['-wal', '-shm']) {

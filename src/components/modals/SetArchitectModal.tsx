@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, ChevronDown, Copy, Loader, Lock, RefreshCw, Sparkles, X } from 'lucide-react'
-import type { ArchitectParams, EnergyCurveType, GenreProfileInfo, SetTrack, SetVibe } from '@/types'
+import type {
+  ArchitectParams,
+  EnergyCurveType,
+  GenreProfileInfo,
+  SetTrack,
+  SetVibe,
+  VenueType
+} from '@/types'
 import { Button } from '@/components/shared/Button'
 import { Chip } from '@/components/shared/Chip'
 import { PlaylistSourceDropdown } from '@/components/shared/PlaylistSourceDropdown'
@@ -13,6 +20,7 @@ import { motion, AnimatePresence } from '@/components/shared/Motion'
 import { Modal } from '@/components/shared/Modal'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { useSetStore } from '@/stores/setStore'
+import { useRecallStore } from '@/stores/recallStore'
 import { useUiStore } from '@/stores/uiStore'
 import { LearnPanel } from '@/components/learn/LearnPanel'
 import { explainEnergyArc } from '@/utils/learnMode/explanations'
@@ -67,6 +75,8 @@ export function SetArchitectModal(): React.JSX.Element {
   const { closeModal } = useUiStore()
   const learnModeEnabled = useUiStore((s) => s.learnModeEnabled)
   const { populateFromArchitect } = useSetStore()
+  const gigs = useRecallStore((s) => s.gigs)
+  const loadGigs = useRecallStore((s) => s.loadGigs)
   // Subscribe to a stable reference (the tracks array) and derive the filtered list
   // via useMemo — selecting `.filter(...)` directly would return a fresh array each
   // render, tripping zustand's getSnapshot caching guard and causing an update loop.
@@ -90,6 +100,8 @@ export function SetArchitectModal(): React.JSX.Element {
   const [setName, setSetName] = useState('')
   const [isBuilding, setIsBuilding] = useState(false)
   const [buildError, setBuildError] = useState<string | null>(null)
+  const [seedVenue, setSeedVenue] = useState('')
+  const [venueHint, setVenueHint] = useState<string | null>(null)
   const [resultTracks, setResultTracks] = useState<SetTrack[]>([])
   // The exact params used for the most recent build — drives the Learn panel and
   // the eventual commit so the curve/vibe shown match what was generated.
@@ -120,7 +132,7 @@ export function SetArchitectModal(): React.JSX.Element {
   // changes, so "Auto" always reflects the tracks being built from.
   useEffect(() => {
     let cancelled = false
-    window.setsense
+    window.setrecord
       .genreProfiles(selectedSourcePlaylistIds)
       .then((info) => {
         if (!cancelled) setGenreInfo(info)
@@ -164,6 +176,37 @@ export function SetArchitectModal(): React.JSX.Element {
 
   function patch<K extends keyof ArchitectParams>(key: K, value: ArchitectParams[K]): void {
     setParams((p) => ({ ...p, [key]: value }))
+  }
+
+  // ── "Start from a venue": tune generation to a room from the Brief ─────────
+  useEffect(() => {
+    void loadGigs()
+  }, [loadGigs])
+  const venues = useMemo(() => {
+    const m = new Map<string, { venue: string; eventType?: VenueType }>()
+    for (const g of gigs) {
+      const v = g.venue?.trim()
+      if (v && !m.has(v.toLowerCase())) m.set(v.toLowerCase(), { venue: v, eventType: g.eventType })
+    }
+    return Array.from(m.values())
+  }, [gigs])
+  async function pickVenue(venue: string): Promise<void> {
+    setSeedVenue(venue)
+    setVenueHint(null)
+    if (!venue) return
+    const meta = venues.find((v) => v.venue === venue)
+    try {
+      const brief = await window.setrecord.historyBrief(venue, meta?.eventType)
+      setParams((p) => ({
+        ...p,
+        venueType: meta?.eventType ?? p.venueType,
+        bpmMin: brief.profile?.bpmLow ?? p.bpmMin,
+        bpmMax: brief.profile?.bpmHigh ?? p.bpmMax
+      }))
+      setVenueHint(brief.timesPlayed > 0 ? brief.narration : null)
+    } catch {
+      setVenueHint(null)
+    }
   }
 
   // Natural-language brief → params (same deterministic tech as Library conversations).
@@ -210,7 +253,7 @@ export function SetArchitectModal(): React.JSX.Element {
         ...(lockedTracks.length > 0 ? { lockedTracks } : {})
       }
       const [setTracks] = await Promise.all([
-        window.setsense.buildSet(paramsForBuild) as Promise<SetTrack[]>,
+        window.setrecord.buildSet(paramsForBuild) as Promise<SetTrack[]>,
         new Promise<void>((r) => setTimeout(r, 700))
       ])
       if (!setTracks || setTracks.length === 0) {
@@ -327,6 +370,27 @@ export function SetArchitectModal(): React.JSX.Element {
                     {nlSummary && <span className="arch-nl-summary">{nlSummary}</span>}
                   </div>
 
+                  {venues.length > 0 && (
+                    <div className="arch-field">
+                      <label className="ss-label" htmlFor="arch-venue-seed">
+                        Start from a venue
+                      </label>
+                      <select
+                        id="arch-venue-seed"
+                        className="arch-input"
+                        value={seedVenue}
+                        onChange={(e) => void pickVenue(e.target.value)}
+                      >
+                        <option value="">No venue — start fresh</option>
+                        {venues.map((v) => (
+                          <option key={v.venue} value={v.venue}>
+                            {v.venue}
+                          </option>
+                        ))}
+                      </select>
+                      {venueHint && <span className="arch-nl-summary">{venueHint}</span>}
+                    </div>
+                  )}
                   <div className="arch-field">
                     <label className="ss-label">{t('architect.setName')}</label>
                     <input

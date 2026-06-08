@@ -249,7 +249,7 @@ describe('analyseTrack caching', () => {
   const pcm: PcmDecode = { samples: sine(2000, 2, 0.8), sampleRate: ANALYSIS_SAMPLE_RATE }
 
   beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'setsense-energy-'))
+    dir = mkdtempSync(join(tmpdir(), 'setrecord-energy-'))
     file = join(dir, 'track.wav')
     writeFileSync(file, Buffer.from('not-real-audio-decode-is-injected'))
     decodeCalls = 0

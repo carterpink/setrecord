@@ -52,7 +52,8 @@
     "goLive": "Go Live",
     "endTitle": "End Live — close the floating overlay",
     "goLiveTitle": "Go Live — a transparent glass overlay that floats over Rekordbox, reads what’s playing, and surfaces the best next moves",
-    "screenPermissionError": "SetSense Live needs Screen Recording permission (System Settings → Privacy)."
+    "screenPermissionError": "SetRecord Live needs Screen Recording permission (System Settings → Privacy).",
+    "setSaved": "Set saved to your history"
   },
   "energy": {
     "pill": "Analysing energy <0>{{processed}} / {{total}}</0>…",

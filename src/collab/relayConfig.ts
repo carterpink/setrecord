@@ -4,7 +4,7 @@
  * `server/collab-relay`. Unset → LAN-only.
  */
 
-/** The configured cloud relay base URL (e.g. wss://collab.setsense.app), or null. */
+/** The configured cloud relay base URL (e.g. wss://collab.setrecord.app), or null. */
 export function getCloudRelayUrl(): string | null {
   const raw = import.meta.env.VITE_COLLAB_RELAY_URL
   if (!raw || typeof raw !== 'string') return null

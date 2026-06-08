@@ -179,7 +179,7 @@ export function CuePointEditor(): React.JSX.Element {
       setCuePoints(nextCues)
       setHotCues(nextHot)
       try {
-        await window.setsense.updateTrackCues(track.id, nextCues, nextHot)
+        await window.setrecord.updateTrackCues(track.id, nextCues, nextHot)
         patchTrackCues(track.id, nextCues, nextHot)
       } catch (err) {
         console.error('[CuePointEditor] updateTrackCues failed', err)
@@ -197,7 +197,7 @@ export function CuePointEditor(): React.JSX.Element {
       setBpm(nextBpm)
       setAnchorMs(nextAnchor)
       try {
-        await window.setsense.updateTrackBeatgrid(track.id, nextBpm, nextAnchor)
+        await window.setrecord.updateTrackBeatgrid(track.id, nextBpm, nextAnchor)
         patchTrackBeatgrid(track.id, nextBpm, nextAnchor)
       } catch (err) {
         console.error('[CuePointEditor] updateTrackBeatgrid failed', err)
@@ -213,7 +213,7 @@ export function CuePointEditor(): React.JSX.Element {
       const prev = loops
       setLoops(next)
       try {
-        await window.setsense.updateTrackLoops(track.id, next)
+        await window.setrecord.updateTrackLoops(track.id, next)
         patchTrackLoops(track.id, next)
       } catch (err) {
         console.error('[CuePointEditor] updateTrackLoops failed', err)

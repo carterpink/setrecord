@@ -1,6 +1,6 @@
-# SetSense — Agent Context
+# SetRecord — Agent Context
 
-Memory file for the Claude Code agent building SetSense. Update at the end of every meaningful step.
+Memory file for the Claude Code agent building SetRecord. Update at the end of every meaningful step.
 
 ---
 
@@ -10,7 +10,7 @@ Memory file for the Claude Code agent building SetSense. Update at the end of ev
 **Last updated:** 2026-05-08
 **Plan file:** `/Users/samcarter/.claude/plans/prd-md-read-this-splendid-goblet.md`
 
-## What SetSense is
+## What SetRecord is
 
 A desktop‑first DJ companion app for macOS that helps DJs build sets and reliably export them to Pioneer CDJ hardware. Three pillars: reliability (USB export, library health), intelligence (algorithmic suggestions, Set Architect), clarity. Built with Electron + Vite + React + TypeScript + Tailwind v3 + SQLite (later phases).
 
@@ -18,13 +18,13 @@ A desktop‑first DJ companion app for macOS that helps DJs build sets and relia
 
 | Concern | Source |
 |---|---|
-| Functional spec | `/Users/samcarter/Documents/SetSenseV2/PRD.md` |
-| Visual spec | Claude Design handoff bundle, extracted to `/tmp/setsense-design/setsense-design-system/` |
-| Design tokens | `/tmp/setsense-design/setsense-design-system/project/colors_and_type.css` |
-| Component CSS | `/tmp/setsense-design/setsense-design-system/project/ui_kits/setsense-app/index.html` (`<style>` block) |
-| Component shapes | `/tmp/setsense-design/setsense-design-system/project/ui_kits/setsense-app/*.jsx` |
-| Brand voice + anti‑patterns | `/tmp/setsense-design/setsense-design-system/project/README.md` |
-| Icon set used | `/tmp/setsense-design/setsense-design-system/project/icons.js` (24 Lucide names; production uses `lucide-react`) |
+| Functional spec | `/Users/samcarter/Documents/SetRecordV2/PRD.md` |
+| Visual spec | Claude Design handoff bundle, extracted to `/tmp/setrecord-design/setrecord-design-system/` |
+| Design tokens | `/tmp/setrecord-design/setrecord-design-system/project/colors_and_type.css` |
+| Component CSS | `/tmp/setrecord-design/setrecord-design-system/project/ui_kits/setrecord-app/index.html` (`<style>` block) |
+| Component shapes | `/tmp/setrecord-design/setrecord-design-system/project/ui_kits/setrecord-app/*.jsx` |
+| Brand voice + anti‑patterns | `/tmp/setrecord-design/setrecord-design-system/project/README.md` |
+| Icon set used | `/tmp/setrecord-design/setrecord-design-system/project/icons.js` (24 Lucide names; production uses `lucide-react`) |
 
 **Conflict rule (from PRD §0):** design system wins on visual matters; PRD wins on functional matters.
 
@@ -41,7 +41,7 @@ A desktop‑first DJ companion app for macOS that helps DJs build sets and relia
 
 ## Phase 1 user-confirmed decisions
 
-- Project root: `/Users/samcarter/Documents/SetSenseV2/` (no nested `setsense/`).
+- Project root: `/Users/samcarter/Documents/SetRecordV2/` (no nested `setrecord/`).
 - Build setup: **electron‑vite**.
 - macOS window chrome: **hiddenInset** traffic lights (`trafficLightPosition: { x: 16, y: 20 }`).
 - Token strategy: CSS variables in `tokens.css` are the source of truth; `tailwind.config.ts` references them via `theme.extend`.
@@ -56,7 +56,7 @@ A desktop‑first DJ companion app for macOS that helps DJs build sets and relia
 ## Project structure (target — PRD §3 + scaffolding decisions)
 
 ```
-SetSenseV2/
+SetRecordV2/
 ├── PRD.md                          # functional spec
 ├── context.md                      # this file
 ├── package.json
@@ -117,7 +117,7 @@ or via the `renderer-preview` config in `.claude/launch.json` (port 5174).
 ## Phase 1 deviations from PRD (notes for future phases)
 
 - React 19 (scaffold default) instead of React 18 — PRD §2 lists 18, but R19 is the current stable in 2026 and API-compatible. No code changes needed.
-- Renderer's preload `window.setsense` is typed as `Record<string, never>` until Phase 2 IPC methods land.
+- Renderer's preload `window.setrecord` is typed as `Record<string, never>` until Phase 2 IPC methods land.
 - Added `@fontsource/jetbrains-mono` (4xx, 5xx weights) for offline JBM rendering — replaces the design system's Google Fonts `@import` for the offline-at-the-venue use case the PRD calls out.
 - Added a renderer-only `vite.config.ts` and `.claude/launch.json` for in-browser preview (does not affect production Electron build).
 - `postcss.config.mjs` rather than `.js` to silence the ESM module-type warning.
@@ -130,12 +130,12 @@ or via the `renderer-preview` config in `.claude/launch.json` (port 5174).
 
 ## Change log
 
-- 2026-05-27: Section 2 library panel UX pass complete (from `setsense_change_matrix.md` user research). P0: clicking a library track drives Suggestions panel to show "What mixes after [track]?" — `selectedLibraryTrackId` added to uiStore, `useSuggestions` no longer requires a setId (passes '' to algo:suggestions IPC, which uses a stub empty set), `SuggestionsPanel` computes `effectiveTrackId` from timeline OR library selection. P1: Camelot key tooltip on `KeyChip` (hover shows "9A = Am · Adjacent Camelot numbers mix harmonically") via `camelotToOpenKey()` in `src/utils/camelot.ts` + CSS `::after` on `.camelot--tip`; dismissible cue-point search callout (localStorage `setsense-search-tip-dismissed`); sort controls (Artist/Title/BPM/Energy/Key/Date added/Play count/Duration/Rating + direction toggle) inline with tabs; filter chips panel (`SlidersHorizontal` button → collapsible panel: BPM range, energy, key, genre, format; active chips row with × dismiss); compact mode toggle (`AlignJustify`/`Menu` ↔ toggle, `libraryDensity` in uiStore, localStorage `setsense-library-density`, 40px rows with title · artist inline). P2: right-click context menu (`TrackContextMenu.tsx` portal, Glass 2, clamps to viewport, Escape/click-outside close, items: Preview/Find similar/Add to set/Edit cues/What have I played after?); "What have I played after this?" history button on TrackRow (hover reveal) + `CombosPopover` (Glass 2 card, top 5 ComboResult entries, fetched via `window.setsense.recallCombos`). Smart filter extended to work from library selection when no timeline track selected. `npm run typecheck` clean.
+- 2026-05-27: Section 2 library panel UX pass complete (from `setrecord_change_matrix.md` user research). P0: clicking a library track drives Suggestions panel to show "What mixes after [track]?" — `selectedLibraryTrackId` added to uiStore, `useSuggestions` no longer requires a setId (passes '' to algo:suggestions IPC, which uses a stub empty set), `SuggestionsPanel` computes `effectiveTrackId` from timeline OR library selection. P1: Camelot key tooltip on `KeyChip` (hover shows "9A = Am · Adjacent Camelot numbers mix harmonically") via `camelotToOpenKey()` in `src/utils/camelot.ts` + CSS `::after` on `.camelot--tip`; dismissible cue-point search callout (localStorage `setrecord-search-tip-dismissed`); sort controls (Artist/Title/BPM/Energy/Key/Date added/Play count/Duration/Rating + direction toggle) inline with tabs; filter chips panel (`SlidersHorizontal` button → collapsible panel: BPM range, energy, key, genre, format; active chips row with × dismiss); compact mode toggle (`AlignJustify`/`Menu` ↔ toggle, `libraryDensity` in uiStore, localStorage `setrecord-library-density`, 40px rows with title · artist inline). P2: right-click context menu (`TrackContextMenu.tsx` portal, Glass 2, clamps to viewport, Escape/click-outside close, items: Preview/Find similar/Add to set/Edit cues/What have I played after?); "What have I played after this?" history button on TrackRow (hover reveal) + `CombosPopover` (Glass 2 card, top 5 ComboResult entries, fetched via `window.setrecord.recallCombos`). Smart filter extended to work from library selection when no timeline track selected. `npm run typecheck` clean.
 - 2026-05-08: Phase 6 complete. wavesurfer.js installed. Electron `media://` protocol registered via `protocol.handle` + `net.fetch` (serves local audio files to renderer safely). `electron/db/queries.ts` gains `updateTrackCues()` (targeted SQL UPDATE, avoids full track round-trip). `cues:update` IPC handler + `updateTrackCues` added to preload bridge + `preload.d.ts`. `playbackStore.ts` expanded: `previewTrack`, `isPlaying`, `currentTime`, `duration`, and actions `startPreview/stopPreview/togglePlay/setCurrentTime/setDuration/setIsPlaying`. `libraryStore.ts` gains `patchTrackCues()` for in-memory sync after saves. `src/utils/constants.ts` created with `HOT_CUE_COLORS` (A–H, Rekordbox-inspired palette) and `HOT_CUE_LABELS`. `src/hooks/usePreviewAudio.ts` — singleton HTMLAudioElement for library-row preview, subscribes to store, syncs play/pause and time events. `src/components/shared/Waveform.tsx` — WaveSurfer v7 wrapper loaded asynchronously, cue markers as absolutely-positioned overlay divs, sync play/pause and nudge from parent via props. `src/components/modals/CuePointEditor.tsx` — Glass 3 modal: Waveform, transport (Play/Pause, ±100ms nudge, time display), default cue setter, 4×2 hot cue grid A–H, saves on every mutation via IPC + patchTrackCues. `AppShell.tsx` now renders `<CuePointEditor />` (replacing ComingSoonModal) and calls `usePreviewAudio()`. `LibraryPanel.tsx` double-click changed from `addTrack` → `startPreview` (per PRD §7.2), passes `playing` prop. `TrackRow.tsx` playing state: chartreuse inset left border + Volume2 icon overlay on artwork. `TimelineTrackCard.tsx` play button wired to `startPreview`/`togglePlay`, shows Pause icon when active. `BottomDock.tsx` cue editor button disabled (0.35 opacity) when no track selected. `npm run typecheck` clean.
 - 2026-05-08: Phase 5 complete. electron/algorithms/energyCurve.ts (getTargetCurve/getActualCurve/getCurveDeviation), electron/algorithms/setArchitect.ts (greedy build loop via getSuggestions(), energy curve targeting, opener selection, 3-pass repair for trainwrecks, final transition scoring). suggestions.ts refactored to import getTargetAt from energyCurve.ts (removed inline duplicate). main.ts algo:build-set stub replaced with real handler. src/utils/energyCurve.ts (frontend mirror, no IPC). Slider.tsx made interactive (min/max/step/onChange). RangeSlider.tsx created (true dual-handle via overlapping <input type=range> technique, chartreuse fill between thumbs, 120-132 BPM default). setStore.ts gains populateFromArchitect(). EnergyCurveGraph.tsx target line now computed from set.energyCurveType via getTargetCurve (was hardcoded to 5). SetArchitectModal.tsx — all PRD §7.5 fields, 1s build animation, error state. BottomDock Sparkles+Layers icons wired to showModal('architect'). AppShell renders SetArchitectModal. Button.tsx template literal bug fixed (btn-${variant} → static record lookup so Tailwind does not purge btn-primary/btn-secondary/btn-ghost). typecheck clean.
 
 - 2026-05-07: Phase 4 complete. electron/algorithms/ created with transitionScore.ts (BPM/key/energy/technical scoring, 0-100 scale, clean/messy/trainwreck classification) and suggestions.ts (BPM-window filter, diversity penalty, energy curve bonus, ranked Suggestion[] with MatchReasons). electron/utils/camelot.ts extended with getKeyCompatibility() (Camelot wheel math: perfect/energy-shift/mood-shift/compatible/neutral/clash). IPC handlers for algo:score-transition + algo:suggestions replace stubs in main.ts. preload.d.ts return types tightened (Promise<unknown> → Promise<Suggestion[]> / Promise<TransitionScore|null>). setStore gains computeAllTransitions() (parallel Promise.all over consecutive pairs, race-safe state check, fired from addTrack + reorderTracks). src/hooks/useSuggestions.ts hook (200ms debounce, isLoading, refresh()). SuggestionsPanel wired to live hook. GhostTrackCard.tsx renders top suggestion at 40% opacity at end of timeline. typecheck clean.
 - 2026-05-07: Phase 3 complete. @dnd-kit/core + @dnd-kit/sortable + recharts installed. Set CRUD queries added to electron/db/queries.ts (getAllSets, getSetById, saveSet, deleteSet with atomic transaction). IPC handlers wired in main.ts. setStore.ts fully implemented with createSet/addTrack/removeTrack/reorderTracks/renameCurrentSet/loadSets/loadCurrentSet/deleteCurrentSet + 500ms auto-save debounce. TimelinePanel wired to store with useDroppable zone + SortableContext + inline set name editing. TimelineTrackCard upgraded with useSortable + grip handle + remove button + select state. EnergyCurveGraph replaced with live Recharts LineChart (chartreuse actual + dim white dashed target). Library TrackRow has useDraggable. LibraryPanel Sets tab lists savedSets. AppShell wraps in DndContext. savedSets syncs optimistically on every mutation. typecheck clean, no console errors.
-- 2026-05-07: Plan written, approved. Beginning Phase 1 execution. Design bundle inspected at `/tmp/setsense-design`.
-- 2026-05-07: Phase 2 complete. SQLite schema (5 tables + 5 indexes) created at ~/Library/Application Support/setsense/library.db on first launch. Rekordbox XML parser (electron/services/libraryImport.ts) maps all 21 PRD §7.1 fields including Camelot key conversion (electron/utils/camelot.ts). IPC bridge has 6 implemented channels (library:import, library:get-all, library:get-stats, library:count, fs:select-xml, fs:file-exists, fs:select-save) + stubs for Phase 3-7. Zustand stores: libraryStore (import/search/load), uiStore (modal routing), setStore/playbackStore (stubs). LibraryPanel reads from store with empty state + loading skeleton + debounced fast-fuzzy search. ImportModal shows progress bar + stats on completion. TopBar Import button opens modal. NOTE: better-sqlite3 requires `npm run rebuild` after any Electron version bump.
+- 2026-05-07: Plan written, approved. Beginning Phase 1 execution. Design bundle inspected at `/tmp/setrecord-design`.
+- 2026-05-07: Phase 2 complete. SQLite schema (5 tables + 5 indexes) created at ~/Library/Application Support/setrecord/library.db on first launch. Rekordbox XML parser (electron/services/libraryImport.ts) maps all 21 PRD §7.1 fields including Camelot key conversion (electron/utils/camelot.ts). IPC bridge has 6 implemented channels (library:import, library:get-all, library:get-stats, library:count, fs:select-xml, fs:file-exists, fs:select-save) + stubs for Phase 3-7. Zustand stores: libraryStore (import/search/load), uiStore (modal routing), setStore/playbackStore (stubs). LibraryPanel reads from store with empty state + loading skeleton + debounced fast-fuzzy search. ImportModal shows progress bar + stats on completion. TopBar Import button opens modal. NOTE: better-sqlite3 requires `npm run rebuild` after any Electron version bump.
 - 2026-05-07: Phase 1 complete. electron-vite scaffolded, reorganised to PRD §3 layout (`electron/main.ts` + `electron/preload.ts` + `src/` for renderer + `index.html` at root). Tokens + globals.css lifted from `colors_and_type.css` and the prototype's `<style>` block. All 17 components built (3 layout + 9 shared + 2 library + 3 timeline + 3 suggestions). Dummy data lifted from JSX. `npm run typecheck` passes (both web and node configs). Renderer preview at localhost:5174 confirms: aurora + 3 glass panels, top bar (Prepare/Play, Set safety badge, Import/Search/Settings/Export), library with 9 track rows + Camelot keys, timeline with "Friday — peak hour" + energy curve SVG + 6 cards (track 04 has the playing ring, track 05 shows messy/key clash), suggestions with chartreuse-ringed best-match card + 3 alternates, bottom dock with 5 icons in two groups. No console errors.

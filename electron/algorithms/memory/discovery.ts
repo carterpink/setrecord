@@ -270,7 +270,7 @@ export function computeDiscovery(
       return {
         kind: 'empty',
         narration:
-          "I can only see play history since you started using SetSense, so I can't reach back five years. If you have older sessions logged, I can surface long-dormant favourites instead."
+          "I can only see play history since you started using SetRecord, so I can't reach back five years. If you have older sessions logged, I can surface long-dormant favourites instead."
       }
     default:
       return { kind: 'empty', narration: 'Nothing to discover for that.' }

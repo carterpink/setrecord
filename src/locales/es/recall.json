@@ -9,7 +9,8 @@
     "venues": "Salas",
     "identity": "Identidad",
     "health": "Salud",
-    "fallback": "Recall"
+    "fallback": "Recall",
+    "graph": "Constelación"
   },
   "panel": {
     "noLibrary": "Recall lee toda tu colección — redescubriendo joyas olvidadas, mapeando tu sonido y trazando las transiciones que más usas. Importa tu biblioteca para darle vida."
@@ -164,6 +165,10 @@
     "noMatch": "Ningún bolo coincide con este filtro.",
     "noSessions": "Aún no hay sesiones pinchadas — importa el historial de Rekordbox o marca un set como pinchado.",
     "viewTracklist": "Ver tracklist",
+    "copyTracklist": "Copiar tracklist",
+    "tracklistCopied": "Tracklist copiada",
+    "recordingLabel": "Grabación del set",
+    "jumpToTrack": "Saltar a esta pista en la grabación",
     "editGig": "Editar bolo",
     "addVenue": "Añadir recinto",
     "autoBadge": "auto",
@@ -322,7 +327,7 @@
     "title": "Redescubrir",
     "subtitle": "Pistas que solías pinchar, criando polvo. Vuelve a meter una en rotación.",
     "noLibraryTitle": "Las joyas olvidadas afloran a medida que pinchas",
-    "noLibraryBody": "Importa tu biblioteca y SetSense empezará a resurgir pistas que solías adorar pero que no tocas desde hace tiempo.",
+    "noLibraryBody": "Importa tu biblioteca y SetRecord empezará a resurgir pistas que solías adorar pero que no tocas desde hace tiempo.",
     "digging": "Rebuscando entre tus cajones…",
     "empty": "Aún no hay joyas olvidadas — el historial de reproducción las irá haciendo crecer con el tiempo."
   },
@@ -373,5 +378,86 @@
       "energyValue": "{{value}}/10",
       "length": "Duración"
     }
+  },
+  "graph": {
+    "title": "Constelación",
+    "lensLabel": "Lente temporal",
+    "loading": "Mapeando tu biblioteca…",
+    "error": "No se pudo crear el mapa.",
+    "centeredOn": "Centrado en",
+    "trackCount": "{{count}} tracks",
+    "mode": {
+      "past": "Pasado",
+      "future": "Futuro",
+      "diff": "Diferencia",
+      "present": "Presente"
+    },
+    "tagline": {
+      "past": "Cada track que has mezclado, en un mapa",
+      "future": "Cada mezcla que podrías hacer",
+      "diff": "Compatibles, pero nunca lo has probado",
+      "present": "El set que estás creando, ahora mismo"
+    },
+    "empty": {
+      "past": {
+        "title": "Aún no hay mezclas mapeadas",
+        "body": "Registra o crea un set y tus tracks empezarán a conectarse en una constelación de las transiciones que realmente has pinchado."
+      },
+      "future": {
+        "title": "Sin vecinos compatibles",
+        "body": "No apareció nada compatible en armonía o ritmo alrededor de este track. Prueba con otro punto de partida."
+      },
+      "diff": {
+        "title": "Ya los has mezclado todos",
+        "body": "Cada track compatible cercano ya está en tu historial: aquí no hay parejas por descubrir. Prueba con otro track."
+      },
+      "present": {
+        "title": "Ningún set en curso",
+        "body": "Abre un set en Build (o ponte en vivo) y se ilumina aquí como un camino brillante: cada track en orden de reproducción."
+      }
+    },
+    "lock": {
+      "future": {
+        "title": "Descubre adónde puede ir cada track",
+        "body": "Futuro mapea las mezclas compatibles en armonía y BPM ocultas en tu biblioteca. Desbloquéalo con Pro."
+      },
+      "diff": {
+        "title": "Encuentra mezclas que nunca has probado",
+        "body": "Diferencia revela parejas compatibles que nunca has pinchado: tu próxima transición insignia. Desbloquéalo con Pro."
+      }
+    },
+    "legend": {
+      "mixed": "Ya mezclados",
+      "gig": "Pinchado en un bolo",
+      "path": "Tu set, en orden",
+      "compatible": "Podrías mezclar",
+      "novel": "Nunca probado"
+    },
+    "scrub": {
+      "title": "Mezclado en",
+      "all": "Todo"
+    },
+    "scopeLabel": "Alcance",
+    "scope": {
+      "neighborhood": "Cercanos",
+      "library": "Galaxia",
+      "context": "Este set"
+    },
+    "path": {
+      "toggle": "Crear set",
+      "title": "Ruta",
+      "hint": "Haz clic en tracks para encadenarlos en un set, en orden.",
+      "route": "Auto-ruta",
+      "add": "Añadir al set",
+      "save": "Guardar como set",
+      "remove": "Quitar",
+      "clear": "Limpiar",
+      "exit": "Salir del modo ruta",
+      "setName": "Ruta de constelación"
+    },
+    "search": {
+      "placeholder": "Buscar un track…"
+    },
+    "genreCount": "{{count}} géneros"
   }
 }

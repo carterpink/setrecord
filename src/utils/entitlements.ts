@@ -1,5 +1,5 @@
 /**
- * Entitlements — the single map of what SetSense Pro unlocks (Section 16).
+ * Entitlements — the single map of what SetRecord Pro unlocks (Section 16).
  *
  * Every feature listed here is Pro-only; the free tier is "import + browse +
  * manual set building + a Library Health headline" (see PRD §16). The metadata
@@ -18,6 +18,7 @@ export type ProFeature =
   | 'healthDrilldown'
   | 'autoTagger'
   | 'hostCollab'
+  | 'graph'
 
 export interface ProFeatureMeta {
   /** Sentence-case feature name for the paywall headline. */
@@ -62,6 +63,10 @@ export const PRO_FEATURES: Record<ProFeature, ProFeatureMeta> = {
   hostCollab: {
     label: 'Live Collaboration',
     blurb: 'Build a set together in real time — invite a back-to-back partner to join your session.'
+  },
+  graph: {
+    label: 'Constellation',
+    blurb: 'See where every track could go next — harmonic and BPM-compatible mixes you haven’t tried yet.'
   }
 }
 

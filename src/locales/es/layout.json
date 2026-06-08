@@ -52,7 +52,8 @@
     "goLive": "En directo",
     "endTitle": "Finalizar En directo — cerrar la superposición flotante",
     "goLiveTitle": "En directo — una superposición de cristal transparente que flota sobre Rekordbox, lee lo que está sonando y muestra los mejores movimientos siguientes",
-    "screenPermissionError": "SetSense Live necesita permiso de Grabación de pantalla (Ajustes del sistema → Privacidad)."
+    "screenPermissionError": "SetRecord Live necesita permiso de Grabación de pantalla (Ajustes del sistema → Privacidad).",
+    "setSaved": "Set guardado en tu historial"
   },
   "energy": {
     "pill": "Analizando energía <0>{{processed}} / {{total}}</0>…",

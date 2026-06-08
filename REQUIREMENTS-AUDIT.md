@@ -1,8 +1,8 @@
-# SetSense — Functional vs Non-Functional Requirements: A Plain-English Audit
+# SetRecord — Functional vs Non-Functional Requirements: A Plain-English Audit
 
 *Written so a 6-year-old (and a PhD engineer) can both follow it. Last reviewed: 2026-06-03.*
 
-This is a health-check of how SetSense writes down what it's supposed to do. It looks at the
+This is a health-check of how SetRecord writes down what it's supposed to do. It looks at the
 **docs**, not the code. Its sibling file, [`REQUIREMENTS.md`](REQUIREMENTS.md), is the actual
 starter list of requirements that came out of this audit.
 
@@ -13,12 +13,12 @@ starter list of requirements that came out of this audit.
 Think about a **car**. 🚗
 
 - **Functional requirements (FRs)** = *the things it does.* It drives. It brakes. It plays music.
-  If it can't drive, it's not a car. For SetSense, an FR is "it can import your Rekordbox library"
+  If it can't drive, it's not a car. For SetRecord, an FR is "it can import your Rekordbox library"
   or "it can build a set for you."
 
 - **Non-functional requirements (NFRs)** = *how well it does those things.* It's safe. It's quiet.
   It starts fast. It doesn't break down in the rain. Nobody buys a car that drives but bursts into
-  flames — *how well* matters as much as *what*. For SetSense, an NFR is "imports finish in under
+  flames — *how well* matters as much as *what*. For SetRecord, an NFR is "imports finish in under
   10 seconds," "it never sends your music to the internet," or "if the database breaks, it
   recovers instead of losing your work."
 
@@ -52,7 +52,7 @@ Legend: ✅ written down properly · ⚠️ true in the code but not *written do
 
 > **The big FR finding:** the features are *all there and well-described*, but they're written as
 > **stories and feature lists**, never as a single enumerated, testable checklist. There is no one
-> document you can point at and say "these are SetSense's functional requirements."
+> document you can point at and say "these are SetRecord's functional requirements."
 
 ### Non-functional side — *how well it does it*
 
@@ -76,7 +76,7 @@ Legend: ✅ written down properly · ⚠️ true in the code but not *written do
 
 ## 3. What EXISTS — and is genuinely good
 
-Credit where it's due. SetSense is **unusually strong on the NFRs that matter for a DJ app that
+Credit where it's due. SetRecord is **unusually strong on the NFRs that matter for a DJ app that
 has to work at a venue at 2am with no WiFi**:
 
 - **Real performance budgets with numbers.** `PRD.md:658-664` doesn't say "make it fast" — it says
@@ -147,6 +147,6 @@ Five rules of thumb your dad would nod at:
    what's a *proposed gap* — so nobody mistakes a wish for a promise.
 
 The companion file [`REQUIREMENTS.md`](REQUIREMENTS.md) puts these rules into practice: it turns
-SetSense's scattered, well-built features and qualities into one enumerated FR/NFR list, carries
+SetRecord's scattered, well-built features and qualities into one enumerated FR/NFR list, carries
 over the real numbers from the PRD, and writes the missing pieces as clearly-labelled *proposed*
 requirements you can accept, edit, or reject.

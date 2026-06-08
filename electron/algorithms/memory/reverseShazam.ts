@@ -7,24 +7,11 @@
  * full tracklist when minute-level timing wasn't logged. No DB/electron deps.
  */
 
-import type { Track } from '../../../src/types'
+import type { Track, ShazamSession, ShazamAnswer } from '../../../src/types'
 import type { Occasion, ShazamHit } from '../../../src/utils/reverseShazamIntent'
 
-export interface ShazamSession {
-  id: string
-  performedAt: string // ISO date (YYYY-MM-DD…)
-  venue?: string
-  trackIds: string[]
-  /** Per-track wall-clock timestamps, aligned with trackIds. Optional. */
-  trackTimes?: (string | undefined)[]
-}
-
-export interface ShazamAnswer {
-  kind: 'gig' | 'tracks' | 'empty'
-  session?: ShazamSession
-  tracks?: Track[]
-  narration: string
-}
+// Re-export so existing importers (tests, main) can keep importing from here.
+export type { ShazamSession, ShazamAnswer }
 
 const OCCASION_DATE: Record<Occasion, { month: number; day: number; label: string }> = {
   nye: { month: 12, day: 31, label: "New Year's Eve" },

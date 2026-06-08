@@ -1,5 +1,5 @@
 /**
- * Screen reader for SetSense Live — the universal sensor.
+ * Screen reader for SetRecord Live — the universal sensor.
  *
  * Captures the screen and OCRs it on a slow cadence, emitting the recognised
  * text lines. Main matches those lines to the library by name (see

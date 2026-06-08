@@ -20,6 +20,7 @@ import type { ComboResult, SetTrack, Track } from '@/types'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
+import { useTrackInspectStore } from '@/stores/trackInspectStore'
 import { useCollabStore } from '@/stores/collabStore'
 import { formatDuration, formatPosition } from '@/utils/format'
 import { EnergyChip } from '@/components/shared/EnergyChip'
@@ -98,8 +99,8 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
     e.stopPropagation()
     setCombosData({ results: [], loading: true })
     try {
-      if (typeof window.setsense !== 'undefined') {
-        const results = await window.setsense.recallCombos(track.id)
+      if (typeof window.setrecord !== 'undefined') {
+        const results = await window.setrecord.recallCombos(track.id)
         setCombosData({ results, loading: false })
       } else {
         setCombosData({ results: [], loading: false })
@@ -163,6 +164,11 @@ export const TimelineTrackCard = memo(function TimelineTrackCard({
           isLocked && 'tl-card--locked'
         )}
         onClick={onSelect}
+        onContextMenu={(e) => {
+          // Right-click → Track Résumé (lived reputation) for this set track.
+          e.preventDefault()
+          void useTrackInspectStore.getState().openResume(track)
+        }}
         onKeyDown={(e) => {
           if (e.key === 'Enter') onSelect?.()
         }}

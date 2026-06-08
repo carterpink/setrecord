@@ -55,7 +55,7 @@ describe('bench fixture: Rekordbox XML', () => {
     const m = xml.match(/Location="(file:\/\/localhost[^"]+)"/)
     expect(m).not.toBeNull()
     const decoded = decodeURIComponent(m![1].replace('file://localhost', ''))
-    expect(decoded.startsWith('/Users/dj/Music/SetSenseBench/')).toBe(true)
+    expect(decoded.startsWith('/Users/dj/Music/SetRecordBench/')).toBe(true)
   })
 })
 

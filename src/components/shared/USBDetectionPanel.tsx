@@ -432,14 +432,14 @@ export function USBDetectionPanel(): React.JSX.Element {
 
   // Load initial data
   useEffect(() => {
-    if (typeof window.setsense === 'undefined') return
+    if (typeof window.setrecord === 'undefined') return
     void refreshDevices()
   }, [refreshDevices])
 
   // Subscribe to OS mount/unmount events from main process
   useEffect(() => {
-    if (typeof window.setsense === 'undefined') return
-    const unsub = window.setsense.onUsbDevicesChanged((devices) => {
+    if (typeof window.setrecord === 'undefined') return
+    const unsub = window.setrecord.onUsbDevicesChanged((devices) => {
       useUSBStore.setState({ connectedDevices: devices })
     })
     return unsub

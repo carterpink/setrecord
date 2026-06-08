@@ -46,8 +46,8 @@ export function RekordboxTagExportModal({ onClose }: Props): React.ReactPortal {
   const [allowNative, setAllowNative] = useState(false)
 
   useEffect(() => {
-    if (typeof window.setsense === 'undefined') return
-    window.setsense
+    if (typeof window.setrecord === 'undefined') return
+    window.setrecord
       .getSettings()
       .then((s) => setAllowNative((s.defaultTagExportRoute ?? 'xml') === 'native'))
       .catch(() => {})
@@ -55,7 +55,7 @@ export function RekordboxTagExportModal({ onClose }: Props): React.ReactPortal {
 
   async function runXml(): Promise<void> {
     setPhase('running')
-    const res = await window.setsense.tagsExportXml()
+    const res = await window.setrecord.tagsExportXml()
     if (res.error === 'cancelled') {
       setPhase('choose')
       return
@@ -78,7 +78,7 @@ export function RekordboxTagExportModal({ onClose }: Props): React.ReactPortal {
 
   async function runNative(): Promise<void> {
     setPhase('running')
-    const res: RekordboxTagWriteResult = await window.setsense.tagsWriteMyTags()
+    const res: RekordboxTagWriteResult = await window.setrecord.tagsWriteMyTags()
     setDone(
       res.success
         ? {

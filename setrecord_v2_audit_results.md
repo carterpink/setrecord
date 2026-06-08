@@ -1,7 +1,7 @@
-# SetSense V2: Pre-Launch Audit Results
+# SetRecord V2: Pre-Launch Audit Results
 ## Comprehensive Multi-Perspective Review — 18 May 2026
 
-> Replaces [setsense_v2_audit_framework.md](setsense_v2_audit_framework.md). The framework was authored before Phases 6–9 shipped; its bug list is resolved and its 3-tier SaaS pricing assumption doesn't fit the actual architecture. This document is the canonical pre-launch audit.
+> Replaces [setrecord_v2_audit_framework.md](setrecord_v2_audit_framework.md). The framework was authored before Phases 6–9 shipped; its bug list is resolved and its 3-tier SaaS pricing assumption doesn't fit the actual architecture. This document is the canonical pre-launch audit.
 
 **Auditor:** Claude Opus 4.7 (multi-perspective analysis)
 **Codebase state:** branch `feat/phase-6-cue-points-preview`, post-Phase-9 commit `7497ef4`
@@ -182,7 +182,7 @@ The framework's four bugs are resolved. The real three blockers:
 
 **This is the section that reframes the audit.**
 
-You have not validated that DJs want what SetSense provides. You've built a thing *you* find useful as a DJ-engineer. Every other recommendation here is pattern-matched against indie-tool benchmarks, not your actual users.
+You have not validated that DJs want what SetRecord provides. You've built a thing *you* find useful as a DJ-engineer. Every other recommendation here is pattern-matched against indie-tool benchmarks, not your actual users.
 
 **5-DJ test plan, week 1, $250 budget:**
 
@@ -269,7 +269,7 @@ You chose subscription. Here's the honest cost.
 ```
 1. User opens app first time → "Sign in or buy".
 2. Click "Sign in" → opens Clerk hosted page via shell.openExternal.
-3. Clerk redirects to setsense://auth?token=… (custom protocol; same primitive as media://).
+3. Clerk redirects to setrecord://auth?token=… (custom protocol; same primitive as media://).
 4. App stores JWT in OS keychain (keytar). Decodes for entitlement claims.
 5. JWT has 7-day expiry. App checks at boot + on resume.
 6. If expired AND online: refresh via refresh token.
@@ -381,4 +381,4 @@ Discipline matters more than features at this stage.
 - **Auditor:** Claude Opus 4.7 (multi-perspective analysis via 3 parallel Explore agents + targeted verification reads)
 - **Codebase state:** branch `feat/phase-6-cue-points-preview`, post-Phase-9 commit `7497ef4`
 - **Files verified by direct read:** [electron/main.ts](electron/main.ts), [src/components/library/LibraryPanel.tsx](src/components/library/LibraryPanel.tsx), [electron/services/discovery/youtubeClient.ts](electron/services/discovery/youtubeClient.ts), [src/stores/setStore.ts](src/stores/setStore.ts), [electron/services/settingsService.ts](electron/services/settingsService.ts), [electron/db/schema.ts](electron/db/schema.ts), [electron/services/energyAnalyser.ts](electron/services/energyAnalyser.ts), `tsconfig.{json,node.json,web.json}`, `package.json`
-- **Replaces:** [setsense_v2_audit_framework.md](setsense_v2_audit_framework.md) (deprecated; bugs resolved, pricing model wrong)
+- **Replaces:** [setrecord_v2_audit_framework.md](setrecord_v2_audit_framework.md) (deprecated; bugs resolved, pricing model wrong)

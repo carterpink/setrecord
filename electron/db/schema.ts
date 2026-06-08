@@ -1,10 +1,19 @@
 import Database from 'better-sqlite3'
 import { app } from 'electron'
-import { existsSync, renameSync, unlinkSync } from 'fs'
+import { copyFileSync, existsSync, renameSync, unlinkSync } from 'fs'
 import { join } from 'path'
 import { runMigrations } from './migrations'
 
 let _db: Database.Database | null = null
+
+/**
+ * Highest schema version produced by runMigrations(). BUMP THIS whenever you add
+ * a migration step in migrations.ts. It exists so initDb() can tell, before
+ * touching anything, whether this launch will actually migrate — and therefore
+ * whether it needs to take a pre-migration safety backup. A test pins this to
+ * the real max version so the two can't drift.
+ */
+export const LATEST_SCHEMA_VERSION = 22
 
 export function getDb(): Database.Database {
   if (!_db) throw new Error('DB not initialised — call initDb() first')
@@ -22,11 +31,63 @@ export function getDbPath(): string {
  */
 export function initDb(): void {
   const dbPath = getDbPath()
+  // Did a real library already exist on disk before we opened it? Only then is
+  // there irreplaceable user data to protect with a pre-migration backup.
+  const isExistingDb = existsSync(dbPath)
   _db = new Database(dbPath)
   _db.pragma('journal_mode = WAL')
   _db.pragma('foreign_keys = ON')
+  // createSchema is all CREATE TABLE IF NOT EXISTS / INSERT OR IGNORE — a no-op
+  // on an existing DB, so it never mutates data before we take the backup below.
   createSchema(_db)
-  runMigrations(_db)
+
+  // Take a safety snapshot *before* any schema-mutating migration runs, but only
+  // when this launch will actually migrate (current on-disk version is behind).
+  // A failed/half-finished migration on a DJ's library is unrecoverable; the
+  // backup + the transaction wrapper below are the two nets that prevent that.
+  if (isExistingDb && getSchemaVersion(_db) < LATEST_SCHEMA_VERSION) {
+    backupBeforeMigration(dbPath, getSchemaVersion(_db))
+  }
+
+  // Wrap the whole migration run in ONE transaction. SQLite makes ALTER TABLE
+  // transactional, so if anything throws partway the DB rolls back to its exact
+  // pre-migration state — no half-applied schema. (runMigrations contains only
+  // PRAGMA table_info reads + ALTER/UPDATE/CREATE, all transaction-safe.)
+  _db.transaction(() => runMigrations(_db!))()
+}
+
+/** Current schema version on disk (migrations record the max value reached). */
+function getSchemaVersion(db: Database.Database): number {
+  try {
+    const row = db.prepare('SELECT MAX(version) AS v FROM schema_version').get() as {
+      v: number | null
+    }
+    return row?.v ?? 0
+  } catch {
+    // schema_version table not present yet (brand-new DB) — treat as version 0.
+    return 0
+  }
+}
+
+/**
+ * Copy the live DB to `library.db.bak-v{N}` before a migration. We checkpoint
+ * the WAL into the main file first so the plain copy is a complete, self-
+ * contained snapshot. If the snapshot can't be written (e.g. disk full) we
+ * THROW rather than migrate blind — main.ts catches initDb() failures and shows
+ * the recovery UI, which is far safer than risking the user's library.
+ */
+function backupBeforeMigration(dbPath: string, fromVersion: number): void {
+  try {
+    _db!.pragma('wal_checkpoint(TRUNCATE)')
+    const backupPath = `${dbPath}.bak-v${fromVersion}`
+    copyFileSync(dbPath, backupPath) // overwriting a stale same-version backup is fine
+  } catch (err) {
+    throw new Error(
+      `Pre-migration backup failed (refusing to migrate to protect your library): ${
+        err instanceof Error ? err.message : String(err)
+      }`
+    )
+  }
 }
 
 /**
@@ -206,6 +267,9 @@ function createSchema(db: Database.Database): void {
       track_id TEXT NOT NULL REFERENCES tracks(id),
       play_order INTEGER NOT NULL,
       played_at TEXT,
+      start_ms INTEGER,
+      end_ms INTEGER,
+      match_offset_sec REAL,
       UNIQUE(session_id, play_order)
     );
 
@@ -249,6 +313,20 @@ function createSchema(db: Database.Database): void {
 
     CREATE INDEX IF NOT EXISTS idx_set_reactions_session ON set_reactions(session_id);
     CREATE INDEX IF NOT EXISTS idx_set_reactions_track ON set_reactions(track_id);
+
+    CREATE TABLE IF NOT EXISTS set_recordings (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL REFERENCES play_sessions(id) ON DELETE CASCADE,
+      audio_file_path TEXT NOT NULL,
+      audio_format TEXT NOT NULL DEFAULT 'webm-opus',
+      audio_duration_sec REAL,
+      audio_bytes INTEGER,
+      source TEXT NOT NULL DEFAULT 'room-mic',
+      created_at TEXT NOT NULL,
+      UNIQUE(session_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_set_recordings_session ON set_recordings(session_id);
 
     CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY);
     INSERT OR IGNORE INTO schema_version VALUES (1);

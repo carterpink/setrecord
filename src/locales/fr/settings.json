@@ -110,9 +110,19 @@
     "privacyNote": "Ta bibliothèque, les titres des morceaux, les chemins de fichiers, le nom de ton appareil et tes données personnelles ne sont jamais inclus. Désactivé par défaut. Le désactiver arrête les rapports immédiatement ; l’activer prend effet après le redémarrage de {{app}}.",
     "toggleAria": "Activer les rapports de plantage"
   },
+  "flightRecorder": {
+    "label": "Enregistreur de set",
+    "caption": "Enregistre une référence audio lo-fi de ton set via le micro de la salle pendant que tu joues, pour la réécouter plus tard. La tracklist est toujours enregistrée — ceci ajoute l'audio.",
+    "privacyNote": "Désactivé par défaut. L'enregistrement reste sur cet appareil et n'est jamais envoyé. Tu choisis de conserver ou de supprimer chaque set à la fin, et un indicateur s'affiche quand le micro capte.",
+    "toggleAria": "Activer l'enregistreur de set",
+    "reactionLabel": "Analyse de la réaction du public",
+    "experimental": "(expérimental)",
+    "reactionCaption": "Après un set, mesure la réaction du public à chaque morceau à partir de l'enregistrement. Préliminaire et approximatif — affiché comme estimations avec un niveau de confiance jusqu'à validation en conditions réelles.",
+    "reactionToggleAria": "Activer l'analyse de la réaction du public"
+  },
   "backup": {
     "exportTitle": "Exporter une sauvegarde",
-    "exportCaption": "Enregistre tes tags, sets, historique de lecture, cycle de vie et crates intelligents dans un seul fichier <0>.setsense</0>. Conserve-le précieusement ou importe-le sur un autre Mac pour emporter ton travail. Tes fichiers audio et ta licence restent en place — rien n’est envoyé.",
+    "exportCaption": "Enregistre tes tags, sets, historique de lecture, cycle de vie et crates intelligents dans un seul fichier <0>.setrecord</0>. Conserve-le précieusement ou importe-le sur un autre Mac pour emporter ton travail. Tes fichiers audio et ta licence restent en place — rien n’est envoyé.",
     "passphrasePlaceholder": "Mot de passe (recommandé)",
     "passphraseAria": "Mot de passe de la sauvegarde",
     "exportButton": "Exporter la sauvegarde",
@@ -121,7 +131,7 @@
     "unencryptedNote": "Les sauvegardes sont chiffrées par défaut. Laisse ce champ vide et nous te demanderons de confirmer avant d’enregistrer un fichier non chiffré que n’importe qui pourrait lire.",
     "exportSuccess": "Sauvegarde enregistrée — {{tracks}} morceaux, {{sets}} sets, {{sessions}} dates.",
     "importTitle": "Importer une sauvegarde",
-    "importCaption": "Importe un fichier <0>.setsense</0> depuis un autre Mac. Importe d’abord ta bibliothèque Rekordbox/Serato — une sauvegarde contient ton travail, pas l’audio, et se reconnecte aux morceaux déjà présents sur cette machine.",
+    "importCaption": "Importe un fichier <0>.setrecord</0> depuis un autre Mac. Importe d’abord ta bibliothèque Rekordbox/Serato — une sauvegarde contient ton travail, pas l’audio, et se reconnecte aux morceaux déjà présents sur cette machine.",
     "chooseButton": "Choisir une sauvegarde…",
     "enterPassphrase": "Saisir le mot de passe de la sauvegarde",
     "unlock": "Déverrouiller",
@@ -165,7 +175,7 @@
     "memory": {
       "label": "Mémoire",
       "title": "Mémoire",
-      "desc": "Comment SetSense comprend vos demandes et apprend au fil du temps."
+      "desc": "Comment SetRecord comprend vos demandes et apprend au fil du temps."
     },
     "mixing": {
       "label": "Mix",
@@ -175,7 +185,7 @@
     "library": {
       "label": "Bibliothèque",
       "title": "Source de la bibliothèque",
-      "desc": "D'où SetSense lit vos morceaux."
+      "desc": "D'où SetRecord lit vos morceaux."
     },
     "data": {
       "label": "Confidentialité et sauvegarde",
@@ -185,7 +195,7 @@
     "reset": {
       "label": "Réinitialiser",
       "title": "Réinitialiser",
-      "desc": "Remet SetSense à son premier lancement."
+      "desc": "Remet SetRecord à son premier lancement."
     },
     "playback": {
       "label": "Lecture",
@@ -205,7 +215,7 @@
     "home": "Accueil",
     "library": "Bibliothèque",
     "build": "Créer",
-    "caption": "Quel espace SetSense ouvre au démarrage."
+    "caption": "Quel espace SetRecord ouvre au démarrage."
   },
   "reducedMotion": {
     "label": "Réduire les animations",
@@ -242,8 +252,8 @@
     "fadeCaption": "Démarre les aperçus par un court fondu plutôt qu’un départ brusque.",
     "outputLabel": "Périphérique de sortie",
     "outputCaption": "Où l’audio d’aperçu est joué. Par défaut, la sortie système.",
-    "inputLabel": "Entrée SetSense Live",
-    "inputCaption": "L’entrée audio que SetSense Live écoute.",
+    "inputLabel": "Entrée SetRecord Live",
+    "inputCaption": "L’entrée audio que SetRecord Live écoute.",
     "systemDefault": "Par défaut du système",
     "unnamedDevice": "Périphérique sans nom",
     "waveformLabel": "Détail des formes d’onde",
@@ -254,7 +264,7 @@
   },
   "autoTagging": {
     "label": "Étiquetage automatique",
-    "caption": "Laissez SetSense générer des tags en langage clair à partir du son de chaque piste."
+    "caption": "Laissez SetRecord générer des tags en langage clair à partir du son de chaque piste."
   },
   "tagRoute": {
     "label": "Export des tags vers Rekordbox",
@@ -264,7 +274,7 @@
   },
   "rbConsent": {
     "label": "Accès à la base de données Rekordbox",
-    "caption": "Vous avez autorisé SetSense à lire votre base de données Rekordbox (en lecture seule). Vous pouvez le révoquer ici ; on vous redemandera la prochaine fois.",
+    "caption": "Vous avez autorisé SetRecord à lire votre base de données Rekordbox (en lecture seule). Vous pouvez le révoquer ici ; on vous redemandera la prochaine fois.",
     "button": "Révoquer l’accès à la base de données",
     "revoked": "Accès à la base de données Rekordbox révoqué."
   },

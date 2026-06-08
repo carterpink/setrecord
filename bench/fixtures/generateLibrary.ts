@@ -173,7 +173,7 @@ export function generateLibrary(seed: number, count: number, opts: GenerateOpts 
       energy,
       energySource,
       duration,
-      filePath: `/Users/dj/Music/SetSenseBench/${format}/${i}_${artistN}${FORMAT_EXT[format]}`,
+      filePath: `/Users/dj/Music/SetRecordBench/${format}/${i}_${artistN}${FORMAT_EXT[format]}`,
       fileSize: Math.floor(
         (duration * (format === 'flac' || format === 'wav' ? 1400 : 320) * 1000) / 8
       ),

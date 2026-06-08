@@ -9,7 +9,8 @@
     "venues": "Venues",
     "identity": "Identity",
     "health": "Health",
-    "fallback": "Recall"
+    "fallback": "Recall",
+    "graph": "Constellation"
   },
   "panel": {
     "noLibrary": "Recall reads your whole collection — rediscovering forgotten gems, mapping your sound, and tracing the transitions you reach for. Import your library to bring it to life."
@@ -164,6 +165,10 @@
     "noMatch": "No gigs match this filter.",
     "noSessions": "No performed sessions yet — import Rekordbox history or mark a set as performed.",
     "viewTracklist": "View tracklist",
+    "copyTracklist": "Copy tracklist",
+    "tracklistCopied": "Tracklist copied",
+    "recordingLabel": "Set recording",
+    "jumpToTrack": "Jump to this track in the recording",
     "editGig": "Edit gig",
     "addVenue": "Add venue",
     "autoBadge": "auto",
@@ -322,7 +327,7 @@
     "title": "Rediscover",
     "subtitle": "Tracks you used to play, gathering dust. Pull one back into rotation.",
     "noLibraryTitle": "Forgotten gems surface as you play",
-    "noLibraryBody": "Import your library and SetSense starts resurfacing tracks you used to love but haven’t touched in a while.",
+    "noLibraryBody": "Import your library and SetRecord starts resurfacing tracks you used to love but haven’t touched in a while.",
     "digging": "Digging through your crates…",
     "empty": "No forgotten gems yet — play history grows this over time."
   },
@@ -373,5 +378,86 @@
       "energyValue": "{{value}}/10",
       "length": "Length"
     }
+  },
+  "graph": {
+    "title": "Constellation",
+    "lensLabel": "Time lens",
+    "loading": "Mapping your library…",
+    "error": "Couldn't build the map.",
+    "centeredOn": "Centred on",
+    "trackCount": "{{count}} tracks",
+    "mode": {
+      "past": "Past",
+      "future": "Future",
+      "diff": "Diff",
+      "present": "Present"
+    },
+    "tagline": {
+      "past": "Every track you've mixed, mapped",
+      "future": "Every mix you could make",
+      "diff": "Compatible — but you've never tried it",
+      "present": "The set you’re building, right now"
+    },
+    "empty": {
+      "past": {
+        "title": "No mixes mapped yet",
+        "body": "Log a set or build one and your tracks will start connecting into a constellation of the transitions you've actually played."
+      },
+      "future": {
+        "title": "No compatible neighbours",
+        "body": "Nothing harmonically or rhythmically compatible turned up around this track. Try a different seed."
+      },
+      "diff": {
+        "title": "You've mixed them all",
+        "body": "Every compatible track near this one is already in your history — no undiscovered pairs here. Try another seed."
+      },
+      "present": {
+        "title": "No set in progress",
+        "body": "Open a set in Build (or go live) and it lights up here as a glowing path — every track in play order."
+      }
+    },
+    "lock": {
+      "future": {
+        "title": "See where every track could go",
+        "body": "Future maps the harmonic and BPM-compatible mixes hiding in your library. Unlock it with Pro."
+      },
+      "diff": {
+        "title": "Find mixes you've never tried",
+        "body": "Diff surfaces compatible pairs you have never played — your next signature transition. Unlock it with Pro."
+      }
+    },
+    "legend": {
+      "mixed": "Mixed before",
+      "gig": "Played at a gig",
+      "path": "Your set, in order",
+      "compatible": "Could mix",
+      "novel": "Never tried"
+    },
+    "scrub": {
+      "title": "Mixed within",
+      "all": "All"
+    },
+    "scopeLabel": "Scope",
+    "scope": {
+      "neighborhood": "Around",
+      "library": "Galaxy",
+      "context": "This set"
+    },
+    "path": {
+      "toggle": "Build a set",
+      "title": "Path",
+      "hint": "Click tracks to chain them into a set — in order.",
+      "route": "Auto-route",
+      "add": "Add to set",
+      "save": "Save as set",
+      "remove": "Remove",
+      "clear": "Clear",
+      "exit": "Exit path mode",
+      "setName": "Constellation path"
+    },
+    "search": {
+      "placeholder": "Find a track…"
+    },
+    "genreCount": "{{count}} genres"
   }
 }

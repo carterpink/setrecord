@@ -16,7 +16,7 @@ function arg(name, fallback) {
 }
 
 const plan = arg('plan', 'lifetime')
-const email = arg('email', 'tester@setsense.app')
+const email = arg('email', 'tester@setrecord.app')
 const months = Number(arg('months', '0'))
 
 if (plan !== 'lifetime' && plan !== 'subscription') {
@@ -51,6 +51,6 @@ console.log('\n✓ Test License Key Generated')
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
 console.log('Payload:')
 console.log(JSON.stringify(payload, null, 2))
-console.log('\n📋 License Key (paste into Settings → SetSense Pro → Activate):\n')
+console.log('\n📋 License Key (paste into Settings → SetRecord Pro → Activate):\n')
 console.log(key)
 console.log('\n')

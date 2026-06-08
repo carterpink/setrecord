@@ -1,5 +1,5 @@
 /**
- * Tag taxonomy — the single source of truth for every tag identity in SetSense.
+ * Tag taxonomy — the single source of truth for every tag identity in SetRecord.
  *
  * Tags are deliberately a small, curated, plain-language vocabulary so they map
  * cleanly onto Smart-Crate filters, Rekordbox MyTags, and a simple override UI.

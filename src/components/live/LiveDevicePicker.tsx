@@ -4,7 +4,7 @@ import { listInputDevices, type InputDevice } from './audioFeed'
 import { getPreferredInputId, setPreferredInputId } from './liveDevice'
 
 /**
- * Compact input-device selector for SetSense Live, shown beside "Go Live".
+ * Compact input-device selector for SetRecord Live, shown beside "Go Live".
  * Lets the DJ point capture at their loopback/master input (e.g. BlackHole)
  * rather than the built-in mic. Device labels populate once mic permission has
  * been granted (after the first Go Live). Hidden outside Electron.
@@ -31,7 +31,7 @@ export function LiveDevicePicker(): React.JSX.Element | null {
     }
   }, [])
 
-  if (typeof window.setsense === 'undefined') return null
+  if (typeof window.setrecord === 'undefined') return null
 
   return (
     <select

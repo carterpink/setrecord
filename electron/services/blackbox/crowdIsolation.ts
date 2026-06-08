@@ -1,7 +1,7 @@
 /**
  * crowdIsolation.ts — Black Box DSP spike (Frontier 1A keystone).
  *
- * The bet: SetSense already captures the master-out as a KNOWN reference signal,
+ * The bet: SetRecord already captures the master-out as a KNOWN reference signal,
  * so measuring crowd reaction from a room mic is not blind source separation —
  * it's acoustic echo cancellation. Adaptively filter the known music out of the
  * mic observation; the residual energy is the room (cheers, sing-along, dead air).

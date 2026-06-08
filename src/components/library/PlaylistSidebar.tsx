@@ -15,7 +15,7 @@ const DEFAULT_WIDTH = 180
 
 function getStoredWidth(): number {
   if (typeof window === 'undefined') return DEFAULT_WIDTH
-  const raw = window.localStorage.getItem('setsense-playlist-sidebar-width')
+  const raw = window.localStorage.getItem('setrecord-playlist-sidebar-width')
   if (!raw) return DEFAULT_WIDTH
   const n = parseInt(raw, 10)
   return isNaN(n) ? DEFAULT_WIDTH : Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, n))
@@ -204,7 +204,7 @@ export function PlaylistSidebar(): React.JSX.Element | null {
       document.body.style.userSelect = ''
 
       setSidebarWidth(newWidth)
-      window.localStorage.setItem('setsense-playlist-sidebar-width', String(newWidth))
+      window.localStorage.setItem('setrecord-playlist-sidebar-width', String(newWidth))
 
       document.removeEventListener('mousemove', onMove)
       document.removeEventListener('mouseup', onUp)

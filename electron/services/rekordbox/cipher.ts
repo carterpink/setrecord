@@ -19,7 +19,7 @@ import sqlcipher from '@journeyapps/sqlcipher'
  * Legal note: reading the user's own master.db on the user's own machine sits
  * in a grey area of the Rekordbox EULA §g (no reverse-engineering). Pioneer
  * has not publicly pursued projects that do this. Lexicon DJ ships the same
- * capability commercially. SetSense gates this behind a one-time consent
+ * capability commercially. SetRecord gates this behind a one-time consent
  * dialog (`rekordboxDbConsent` setting) and never modifies master.db.
  */
 export const REKORDBOX_MASTER_DB_KEY =

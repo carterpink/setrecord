@@ -11,58 +11,18 @@
  * Pure: tracks + sessions + now. No DB/electron deps.
  */
 
-import type { Track } from '../../../src/types'
+import type {
+  Track,
+  MirrorSession,
+  MirrorWindow,
+  VibeShift,
+  MirrorDrift,
+  RutSignal,
+  SoundMirrorResult
+} from '../../../src/types'
 
-export interface MirrorSession {
-  id: string
-  performedAt: string // ISO date
-  trackIds: string[]
-}
-
-export interface MirrorWindow {
-  label: string // e.g. "2025 Q1"
-  sessionCount: number
-  trackCount: number
-  avgBpm: number
-  avgEnergy: number
-  /** Mean spectral brightness (0..1) over plays that carry analysisFeatures. */
-  avgBrightness?: number
-  topGenres: string[]
-  /** Share (0..1) of each vibe tag among vibe-tagged plays in the window. */
-  vibeShare: Record<string, number>
-}
-
-export interface VibeShift {
-  vibe: string
-  fromPct: number
-  toPct: number
-}
-
-export interface MirrorDrift {
-  fromLabel: string
-  toLabel: string
-  bpmDelta: number // latest − earliest (negative = slower)
-  energyDelta: number
-  brightnessDelta?: number
-  vibeShifts: VibeShift[]
-  statements: string[]
-}
-
-export interface RutSignal {
-  kind: 'opener' | 'closer'
-  trackId: string
-  title: string
-  occurrences: number
-  ofLast: number
-}
-
-export interface SoundMirrorResult {
-  windows: MirrorWindow[]
-  drift?: MirrorDrift
-  ruts: RutSignal[]
-  becoming?: string
-  narration: string
-}
+// Re-export so existing importers (tests, main) can keep importing from here.
+export type { MirrorSession, MirrorWindow, VibeShift, MirrorDrift, RutSignal, SoundMirrorResult }
 
 export interface SoundMirrorOptions {
   /** How many of the most-recent sessions to scan for ruts. Default 5. */

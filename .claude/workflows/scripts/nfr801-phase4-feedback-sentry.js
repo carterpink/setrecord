@@ -43,8 +43,8 @@ phase('Implement')
 log(`Branch: ${BRANCH} (base: ${BASE}) — Phase 4 feedback + Sentry, gh-free`)
 
 const result = await agent(
-  `You are implementing NFR-801 Phase 4 (final) in SetSense — Electron 33 DJ app
-(TypeScript, React, better-sqlite3, Vite, Vitest, ESLint). Repo: /Users/samcarter/Documents/SetSenseV2
+  `You are implementing NFR-801 Phase 4 (final) in SetRecord — Electron 33 DJ app
+(TypeScript, React, better-sqlite3, Vite, Vitest, ESLint). Repo: /Users/samcarter/Documents/SetRecordV2
 You are inside a FRESH ISOLATED git worktree. The user's working tree on feat/memory-product must NOT be touched.
 
 === SETUP ===
@@ -59,7 +59,7 @@ You are inside a FRESH ISOLATED git worktree. The user's working tree on feat/me
      it strips ALL breadcrumbs and is GATED behind settings.crashReportingEnabled, default off)
    - electron/services/logging/exportBundle.ts (buildLogBundle)
    - src/components/modals/FeedbackModal.tsx and the feedback:submit handler in electron/main.ts
-   - electron/preload.ts / preload.d.ts (the window.setsense surface, incl. exportLogs/revealLogBundle from Phase 2)
+   - electron/preload.ts / preload.d.ts (the window.setrecord surface, incl. exportLogs/revealLogBundle from Phase 2)
 4. npm install if no node_modules (electron-log@^5.4.4 is in package.json on this branch). npm run rebuild if native ABI errors.
 
 === SCOPE — two pieces ===
@@ -68,7 +68,7 @@ PIECE A — Feedback "Bug" path attaches diagnostics (renderer + main):
   - In FeedbackModal.tsx: when category === 'Bug' (match the existing category values), show a checkbox
     "Attach diagnostic logs (helps me fix it faster)" DEFAULT CHECKED for Bug only, plus a small
     "What's included?" disclosure: "App logs with file paths and personal details removed."
-  - On submit WITH the box checked: call window.setsense.exportLogs() (Phase 2) to build the bundle,
+  - On submit WITH the box checked: call window.setrecord.exportLogs() (Phase 2) to build the bundle,
     then reveal it in Finder via the existing revealLogBundle/logs:reveal, AND open the existing mailto
     draft. Since mailto cannot carry attachments, the UX is: open the pre-filled mail draft + reveal the
     zip in Finder, and add a one-line in-modal instruction "Your logs opened in Finder — drag the file

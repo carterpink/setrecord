@@ -1,4 +1,4 @@
-# i18n migration conventions (SetSense)
+# i18n migration conventions (SetRecord)
 
 How to migrate a component's hardcoded UI strings to i18next. Follow EXACTLY — a
 parity test (`tests/i18n.test.ts`) enforces key + interpolation consistency.
@@ -35,12 +35,12 @@ When a string wraps a styled element (e.g. a `<span className="ss-mono">`):
 ```tsx
 <Trans t={t} i18nKey="some.key" components={[<span key="0" className="ss-mono" />]} />
 ```
-and the value uses indexed tags: `"Save to a <0>.setsense</0> file"`.
+and the value uses indexed tags: `"Save to a <0>.setrecord</0> file"`.
 Always give the component element a `key` prop.
 
 ## Brand / technical terms — NEVER translate
-SetSense, Pro, Rekordbox, Serato, Engine DJ, Pioneer, CDJ/XDJ model names,
-Set Architect, Recall, Camelot, Open Key, BPM, Mac, Beatport, MyTag, `.setsense`,
+SetRecord, Pro, Rekordbox, Serato, Engine DJ, Pioneer, CDJ/XDJ model names,
+Set Architect, Recall, Camelot, Open Key, BPM, Mac, Beatport, MyTag, `.setrecord`,
 USB, XML, hot cue (keep "hot cue"/"cue" as-is), Camelot key codes (9A, etc.).
 
 ## Locale files

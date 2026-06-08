@@ -1,4 +1,4 @@
-# SetSense × Stripe — Checkout & Licensing Integration
+# SetRecord × Stripe — Checkout & Licensing Integration
 
 This is the **contract the app expects** from the commerce backend. The app is
 offline-first: it never talks to Stripe directly and never needs a network at
@@ -7,7 +7,7 @@ license key**, hand it to the app via a deep link, and the app verifies it
 locally. Build your Stripe flow to satisfy the four contracts below.
 
 > TL;DR for the backend: receive a Stripe payment → mint a `SES1.…` key whose
-> payload matches §3 → redirect the browser to `setsense://activate?key=…`. Done.
+> payload matches §3 → redirect the browser to `setrecord://activate?key=…`. Done.
 
 ---
 
@@ -17,7 +17,7 @@ locally. Build your Stripe flow to satisfy the four contracts below.
  In-app "Go Pro" (UpgradeModal)
         │  opens external browser to:
         ▼
- https://setsense.app/checkout?plan=annual&redirect=setsense%3A%2F%2Factivate
+ https://setrecord.app/checkout?plan=annual&redirect=setrecord%3A%2F%2Factivate
         │  your page maps plan → Stripe Price, creates a Checkout Session
         ▼
  Stripe Checkout (card entry)  ──pays──►  Stripe
@@ -27,7 +27,7 @@ locally. Build your Stripe flow to satisfy the four contracts below.
  your /activated page  ◄──────────────────  (scripts/mint-license.mjs logic)
         │  redirects to:
         ▼
- setsense://activate?key=SES1.<payload>.<sig>
+ setrecord://activate?key=SES1.<payload>.<sig>
         │  OS routes the deep link back to the app
         ▼
  App verifies signature locally (Ed25519 public key) → unlocks Pro
@@ -35,7 +35,7 @@ locally. Build your Stripe flow to satisfy the four contracts below.
 
 Two delivery paths, support **both**:
 1. **Deep link** (primary): `success_url` → a page that 302-redirects to
-   `setsense://activate?key=…`. The app auto-activates, zero copy-paste.
+   `setrecord://activate?key=…`. The app auto-activates, zero copy-paste.
 2. **Email fallback**: also email the raw `SES1.…` key. The user can paste it
    into UpgradeModal → "Already purchased? Enter your key". Always send this in
    case the deep link is blocked.
@@ -46,19 +46,19 @@ Two delivery paths, support **both**:
 
 The app builds these URLs (`electron/services/licensing/signingKey.ts` →
 `checkoutUrl()`), opens them in the default browser, and restricts itself to the
-`setsense.app` host (`electron/main.ts`, `license:checkout`).
+`setrecord.app` host (`electron/main.ts`, `license:checkout`).
 
 | Action | URL the app opens |
 |---|---|
-| Subscribe monthly | `https://setsense.app/checkout?plan=monthly&redirect=setsense://activate` |
-| Subscribe annual | `https://setsense.app/checkout?plan=annual&redirect=setsense://activate` |
-| Buy lifetime | `https://setsense.app/checkout?plan=lifetime&redirect=setsense://activate` |
-| Tip | `https://setsense.app/support?amount=12&redirect=setsense://activate` |
+| Subscribe monthly | `https://setrecord.app/checkout?plan=monthly&redirect=setrecord://activate` |
+| Subscribe annual | `https://setrecord.app/checkout?plan=annual&redirect=setrecord://activate` |
+| Buy lifetime | `https://setrecord.app/checkout?plan=lifetime&redirect=setrecord://activate` |
+| Tip | `https://setrecord.app/support?amount=12&redirect=setrecord://activate` |
 
 - `plan` ∈ `monthly | annual | lifetime`. **You** map each to a Stripe Price.
 - `redirect` is the deep-link base; append the minted key as `?key=` when you
   send the browser back (URL-encode it).
-- The host **must stay `setsense.app`** — the app refuses any other host.
+- The host **must stay `setrecord.app`** — the app refuses any other host.
 
 ### Suggested Stripe Prices
 
@@ -145,7 +145,7 @@ must **re-mint a fresh key after every successful renewal** and re-deliver it.
 
 > Renewal delivery: emailing the refreshed key is the robust path (the app may
 > not be open when the invoice clears). The user pastes it, or clicks the
-> emailed `setsense://activate?key=…` link. The in-app "Pro ends in N days —
+> emailed `setrecord://activate?key=…` link. The in-app "Pro ends in N days —
 > renew" chip (added this release) nudges them ~14 days before `expiresAt`.
 
 ---
@@ -192,13 +192,13 @@ Rules the app enforces:
 - [ ] Webhook endpoint verifying Stripe signatures; handle the 4 events in §4.
 - [ ] Mint helper (reuse `scripts/mint-license.mjs`): build payload per §3, sign,
       format `SES1.…`.
-- [ ] `/activated` page: 302 → `setsense://activate?key=<urlencoded key>`, and
-      also show the key + "open SetSense" button as a fallback.
+- [ ] `/activated` page: 302 → `setrecord://activate?key=<urlencoded key>`, and
+      also show the key + "open SetRecord" button as a fallback.
 - [ ] Email the key on every mint (first purchase **and** each renewal).
 - [ ] (Optional) Host `/v1/activate` + `/v1/check`; set `LICENSE_API_BASE` in
       `gateway.ts` and ship device-bound keys.
 - [ ] Test: paste a freshly minted key into UpgradeModal → it should flip to
-      "You're on Pro". Then test the `setsense://` deep link end-to-end.
+      "You're on Pro". Then test the `setrecord://` deep link end-to-end.
 
 ---
 

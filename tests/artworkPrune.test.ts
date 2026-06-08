@@ -10,7 +10,7 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 
 // Stable temp userData dir for the whole file; getArtworkCacheDir() caches it.
-const USER_DATA = mkdtempSync(join(tmpdir(), 'setsense-artwork-'))
+const USER_DATA = mkdtempSync(join(tmpdir(), 'setrecord-artwork-'))
 
 vi.mock('electron', () => ({
   app: { getPath: () => USER_DATA }

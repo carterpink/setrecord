@@ -1,5 +1,5 @@
 /**
- * stats.ts — pure analytics aggregations for the SetSense Intelligence layer.
+ * stats.ts — pure analytics aggregations for the SetRecord Intelligence layer.
  *
  * One function per metric, all deterministic and offline. Detection lives in
  * src/utils/statsIntent.ts; this module turns a detected metric into a

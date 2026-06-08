@@ -35,7 +35,7 @@ interface UIState {
   /** The Pro feature that triggered the paywall, for contextual upgrade copy. */
   upgradeContext: ProFeature | null
   showUpgrade: (feature?: ProFeature) => void
-  /** License key delivered via a setsense://activate deep-link, awaiting auto-activation. */
+  /** License key delivered via a setrecord://activate deep-link, awaiting auto-activation. */
   pendingActivationKey: string | null
   showUpgradeWithKey: (key: string) => void
   clearPendingActivationKey: () => void
@@ -57,7 +57,7 @@ interface UIState {
   /** Freeze decorative animation (aurora drift, etc.). Mirrors AppSettings. */
   reducedMotion: boolean
   setReducedMotion: (v: boolean) => void
-  /** Which workspace SetSense opens to on launch. 'last' restores the previous session. */
+  /** Which workspace SetRecord opens to on launch. 'last' restores the previous session. */
   launchMode: 'last' | AppMode
   setLaunchMode: (v: 'last' | AppMode) => void
   /** Enable the on-device push-to-talk voice input in the Home box. Mirrors AppSettings. */
@@ -110,7 +110,7 @@ interface UIState {
 
 function getInitialSidebarCollapsed(): boolean {
   if (typeof window === 'undefined') return false
-  return window.localStorage.getItem('setsense-playlist-sidebar') === 'collapsed'
+  return window.localStorage.getItem('setrecord-playlist-sidebar') === 'collapsed'
 }
 
 function getInitialMode(): AppMode {
@@ -119,9 +119,9 @@ function getInitialMode(): AppMode {
   // Recall/Discover → Home, Prepare → Build, old "Library" front-door → Home.
   if (typeof window === 'undefined') return 'Home'
   // An explicit "open to ___" launch preference wins over last-session restore.
-  const launch = window.localStorage.getItem('setsense-launch-mode')
+  const launch = window.localStorage.getItem('setrecord-launch-mode')
   if (launch === 'Home' || launch === 'Library' || launch === 'Build') return launch as AppMode
-  const saved = window.localStorage.getItem('setsense-mode')
+  const saved = window.localStorage.getItem('setrecord-mode')
   if (saved === 'Prepare' || saved === 'Build') return 'Build'
   if (saved === 'Home' || saved === 'Library' || saved === 'Build') return saved as AppMode
   return 'Home'
@@ -129,32 +129,32 @@ function getInitialMode(): AppMode {
 
 function getInitialLibraryDensity(): 'standard' | 'compact' {
   if (typeof window === 'undefined') return 'standard'
-  return window.localStorage.getItem('setsense-library-density') === 'compact'
+  return window.localStorage.getItem('setrecord-library-density') === 'compact'
     ? 'compact'
     : 'standard'
 }
 
 function getInitialKeyNotation(): 'camelot' | 'standard' {
   if (typeof window === 'undefined') return 'camelot'
-  return window.localStorage.getItem('setsense-key-notation') === 'standard'
+  return window.localStorage.getItem('setrecord-key-notation') === 'standard'
     ? 'standard'
     : 'camelot'
 }
 
 function getInitialReducedMotion(): boolean {
   if (typeof window === 'undefined') return false
-  return window.localStorage.getItem('setsense-reduced-motion') === 'true'
+  return window.localStorage.getItem('setrecord-reduced-motion') === 'true'
 }
 
 function getInitialLaunchMode(): 'last' | AppMode {
   if (typeof window === 'undefined') return 'last'
-  const v = window.localStorage.getItem('setsense-launch-mode')
+  const v = window.localStorage.getItem('setrecord-launch-mode')
   return v === 'Home' || v === 'Library' || v === 'Build' ? (v as AppMode) : 'last'
 }
 
 function getInitialVoiceInput(): boolean {
   if (typeof window === 'undefined') return true
-  return window.localStorage.getItem('setsense-voice-input') !== 'off'
+  return window.localStorage.getItem('setrecord-voice-input') !== 'off'
 }
 
 /** Toggle the document-level reduced-motion class that gates decorative CSS animation. */
@@ -165,7 +165,7 @@ function applyReducedMotionClass(on: boolean): void {
 
 function getInitialSuggestionsSource(): string[] {
   if (typeof window === 'undefined') return []
-  const raw = window.localStorage.getItem('setsense-suggestions-source')
+  const raw = window.localStorage.getItem('setrecord-suggestions-source')
   if (!raw) return []
   try {
     const parsed = JSON.parse(raw)
@@ -208,58 +208,58 @@ export const useUiStore = create<UIState>((set) => ({
     set((s) => {
       const next: 'standard' | 'compact' = s.libraryDensity === 'standard' ? 'compact' : 'standard'
       if (typeof window !== 'undefined') {
-        window.localStorage.setItem('setsense-library-density', next)
+        window.localStorage.setItem('setrecord-library-density', next)
       }
       return { libraryDensity: next }
     }),
   setLibraryDensity: (v) => {
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem('setsense-library-density', v)
+      window.localStorage.setItem('setrecord-library-density', v)
     }
     set({ libraryDensity: v })
   },
   keyNotation: getInitialKeyNotation(),
   setKeyNotation: (v) => {
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem('setsense-key-notation', v)
+      window.localStorage.setItem('setrecord-key-notation', v)
     }
     set({ keyNotation: v })
     // Persist to AppSettings (source of truth) so it travels with backups and
     // stays consistent across machines — the localStorage write above is only a
     // fast first-paint cache.
-    if (typeof window !== 'undefined' && window.setsense) {
-      void window.setsense.setSettings({ keyNotation: v })
+    if (typeof window !== 'undefined' && window.setrecord) {
+      void window.setrecord.setSettings({ keyNotation: v })
     }
   },
   reducedMotion: getInitialReducedMotion(),
   setReducedMotion: (v) => {
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem('setsense-reduced-motion', v ? 'true' : 'false')
+      window.localStorage.setItem('setrecord-reduced-motion', v ? 'true' : 'false')
     }
     applyReducedMotionClass(v)
     set({ reducedMotion: v })
-    if (typeof window !== 'undefined' && window.setsense) {
-      void window.setsense.setSettings({ reducedMotion: v })
+    if (typeof window !== 'undefined' && window.setrecord) {
+      void window.setrecord.setSettings({ reducedMotion: v })
     }
   },
   launchMode: getInitialLaunchMode(),
   setLaunchMode: (v) => {
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem('setsense-launch-mode', v)
+      window.localStorage.setItem('setrecord-launch-mode', v)
     }
     set({ launchMode: v })
-    if (typeof window !== 'undefined' && window.setsense) {
-      void window.setsense.setSettings({ launchMode: v })
+    if (typeof window !== 'undefined' && window.setrecord) {
+      void window.setrecord.setSettings({ launchMode: v })
     }
   },
   voiceInputEnabled: getInitialVoiceInput(),
   setVoiceInputEnabled: (v) => {
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem('setsense-voice-input', v ? 'on' : 'off')
+      window.localStorage.setItem('setrecord-voice-input', v ? 'on' : 'off')
     }
     set({ voiceInputEnabled: v })
-    if (typeof window !== 'undefined' && window.setsense) {
-      void window.setsense.setSettings({ voiceInputEnabled: v })
+    if (typeof window !== 'undefined' && window.setrecord) {
+      void window.setrecord.setSettings({ voiceInputEnabled: v })
     }
   },
   // Mirrors AppSettings.language; the real value is hydrated on boot in AppShell.
@@ -268,8 +268,8 @@ export const useUiStore = create<UIState>((set) => ({
   setLanguage: (v) => {
     set({ language: v })
     applyLanguagePreference(v)
-    if (typeof window !== 'undefined' && window.setsense) {
-      void window.setsense.setSettings({ language: v })
+    if (typeof window !== 'undefined' && window.setrecord) {
+      void window.setrecord.setSettings({ language: v })
     }
   },
   playlistSidebarCollapsed: getInitialSidebarCollapsed(),
@@ -277,7 +277,7 @@ export const useUiStore = create<UIState>((set) => ({
     set((s) => {
       const next = !s.playlistSidebarCollapsed
       if (typeof window !== 'undefined') {
-        window.localStorage.setItem('setsense-playlist-sidebar', next ? 'collapsed' : 'expanded')
+        window.localStorage.setItem('setrecord-playlist-sidebar', next ? 'collapsed' : 'expanded')
       }
       return { playlistSidebarCollapsed: next }
     }),
@@ -289,8 +289,8 @@ export const useUiStore = create<UIState>((set) => ({
   hasCompletedOnboarding: false,
   completeOnboarding: () => {
     set({ hasCompletedOnboarding: true, onboardingVisible: false })
-    if (typeof window !== 'undefined' && window.setsense) {
-      void window.setsense.setSettings({ hasCompletedOnboarding: true })
+    if (typeof window !== 'undefined' && window.setrecord) {
+      void window.setrecord.setSettings({ hasCompletedOnboarding: true })
     }
   },
   energyAnalysis: null,
@@ -298,7 +298,7 @@ export const useUiStore = create<UIState>((set) => ({
   mode: getInitialMode(),
   setMode: (mode) => {
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem('setsense-mode', mode)
+      window.localStorage.setItem('setrecord-mode', mode)
     }
     // Stop any in-flight preview so audio (and the global spacebar shortcut)
     // doesn't leak across tabs when leaving the panel that started it.
@@ -308,15 +308,15 @@ export const useUiStore = create<UIState>((set) => ({
   learnModeEnabled: false,
   setLearnModeEnabled: (v) => {
     set({ learnModeEnabled: v })
-    if (typeof window !== 'undefined' && window.setsense) {
-      void window.setsense.setSettings({ learnModeEnabled: v })
+    if (typeof window !== 'undefined' && window.setrecord) {
+      void window.setrecord.setSettings({ learnModeEnabled: v })
     }
   },
   isBeginner: false,
   setIsBeginner: (v) => {
     set({ isBeginner: v })
-    if (typeof window !== 'undefined' && window.setsense) {
-      void window.setsense.setSettings({ isBeginner: v })
+    if (typeof window !== 'undefined' && window.setrecord) {
+      void window.setrecord.setSettings({ isBeginner: v })
     }
   },
   hydrateFromSettings: ({
@@ -345,7 +345,7 @@ export const useUiStore = create<UIState>((set) => ({
   suggestionsSourcePlaylistIds: getInitialSuggestionsSource(),
   setSuggestionsSourcePlaylistIds: (ids) => {
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem('setsense-suggestions-source', JSON.stringify(ids))
+      window.localStorage.setItem('setrecord-suggestions-source', JSON.stringify(ids))
     }
     set({ suggestionsSourcePlaylistIds: ids })
   }

@@ -52,7 +52,8 @@
     "goLive": "Live gehen",
     "endTitle": "Live beenden — das schwebende Overlay schließen",
     "goLiveTitle": "Live gehen — ein transparentes Glas-Overlay, das über Rekordbox schwebt, ausliest, was läuft, und die besten nächsten Schritte anzeigt",
-    "screenPermissionError": "SetSense Live benötigt die Berechtigung zur Bildschirmaufnahme (Systemeinstellungen → Datenschutz)."
+    "screenPermissionError": "SetRecord Live benötigt die Berechtigung zur Bildschirmaufnahme (Systemeinstellungen → Datenschutz).",
+    "setSaved": "Set in deinem Verlauf gespeichert"
   },
   "energy": {
     "pill": "Energie wird analysiert <0>{{processed}} / {{total}}</0>…",

@@ -1,7 +1,7 @@
 /**
  * Eval harness contracts.
  *
- * The harness runs every prompt from setsense_ai_eval_matrix.md through a single
+ * The harness runs every prompt from setrecord_ai_eval_matrix.md through a single
  * `resolveQuery(prompt, ctx)` engine driver and scores the normalized result
  * against an encoded "Pass when" predicate. The driver is the seam we improve
  * across phases (P0 baseline → P1+ ); the cases and fixtures stay fixed, so the

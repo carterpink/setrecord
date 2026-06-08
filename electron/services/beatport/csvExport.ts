@@ -25,10 +25,20 @@ const HEADER = [
   'Beatport Search'
 ] as const
 
-/** RFC-4180 field escaping: quote anything containing a comma, quote or newline. */
+/**
+ * RFC-4180 field escaping + spreadsheet formula-injection defence.
+ *
+ * Track metadata is attacker-influenceable (it comes from imported library
+ * files), and this CSV is meant to be opened in Excel/Sheets by the DJ or a
+ * label. A value like `=cmd|'/c calc'!A0` or `=HYPERLINK(...)` would execute as
+ * a formula on open, so we neutralise any field that begins with a formula
+ * trigger (`= + - @`, tab or CR) by prefixing a single quote before RFC-4180
+ * quoting. The leading `'` is the OWASP-recommended, Excel-recognised guard.
+ */
 function csvField(value: string | number | undefined | null): string {
   if (value == null) return ''
-  const s = String(value)
+  let s = String(value)
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
@@ -71,7 +81,7 @@ export async function exportBeatportCsv(
 ): Promise<ExportResult> {
   try {
     const csv = buildCsv(rows)
-    const tmpPath = `${filePath}.setsense-tmp`
+    const tmpPath = `${filePath}.setrecord-tmp`
     try {
       writeFileSync(tmpPath, csv, 'utf-8')
       renameSync(tmpPath, filePath)

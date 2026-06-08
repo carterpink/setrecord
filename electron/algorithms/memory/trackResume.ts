@@ -12,48 +12,16 @@
  * feed the two arrays below; the renderer surfaces the result on a track row.
  */
 
-import type { Track } from '../../../src/types'
+import type {
+  Track,
+  ResumeSession,
+  ResumeReaction,
+  ResumeContext,
+  TrackResume
+} from '../../../src/types'
 
-export interface ResumeSession {
-  id: string
-  performedAt: string // ISO date
-  venue?: string
-  eventType?: string
-  trackIds: string[]
-}
-
-export interface ResumeReaction {
-  sessionId: string
-  trackId: string
-  reactionScore?: number
-  confidence?: number
-}
-
-export interface ResumeContext {
-  label: string
-  count: number
-  /** 0..1 confidence-weighted mean reaction, when any reaction exists for this context. */
-  avgReaction?: number
-}
-
-export interface TrackResume {
-  trackId: string
-  /** Sessions that contain this track. */
-  timesPlayedLive: number
-  /** The flat CDJ aggregate from the tracks table (a different, coarser stream). */
-  totalPlayCount: number
-  firstPlayedAt?: string
-  lastPlayedAt?: string
-  lastVenue?: string
-  venues: ResumeContext[]
-  byEventType: ResumeContext[]
-  /** Highest-reaction context (venue) when reaction data exists. */
-  bestContext?: ResumeContext
-  /** Lowest-reaction context (venue) when reaction data exists. */
-  worstContext?: ResumeContext
-  hasReactionData: boolean
-  narration: string
-}
+// Re-export so existing importers (tests, main) can keep importing from here.
+export type { ResumeSession, ResumeReaction, ResumeContext, TrackResume }
 
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', {

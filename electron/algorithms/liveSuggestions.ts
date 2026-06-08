@@ -1,7 +1,7 @@
 /**
  * Live "what happens if I play this" layer.
  *
- * SetSense Live's core insight: DJs care about CONSEQUENCES, not bare
+ * SetRecord Live's core insight: DJs care about CONSEQUENCES, not bare
  * recommendations. This wraps the existing {@link getSuggestions} brain — fed
  * the *detected* current track instead of a planned one — and reframes each
  * candidate as the consequence of playing it next: signed BPM move, energy

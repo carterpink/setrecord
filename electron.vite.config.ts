@@ -24,7 +24,7 @@ export default defineConfig({
         input: {
           // Main app window.
           index: resolve(__dirname, 'index.html'),
-          // Transparent always-on-top SetSense Live overlay window.
+          // Transparent always-on-top SetRecord Live overlay window.
           overlay: resolve(__dirname, 'overlay.html')
         }
       }

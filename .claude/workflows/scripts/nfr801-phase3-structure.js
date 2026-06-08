@@ -43,8 +43,8 @@ phase('Implement')
 log(`Branch: ${BRANCH} (base: ${BASE}) — Phase 3 structure hot paths, gh-free`)
 
 const result = await agent(
-  `You are implementing NFR-801 Phase 3 (structure the hot paths) in SetSense — Electron 33 DJ app
-(TypeScript, React, better-sqlite3, Vite, Vitest, ESLint). Repo: /Users/samcarter/Documents/SetSenseV2
+  `You are implementing NFR-801 Phase 3 (structure the hot paths) in SetRecord — Electron 33 DJ app
+(TypeScript, React, better-sqlite3, Vite, Vitest, ESLint). Repo: /Users/samcarter/Documents/SetRecordV2
 You are inside a FRESH ISOLATED git worktree. The user's working tree on feat/memory-product must NOT be touched.
 
 === SETUP ===

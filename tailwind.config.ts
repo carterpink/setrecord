@@ -1,7 +1,7 @@
 import type { Config } from 'tailwindcss'
 
 /**
- * SetSense Tailwind config.
+ * SetRecord Tailwind config.
  *
  * Tokens are defined in src/styles/tokens.css as CSS custom properties.
  * This config maps them to Tailwind utilities so we can use

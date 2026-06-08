@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
 /**
- * SetSense Live — renderer state for the floating HUD.
+ * SetRecord Live — renderer state for the floating HUD.
  *
  * Mirrors the main-process pipeline output (NowPlaying + LiveConsequence from
  * electron/services/live + electron/algorithms/liveSuggestions) as plain,
@@ -57,9 +57,12 @@ interface LiveState {
   nextUp: LiveNextUp[]
   /** 0–100 composite (energy fit / harmonic runway / BPM trap / ammunition). */
   setHealth: number
+  /** Venue/room chosen for this live session (HUD context + Black Box anchor). */
+  venue: string | null
 
   goLive: () => void
   endLive: () => void
+  setVenue: (venue: string | null) => void
   setExpanded: (v: boolean) => void
   toggleExpanded: () => void
 
@@ -105,7 +108,17 @@ const N = (
   keyCompatibility: KeyCompatibility,
   summary: string,
   best = false
-): LiveNextUp => ({ id, title, artist, matchScore, bpmDelta, energyDelta, keyCompatibility, summary, best })
+): LiveNextUp => ({
+  id,
+  title,
+  artist,
+  matchScore,
+  bpmDelta,
+  energyDelta,
+  keyCompatibility,
+  summary,
+  best
+})
 
 const SCENES: Scene[] = [
   {
@@ -119,11 +132,37 @@ const SCENES: Scene[] = [
   {
     status: 'locked',
     confidence: 0.96,
-    current: { id: 't1', title: 'Nocturne Drive', artist: 'Lunar Bloc', bpm: 124, key: '8A', energy: 6 },
+    current: {
+      id: 't1',
+      title: 'Nocturne Drive',
+      artist: 'Lunar Bloc',
+      bpm: 124,
+      key: '8A',
+      energy: 6
+    },
     setHealth: 92,
     nextUp: [
-      N('a', 'Escape Velocity', 'Vela', 97, 0, 1, 'perfect', 'Perfect harmony · +1 energy · same BPM', true),
-      N('b', 'Midnight Driver', 'Korso', 94, 2, 0, 'compatible', 'Harmonic · holds energy · +2 BPM'),
+      N(
+        'a',
+        'Escape Velocity',
+        'Vela',
+        97,
+        0,
+        1,
+        'perfect',
+        'Perfect harmony · +1 energy · same BPM',
+        true
+      ),
+      N(
+        'b',
+        'Midnight Driver',
+        'Korso',
+        94,
+        2,
+        0,
+        'compatible',
+        'Harmonic · holds energy · +2 BPM'
+      ),
       N('c', 'Oxygen', 'Halcyon', 88, 4, 2, 'neutral', 'Key OK · +2 energy · +4 BPM')
     ],
     hold: 5200
@@ -134,7 +173,17 @@ const SCENES: Scene[] = [
     current: { id: 't2', title: 'Escape Velocity', artist: 'Vela', bpm: 124, key: '8A', energy: 7 },
     setHealth: 88,
     nextUp: [
-      N('d', 'Glass Horizon', 'Aeon Field', 95, 1, 1, 'perfect', 'Perfect harmony · +1 energy · +1 BPM', true),
+      N(
+        'd',
+        'Glass Horizon',
+        'Aeon Field',
+        95,
+        1,
+        1,
+        'perfect',
+        'Perfect harmony · +1 energy · +1 BPM',
+        true
+      ),
       N('e', 'Afterglow', 'Mirae', 90, 0, 0, 'compatible', 'Harmonic · holds energy · same BPM'),
       N('f', 'Static Bloom', 'Rell', 72, 3, -1, 'clash', 'Key clash · -1 energy · +3 BPM')
     ],
@@ -151,11 +200,37 @@ const SCENES: Scene[] = [
   {
     status: 'locked',
     confidence: 0.91,
-    current: { id: 't3', title: 'Glass Horizon', artist: 'Aeon Field', bpm: 125, key: '9A', energy: 8 },
+    current: {
+      id: 't3',
+      title: 'Glass Horizon',
+      artist: 'Aeon Field',
+      bpm: 125,
+      key: '9A',
+      energy: 8
+    },
     setHealth: 79,
     nextUp: [
-      N('g', 'Peak Theory', 'Dusk Lab', 93, 1, 1, 'perfect', 'Perfect harmony · +1 energy · +1 BPM', true),
-      N('h', 'Gravity Well', 'Soma Ridge', 86, 2, 0, 'compatible', 'Harmonic · holds energy · +2 BPM'),
+      N(
+        'g',
+        'Peak Theory',
+        'Dusk Lab',
+        93,
+        1,
+        1,
+        'perfect',
+        'Perfect harmony · +1 energy · +1 BPM',
+        true
+      ),
+      N(
+        'h',
+        'Gravity Well',
+        'Soma Ridge',
+        86,
+        2,
+        0,
+        'compatible',
+        'Harmonic · holds energy · +2 BPM'
+      ),
       N('i', 'Last Light', 'Verzo', 64, -3, -2, 'clash', 'Key clash · -2 energy · -3 BPM')
     ],
     hold: 5200
@@ -201,6 +276,7 @@ export const useLiveStore = create<LiveState>((set, get) => {
     current: null,
     nextUp: [],
     setHealth: 0,
+    venue: null,
 
     goLive: () => {
       if (get().isLive) return
@@ -221,18 +297,26 @@ export const useLiveStore = create<LiveState>((set, get) => {
         positionSec: null,
         elapsedSec: 0,
         indexProgress: null,
-        indexedTracks: 0
+        indexedTracks: 0,
+        venue: null
       })
     },
 
     setExpanded: (v) => set({ expanded: v }),
     toggleExpanded: () => set((s) => ({ expanded: !s.expanded })),
+    setVenue: (venue) => set({ venue }),
 
     setLiveActive: (active) => {
       if (active) {
         if (get().isLive) return
         // Screen-read + metadata work immediately, so go straight to listening.
-        set({ isLive: true, expanded: true, status: 'listening', indexProgress: null, elapsedSec: 0 })
+        set({
+          isLive: true,
+          expanded: true,
+          status: 'listening',
+          indexProgress: null,
+          elapsedSec: 0
+        })
         clockTimer = setInterval(() => set((s) => ({ elapsedSec: s.elapsedSec + 1 })), 1000)
       } else {
         get().endLive()
@@ -242,7 +326,12 @@ export const useLiveStore = create<LiveState>((set, get) => {
     applyIndexProgress: (p) => set({ isLive: true, status: 'indexing', indexProgress: p }),
 
     setReady: (s) =>
-      set({ isLive: true, status: 'listening', indexedTracks: s.indexedTracks, indexProgress: null }),
+      set({
+        isLive: true,
+        status: 'listening',
+        indexedTracks: s.indexedTracks,
+        indexProgress: null
+      }),
 
     applyLiveData: (d) =>
       set({

@@ -1,5 +1,5 @@
 /**
- * Live audio capture for SetSense Live (renderer side).
+ * Live audio capture for SetRecord Live (renderer side).
  *
  * Captures master-out from a chosen input device — a loopback device such as
  * BlackHole / Loopback fed by the DJ master, or a hardware interface with the

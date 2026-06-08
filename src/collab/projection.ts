@@ -1,5 +1,5 @@
 /**
- * Translation layer between a SetSense `DJSet` (the Zustand source of truth) and
+ * Translation layer between a SetRecord `DJSet` (the Zustand source of truth) and
  * the shared Yjs document. Three operations:
  *   • seedYDoc        — host populates a fresh doc from its current set
  *   • projectToDJSet  — build a DJSet from the doc, hydrated against THIS peer's

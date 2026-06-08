@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Disc3, History, Play, Plus, Search, Tag } from 'lucide-react'
+import { Award, Disc3, History, Play, Plus, Search, Tag, Zap } from 'lucide-react'
 import type { Track } from '@/types'
 
 interface TrackContextMenuProps {
@@ -11,9 +11,11 @@ interface TrackContextMenuProps {
   onClose: () => void
   onPreview: () => void
   onFindSimilar: () => void
+  onShowCourage: () => void
   onAddToSet: () => void
   onEditCues: () => void
   onShowCombos: () => void
+  onShowResume: () => void
   onEditTags: () => void
 }
 
@@ -31,9 +33,11 @@ export function TrackContextMenu({
   onClose,
   onPreview,
   onFindSimilar,
+  onShowCourage,
   onAddToSet,
   onEditCues,
   onShowCombos,
+  onShowResume,
   onEditTags
 }: TrackContextMenuProps): React.ReactPortal {
   const { t } = useTranslation('library')
@@ -104,6 +108,12 @@ export function TrackContextMenu({
       disabled: unavailable
     },
     {
+      icon: Zap,
+      label: t('contextMenu.courage'),
+      action: onShowCourage,
+      disabled: unavailable
+    },
+    {
       icon: Plus,
       label: t('contextMenu.addToSet'),
       action: onAddToSet
@@ -118,6 +128,11 @@ export function TrackContextMenu({
       icon: History,
       label: t('contextMenu.playedAfter'),
       action: onShowCombos
+    },
+    {
+      icon: Award,
+      label: t('contextMenu.trackResume'),
+      action: onShowResume
     },
     {
       icon: Tag,

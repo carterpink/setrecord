@@ -150,7 +150,7 @@ export async function exportSet(set: DJSet, filePath: string): Promise<ExportRes
     })
     const xml = builder.buildObject(djPlaylists)
 
-    const tmpPath = `${filePath}.setsense-tmp`
+    const tmpPath = `${filePath}.setrecord-tmp`
     try {
       writeFileSync(tmpPath, xml, 'utf-8')
       renameSync(tmpPath, filePath)
@@ -217,7 +217,7 @@ export async function exportLibraryTagsXml(
     })
     const xml = builder.buildObject(djPlaylists)
 
-    const tmpPath = `${filePath}.setsense-tmp`
+    const tmpPath = `${filePath}.setrecord-tmp`
     try {
       writeFileSync(tmpPath, xml, 'utf-8')
       renameSync(tmpPath, filePath)

@@ -110,9 +110,19 @@
     "privacyNote": "Deine Bibliothek, Track-Titel, Dateipfade, dein Gerätename und persönliche Daten werden nie übermittelt. Standardmäßig aus. Ausschalten stoppt die Berichte sofort; Einschalten wird nach einem Neustart von {{app}} wirksam.",
     "toggleAria": "Absturzberichte umschalten"
   },
+  "flightRecorder": {
+    "label": "Set-Flugschreiber",
+    "caption": "Nimm während des Auflegens über das Raummikrofon eine Lo-Fi-Audioreferenz deines Sets auf, um sie später abzuspielen. Die Tracklist wird immer gespeichert – dies ergänzt das Audio.",
+    "privacyNote": "Standardmäßig aus. Die Aufnahme bleibt auf diesem Gerät und wird nie hochgeladen. Du entscheidest am Ende, ob du jedes Set behältst oder verwirfst, und eine Anzeige zeigt, wenn das Mikrofon aufnimmt.",
+    "toggleAria": "Set-Flugschreiber umschalten",
+    "reactionLabel": "Analyse der Publikumsreaktion",
+    "experimental": "(experimentell)",
+    "reactionCaption": "Miss nach einem Set anhand der Aufnahme, wie das Publikum auf jeden Track reagiert hat. Früh und ungefähr – wird als Schätzung mit Vertrauenswert angezeigt, bis es in echten Räumen bestätigt ist.",
+    "reactionToggleAria": "Analyse der Publikumsreaktion umschalten"
+  },
   "backup": {
     "exportTitle": "Backup exportieren",
-    "exportCaption": "Speichert deine Tags, Sets, Wiedergabeverlauf, Lifecycle und Smart Crates in einer einzigen <0>.setsense</0>-Datei. Bewahre sie sicher auf oder importiere sie auf einem anderen Mac, um deine Arbeit mitzunehmen. Deine Audiodateien und deine Lizenz bleiben, wo sie sind – es wird nichts hochgeladen.",
+    "exportCaption": "Speichert deine Tags, Sets, Wiedergabeverlauf, Lifecycle und Smart Crates in einer einzigen <0>.setrecord</0>-Datei. Bewahre sie sicher auf oder importiere sie auf einem anderen Mac, um deine Arbeit mitzunehmen. Deine Audiodateien und deine Lizenz bleiben, wo sie sind – es wird nichts hochgeladen.",
     "passphrasePlaceholder": "Passwort (empfohlen)",
     "passphraseAria": "Backup-Passwort",
     "exportButton": "Backup exportieren",
@@ -121,7 +131,7 @@
     "unencryptedNote": "Backups werden standardmäßig verschlüsselt. Lass dies leer und wir bitten dich um Bestätigung, bevor eine unverschlüsselte Datei gespeichert wird, die jeder lesen könnte.",
     "exportSuccess": "Backup gespeichert – {{tracks}} Tracks, {{sets}} Sets, {{sessions}} Gigs.",
     "importTitle": "Backup importieren",
-    "importCaption": "Importiere eine <0>.setsense</0>-Datei von einem anderen Mac. Importiere zuerst deine Rekordbox-/Serato-Bibliothek – ein Backup enthält deine Arbeit, nicht die Audiodateien, und verknüpft sich erneut mit den Tracks, die bereits auf diesem Gerät sind.",
+    "importCaption": "Importiere eine <0>.setrecord</0>-Datei von einem anderen Mac. Importiere zuerst deine Rekordbox-/Serato-Bibliothek – ein Backup enthält deine Arbeit, nicht die Audiodateien, und verknüpft sich erneut mit den Tracks, die bereits auf diesem Gerät sind.",
     "chooseButton": "Backup wählen…",
     "enterPassphrase": "Backup-Passwort eingeben",
     "unlock": "Entsperren",
@@ -165,7 +175,7 @@
     "memory": {
       "label": "Memory",
       "title": "Memory",
-      "desc": "Wie SetSense versteht, was du fragst, und mit der Zeit dazulernt."
+      "desc": "Wie SetRecord versteht, was du fragst, und mit der Zeit dazulernt."
     },
     "mixing": {
       "label": "Mixing",
@@ -175,7 +185,7 @@
     "library": {
       "label": "Bibliothek",
       "title": "Bibliotheksquelle",
-      "desc": "Woraus SetSense deine Tracks liest."
+      "desc": "Woraus SetRecord deine Tracks liest."
     },
     "data": {
       "label": "Datenschutz & Backup",
@@ -185,7 +195,7 @@
     "reset": {
       "label": "Zurücksetzen",
       "title": "Zurücksetzen",
-      "desc": "Setzt SetSense auf den ersten Start zurück."
+      "desc": "Setzt SetRecord auf den ersten Start zurück."
     },
     "playback": {
       "label": "Wiedergabe",
@@ -205,7 +215,7 @@
     "home": "Start",
     "library": "Bibliothek",
     "build": "Erstellen",
-    "caption": "Welcher Bereich beim Start von SetSense geöffnet wird."
+    "caption": "Welcher Bereich beim Start von SetRecord geöffnet wird."
   },
   "reducedMotion": {
     "label": "Bewegung reduzieren",
@@ -242,8 +252,8 @@
     "fadeCaption": "Vorschauen mit kurzem Einblenden starten statt mit hartem Einsatz.",
     "outputLabel": "Ausgabegerät",
     "outputCaption": "Wo die Vorschau abgespielt wird. Standard ist die Systemausgabe.",
-    "inputLabel": "SetSense-Live-Eingang",
-    "inputCaption": "Der Audioeingang, den SetSense Live abhört.",
+    "inputLabel": "SetRecord-Live-Eingang",
+    "inputCaption": "Der Audioeingang, den SetRecord Live abhört.",
     "systemDefault": "Systemstandard",
     "unnamedDevice": "Unbenanntes Gerät",
     "waveformLabel": "Wellenform-Detail",
@@ -254,7 +264,7 @@
   },
   "autoTagging": {
     "label": "Auto-Tagging",
-    "caption": "SetSense aus dem Klang jedes Tracks verständliche Tags erzeugen lassen."
+    "caption": "SetRecord aus dem Klang jedes Tracks verständliche Tags erzeugen lassen."
   },
   "tagRoute": {
     "label": "Tags nach Rekordbox exportieren",
@@ -264,7 +274,7 @@
   },
   "rbConsent": {
     "label": "Zugriff auf die Rekordbox-Datenbank",
-    "caption": "Du hast SetSense erlaubt, deine Rekordbox-Datenbank zu lesen (nur lesend). Du kannst das hier widerrufen; beim nächsten Mal wirst du erneut gefragt.",
+    "caption": "Du hast SetRecord erlaubt, deine Rekordbox-Datenbank zu lesen (nur lesend). Du kannst das hier widerrufen; beim nächsten Mal wirst du erneut gefragt.",
     "button": "Datenbankzugriff widerrufen",
     "revoked": "Zugriff auf die Rekordbox-Datenbank widerrufen."
   },

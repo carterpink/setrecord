@@ -30,6 +30,7 @@ import { PlaylistSidebar } from './PlaylistSidebar'
 import { CratesLibraryTab } from './CratesLibraryTab'
 import { TagEditorPopover } from './tags/TagEditorPopover'
 import { TrackContextMenu } from './TrackContextMenu'
+import { useTrackInspectStore } from '@/stores/trackInspectStore'
 
 const TABS: readonly LibraryTab[] = ['Collection', 'Crates', 'Sets'] as const
 
@@ -155,11 +156,11 @@ export function LibraryPanel(): React.JSX.Element {
   const [tipDismissed, setTipDismissed] = useState(
     () =>
       typeof window !== 'undefined' &&
-      localStorage.getItem('setsense-search-tip-dismissed') === 'true'
+      localStorage.getItem('setrecord-search-tip-dismissed') === 'true'
   )
   function dismissTip(): void {
     setTipDismissed(true)
-    localStorage.setItem('setsense-search-tip-dismissed', 'true')
+    localStorage.setItem('setrecord-search-tip-dismissed', 'true')
   }
 
   // ── Context menu state ────────────────────────────────────────────────────
@@ -172,6 +173,11 @@ export function LibraryPanel(): React.JSX.Element {
   const [combosData, setCombosData] = useState<{ track: Track; results: ComboResult[] } | null>(
     null
   )
+
+  // Track Résumé / Courage overlays are app-global (rendered full-screen at the
+  // app root via trackInspectStore) so they're never squished inside this panel.
+  const openResume = useTrackInspectStore((s) => s.openResume)
+  const openCourage = useTrackInspectStore((s) => s.openCourage)
 
   const selectedPlaylist = selectedPlaylistId
     ? (playlists.find((p) => p.id === selectedPlaylistId) ?? null)
@@ -294,7 +300,7 @@ export function LibraryPanel(): React.JSX.Element {
   async function handleShowCombos(track: Track): Promise<void> {
     setCombosData({ track, results: [] })
     try {
-      const results = await window.setsense.recallCombos(track.id)
+      const results = await window.setrecord.recallCombos(track.id)
       setCombosData({ track, results })
     } catch {
       setCombosData({ track, results: [] })
@@ -798,6 +804,10 @@ export function LibraryPanel(): React.JSX.Element {
             handleFindSimilar(ctxMenu.track)
             setCtxMenu(null)
           }}
+          onShowCourage={() => {
+            void openCourage(ctxMenu.track)
+            setCtxMenu(null)
+          }}
           onAddToSet={() => {
             addTrackAfterSelected(ctxMenu.track)
             setCtxMenu(null)
@@ -808,6 +818,10 @@ export function LibraryPanel(): React.JSX.Element {
           }}
           onShowCombos={() => {
             void handleShowCombos(ctxMenu.track)
+            setCtxMenu(null)
+          }}
+          onShowResume={() => {
+            void openResume(ctxMenu.track)
             setCtxMenu(null)
           }}
           onEditTags={() => {
@@ -821,6 +835,7 @@ export function LibraryPanel(): React.JSX.Element {
       {tagEditorTrack && (
         <TagEditorPopover track={tagEditorTrack} onClose={() => setTagEditorTrack(null)} />
       )}
+
 
       {/* Combos popover */}
       {combosData && (

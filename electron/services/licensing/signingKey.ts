@@ -1,7 +1,7 @@
 /**
- * SetSense licensing — verification material + commerce constants.
+ * SetRecord licensing — verification material + commerce constants.
  *
- * SetSense is offline-first (PRD §2): the app must validate a purchase with no
+ * SetRecord is offline-first (PRD §2): the app must validate a purchase with no
  * network, at a venue, on a laptop with no WiFi. We therefore use Ed25519
  * *offline-signed* license keys. The signing (private) key lives only with the
  * issuing authority (see scripts/mint-license.mjs) and is NEVER bundled into
@@ -15,10 +15,10 @@
 
 /** Ed25519 SPKI public key. Pair lives in scripts/mint-license.mjs (issuer-only). */
 export const LICENSE_PUBLIC_KEY_PEM = `-----BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEADYz25oW2tlhuUAkV/0Iy6YQ+i2ENRgDOgP283jQC5j8=
+MCowBQYDK2VwAyEAi/VLfP37DlLk1dwte9raJT6z1H2lKPLis6M6Ur4V7Tg=
 -----END PUBLIC KEY-----`
 
-/** Prefix that tags a SetSense license key and pins the payload schema version. */
+/** Prefix that tags a SetRecord license key and pins the payload schema version. */
 export const LICENSE_KEY_PREFIX = 'SES1'
 
 /**
@@ -81,15 +81,15 @@ export const TIP_AMOUNTS = [5, 12, 25] as const
  * shell allowlist so commerce links and content links can be reasoned about
  * independently.
  */
-export const COMMERCE_HOST = 'setsense.app'
+export const COMMERCE_HOST = 'setrecord.app'
 
 /**
  * Custom URL scheme the OS routes back to the app after checkout. The full
- * activation deep-link looks like `setsense://activate?key=SES1.…`. Kept as a
+ * activation deep-link looks like `setrecord://activate?key=SES1.…`. Kept as a
  * single constant so the planned product rename only has to touch one line
  * (the scheme is also baked into the macOS Info.plist — see electron-builder.yml).
  */
-export const ACTIVATION_SCHEME = 'setsense'
+export const ACTIVATION_SCHEME = 'setrecord'
 
 /** The deep-link the checkout backend should redirect to once a key is minted. */
 export const ACTIVATION_DEEP_LINK = `${ACTIVATION_SCHEME}://activate`
@@ -109,7 +109,7 @@ export function parseActivationUrl(rawUrl: string): string | null {
   }
   // URL parses the scheme with a trailing colon.
   if (url.protocol !== `${ACTIVATION_SCHEME}:`) return null
-  // Accept both setsense://activate and setsense:///activate shapes — the host
+  // Accept both setrecord://activate and setrecord:///activate shapes — the host
   // or the first path segment may carry "activate" depending on the OS.
   const action = (url.hostname || url.pathname.replace(/^\/+/, '')).toLowerCase()
   if (action !== 'activate') return null
@@ -125,7 +125,7 @@ export function checkoutUrl(
   tipAmount?: number
 ): string {
   // Tell the checkout backend where to send the buyer once payment clears, so
-  // it can redirect to `setsense://activate?key=…` and the app self-activates
+  // it can redirect to `setrecord://activate?key=…` and the app self-activates
   // instead of relying on a manual copy-paste from the confirmation email.
   const redirect = `redirect=${encodeURIComponent(ACTIVATION_DEEP_LINK)}`
   if (plan === 'tip') {

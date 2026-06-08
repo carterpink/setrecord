@@ -51,27 +51,27 @@ export const useUSBStore = create<USBStore>((set) => ({
   setRenamingDeviceId: (id) => set({ renamingDeviceId: id }),
 
   refreshDevices: async () => {
-    if (typeof window.setsense === 'undefined') return
+    if (typeof window.setrecord === 'undefined') return
     const [devices, remembered] = await Promise.all([
-      window.setsense.usbList(),
-      window.setsense.usbGetRemembered()
+      window.setrecord.usbList(),
+      window.setrecord.usbGetRemembered()
     ])
     set({ connectedDevices: devices, rememberedDevices: remembered })
   },
 
   loadRemembered: async () => {
-    if (typeof window.setsense === 'undefined') return
-    const remembered = await window.setsense.usbGetRemembered()
+    if (typeof window.setrecord === 'undefined') return
+    const remembered = await window.setrecord.usbGetRemembered()
     set({ rememberedDevices: remembered })
   },
 
   runSpeedTest: async (id, mountPath) => {
-    if (typeof window.setsense === 'undefined') return
+    if (typeof window.setrecord === 'undefined') return
     set((s) => ({ testingSpeedIds: new Set([...s.testingSpeedIds, id]) }))
     try {
-      const result = await window.setsense.usbTestSpeed(mountPath)
+      const result = await window.setrecord.usbTestSpeed(mountPath)
       if (result) {
-        await window.setsense.usbUpdatePrefs(id, {
+        await window.setrecord.usbUpdatePrefs(id, {
           readSpeedMBps: result.readMBps,
           writeSpeedMBps: result.writeMBps,
           speedTestedAt: new Date().toISOString()
@@ -101,8 +101,8 @@ export const useUSBStore = create<USBStore>((set) => ({
   },
 
   updatePrefs: async (id, prefs) => {
-    if (typeof window.setsense === 'undefined') return
-    await window.setsense.usbUpdatePrefs(id, prefs)
+    if (typeof window.setrecord === 'undefined') return
+    await window.setrecord.usbUpdatePrefs(id, prefs)
     // Convert null customName to undefined for the USBDevice type
     const patch = {
       ...prefs,
@@ -115,19 +115,19 @@ export const useUSBStore = create<USBStore>((set) => ({
   },
 
   forgetDevice: async (id) => {
-    if (typeof window.setsense === 'undefined') return
-    await window.setsense.usbForget(id)
+    if (typeof window.setrecord === 'undefined') return
+    await window.setrecord.usbForget(id)
     set((s) => ({
       rememberedDevices: s.rememberedDevices.filter((d) => d.id !== id)
     }))
   },
 
   copyToUSB: async (srcPath, mountPath, filename, deviceId) => {
-    if (typeof window.setsense === 'undefined') return { success: false, error: 'Not available' }
-    const result = await window.setsense.usbCopyToUSB(srcPath, mountPath, filename)
+    if (typeof window.setrecord === 'undefined') return { success: false, error: 'Not available' }
+    const result = await window.setrecord.usbCopyToUSB(srcPath, mountPath, filename)
     if (result.success) {
       // Increment export count in DB
-      await window.setsense.usbRecordExport(deviceId)
+      await window.setrecord.usbRecordExport(deviceId)
       set((s) => ({
         connectedDevices: s.connectedDevices.map((d) =>
           d.id === deviceId

@@ -28,7 +28,7 @@ const ENTRIES: Entry[] = [
     topic: 'harmonic-mixing',
     test: /\b(what is|what's|explain).*(harmonic mixing|mixing in key)|how does harmonic mixing/,
     answer:
-      "Harmonic mixing means blending tracks whose musical keys are compatible, using the Camelot Wheel (a DJ-friendly map of the Circle of Fifths). Compatible keys sit within ±1 step on the wheel, or are the relative major/minor of each other. Example: 8A (A minor) mixes smoothly into 7A, 9A, or 8B. SetSense shows each track's Camelot key so you can line them up."
+      "Harmonic mixing means blending tracks whose musical keys are compatible, using the Camelot Wheel (a DJ-friendly map of the Circle of Fifths). Compatible keys sit within ±1 step on the wheel, or are the relative major/minor of each other. Example: 8A (A minor) mixes smoothly into 7A, 9A, or 8B. SetRecord shows each track's Camelot key so you can line them up."
   },
   {
     topic: 'camelot-wheel',
@@ -101,7 +101,7 @@ const ENTRIES: Entry[] = [
     topic: 'crate',
     test: /\b(what is|what's).*(a )?(dj'?s )?crate\b|what'?s a crate\b/,
     answer:
-      'A crate is a curated selection of tracks prepared for a set — the term comes from carrying records in physical crates. The digital equivalent is a playlist or folder in your DJ software; in SetSense your crates and playlists serve the same purpose.'
+      'A crate is a curated selection of tracks prepared for a set — the term comes from carrying records in physical crates. The digital equivalent is a playlist or folder in your DJ software; in SetRecord your crates and playlists serve the same purpose.'
   },
   {
     topic: 'energy-arc',
@@ -164,31 +164,31 @@ const ENTRIES: Entry[] = [
     topic: 'import-rekordbox',
     test: /\bhow (do|to).*import.*rekordbox|import my rekordbox/,
     answer:
-      'To import from Rekordbox: in Rekordbox, export your collection as an XML (File → Export Collection in xml format), then in SetSense open the import flow and point it at that XML. SetSense can also read a Rekordbox database directly. Your tracks, playlists, BPM and keys come across.'
+      'To import from Rekordbox: in Rekordbox, export your collection as an XML (File → Export Collection in xml format), then in SetRecord open the import flow and point it at that XML. SetRecord can also read a Rekordbox database directly. Your tracks, playlists, BPM and keys come across.'
   },
   {
     topic: 'import-serato',
     test: /\b(can i|how (do|to)).*import.*serato|serato.*import/,
     answer:
-      'Yes — Serato import is supported. Serato stores its library in a "_Serato_" folder (in Music on macOS, or alongside your drives), including crates and per-file cues/beatgrids. Point SetSense\'s import at your Serato library and it will bring in your tracks, crates, cue points and beatgrids where available.'
+      'Yes — Serato import is supported. Serato stores its library in a "_Serato_" folder (in Music on macOS, or alongside your drives), including crates and per-file cues/beatgrids. Point SetRecord\'s import at your Serato library and it will bring in your tracks, crates, cue points and beatgrids where available.'
   },
   {
     topic: 'usb-cdjs',
     test: /\b(usb|export).*(pioneer|cdj|engine)|playlists? (onto|to) (a )?usb/,
     answer:
-      'For Pioneer CDJs, SetSense exports a gig-ready Engine DJ USB (it copies the audio and writes the database). Format the USB as FAT32 or exFAT first. Plug it into the CDJs and your playlists, BPM and cues are there. (USB export is a Pro feature.)'
+      'For Pioneer CDJs, SetRecord exports a gig-ready Engine DJ USB (it copies the audio and writes the database). Format the USB as FAT32 or exFAT first. Plug it into the CDJs and your playlists, BPM and cues are there. (USB export is a Pro feature.)'
   },
   {
     topic: 'hotcues-not-importing',
     test: /\b(why|hot ?cues?).*(not import|aren'?t import|missing).*(rekordbox)?|rekordbox.*hot ?cues?.*import/,
     answer:
-      "Rekordbox 7 changed its database encryption (the cipher uses a passphrase, not the old format) and its schema, so hot cues sometimes don't come through from a direct DB read. The reliable workaround is to export a collection XML from Rekordbox and import that, which carries cues across; SetSense handles the v7 cipher where it can."
+      "Rekordbox 7 changed its database encryption (the cipher uses a passphrase, not the old format) and its schema, so hot cues sometimes don't come through from a direct DB read. The reliable workaround is to export a collection XML from Rekordbox and import that, which carries cues across; SetRecord handles the v7 cipher where it can."
   },
   {
     topic: 'backup',
     test: /\b(export|back ?up|backup).*(library|collection|everything).*(backup)?|how (do|to).*back ?up my (library|collection)/,
     answer:
-      "SetSense can export a full backup of your library — tracks, metadata, playlists and play history. Backups are encrypted by default; you choose the destination. Keep a copy off your main drive so a disk failure can't take your collection and gig history with it."
+      "SetRecord can export a full backup of your library — tracks, metadata, playlists and play history. Backups are encrypted by default; you choose the destination. Keep a copy off your main drive so a disk failure can't take your collection and gig history with it."
   },
   // ── Adversarial / honest redirects ───────────────────────────────────────
   {
@@ -225,7 +225,7 @@ const ENTRIES: Entry[] = [
     topic: 'get-more-gigs',
     test: /\bhow (do|to|can i).*(get|land|book).*(more )?gigs|more gigs\b/,
     answer:
-      'Booking is a bit outside what SetSense does, but the things that get you gigs are things it helps with: tight, well-built sets, a recorded mix that shows your sound, knowing your library cold, and being CDJ-ready with USB exports. I can help you build a standout set or polish your selection — want to start there?'
+      'Booking is a bit outside what SetRecord does, but the things that get you gigs are things it helps with: tight, well-built sets, a recorded mix that shows your sound, knowing your library cold, and being CDJ-ready with USB exports. I can help you build a standout set or polish your selection — want to start there?'
   }
 ]
 

@@ -143,8 +143,8 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
 
   // Pre-populate hardware from saved settings
   useEffect(() => {
-    if (typeof window.setsense === 'undefined') return
-    window.setsense
+    if (typeof window.setrecord === 'undefined') return
+    window.setrecord
       .getSettings()
       .then((s) => {
         if (s.targetHardware) setHardware(s.targetHardware)
@@ -162,8 +162,8 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
 
     try {
       // Flush any pending auto-save so the set is guaranteed to be in SQLite
-      await window.setsense.saveSet(currentSet)
-      const result = await window.setsense.validateForExport(
+      await window.setrecord.saveSet(currentSet)
+      const result = await window.setrecord.validateForExport(
         currentSet.id,
         hardware,
         target === 'engine' ? 'engine' : 'pioneer'
@@ -215,9 +215,9 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
 
     setPhase('exporting')
     setEngineProgress({ processed: 0, total: currentSet.tracks.length, phase: 'copying' })
-    const unsubscribe = window.setsense.onEngineExportProgress((p) => setEngineProgress(p))
+    const unsubscribe = window.setrecord.onEngineExportProgress((p) => setEngineProgress(p))
     try {
-      const result = await window.setsense.exportSetToEngineUsb(currentSet.id, device.mountPath)
+      const result = await window.setrecord.exportSetToEngineUsb(currentSet.id, device.mountPath)
       if (result?.success) {
         setExportedPath(result.filePath ?? device.mountPath)
         setExportedTrackCount(result.trackCount ?? null)
@@ -250,7 +250,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
 
     try {
       const [result] = await Promise.all([
-        window.setsense.exportSet(currentSet.id, hardware) as Promise<{
+        window.setrecord.exportSet(currentSet.id, hardware) as Promise<{
           success: boolean
           filePath?: string
           trackCount?: number
@@ -295,7 +295,7 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
     setExportError(null)
     try {
       const [result] = await Promise.all([
-        window.setsense.exportBeatportCsv(currentSet.name, bpRows),
+        window.setrecord.exportBeatportCsv(currentSet.name, bpRows),
         new Promise<void>((r) => setTimeout(r, 800))
       ])
       if (result?.success && result.filePath) {

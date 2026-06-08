@@ -2,7 +2,7 @@
  * NFR-107 — fixture emitter. Run via `npm run bench:fixtures`. Writes the
  * canonical 10k-track library to disk in the two forms Tier B consumes:
  *
- *   bench/results/library-10k.xml   → seed the app via window.setsense.importLibrary
+ *   bench/results/library-10k.xml   → seed the app via window.setrecord.importLibrary
  *   bench/results/library-10k.json  → the same Track[] for reference / debugging
  *
  * Kept out of the bench/node/** gating glob so it never runs (and never writes a

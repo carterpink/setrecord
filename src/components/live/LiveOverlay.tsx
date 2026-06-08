@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronUp, ChevronDown, Sparkles, AudioLines } from 'lucide-react'
+import { X, ChevronUp, ChevronDown, Sparkles, AudioLines, Building2 } from 'lucide-react'
 import { useLiveStore, type LiveNextUp } from '@/stores/liveStore'
 import { interactiveHandlers } from './clickThrough'
 import { LiveActivation } from './LiveActivation'
@@ -67,6 +67,7 @@ export function LiveOverlay(): React.JSX.Element | null {
   const setHealth = useLiveStore((s) => s.setHealth)
   const positionSec = useLiveStore((s) => s.positionSec)
   const elapsedSec = useLiveStore((s) => s.elapsedSec)
+  const venue = useLiveStore((s) => s.venue)
   const indexProgress = useLiveStore((s) => s.indexProgress)
   const toggleExpanded = useLiveStore((s) => s.toggleExpanded)
   const endLive = useLiveStore((s) => s.endLive)
@@ -78,10 +79,18 @@ export function LiveOverlay(): React.JSX.Element | null {
     return () => clearTimeout(t)
   }, [])
 
+  // Honour the Flight Recorder consent promise: show a REC indicator whenever the
+  // room mic is actually being captured (driven from the main-window recorder).
+  const [recording, setRecording] = useState(false)
+  useEffect(() => {
+    if (typeof window.setrecord === 'undefined') return
+    return window.setrecord.onLiveRecordingState((active) => setRecording(active))
+  }, [])
+
   // In the real overlay window, End closes the window + stops the engine;
   // in browser preview it just hides the mock HUD.
   const handleEnd = (): void => {
-    window.setsense?.liveStop()
+    window.setrecord?.liveStop()
     endLive()
   }
 
@@ -121,6 +130,16 @@ export function LiveOverlay(): React.JSX.Element | null {
           </span>
           <span className="lv-timer">{clock(elapsedSec)}</span>
 
+          {recording && (
+            <>
+              <span className="lv-strip-div" />
+              <span className="lv-rec" title="Recording this set — audio stays on your device">
+                <span className="lv-rec-dot" />
+                REC
+              </span>
+            </>
+          )}
+
           {locked && (
             <>
               <span className="lv-strip-div" />
@@ -131,6 +150,24 @@ export function LiveOverlay(): React.JSX.Element | null {
             </>
           )}
 
+          {venue && (
+            <>
+              <span className="lv-strip-div" />
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  opacity: 0.85,
+                  fontSize: 12
+                }}
+                title="Venue"
+              >
+                <Building2 size={13} strokeWidth={1.7} />
+                {venue}
+              </span>
+            </>
+          )}
           <span className="lv-strip-div" />
           <span className="lv-hint">
             {expanded ? t('strip.hide') : t('strip.show')}

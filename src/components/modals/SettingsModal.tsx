@@ -319,15 +319,15 @@ function LicenseSection(): React.JSX.Element {
 }
 
 /**
- * Backendless backup & migration. Export the whole SetSense overlay to a single
- * `.setsense` file (optionally passphrase-encrypted), and import it on another
+ * Backendless backup & migration. Export the whole SetRecord overlay to a single
+ * `.setrecord` file (optionally passphrase-encrypted), and import it on another
  * machine — it re-links to that machine's own library by stable track identity,
  * never touching local file paths. No accounts, no cloud.
  */
 function BackupSection(): React.JSX.Element {
   const { t } = useTranslation('settings')
   const toast = useToastStore()
-  const hasBridge = typeof window.setsense !== 'undefined'
+  const hasBridge = typeof window.setrecord !== 'undefined'
 
   const [exportPass, setExportPass] = useState('')
   const [exporting, setExporting] = useState(false)
@@ -351,7 +351,7 @@ function BackupSection(): React.JSX.Element {
     if (!hasBridge) return
     setExporting(true)
     try {
-      const r = await window.setsense.backupExport(exportPass || undefined)
+      const r = await window.setrecord.backupExport(exportPass || undefined)
       if (r.success) {
         toast.success(
           t('backup.exportSuccess', {
@@ -373,7 +373,7 @@ function BackupSection(): React.JSX.Element {
     if (!hasBridge) return
     setBusy(true)
     try {
-      const res = await window.setsense.backupInspect(path, pass)
+      const res = await window.setrecord.backupInspect(path, pass)
       if (res.needsPassphrase) {
         setNeedsPass(true)
         setInspect(null)
@@ -394,7 +394,7 @@ function BackupSection(): React.JSX.Element {
 
   async function handlePick(): Promise<void> {
     if (!hasBridge) return
-    const path = await window.setsense.backupPick()
+    const path = await window.setrecord.backupPick()
     if (!path) return
     resetImport()
     setImportPath(path)
@@ -405,7 +405,7 @@ function BackupSection(): React.JSX.Element {
     if (!hasBridge || !importPath || !inspect) return
     setBusy(true)
     try {
-      const r = await window.setsense.backupImport(
+      const r = await window.setrecord.backupImport(
         importPath,
         inspect.suggestedMode ?? 'merge',
         importPass || undefined
@@ -610,7 +610,7 @@ function DangerZoneSection(): React.JSX.Element {
   const { t } = useTranslation('settings')
   const [confirming, setConfirming] = useState(false)
   const [wiping, setWiping] = useState(false)
-  const hasBridge = typeof window.setsense !== 'undefined'
+  const hasBridge = typeof window.setrecord !== 'undefined'
 
   function handleConfirm(): void {
     // Drop renderer-persisted UI state up front; the main process wipes the rest
@@ -674,7 +674,7 @@ function DangerZoneSection(): React.JSX.Element {
         )}
       </div>
 
-      {wiping && <FreshStartOverlay onComplete={() => void window.setsense.freshStart()} />}
+      {wiping && <FreshStartOverlay onComplete={() => void window.setrecord.freshStart()} />}
     </div>
   )
 }
@@ -710,6 +710,8 @@ export function SettingsModal(): React.JSX.Element {
   const [learnMode, setLearnMode] = useState(false)
   const [memoryAi, setMemoryAi] = useState(false)
   const [crashReportingEnabled, setCrashReportingEnabled] = useState(false)
+  const [flightRecorderEnabled, setFlightRecorderEnabled] = useState(false)
+  const [reactionCaptureEnabled, setReactionCaptureEnabled] = useState(false)
   const [saving, setSaving] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [tab, setTab] = useState<SettingsTab>('general')
@@ -747,8 +749,8 @@ export function SettingsModal(): React.JSX.Element {
   const [artworkCacheBytes, setArtworkCacheBytes] = useState<number | null>(null)
 
   useEffect(() => {
-    if (typeof window.setsense === 'undefined') return
-    window.setsense.getSettings().then((s) => {
+    if (typeof window.setrecord === 'undefined') return
+    window.setrecord.getSettings().then((s) => {
       setTargetHardware(s.targetHardware)
       setBpmLow(s.defaultBpmMin)
       setBpmHigh(s.defaultBpmMax)
@@ -760,6 +762,8 @@ export function SettingsModal(): React.JSX.Element {
       setLastImportAt(s.lastImportAt ?? null)
       setAutoDetectRekordbox(s.autoDetectRekordbox ?? true)
       setCrashReportingEnabled(s.crashReportingEnabled ?? false)
+      setFlightRecorderEnabled(s.flightRecorderEnabled ?? false)
+      setReactionCaptureEnabled(s.reactionCaptureEnabled ?? false)
       setAutoTaggingEnabled(s.autoTaggingEnabled ?? true)
       setDefaultTagExportRoute(s.defaultTagExportRoute ?? 'xml')
       setRekordboxDbConsent(s.rekordboxDbConsent ?? false)
@@ -792,8 +796,8 @@ export function SettingsModal(): React.JSX.Element {
 
   // Load artwork-cache size when the Privacy & data tab opens.
   useEffect(() => {
-    if (tab !== 'data' || typeof window.setsense === 'undefined') return
-    window.setsense
+    if (tab !== 'data' || typeof window.setrecord === 'undefined') return
+    window.setrecord
       .artworkCacheStats()
       .then((st) => setArtworkCacheBytes(st.bytes))
       .catch(() => {})
@@ -802,7 +806,7 @@ export function SettingsModal(): React.JSX.Element {
   async function handleSave(): Promise<void> {
     setSaving(true)
     try {
-      await window.setsense.setSettings({
+      await window.setrecord.setSettings({
         targetHardware,
         defaultBpmMin: bpmLow,
         defaultBpmMax: bpmHigh,
@@ -810,6 +814,8 @@ export function SettingsModal(): React.JSX.Element {
         learnModeEnabled: learnMode,
         autoDetectRekordbox,
         crashReportingEnabled,
+        flightRecorderEnabled,
+        reactionCaptureEnabled,
         autoTaggingEnabled,
         defaultTagExportRoute,
         updateAutoCheck,
@@ -844,17 +850,17 @@ export function SettingsModal(): React.JSX.Element {
   }
 
   async function handleRevokeConsent(): Promise<void> {
-    if (typeof window.setsense === 'undefined') return
-    await window.setsense.setSettings({ rekordboxDbConsent: false })
+    if (typeof window.setrecord === 'undefined') return
+    await window.setrecord.setSettings({ rekordboxDbConsent: false })
     setRekordboxDbConsent(false)
     toast.info(t('rbConsent.revoked'))
   }
 
   async function handleCheckUpdates(): Promise<void> {
-    if (typeof window.setsense === 'undefined') return
+    if (typeof window.setrecord === 'undefined') return
     setCheckingUpdate(true)
     try {
-      const result = await window.setsense.checkForUpdatesNow()
+      const result = await window.setrecord.checkForUpdatesNow()
       const key =
         result === 'updated'
           ? 'updates.resultUpdated'
@@ -870,10 +876,10 @@ export function SettingsModal(): React.JSX.Element {
   }
 
   async function handleClearArtwork(): Promise<void> {
-    if (typeof window.setsense === 'undefined') return
+    if (typeof window.setrecord === 'undefined') return
     setClearingArtwork(true)
     try {
-      const res = await window.setsense.artworkClearCache()
+      const res = await window.setrecord.artworkClearCache()
       setArtworkCacheBytes(0)
       toast.success(t('artworkCache.cleared', { count: res.removed }))
     } finally {
@@ -1154,8 +1160,8 @@ export function SettingsModal(): React.JSX.Element {
                             on={memoryAi}
                             onChange={(v) => {
                               setMemoryAi(v)
-                              if (typeof window.setsense !== 'undefined')
-                                void window.setsense.recallAiEnable(v)
+                              if (typeof window.setrecord !== 'undefined')
+                                void window.setrecord.recallAiEnable(v)
                             }}
                             aria-label={t('plainSearch.toggleAria')}
                           />
@@ -1790,6 +1796,80 @@ export function SettingsModal(): React.JSX.Element {
                             aria-label={t('crashReporting.toggleAria')}
                           />
                         </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            gap: 16
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                            <Mic
+                              size={18}
+                              strokeWidth={1.6}
+                              style={{ marginTop: 2, opacity: 0.8, flexShrink: 0 }}
+                              aria-hidden="true"
+                            />
+                            <div>
+                              <div className="ss-label">{t('flightRecorder.label')}</div>
+                              <div
+                                className="ss-caption"
+                                style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.5 }}
+                              >
+                                {t('flightRecorder.caption')}
+                              </div>
+                              <div
+                                className="ss-caption"
+                                style={{ opacity: 0.5, marginTop: 6, lineHeight: 1.45 }}
+                              >
+                                {t('flightRecorder.privacyNote')}
+                              </div>
+                            </div>
+                          </div>
+                          <Toggle
+                            on={flightRecorderEnabled}
+                            onChange={setFlightRecorderEnabled}
+                            aria-label={t('flightRecorder.toggleAria')}
+                          />
+                        </div>
+
+                        {flightRecorderEnabled && (
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'flex-start',
+                              gap: 16,
+                              marginTop: 14,
+                              paddingTop: 14,
+                              borderTop: '1px solid var(--border-subtle, rgba(255,255,255,0.06))'
+                            }}
+                          >
+                            <div>
+                              <div className="ss-label">
+                                {t('flightRecorder.reactionLabel')}{' '}
+                                <span style={{ opacity: 0.55, fontWeight: 400 }}>
+                                  {t('flightRecorder.experimental')}
+                                </span>
+                              </div>
+                              <div
+                                className="ss-caption"
+                                style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.5 }}
+                              >
+                                {t('flightRecorder.reactionCaption')}
+                              </div>
+                            </div>
+                            <Toggle
+                              on={reactionCaptureEnabled}
+                              onChange={setReactionCaptureEnabled}
+                              aria-label={t('flightRecorder.reactionToggleAria')}
+                            />
+                          </div>
+                        )}
                       </div>
 
                       <div className="field-group">

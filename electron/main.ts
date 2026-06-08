@@ -22,8 +22,23 @@ import {
   matchText,
   readNowPlaying,
   isIndexReady,
-  liveStatus
+  liveStatus,
+  beginRecordingSession,
+  setLiveVenue,
+  finalizeLiveSession,
+  type FinalizedSet
 } from './services/live/liveEngine'
+import {
+  beginRecording,
+  appendChunk,
+  finalizeRecording,
+  promoteRecording,
+  discardRecording,
+  deleteRecordingFile,
+  sweepOrphans,
+  type PendingAudio
+} from './services/live/setRecorder'
+import { analyzeSessionReactions } from './services/blackbox/reactionPipeline'
 import { initDb, getDb, resetDb, getDbPath } from './db/schema'
 import {
   getAllTracks,
@@ -53,7 +68,11 @@ import {
   getSessions,
   getSessionTracks,
   getSessionsForTrack,
+  createLiveSession,
+  createRecording,
+  getRecordingForSession,
   getReactionsForSession,
+  getReactionsForTrack,
   querySessions,
   updateSession,
   bulkAssignSessions,
@@ -64,7 +83,7 @@ import {
   resolveGigFlag,
   getTracksFlaggedForGig,
   getFlaggedTracksInSession,
-  pruneDuplicateSetsenseSessions,
+  pruneDuplicateSetRecordSessions,
   getTagCoverage,
   getTagsForTrack,
   setUserTags,
@@ -73,8 +92,21 @@ import {
   getExistingTrackIdsByPath
 } from './db/queries'
 import { computeBrief } from './algorithms/memory/brief'
-import type { BriefSession, BriefReactionRow } from '../src/types'
+import { computeTrackResume } from './algorithms/memory/trackResume'
+import { computeSoundMirror } from './algorithms/memory/soundMirror'
+import { computeCourage } from './algorithms/memory/courage'
+import { computeReverseShazam } from './algorithms/memory/reverseShazam'
+import type { ShazamHit } from '../src/utils/reverseShazamIntent'
+import type {
+  BriefSession,
+  BriefReactionRow,
+  ResumeSession,
+  ResumeReaction,
+  MirrorSession,
+  ShazamSession
+} from '../src/types'
 import { exportBackup, inspectBackup, importBackup } from './services/backupService'
+import { isAllowedMediaPath } from './services/mediaAccess'
 import { startRelay, stopRelay } from './services/collab/relayServer'
 import { retagLibrary, retagTrack } from './services/tagging/tagger'
 import type {
@@ -129,10 +161,12 @@ import {
   type MixingProfile
 } from './algorithms/genreProfiles'
 import * as memoryService from './services/memoryService'
+import * as graphService from './services/graphService'
 import * as memoryAssistant from './services/memoryAssistant'
 import * as speech from './services/speech/transcribeService'
 import type {
   SmartCrate,
+  GraphRequest,
   LibrarySearchParams,
   SessionFilter,
   SessionMetadataPatch,
@@ -153,6 +187,9 @@ import {
 import type { AppSettings } from './services/settingsService'
 import { freshStart } from './services/resetService'
 import { initCrashReporter, closeCrashReporter } from './services/crashReporter'
+import { initLogger, getSessionId } from './services/logging/logger'
+import { buildFeedbackBody, shouldAttachDiagnostics } from './services/logging/feedbackDiagnostics'
+import { buildLogBundle } from './services/logging/exportBundle'
 import { checkForUpdatesAndNotify, checkForUpdatesNow } from './services/updateChecker'
 import { loadSecretsFromKeychain } from './services/secretStore'
 import {
@@ -252,13 +289,52 @@ protocol.registerSchemesAsPrivileged([
 
 let mainWindow: BrowserWindow
 
-/** Transparent always-on-top SetSense Live overlay (lazily created). */
+/** Transparent always-on-top SetRecord Live overlay (lazily created). */
 let overlayWindow: BrowserWindow | null = null
+
+/**
+ * The just-ended live set, finalized but not yet persisted — the DJ decides
+ * Save/Discard from the renderer (live:save-session / live:discard-session).
+ */
+let pendingRecording: FinalizedSet | null = null
+/** The finalized lo-fi audio temp file awaiting the same Save/Discard decision. */
+let pendingAudio: PendingAudio | null = null
+
+/**
+ * Finalize the in-flight Live recording and hand its tracklist to the renderer
+ * for the Save/Discard decision. Idempotent (finalizeLiveSession nulls the
+ * accumulator), so the two end paths — the overlay's End button and the Go-Live
+ * toggle, which both close the overlay — can call it without double-saving.
+ */
+function finishLiveSession(): void {
+  const audio = finalizeRecording()
+  const finalized = finalizeLiveSession(Date.now())
+  pendingRecording = finalized && finalized.entries.length > 0 ? finalized : null
+  // Keep the audio only if there's a set to attach it to; otherwise drop the temp.
+  if (pendingRecording) {
+    pendingAudio = audio
+  } else {
+    pendingAudio = null
+    if (audio) discardRecording(audio.tmpPath)
+  }
+  if (pendingRecording && mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('live:recording-ready', {
+      tracklist: pendingRecording.entries.map((e) => ({
+        trackId: e.trackId,
+        title: e.title,
+        artist: e.artist,
+        startMs: e.startMs
+      })),
+      durationSec: Math.round(pendingRecording.durationMs / 1000),
+      venue: pendingRecording.venue
+    })
+  }
+}
 
 /** Now-Playing (AppleScript) poll while a live session is active. */
 let nowPlayingPoll: ReturnType<typeof setInterval> | null = null
 
-// ── License activation deep-links (setsense://activate?key=…) ────────────────
+// ── License activation deep-links (setrecord://activate?key=…) ────────────────
 // A deep-link can arrive three ways: cold start (queued before the window
 // exists), while the app is already running (open-url on macOS), or as a launch
 // arg on Windows/Linux. We buffer the key until the renderer signals it has
@@ -283,7 +359,7 @@ function deliverActivationKey(key: string): void {
 /**
  * Scan a process-argv array for an activation deep-link. Windows/Linux deliver
  * the URL as a launch argument; our dev harness also accepts
- * `--activate-url=setsense://activate?key=…` so cold-start can be exercised
+ * `--activate-url=setrecord://activate?key=…` so cold-start can be exercised
  * without OS-level scheme registration.
  */
 function handleActivationArgv(argv: string[]): void {
@@ -298,7 +374,7 @@ function handleActivationArgv(argv: string[]): void {
   }
 }
 
-// Single-instance lock: a second launch (e.g. clicking a setsense:// link while
+// Single-instance lock: a second launch (e.g. clicking a setrecord:// link while
 // the app is open on Windows/Linux) routes its argv to the running instance
 // instead of spawning a duplicate.
 const gotSingleInstanceLock = app.requestSingleInstanceLock()
@@ -342,11 +418,11 @@ async function initDbWithRecovery(): Promise<void> {
     const message = err instanceof Error ? err.message : String(err)
     const choice = await dialog.showMessageBox({
       type: 'error',
-      title: 'SetSense library couldn’t load',
+      title: 'SetRecord library couldn’t load',
       message: 'Your set library file is corrupted or locked.',
       detail:
         `The file at:\n${getDbPath()}\n\ncouldn’t be opened. ` +
-        'You can start fresh (your tracks stay where they are — only the SetSense index resets, ' +
+        'You can start fresh (your tracks stay where they are — only the SetRecord index resets, ' +
         'and you’ll re-import your Rekordbox XML), or quit and try to recover it manually.' +
         `\n\nTechnical detail: ${message}`,
       buttons: ['Reset library and continue', 'Quit'],
@@ -367,10 +443,10 @@ async function initDbWithRecovery(): Promise<void> {
       console.error('[initDb] reset also failed', resetErr)
       await dialog.showMessageBox({
         type: 'error',
-        title: 'SetSense couldn’t recover',
+        title: 'SetRecord couldn’t recover',
         message: 'A fresh library still failed to open.',
         detail:
-          `This usually means SetSense can’t write to:\n${getDbPath()}\n\n` +
+          `This usually means SetRecord can’t write to:\n${getDbPath()}\n\n` +
           'Check that the parent folder is writable, then relaunch the app.',
         buttons: ['Quit']
       })
@@ -403,7 +479,7 @@ function createWindow(): void {
   // Allow Chromium to throttle this renderer when it's hidden/minimised — at
   // rest there is nothing the user can see, so paying full 60fps for the aurora,
   // glass blur and animation loops behind another app just wastes CPU/GPU.
-  // SetSense Live is the one exception: it captures master-out from this
+  // SetRecord Live is the one exception: it captures master-out from this
   // renderer while the app is tucked behind Rekordbox, so live:start flips
   // throttling off for the duration of the session and live:stop restores it.
   mainWindow.webContents.setBackgroundThrottling(true)
@@ -421,10 +497,33 @@ function createWindow(): void {
     startUSBWatcher()
   })
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+  // window.open / target=_blank → open in the user's browser, but ONLY for web
+  // and mail schemes. Handing an arbitrary URL straight to shell.openExternal
+  // would let any injected link launch file:// or a custom protocol handler.
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    try {
+      const { protocol } = new URL(url)
+      if (protocol === 'https:' || protocol === 'mailto:') shell.openExternal(url)
+    } catch {
+      /* malformed URL — refuse */
+    }
     return { action: 'deny' }
   })
+
+  // Never let the top-level frame navigate away from our own app. The renderer
+  // routes via hash/pushState (which don't fire will-navigate), so the only
+  // things this blocks are accidental or injected navigations to a remote
+  // origin — which would otherwise run inside the privileged window with the
+  // preload bridge attached. SPA HMR reloads to the same dev URL stay allowed.
+  const isOwnOrigin = (url: string): boolean =>
+    is.dev && process.env['ELECTRON_RENDERER_URL']
+      ? url.startsWith(process.env['ELECTRON_RENDERER_URL'])
+      : url.startsWith('file://')
+  const blockForeignNav = (e: Electron.Event, url: string): void => {
+    if (!isOwnOrigin(url)) e.preventDefault()
+  }
+  mainWindow.webContents.on('will-navigate', blockForeignNav)
+  mainWindow.webContents.on('will-redirect', blockForeignNav)
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
@@ -434,7 +533,7 @@ function createWindow(): void {
 }
 
 /**
- * Create (or reveal) the SetSense Live overlay: a frameless, transparent,
+ * Create (or reveal) the SetRecord Live overlay: a frameless, transparent,
  * always-on-top window that floats over Rekordbox (and across Spaces /
  * fullscreen apps). The surface is click-through by default — the renderer
  * toggles that off (live:set-ignore-mouse) while the pointer is over the glass
@@ -484,6 +583,10 @@ function showOverlayWindow(): void {
     overlayWindow = null
     if (nowPlayingPoll) clearInterval(nowPlayingPoll)
     nowPlayingPoll = null
+    // Universal end path: closing the overlay (its End button OR live:stop, which
+    // close()s it) lands here. Finalize the recording BEFORE stopLive clears the
+    // detector — the engine still holds the library, so track titles resolve.
+    finishLiveSession()
     stopLive()
     // Overlay dismissed directly (not via live:stop) — re-enable throttling so
     // the hidden main renderer doesn't keep burning cycles.
@@ -774,12 +877,21 @@ function registerIpcHandlers(): void {
   ipcMain.handle('collab:host-start', () => startRelay())
   ipcMain.handle('collab:host-stop', () => stopRelay())
 
-  // ── SetSense Live overlay ──────────────────────────────────────────────────
+  // ── SetRecord Live overlay ──────────────────────────────────────────────────
   const pushLive = (data: unknown): void => {
     if (data && overlayWindow && !overlayWindow.isDestroyed()) {
       overlayWindow.webContents.send('live:data', data)
     }
   }
+
+  // The room the DJ picked for this session (Live venue picker). Forwarded to the
+  // overlay for in-the-moment HUD context; the Black Box will anchor reactions to it.
+  ipcMain.handle('live:set-venue', (_e, venue: string | null) => {
+    setLiveVenue(venue)
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.webContents.send('live:venue', venue)
+    }
+  })
 
   ipcMain.handle('live:start', () => {
     showOverlayWindow()
@@ -796,6 +908,13 @@ function registerIpcHandlers(): void {
       // Screen-read + metadata work immediately (match by name), so start the
       // session and tell the overlay to listen right away.
       startLive(lib)
+      // Arm the flight recorder for this session (independent of startLive so the
+      // index-build re-wire below doesn't reset the captured tracklist).
+      beginRecordingSession(Date.now())
+      // Open the audio temp file too; chunks only arrive if the renderer's room
+      // recorder is running (gated by the flightRecorderEnabled setting), so when
+      // the recorder is off this stays empty and is cleaned up on finalize.
+      beginRecording()
       if (overlayWindow && !overlayWindow.isDestroyed()) {
         overlayWindow.webContents.send('live:ready', liveStatus())
       }
@@ -854,11 +973,94 @@ function registerIpcHandlers(): void {
       // never let a bad window crash the main process
     }
   })
+  // Encoded room-mic chunks from the renderer's MediaRecorder → temp audio file.
+  ipcMain.on('live:rec-chunk', (_event, chunk: ArrayBuffer) => {
+    try {
+      appendChunk(Buffer.from(chunk))
+    } catch {
+      // a dropped chunk just shortens the recording; never crash the set
+    }
+  })
+  // Main-window renderer reports recorder on/off → mirror to the overlay's REC dot.
+  ipcMain.on('live:recording-active', (_event, active: boolean) => {
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.webContents.send('live:recording-state', !!active)
+    }
+  })
   // Toggle click-through for the overlay surface. The renderer sends `false`
   // while the pointer is over interactive glass, `true` otherwise.
   ipcMain.on('live:set-ignore-mouse', (_event, ignore: boolean) => {
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       overlayWindow.setIgnoreMouseEvents(!!ignore, { forward: true })
+    }
+  })
+  // Persist the just-ended live set (the DJ chose "Save" on the review sheet).
+  // Each track keeps its own played_at, derived from when it was committed live.
+  ipcMain.handle('live:save-session', (_e, meta?: { venue?: string | null }) => {
+    if (!pendingRecording) {
+      if (pendingAudio) {
+        discardRecording(pendingAudio.tmpPath)
+        pendingAudio = null
+      }
+      return null
+    }
+    const rec = pendingRecording
+    const audio = pendingAudio
+    pendingRecording = null
+    pendingAudio = null
+    const venue = meta?.venue ?? rec.venue
+    const id = createLiveSession(getDb(), {
+      name: venue || 'Live set',
+      venue,
+      performedAt: new Date(rec.startedAtMs).toISOString(),
+      durationSec: Math.round(rec.durationMs / 1000),
+      tracks: rec.entries.map((e) => ({
+        trackId: e.trackId,
+        playedAt: new Date(rec.startedAtMs + e.startMs).toISOString(),
+        startMs: e.startMs,
+        endMs: e.endMs,
+        matchOffsetSec: e.matchOffsetSec
+      }))
+    })
+    // Promote the captured audio into a per-session file and link it.
+    if (id && audio) {
+      try {
+        const promoted = promoteRecording(audio.tmpPath, id)
+        createRecording(getDb(), {
+          sessionId: id,
+          audioFilePath: promoted.filePath,
+          audioFormat: 'webm-opus',
+          durationSec: Math.round(rec.durationMs / 1000),
+          bytes: promoted.bytes,
+          source: 'room-mic'
+        })
+        // EXPERIMENTAL: if enabled, analyse crowd reaction in the background
+        // (decode + NLMS is heavy and not needed synchronously). Notify the
+        // renderer when rows land so the Brief/Résumé can refresh.
+        if (getSettings().reactionCaptureEnabled) {
+          void analyzeSessionReactions(getDb(), id)
+            .then(() => {
+              if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('live:reactions-ready', id)
+              }
+            })
+            .catch((err) => console.error('[live] reaction analysis failed', err))
+        }
+      } catch (err) {
+        console.error('[live] promote recording failed', err)
+        discardRecording(audio.tmpPath)
+      }
+    } else if (audio) {
+      discardRecording(audio.tmpPath)
+    }
+    return id
+  })
+  // The DJ chose "Discard" — drop the captured set + its audio, persist nothing.
+  ipcMain.handle('live:discard-session', () => {
+    pendingRecording = null
+    if (pendingAudio) {
+      discardRecording(pendingAudio.tmpPath)
+      pendingAudio = null
     }
   })
 
@@ -1215,7 +1417,7 @@ function registerIpcHandlers(): void {
     if (!isProEntitled()) return { success: false, error: 'pro_required' }
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
       title: 'Export tags to Rekordbox XML',
-      defaultPath: 'setsense-tags.xml',
+      defaultPath: 'setrecord-tags.xml',
       filters: [{ name: 'Rekordbox XML', extensions: ['xml'] }]
     })
     if (canceled || !filePath) return { success: false, error: 'cancelled' }
@@ -1247,16 +1449,16 @@ function registerIpcHandlers(): void {
   })
 
   // ── Backup & migration ──────────────────────────────────────────────────────
-  // Backendless export/import of the SetSense overlay (tags, sets, sessions,
+  // Backendless export/import of the SetRecord overlay (tags, sets, sessions,
   // crates, lifecycle). Re-links to the destination machine's own library; never
   // touches local file paths. Not Pro-gated — owning and moving your own data is
   // a trust feature, not an upsell.
 
   ipcMain.handle('backup:export', async (_e, passphrase?: string) => {
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
-      title: 'Export SetSense backup',
-      defaultPath: `SetSense-backup-${new Date().toISOString().slice(0, 10)}.setsense`,
-      filters: [{ name: 'SetSense Backup', extensions: ['setsense'] }]
+      title: 'Export SetRecord backup',
+      defaultPath: `SetRecord-backup-${new Date().toISOString().slice(0, 10)}.setrecord`,
+      filters: [{ name: 'SetRecord Backup', extensions: ['setrecord'] }]
     })
     if (canceled || !filePath) return { success: false, error: 'cancelled' }
 
@@ -1291,8 +1493,8 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('backup:pick', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
-      title: 'Choose a SetSense backup',
-      filters: [{ name: 'SetSense Backup', extensions: ['setsense'] }],
+      title: 'Choose a SetRecord backup',
+      filters: [{ name: 'SetRecord Backup', extensions: ['setrecord'] }],
       properties: ['openFile']
     })
     return canceled ? null : filePaths[0]
@@ -1353,6 +1555,11 @@ function registerIpcHandlers(): void {
   // fetch path, which is inconsistent for custom schemes — `<audio>` works,
   // `fetch()` does not.
   ipcMain.handle('audio:read-file', async (_e, filePath: string): Promise<ArrayBuffer | null> => {
+    // Same confinement as the media:// handler — only library files / app caches.
+    if (!isAllowedMediaPath(filePath)) {
+      console.error('[audio:read-file] denied out-of-library path')
+      return null
+    }
     try {
       const buf = await fsp.readFile(filePath)
       // Slice produces a clean ArrayBuffer (not SharedArrayBuffer) for structured clone
@@ -1415,6 +1622,25 @@ function registerIpcHandlers(): void {
     app.exit(0)
   })
 
+  // ── Diagnostic log export (NFR-801 Phase 2) ───────────────────────────────
+  ipcMain.handle('logs:export', async () => {
+    try {
+      const path = await buildLogBundle()
+      return { success: true, path }
+    } catch (e) {
+      return { success: false, error: String(e) }
+    }
+  })
+
+  // Reveal an exported bundle in Finder so the user can attach it to a report.
+  ipcMain.handle('logs:reveal', (_e, path: string) => {
+    shell.showItemInFolder(path)
+  })
+
+  // Per-launch session id + app version, so even an UN-attached bug report can
+  // be correlated to its Sentry issue (which is tagged with the same sid).
+  ipcMain.handle('logs:sid', () => ({ sid: getSessionId(), version: app.getVersion() }))
+
   // ── Retention / activation progress (brief #22, Phase B) ──────────────────
   ipcMain.handle('progress:get', () => getProgress())
   ipcMain.handle('progress:set', (_e, partial: Partial<ProgressState>) => setProgress(partial))
@@ -1422,7 +1648,7 @@ function registerIpcHandlers(): void {
   ipcMain.handle('progress:claimMilestone', (_e, id: string) => claimMilestone(id))
   ipcMain.handle('progress:recordActivity', () => recordActivity())
 
-  // ── Licensing / SetSense Pro (Section 16) ─────────────────────────────────
+  // ── Licensing / SetRecord Pro (Section 16) ─────────────────────────────────
   ipcMain.handle('license:get', () => getLicenseState())
 
   ipcMain.handle('license:activate', (_e, key: string) => activateLicense(key))
@@ -1481,15 +1707,19 @@ function registerIpcHandlers(): void {
       try {
         const to = 'carterpinkmusic@gmail.com'
         const stars = payload.rating > 0 ? ` (${payload.rating}/5)` : ''
-        const subject = `SetSense feedback — ${payload.category}${stars}`
-        const body = [
-          payload.message,
-          '',
-          payload.email ? `Reply to: ${payload.email}` : '',
-          payload.meta ? `\n— ${payload.meta}` : ''
-        ]
-          .filter(Boolean)
-          .join('\n')
+        const subject = `SetRecord feedback — ${payload.category}${stars}`
+        // Bug reports carry a non-identifying sid+version line so even an
+        // un-attached report is correlatable to its Sentry issue. Composition +
+        // the attach decision live in feedbackDiagnostics (unit-tested, no PII).
+        const diagnostics = shouldAttachDiagnostics(payload.category)
+          ? { sid: getSessionId(), version: app.getVersion() }
+          : undefined
+        const body = buildFeedbackBody({
+          message: payload.message,
+          email: payload.email,
+          meta: payload.meta,
+          diagnostics
+        })
         const url = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
         await shell.openExternal(url)
         return true
@@ -1507,7 +1737,7 @@ function registerIpcHandlers(): void {
     const safeName = set.name.replace(/[/\\?%*:|"<>]/g, '-')
     const date = new Date().toISOString().slice(0, 10)
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
-      defaultPath: `${safeName}_SetSense_${date}.xml`,
+      defaultPath: `${safeName}_SetRecord_${date}.xml`,
       filters: [{ name: 'Rekordbox XML', extensions: ['xml'] }]
     })
     if (canceled || !filePath) return { success: false }
@@ -1548,7 +1778,7 @@ function registerIpcHandlers(): void {
     const safeName = (setName || 'set').replace(/[/\\?%*:|"<>]/g, '-')
     const date = new Date().toISOString().slice(0, 10)
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
-      defaultPath: `${safeName}_SetSense_Beatport_${date}.csv`,
+      defaultPath: `${safeName}_SetRecord_Beatport_${date}.csv`,
       filters: [{ name: 'Beatport CSV', extensions: ['csv'] }]
     })
     if (canceled || !filePath) return { success: false }
@@ -1620,6 +1850,11 @@ function registerIpcHandlers(): void {
     return getSessionTracks(getDb(), sessionId)
   })
 
+  // The lo-fi reference recording for a session (Flight Recorder), or null.
+  ipcMain.handle('history:get-recording', (_e, sessionId: string) => {
+    return getRecordingForSession(getDb(), sessionId)
+  })
+
   ipcMain.handle('history:get-for-track', (_e, trackId: string) => {
     return getSessionsForTrack(getDb(), trackId)
   })
@@ -1657,6 +1892,68 @@ function registerIpcHandlers(): void {
     )
   })
 
+  // Track Résumé: a single track's lived reputation across logged gigs (+ reactions).
+  ipcMain.handle('history:track-resume', (_e, trackId: string) => {
+    const db = getDb()
+    const track = getAllTracks(db).find((t) => t.id === trackId)
+    if (!track) return null
+    const sessions: ResumeSession[] = getSessionsForTrack(db, trackId).map((s) => ({
+      id: s.id,
+      performedAt: s.performedAt ?? s.createdAt,
+      venue: s.venue,
+      eventType: s.eventType,
+      trackIds: getSessionTracks(db, s.id).map((st) => st.trackId)
+    }))
+    const reactions: ResumeReaction[] = getReactionsForTrack(db, trackId).map((r) => ({
+      sessionId: r.sessionId,
+      trackId: r.trackId,
+      reactionScore: r.reactionScore,
+      confidence: r.confidence
+    }))
+    return computeTrackResume(track, sessions, reactions)
+  })
+
+  // Sound Mirror: longitudinal drift of the DJ's played sets over time.
+  ipcMain.handle('history:sound-mirror', () => {
+    const db = getDb()
+    const sessions: MirrorSession[] = getSessions(db).map((s) => ({
+      id: s.id,
+      performedAt: s.performedAt ?? s.createdAt,
+      trackIds: getSessionTracks(db, s.id).map((st) => st.trackId)
+    }))
+    return computeSoundMirror(getAllTracks(db), sessions, new Date())
+  })
+
+  // Courage Engine: mixable-but-daring picks out of a reference track, from
+  // outside the comfort zone derived from what the DJ actually plays.
+  ipcMain.handle('history:courage', (_e, trackId: string) => {
+    const db = getDb()
+    const library = getAllTracks(db)
+    const reference = library.find((t) => t.id === trackId)
+    if (!reference) return null
+    const sessions = getSessions(db).map((s) => ({
+      trackIds: getSessionTracks(db, s.id).map((st) => st.trackId)
+    }))
+    return computeCourage(reference, library, { sessions })
+  })
+
+  // Reverse-Shazam: recall a track by the MOMENT it was played (occasion /
+  // position / clock anchor) rather than its metadata.
+  ipcMain.handle('history:reverse-shazam', (_e, hit: ShazamHit) => {
+    const db = getDb()
+    const sessions: ShazamSession[] = getSessions(db).map((s) => {
+      const sts = getSessionTracks(db, s.id)
+      return {
+        id: s.id,
+        performedAt: s.performedAt ?? s.createdAt,
+        venue: s.venue,
+        trackIds: sts.map((st) => st.trackId),
+        trackTimes: sts.map((st) => st.playedAt)
+      }
+    })
+    return computeReverseShazam(hit, getAllTracks(db), sessions, new Date())
+  })
+
   ipcMain.handle('history:query-sessions', (_e, filter: SessionFilter = {}) => {
     return querySessions(getDb(), filter)
   })
@@ -1691,7 +1988,11 @@ function registerIpcHandlers(): void {
   )
 
   ipcMain.handle('history:delete', (_e, sessionId: string) => {
+    // Grab the linked audio path before the row goes (ON DELETE CASCADE drops it),
+    // then unlink the file so deleting a gig doesn't orphan its recording.
+    const recording = getRecordingForSession(getDb(), sessionId)
     deleteSession(getDb(), sessionId)
+    if (recording) deleteRecordingFile(recording.audioFilePath)
   })
 
   ipcMain.handle('history:import-file', async () => {
@@ -1759,6 +2060,10 @@ function registerIpcHandlers(): void {
   )
   ipcMain.handle('recall:ends', () => memoryService.getEnds())
 
+  // ── Constellation graph view ──────────────────────────────────────────────
+
+  ipcMain.handle('graph:build', (_e, req: GraphRequest) => graphService.buildGraph(req))
+
   // ── Recall local-AI layer (Phase 13) ──────────────────────────────────────
 
   ipcMain.handle('recall:ai-status', () => memoryAssistant.getStatus())
@@ -1817,7 +2122,12 @@ app.whenReady().then(async () => {
   // Bail if another instance owns the lock — this process is on its way out.
   if (!gotSingleInstanceLock) return
 
-  electronApp.setAppUserModelId('com.setsense.app')
+  electronApp.setAppUserModelId('com.setrecord.app')
+
+  // Init structured logging first so the rest of startup (DB init, window
+  // creation) is captured. Routes main-process console.* to a redacted NDJSON
+  // file under userData/logs. Safe before crash reporting / DB init.
+  initLogger()
 
   // Init crash reporting before anything else so errors during startup are captured.
   // Only runs when the user has explicitly opted in; default is off.
@@ -1850,6 +2160,12 @@ app.whenReady().then(async () => {
       filePath = decodeURIComponent(new URL(req.url).pathname)
     } catch {
       return new Response(null, { status: 400 })
+    }
+
+    // Confine reads to library files + app caches — a renderer-reachable handler
+    // must never become an arbitrary-file-read primitive (e.g. media://local/etc/passwd).
+    if (!isAllowedMediaPath(filePath)) {
+      return new Response(null, { status: 403 })
     }
 
     try {
@@ -1904,13 +2220,17 @@ app.whenReady().then(async () => {
 
   await initDbWithRecovery()
 
-  // Clean up duplicate setsense sessions created by rapid UI clicks or tests.
+  // Sweep any Flight Recorder temp audio a crash left behind — never silently
+  // retain a recording the DJ didn't explicitly choose to keep.
+  sweepOrphans()
+
+  // Clean up duplicate setrecord sessions created by rapid UI clicks or tests.
   // Runs once on every launch — fast (indexed query), never touches rekordbox sessions.
   try {
-    const pruned = pruneDuplicateSetsenseSessions(getDb())
-    if (pruned > 0) console.log(`[startup] pruned ${pruned} duplicate setsense session(s)`)
+    const pruned = pruneDuplicateSetRecordSessions(getDb())
+    if (pruned > 0) console.log(`[startup] pruned ${pruned} duplicate setrecord session(s)`)
   } catch (err) {
-    console.error('[startup] pruneDuplicateSetsenseSessions failed', err)
+    console.error('[startup] pruneDuplicateSetRecordSessions failed', err)
   }
 
   // Reclaim orphaned album art for tracks that no longer exist (NFR-901 cache
@@ -1939,7 +2259,7 @@ app.whenReady().then(async () => {
     { useSystemPicker: false }
   )
 
-  // Web-layer permission gate. SetSense only ever requests the microphone (voice
+  // Web-layer permission gate. SetRecord only ever requests the microphone (voice
   // input — FR-705) and screen capture (the Live screen-reader); everything else
   // is denied. macOS still enforces its own TCC prompt on top of this. Without an
   // explicit handler we'd inherit Electron's default-grant behaviour, which is

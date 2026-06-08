@@ -1,6 +1,6 @@
 # Telemetry & Crash Reporting
 
-SetSense is offline-first. Audio, your library, and your taste data **never leave
+SetRecord is offline-first. Audio, your library, and your taste data **never leave
 your machine** (NFR-301). The one exception is crash reporting, and it is
 **off by default** and **opt-in only**. This document is the canonical record of
 what the crash reporter collects, how it is configured, and how to opt out — it
@@ -63,7 +63,7 @@ covered by tests in [`tests/reliability.test.ts`](tests/reliability.test.ts).
 - It is injected from CI secrets for release builds only.
 - A DSN is a write-only ingestion key — it cannot be used to read reports — but it
   is kept out of source to avoid quota abuse.
-- The Sentry project ("SetSense Desktop") is owned by the SetSense maintainers.
+- The Sentry project ("SetRecord Desktop") is owned by the SetRecord maintainers.
 
 ## How to opt out
 

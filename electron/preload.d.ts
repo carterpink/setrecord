@@ -14,6 +14,8 @@ import type {
   EnergySource,
   GemResult,
   GenreProfileInfo,
+  GraphData,
+  GraphRequest,
   HealthReport,
   HotCue,
   Loop,
@@ -32,6 +34,8 @@ import type {
   RecallAiStatus,
   RecallAskResult,
   RecallRoute,
+  RecordedSetSummary,
+  SetRecording,
   VoiceStatus,
   MicAccess,
   LibrarySourceId,
@@ -46,6 +50,10 @@ import type {
   SetSlot,
   VenueType,
   BriefAnswer,
+  TrackResume,
+  SoundMirrorResult,
+  CourageResult,
+  ShazamAnswer,
   Set as DJSet,
   SetTrack,
   SmartCrate,
@@ -64,6 +72,7 @@ import type {
 } from '../src/types'
 import type { AppSettings } from './services/settingsService'
 import type { ProgressState, FirstEvent } from './services/progressService'
+import type { ShazamHit } from '../src/utils/reverseShazamIntent'
 
 export interface EnergyProgress {
   processed: number
@@ -103,7 +112,7 @@ export interface EngineExportProgress {
 declare global {
   interface Window {
     electron: ElectronAPI
-    setsense: {
+    setrecord: {
       // Library
       importLibrary: (xmlPath: string) => Promise<ImportResult>
       getLibrary: (filters?: LibraryFilters) => Promise<Track[]>
@@ -209,13 +218,17 @@ declare global {
         mode: 'restore' | 'merge',
         passphrase?: string
       ) => Promise<BackupImportResult>
+      // Diagnostic log export (NFR-801 Phase 2)
+      exportLogs: () => Promise<{ success: boolean; path?: string; error?: string }>
+      revealLogBundle: (path: string) => Promise<void>
+      logSessionInfo: () => Promise<{ sid: string; version: string }>
       // Retention / activation progress (brief #22, Phase B)
       progressGet: () => Promise<ProgressState>
       progressSet: (partial: Partial<ProgressState>) => Promise<ProgressState>
       progressMarkFirst: (event: FirstEvent) => Promise<ProgressState>
       progressClaimMilestone: (id: string) => Promise<boolean>
       progressRecordActivity: () => Promise<ProgressState>
-      // Licensing / SetSense Pro (Section 16)
+      // Licensing / SetRecord Pro (Section 16)
       licenseGet: () => Promise<LicenseState>
       licenseActivate: (key: string) => Promise<LicenseActivationResult>
       licenseDeactivate: () => Promise<LicenseState>
@@ -230,6 +243,7 @@ declare global {
         message: string
         email?: string
         meta?: string
+        diagnostics?: { sid: string; version: string }
       }) => Promise<boolean>
       // USB Detection (Phase 9)
       usbList: () => Promise<USBDevice[]>
@@ -253,8 +267,13 @@ declare global {
       // Play history (Phase 11)
       historySessions: () => Promise<PlaySession[]>
       historySessionTracks: (sessionId: string) => Promise<SessionTrack[]>
+      historyGetRecording: (sessionId: string) => Promise<SetRecording | null>
       historyForTrack: (trackId: string) => Promise<PlaySession[]>
       historyBrief: (venue: string, eventType?: VenueType) => Promise<BriefAnswer>
+      historyTrackResume: (trackId: string) => Promise<TrackResume | null>
+      historySoundMirror: () => Promise<SoundMirrorResult>
+      historyCourage: (trackId: string) => Promise<CourageResult | null>
+      historyReverseShazam: (hit: ShazamHit) => Promise<ShazamAnswer>
       historyQuerySessions: (filter?: SessionFilter) => Promise<PlaySession[]>
       historyUpdateSession: (sessionId: string, patch: SessionMetadataPatch) => Promise<void>
       historyBulkAssign: (filter: SessionFilter, patch: SessionMetadataPatch) => Promise<number>
@@ -306,6 +325,8 @@ declare global {
       recallAiRoute: (question: string, contextJson?: string) => Promise<RecallRoute>
       recallSimilar: (trackId: string, count?: number) => Promise<Track[]>
       recallEnds: () => Promise<{ openers: ComboResult[]; closers: ComboResult[] }>
+      // Constellation graph view
+      buildGraph: (req: GraphRequest) => Promise<GraphData>
       onRecallAiProgress: (cb: (s: RecallAiStatus) => void) => () => void
       // On-device voice (Phase 13)
       speechVoiceStatus: () => Promise<VoiceStatus>
@@ -316,18 +337,26 @@ declare global {
       // Live collaboration (Back-to-Back)
       collabHostStart: () => Promise<{ port: number; secret: string; host: string }>
       collabHostStop: () => Promise<void>
-      // SetSense Live overlay
+      // SetRecord Live overlay
       liveStart: () => Promise<void>
       liveStop: () => Promise<void>
       liveSetIgnoreMouse: (ignore: boolean) => void
       onLiveOverlayClosed: (cb: () => void) => () => void
       liveAudioWindow: (samples: Float32Array) => void
+      liveRecChunk: (chunk: ArrayBuffer) => void
+      liveRecordingActive: (active: boolean) => void
+      onLiveRecordingState: (cb: (active: boolean) => void) => () => void
       liveScreenText: (lines: string[]) => void
+      liveSetVenue: (venue: string | null) => Promise<void>
+      onLiveVenue: (cb: (venue: string | null) => void) => () => void
       onLiveData: (
         cb: (data: import('./services/live/liveEngine').LiveDataPayload) => void
       ) => () => void
       onLiveIndexProgress: (cb: (p: { done: number; total: number }) => void) => () => void
       onLiveReady: (cb: (s: { indexedTracks: number }) => void) => () => void
+      onLiveRecordingReady: (cb: (rec: RecordedSetSummary) => void) => () => void
+      liveSaveSession: (meta?: { venue?: string | null }) => Promise<string | null>
+      liveDiscardSession: () => Promise<void>
     }
   }
 }

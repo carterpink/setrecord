@@ -221,7 +221,7 @@ function drawCard(ctx: CanvasRenderingContext2D, snap: IdentitySnapshot, t: TFun
   ctx.fillText(madeWith, 60, CARD_H - 50)
   ctx.fillStyle = COLOUR_ACCENT
   ctx.font = `600 13px ${FONT_SANS}`
-  ctx.fillText('setsense', 60 + ctx.measureText(`${madeWith} `).width, CARD_H - 50)
+  ctx.fillText('setrecord', 60 + ctx.measureText(`${madeWith} `).width, CARD_H - 50)
 
   ctx.restore()
 }
@@ -324,7 +324,7 @@ export function IdentityShareCard({ identity }: { identity: IdentitySnapshot }):
       const url = URL.createObjectURL(png)
       const a = document.createElement('a')
       a.href = url
-      a.download = `setsense-identity-${new Date().toISOString().slice(0, 10)}.png`
+      a.download = `setrecord-identity-${new Date().toISOString().slice(0, 10)}.png`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)

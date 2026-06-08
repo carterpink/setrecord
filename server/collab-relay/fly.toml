@@ -1,8 +1,8 @@
-# Fly.io config for the SetSense collab relay.
+# Fly.io config for the SetRecord collab relay.
 # Deploy:  fly launch --no-deploy   (then edit app name)  ->  fly deploy
 # Fly terminates TLS at the edge, so clients connect to wss://<app>.fly.dev.
 
-app = "setsense-collab-relay"
+app = "setrecord-collab-relay"
 primary_region = "syd"
 
 [build]
