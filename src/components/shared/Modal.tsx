@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import FocusLock from 'react-focus-lock'
 import { motion, modalBackdrop, modalPanel } from './Motion'
+import GrainBloom, { type BloomTone } from '@/components/atmosphere/GrainBloom'
+import { type BloomIcon } from '@/components/atmosphere/bloomIcons'
 
 /**
  * Shared modal primitive. Centralises the accessibility contract that every
@@ -46,6 +48,8 @@ interface ModalProps {
   closeOnBackdrop?: boolean
   /** Allow Escape to close (default true). Set false for blocking flows (e.g. onboarding). */
   closeOnEscape?: boolean
+  /** Optional grit background glyph behind the panel (a quiet neon grain bloom). */
+  bloom?: { icon?: BloomIcon; tone?: BloomTone }
   children: React.ReactNode
 }
 
@@ -59,6 +63,7 @@ export function Modal({
   style,
   closeOnBackdrop = true,
   closeOnEscape = true,
+  bloom,
   children
 }: ModalProps): React.JSX.Element {
   // Escape closes — bound to the document so it fires regardless of which
@@ -96,7 +101,7 @@ export function Modal({
     >
       <FocusLock returnFocus>
         <motion.div
-          className={`modal glass-3${className ? ` ${className}` : ''}`}
+          className={`modal glass-3${bloom ? ' grit-bloomhost' : ''}${className ? ` ${className}` : ''}`}
           variants={modalPanel}
           initial="hidden"
           animate="visible"
@@ -109,6 +114,14 @@ export function Modal({
           aria-describedby={describedById}
           onClick={(e) => e.stopPropagation()}
         >
+          {bloom && (
+            <GrainBloom
+              className="grainbloom--modal"
+              icon={bloom.icon}
+              tone={bloom.tone ?? 'lime'}
+              seed={3}
+            />
+          )}
           {children}
         </motion.div>
       </FocusLock>

@@ -99,7 +99,12 @@ export function FeedbackModal(): React.JSX.Element {
   }
 
   return (
-    <Modal onClose={closeModal} ariaLabel={t('feedback.title')} maxWidth={460}>
+    <Modal
+      onClose={closeModal}
+      ariaLabel={t('feedback.title')}
+      maxWidth={460}
+      bloom={{ icon: 'mail', tone: 'lime' }}
+    >
       <div className="modal-header">
         <div>
           <span className="ss-h2">{t('feedback.title')}</span>
@@ -141,7 +146,7 @@ export function FeedbackModal(): React.JSX.Element {
                 className="ss-caption"
                 style={{ color: 'var(--text-tertiary)', textAlign: 'center', marginTop: 6 }}
               >
-                Logs couldn't be attached this time — your report still sent.
+                Logs couldn’t be attached this time — your report still sent.
               </p>
             )}
             <div className="feedback-sent-actions">

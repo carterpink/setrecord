@@ -18,6 +18,8 @@ import { useCanUse } from '@/stores/licenseStore'
 import { ProLock } from '@/components/shared/ProGate'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { NoLibraryState } from '@/components/shared/NoLibraryState'
+import GrainBloom, { type BloomTone } from '@/components/atmosphere/GrainBloom'
+import { type BloomIcon } from '@/components/atmosphere/bloomIcons'
 import { UncoverSection } from './UncoverSection'
 import { RediscoverSection } from './RediscoverSection'
 import { CratesSection } from './CratesSection'
@@ -41,6 +43,22 @@ const NAV: { id: RecallSection; labelKey: string; icon: typeof Sparkles }[] = [
   { id: 'identity', labelKey: 'nav.identity', icon: Fingerprint },
   { id: 'health', labelKey: 'nav.health', icon: HeartPulse }
 ]
+
+// Each recall section gets its own neon glyph emerging from the top-right corner
+// — a quiet, sectioned echo of the landing page's per-chapter grain blooms.
+const SECTION_BLOOM: Record<RecallSection, { icon: BloomIcon; tone: BloomTone }> = {
+  graph: { icon: 'brain', tone: 'cyan' },
+  crates: { icon: 'layers', tone: 'lime' },
+  tags: { icon: 'search', tone: 'magenta' },
+  uncover: { icon: 'search', tone: 'cyan' },
+  rediscover: { icon: 'sparkles', tone: 'violet' },
+  combos: { icon: 'activity', tone: 'lime' },
+  gigs: { icon: 'radio', tone: 'magenta' },
+  venues: { icon: 'users', tone: 'cyan' },
+  identity: { icon: 'activity', tone: 'lime' },
+  health: { icon: 'shield', tone: 'violet' },
+  conversations: { icon: 'brain', tone: 'lime' }
+}
 
 export function RecallPanel(): React.JSX.Element {
   const { t } = useTranslation('recall')
@@ -75,7 +93,17 @@ export function RecallPanel(): React.JSX.Element {
         ))}
       </aside>
 
-      <div className="recall-body">
+      <div className="recall-body grit-bloomhost">
+        {/* Per-section neon glyph in the corner (skipped for the graph, which has
+            its own full-bleed dark constellation canvas + film grain). */}
+        {hasLibrary && section !== 'graph' && (
+          <GrainBloom
+            className="grainbloom--recall"
+            icon={SECTION_BLOOM[section].icon}
+            tone={SECTION_BLOOM[section].tone}
+            seed={9}
+          />
+        )}
         {/* Each section is isolated: a crash in one is caught here (keyed by
             section so it's a fresh boundary per view, with resetKeys as a
             belt-and-braces auto-reset on navigation). The nav above stays

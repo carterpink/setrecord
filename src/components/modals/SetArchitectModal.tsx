@@ -309,7 +309,12 @@ export function SetArchitectModal(): React.JSX.Element {
   const subtitle = phase === 'form' ? t('architect.subtitleForm') : t('architect.subtitleResult')
 
   return (
-    <Modal onClose={closeModal} ariaLabel="Set Architect" maxWidth={520}>
+    <Modal
+      onClose={closeModal}
+      ariaLabel="Set Architect"
+      maxWidth={520}
+      bloom={{ icon: 'layers', tone: 'cyan' }}
+    >
       {/* Header */}
       <div className="modal-header">
         <div>

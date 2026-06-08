@@ -137,6 +137,7 @@ export function UpgradeModal(): React.JSX.Element {
       ariaLabel={t('upgrade.ariaLabel', { app: APP_NAME })}
       maxWidth={720}
       className="upgrade-modal"
+      bloom={{ icon: 'sparkles', tone: 'lime' }}
     >
       <div className="modal-header">
         <div className="upgrade-title">

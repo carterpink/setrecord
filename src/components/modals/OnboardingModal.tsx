@@ -45,6 +45,7 @@ export function OnboardingModal(): React.JSX.Element {
       style={{ maxWidth: 480, width: '100%', textAlign: 'center' }}
       closeOnBackdrop={false}
       closeOnEscape={false}
+      bloom={{ icon: 'brain', tone: 'lime' }}
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
@@ -57,7 +58,7 @@ export function OnboardingModal(): React.JSX.Element {
           {step === 'welcome' && (
             <>
               <div style={{ padding: '8px 0 24px' }}>
-                <div className="ss-h1" style={{ marginBottom: 8 }}>
+                <div className="ss-h1 grit-serif" style={{ marginBottom: 8 }}>
                   {t('onboarding.welcomeTitle', { app: APP_NAME })}
                 </div>
                 <div className="ss-body" style={{ opacity: 0.7 }}>
@@ -128,7 +129,7 @@ export function OnboardingModal(): React.JSX.Element {
           {step === 'proficiency' && (
             <>
               <div style={{ padding: '8px 0 20px' }}>
-                <div className="ss-h2" style={{ marginBottom: 8 }}>
+                <div className="ss-h2 grit-serif" style={{ marginBottom: 8 }}>
                   {t('onboarding.proficiencyTitle')}
                 </div>
                 <div className="ss-body" style={{ opacity: 0.7 }}>
@@ -180,7 +181,7 @@ export function OnboardingModal(): React.JSX.Element {
           {step === 'import' && (
             <>
               <div style={{ padding: '8px 0 24px' }}>
-                <div className="ss-h2" style={{ marginBottom: 8 }}>
+                <div className="ss-h2 grit-serif" style={{ marginBottom: 8 }}>
                   {t('onboarding.findTitle')}
                 </div>
                 <div className="ss-body" style={{ opacity: 0.7 }}>

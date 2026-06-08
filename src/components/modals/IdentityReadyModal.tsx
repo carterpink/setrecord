@@ -13,7 +13,12 @@ export function IdentityReadyModal(): React.JSX.Element {
   const identity = useRecallStore((s) => s.identity)
 
   return (
-    <Modal onClose={closeModal} ariaLabel={t('identity.title')} className="identity-ready-modal">
+    <Modal
+      onClose={closeModal}
+      ariaLabel={t('identity.title')}
+      className="identity-ready-modal"
+      bloom={{ icon: 'activity', tone: 'magenta' }}
+    >
       <div className="modal-header">
         <div className="identity-ready-heading">
           <Fingerprint size={18} strokeWidth={1.7} className="identity-ready-icon" />

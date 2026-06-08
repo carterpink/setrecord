@@ -42,7 +42,12 @@ export function PostGigPromptModal(): React.JSX.Element | null {
   }
 
   return (
-    <Modal onClose={closeModal} ariaLabel={t('postGig.ariaLabel')} maxWidth={520}>
+    <Modal
+      onClose={closeModal}
+      ariaLabel={t('postGig.ariaLabel')}
+      maxWidth={520}
+      bloom={{ icon: 'radio', tone: 'violet' }}
+    >
       <div className="modal-header">
         <div>
           <span className="ss-h2">{t('postGig.title', { count: data.tracks.length })}</span>

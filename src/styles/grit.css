@@ -133,6 +133,22 @@
   transform: translate(-50%, -50%);
   opacity: 0.8;
 }
+/* Recall sections: a neon glyph emerging from the top-right corner, per section. */
+.grainbloom--recall {
+  width: min(40vw, 460px);
+  height: min(40vw, 460px);
+  right: -7%;
+  top: -9%;
+  opacity: 0.5;
+}
+/* Modal header watermark — a quiet glyph behind the title row. */
+.grainbloom--modal {
+  width: min(62%, 380px);
+  height: min(62%, 380px);
+  right: -9%;
+  top: -14%;
+  opacity: 0.42;
+}
 
 /* Under the legacy theme, blooms are silent (the aurora carries the colour). */
 [data-theme='aurora'] .grainbloom {
@@ -172,8 +188,8 @@
 /* Display-tier heads that already exist in the app, promoted to the serif:
    modal titles + recall section heroes. Scoped tightly so dense .ss-h2 chrome
    elsewhere stays on the geometric sans. Reverts to sans under aurora. */
-.modal-header > .ss-h2,
-.modal-header > .ss-h1,
+.modal-header .ss-h2,
+.modal-header .ss-h1,
 .recall-section-head .ss-h2,
 .recall-section-head-row .ss-h2 {
   font-family: var(--font-display);

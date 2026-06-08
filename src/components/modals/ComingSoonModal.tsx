@@ -15,7 +15,13 @@ export function ComingSoonModal({ feature, phase }: Props): React.JSX.Element {
   const { closeModal } = useUiStore()
 
   return (
-    <Modal onClose={closeModal} ariaLabel={feature} maxWidth={400} style={{ textAlign: 'center' }}>
+    <Modal
+      onClose={closeModal}
+      ariaLabel={feature}
+      maxWidth={400}
+      style={{ textAlign: 'center' }}
+      bloom={{ icon: 'sparkles', tone: 'cyan' }}
+    >
       <div className="modal-header" style={{ justifyContent: 'flex-end', paddingBottom: 0 }}>
         <IconButton icon={X} size="sm" aria-label={t('common.close')} onClick={closeModal} />
       </div>
