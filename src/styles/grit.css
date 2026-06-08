@@ -133,20 +133,22 @@
   transform: translate(-50%, -50%);
   opacity: 0.8;
 }
-/* Recall sections: a neon glyph emerging from the top-right corner, per section. */
+/* Recall sections: a neon glyph nestled in the top-right corner. Anchored with
+   EVEN positive margins (not negative offsets) so the icon is never clipped by the
+   panel's overflow — it sits in the corner with breathing room on both sides. */
 .grainbloom--recall {
-  width: min(40vw, 460px);
-  height: min(40vw, 460px);
-  right: -7%;
-  top: -9%;
-  opacity: 0.5;
+  width: min(30vw, 300px);
+  height: min(30vw, 300px);
+  right: 20px;
+  top: 20px;
+  opacity: 0.55;
 }
-/* Modal header watermark — a quiet glyph behind the title row. */
+/* Modal corner glyph — same even-margin anchoring, scaled to the panel. */
 .grainbloom--modal {
-  width: min(62%, 380px);
-  height: min(62%, 380px);
-  right: -9%;
-  top: -14%;
+  width: min(44%, 268px);
+  height: min(44%, 268px);
+  right: 16px;
+  top: 16px;
   opacity: 0.42;
 }
 

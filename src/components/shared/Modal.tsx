@@ -119,6 +119,7 @@ export function Modal({
               className="grainbloom--modal"
               icon={bloom.icon}
               tone={bloom.tone ?? 'lime'}
+              sizeFrac={0.82}
               seed={3}
             />
           )}

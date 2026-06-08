@@ -44,19 +44,20 @@ const NAV: { id: RecallSection; labelKey: string; icon: typeof Sparkles }[] = [
   { id: 'health', labelKey: 'nav.health', icon: HeartPulse }
 ]
 
-// Each recall section gets its own neon glyph emerging from the top-right corner
-// — a quiet, sectioned echo of the landing page's per-chapter grain blooms.
+// Each recall section's corner bloom is that tab's OWN lucide glyph (see NAV
+// above) — the grain takes the exact icon shape, so the decoration reads as a
+// large, soft echo of the active tab.
 const SECTION_BLOOM: Record<RecallSection, { icon: BloomIcon; tone: BloomTone }> = {
-  graph: { icon: 'brain', tone: 'cyan' },
+  graph: { icon: 'waypoints', tone: 'cyan' },
   crates: { icon: 'layers', tone: 'lime' },
-  tags: { icon: 'search', tone: 'magenta' },
-  uncover: { icon: 'search', tone: 'cyan' },
+  tags: { icon: 'tag', tone: 'magenta' },
+  uncover: { icon: 'telescope', tone: 'cyan' },
   rediscover: { icon: 'sparkles', tone: 'violet' },
-  combos: { icon: 'activity', tone: 'lime' },
-  gigs: { icon: 'radio', tone: 'magenta' },
-  venues: { icon: 'users', tone: 'cyan' },
-  identity: { icon: 'activity', tone: 'lime' },
-  health: { icon: 'shield', tone: 'violet' },
+  combos: { icon: 'arrowLeftRight', tone: 'lime' },
+  gigs: { icon: 'mapPin', tone: 'magenta' },
+  venues: { icon: 'building2', tone: 'cyan' },
+  identity: { icon: 'fingerprint', tone: 'lime' },
+  health: { icon: 'heartPulse', tone: 'violet' },
   conversations: { icon: 'brain', tone: 'lime' }
 }
 
@@ -101,6 +102,7 @@ export function RecallPanel(): React.JSX.Element {
             className="grainbloom--recall"
             icon={SECTION_BLOOM[section].icon}
             tone={SECTION_BLOOM[section].tone}
+            sizeFrac={0.82}
             seed={9}
           />
         )}

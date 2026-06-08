@@ -160,6 +160,109 @@ export const BLOOM_ICONS: Record<string, IconDef> = {
       'm22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'
     ]
   },
+  // ── Recall section stencils — the EXACT lucide glyph shown on each Library tab,
+  // so each section's bloom is its own tab icon. Circles/lines are pre-converted to
+  // path `d` strings (implicit-arc style, like search/vinyl above) so they stroke
+  // identically. vb/sw match lucide's 24-box, 2px source.
+  // Constellation (Waypoints)
+  waypoints: {
+    vb: 24,
+    sw: 2,
+    thicken: 2,
+    paths: [
+      'M14.5 4.5a2.5 2.5 0 1 0-5 0 2.5 2.5 0 1 0 5 0',
+      'm10.2 6.3-3.9 3.9',
+      'M7 12a2.5 2.5 0 1 0-5 0 2.5 2.5 0 1 0 5 0',
+      'M7 12h10',
+      'M22 12a2.5 2.5 0 1 0-5 0 2.5 2.5 0 1 0 5 0',
+      'm13.8 17.7 3.9-3.9',
+      'M14.5 19.5a2.5 2.5 0 1 0-5 0 2.5 2.5 0 1 0 5 0'
+    ]
+  },
+  // Tags (Tag)
+  tag: {
+    vb: 24,
+    sw: 2,
+    thicken: 2.6,
+    paths: [
+      'M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z',
+      'M8 7.5a.5 .5 0 1 0-1 0 .5 .5 0 1 0 1 0'
+    ]
+  },
+  // Uncover (Telescope)
+  telescope: {
+    vb: 24,
+    sw: 2,
+    thicken: 2.2,
+    paths: [
+      'm10.065 12.493-6.18 1.318a.934.934 0 0 1-1.108-.702l-.537-2.15a1.07 1.07 0 0 1 .691-1.265l13.504-4.44',
+      'm13.56 11.747 4.332-.924',
+      'm16 21-3.105-6.21',
+      'M16.485 5.94a2 2 0 0 1 1.455-2.425l1.09-.272a1 1 0 0 1 1.212.727l1.515 6.06a1 1 0 0 1-.727 1.213l-1.09.272a2 2 0 0 1-2.425-1.455z',
+      'm6.158 8.633 1.114 4.456',
+      'm8 21 3.105-6.21',
+      'M14 13a2 2 0 1 0-4 0 2 2 0 1 0 4 0'
+    ]
+  },
+  // Combos (ArrowLeftRight)
+  arrowLeftRight: {
+    vb: 24,
+    sw: 2,
+    thicken: 2.6,
+    paths: ['M8 3 4 7l4 4', 'M4 7h16', 'm16 21 4-4-4-4', 'M20 17H4']
+  },
+  // Gigs (MapPin)
+  mapPin: {
+    vb: 24,
+    sw: 2,
+    thicken: 2.4,
+    paths: [
+      'M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0',
+      'M15 10a3 3 0 1 0-6 0 3 3 0 1 0 6 0'
+    ]
+  },
+  // Venues (Building2)
+  building2: {
+    vb: 24,
+    sw: 2,
+    thicken: 2.4,
+    paths: [
+      'M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z',
+      'M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2',
+      'M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2',
+      'M10 6h4',
+      'M10 10h4',
+      'M10 14h4',
+      'M10 18h4'
+    ]
+  },
+  // Health (HeartPulse)
+  heartPulse: {
+    vb: 24,
+    sw: 2,
+    thicken: 2.4,
+    paths: [
+      'M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z',
+      'M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27'
+    ]
+  },
+  // Identity (Fingerprint)
+  fingerprint: {
+    vb: 24,
+    sw: 2,
+    thicken: 2.2,
+    paths: [
+      'M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4',
+      'M14 13.12c0 2.38 0 6.38-1 8.88',
+      'M17.29 21.02c.12-.6.43-2.3.5-3.02',
+      'M2 12a10 10 0 0 1 18-6',
+      'M2 16h.01',
+      'M21.8 16c.2-2 .131-5.354 0-6',
+      'M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2',
+      'M8.65 22c.21-.66.45-1.32.57-2',
+      'M9 6.8a6 6 0 0 1 9 5.2v2'
+    ]
+  },
   // Brand glyph (kept for reference; not used as a bloom)
   glyph: {
     vb: 1024,
