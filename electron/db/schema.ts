@@ -279,7 +279,12 @@ export function createSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_session_tracks_track ON session_tracks(track_id);
     CREATE INDEX IF NOT EXISTS idx_play_sessions_performed ON play_sessions(performed_at);
     CREATE INDEX IF NOT EXISTS idx_play_sessions_venue ON play_sessions(venue);
-    CREATE INDEX IF NOT EXISTS idx_play_sessions_method ON play_sessions(method);
+    -- NOTE: the index on play_sessions(method) is intentionally NOT created here.
+    -- createSchema runs BEFORE migrations (initDb), and method is a column added by
+    -- the v23 migration. On a pre-v23 DB this table has no method column yet, so
+    -- creating the index here threw no-such-column-method and aborted startup before
+    -- the migration could run. The v23 migration creates the index itself (after the
+    -- ADD COLUMN) and always runs, including on new DBs.
 
     CREATE TABLE IF NOT EXISTS smart_crates (
       id TEXT PRIMARY KEY,

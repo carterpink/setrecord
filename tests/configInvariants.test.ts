@@ -54,3 +54,29 @@ describe('schema version pin', () => {
     expect(declared).toBe(Math.max(...versions))
   })
 })
+
+describe('createSchema must not index migration-added columns', () => {
+  // createSchema() runs BEFORE migrations in initDb. A column added later via
+  // `ALTER TABLE … ADD COLUMN` does not exist on a not-yet-migrated DB, so any
+  // `CREATE INDEX … ON t(col)` for such a column in createSchema throws
+  // "no such column: col" and aborts startup before the migration can run.
+  // (Regression: idx_play_sessions_method crashed every pre-v23 library on open.)
+  // Indexes on migration-added columns belong in the migration, after ADD COLUMN.
+  const schema = read('../electron/db/schema.ts')
+  const migrations = read('../electron/db/migrations.ts')
+
+  it('no createSchema index references a column added by an ALTER TABLE migration', () => {
+    const altered = new Set(
+      [...migrations.matchAll(/ADD COLUMN\s+(\w+)/g)].map((m) => m[1])
+    )
+    expect(altered.size).toBeGreaterThan(0)
+
+    const offenders: string[] = []
+    for (const m of schema.matchAll(/CREATE INDEX[^(]*\bON\s+\w+\s*\(([^)]+)\)/g)) {
+      for (const col of m[1].split(',').map((c) => c.trim())) {
+        if (altered.has(col)) offenders.push(`${m[0].trim()} → column "${col}"`)
+      }
+    }
+    expect(offenders, `createSchema indexes a migration-added column:\n${offenders.join('\n')}`).toEqual([])
+  })
+})
