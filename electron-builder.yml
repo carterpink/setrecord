@@ -23,6 +23,12 @@ files:
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml,package-lock.json}'
   - '!*.pem'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  # ffmpeg-static's prebuilt binary is --enable-nonfree (legally UNREDISTRIBUTABLE)
+  # — never ship it. The app spawns the vendored LGPL build from resources/ffmpeg
+  # instead (see extraResources + electron/services/ffmpegBinary.ts). The package's
+  # JS stays (harmless dev fallback path); only the binary is dropped.
+  - '!node_modules/ffmpeg-static/ffmpeg'
+  - '!node_modules/ffmpeg-static/ffmpeg.exe'
 # The Recall language model (~1.9 GB) ships in the app bundle so "Extended
 # understanding" works offline from first launch. `scripts/fetch-model.mjs`
 # populates resources/models before packaging (wired into build:mac /
@@ -38,13 +44,16 @@ extraResources:
   # to satisfy attribution/notice obligations. See THIRD_PARTY_LICENSES.md.
   - from: THIRD_PARTY_LICENSES.md
     to: THIRD_PARTY_LICENSES.md
+  # The vendored, REDISTRIBUTABLE LGPL ffmpeg binary (built by
+  # scripts/build-ffmpeg-lgpl.sh). Resolves to <Resources>/ffmpeg/ffmpeg at
+  # runtime — see electron/services/ffmpegBinary.ts. Replaces the nonfree
+  # ffmpeg-static binary excluded above.
+  - from: resources/ffmpeg
+    to: ffmpeg
+    filter:
+      - '**/*'
 asarUnpack:
   - resources/**
-  # ffmpeg-static ships an extensionless native executable. A binary inside the
-  # asar archive cannot be spawned (child_process needs a real on-disk path), so
-  # it MUST be unpacked. The resolved path is rewritten app.asar → app.asar.unpacked
-  # at runtime in electron/services/ffmpegBinary.ts.
-  - node_modules/ffmpeg-static/**
   # node-llama-cpp loads native llama.cpp binaries at runtime — must live outside the asar.
   - node_modules/node-llama-cpp/**
   - node_modules/@node-llama-cpp/**

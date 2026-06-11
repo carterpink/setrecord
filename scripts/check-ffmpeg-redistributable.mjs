@@ -16,10 +16,34 @@
  */
 import { execFileSync } from 'node:child_process'
 import { createRequire } from 'node:module'
+import { existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import path from 'node:path'
 
 const require = createRequire(import.meta.url)
-/** ffmpeg-static default-exports the absolute path to the binary (or null). */
-const ffmpegPath = require('ffmpeg-static')
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+
+/**
+ * Resolve which binary to vet, in priority order:
+ *   1. --bin <path> CLI arg (used by the build script to self-verify)
+ *   2. the vendored clean LGPL binary at resources/ffmpeg/ffmpeg (what SHIPS)
+ *   3. ffmpeg-static's prebuilt (dev fallback — the nonfree one we're replacing)
+ */
+function resolveTarget() {
+  const argIdx = process.argv.indexOf('--bin')
+  if (argIdx !== -1 && process.argv[argIdx + 1]) return process.argv[argIdx + 1]
+
+  const vendored = path.join(root, 'resources', 'ffmpeg', 'ffmpeg')
+  if (existsSync(vendored)) return vendored
+
+  try {
+    return require('ffmpeg-static')
+  } catch {
+    return null
+  }
+}
+
+const ffmpegPath = resolveTarget()
 
 if (!ffmpegPath) {
   console.error('✗ ffmpeg: no binary resolved for this platform/arch')

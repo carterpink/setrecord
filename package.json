@@ -14,6 +14,7 @@
     "test:watch": "vitest",
     "test:smoke": "node tests/smoke/launch.smoke.mjs",
     "check:ffmpeg": "node scripts/check-ffmpeg-redistributable.mjs",
+    "build:ffmpeg": "bash scripts/build-ffmpeg-lgpl.sh",
     "bench": "npm run bench:node",
     "bench:node": "vitest run --config vitest.bench.config.ts",
     "bench:fixtures": "vitest run --config vitest.fixtures.config.ts",
@@ -27,7 +28,7 @@
     "build:unpack": "npm run fetch-model && npm run build && electron-builder --dir",
     "icons": "node scripts/generate-icons.mjs",
     "fetch-model": "node scripts/fetch-model.mjs",
-    "build:mac": "npm run icons && npm run fetch-model && electron-vite build && electron-builder --mac"
+    "build:mac": "npm run icons && npm run build:ffmpeg && npm run check:ffmpeg && npm run fetch-model && electron-vite build && electron-builder --mac"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

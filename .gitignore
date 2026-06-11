@@ -6,6 +6,10 @@ out
 # scripts/fetch-model.mjs. Too large to commit; ships via electron-builder.
 resources/models/
 *.gguf
+
+# Vendored LGPL ffmpeg binary — ~10-20 MB, built at build time by
+# scripts/build-ffmpeg-lgpl.sh. Not committed; ships via electron-builder.
+resources/ffmpeg/
 .DS_Store
 .eslintcache
 *.log*

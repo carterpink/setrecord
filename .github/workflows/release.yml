@@ -51,10 +51,12 @@ jobs:
       - name: Gate — typecheck · lint · test
         run: npm run typecheck && npm run lint && npm test
 
-      # Legal gate: refuse to notarize/ship a non-redistributable (--enable-nonfree)
-      # ffmpeg. Hard-fails the release until the bundled binary is an LGPL build.
-      - name: Gate — ffmpeg is redistributable
-        run: npm run check:ffmpeg
+      # Build the vendored LGPL ffmpeg, then refuse to continue unless it is
+      # redistributable (no --enable-nonfree). Hard legal gate before notarize/ship.
+      - name: Build + gate — redistributable LGPL ffmpeg
+        run: |
+          npm run build:ffmpeg
+          npm run check:ffmpeg
 
       - name: Build, sign, notarize & publish the DMG
         env:

@@ -1,20 +1,45 @@
-import ffmpegPath from 'ffmpeg-static'
+import { existsSync } from 'fs'
+import { join } from 'path'
+import { app } from 'electron'
+import ffmpegStaticPath from 'ffmpeg-static'
 
 /**
- * Absolute path to the bundled ffmpeg binary, corrected for Electron packaging.
+ * Absolute path to the ffmpeg binary SetRecord spawns to decode audio (energy
+ * analysis, fingerprinting) and extract embedded artwork.
  *
- * ffmpeg-static resolves the binary relative to its own `__dirname`. In a
- * packaged build that sits *inside* `app.asar`, and a binary inside an asar
- * archive cannot be spawned (`child_process` needs a real on-disk path).
- * electron-builder unpacks `node_modules/ffmpeg-static/**` to `app.asar.unpacked`
- * (see asarUnpack in electron-builder.yml), so we rewrite the path to the real
- * on-disk copy. The replace is a no-op in dev (no `app.asar` segment) and the
- * value is `null` when ffmpeg-static has no binary for this platform/arch.
+ * Resolution order:
+ *  1. The vendored, REDISTRIBUTABLE LGPL build at resources/ffmpeg/ffmpeg — built
+ *     by scripts/build-ffmpeg-lgpl.sh and bundled via electron-builder
+ *     extraResources (→ <Resources>/ffmpeg/ffmpeg in the packaged app). This is
+ *     what ships.
+ *  2. ffmpeg-static's prebuilt binary — DEV ONLY. That build is --enable-nonfree
+ *     (legally unredistributable) and its binary is excluded from the packaged
+ *     app (see electron-builder.yml `files`), so this fallback only ever fires in
+ *     `npm run dev` before `npm run build:ffmpeg` has produced the vendored copy.
+ *     The release guard (npm run check:ffmpeg) blocks shipping the nonfree build.
  *
- * ffmpeg-static is typed as `any`, so the cast keeps strict-null handling honest.
+ * `null` when neither is available (ffmpeg-static is typed `any`, hence the cast).
  */
-const raw = (ffmpegPath as unknown as string | null) ?? null
+function resolveVendored(): string | null {
+  try {
+    if (app.isPackaged) {
+      const p = join(process.resourcesPath, 'ffmpeg', 'ffmpeg')
+      return existsSync(p) ? p : null
+    }
+    const candidates = [
+      join(app.getAppPath(), 'resources', 'ffmpeg', 'ffmpeg'),
+      join(process.cwd(), 'resources', 'ffmpeg', 'ffmpeg')
+    ]
+    return candidates.find((p) => existsSync(p)) ?? null
+  } catch {
+    return null
+  }
+}
 
-export const FFMPEG_BIN: string | null = raw
-  ? raw.replace('app.asar', 'app.asar.unpacked')
-  : null
+function resolveDevFallback(): string | null {
+  const raw = (ffmpegStaticPath as unknown as string | null) ?? null
+  // The binary is asar-unpacked in dev only; rewrite is a no-op outside a package.
+  return raw ? raw.replace('app.asar', 'app.asar.unpacked') : null
+}
+
+export const FFMPEG_BIN: string | null = resolveVendored() ?? resolveDevFallback()
