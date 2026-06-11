@@ -24,7 +24,7 @@ const REPO_OWNER = 'carterpink'
 // MUST stay in sync with the `publish.repo` in electron-builder.yml — a mismatch
 // makes the update API 404 silently, leaving every installed build unable to
 // learn about new releases (incl. security patches). Guarded by a test.
-const REPO_NAME = 'setrecordv2'
+const REPO_NAME = 'setrecord'
 const LATEST_RELEASE_API = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest`
 const RELEASES_LIST_API = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases?per_page=10`
 const RELEASES_PAGE = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/latest`

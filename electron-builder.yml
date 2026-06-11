@@ -126,5 +126,5 @@ npmRebuild: false
 publish:
   provider: github
   owner: carterpink
-  repo: setrecordv2
+  repo: setrecord
   releaseType: release
