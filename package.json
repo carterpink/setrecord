@@ -12,6 +12,7 @@
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:smoke": "node tests/smoke/launch.smoke.mjs",
     "bench": "npm run bench:node",
     "bench:node": "vitest run --config vitest.bench.config.ts",
     "bench:fixtures": "vitest run --config vitest.fixtures.config.ts",

@@ -226,30 +226,32 @@ describe('crashReporter', () => {
     mockSentryInit.mockReset()
     mockSentryClose.mockReset()
     mockSentryClose.mockImplementation(() => Promise.resolve(true))
-    // Ensure the module picks up our env override on each test
+    // Clear any env stub from a prior test, then drop the module cache so the
+    // next dynamic import re-reads import.meta.env.VITE_SENTRY_DSN fresh. The
+    // crash reporter reads the DSN from import.meta.env (Vite-injected), NOT
+    // process.env — so tests MUST drive it via vi.stubEnv, not process.env.
+    vi.unstubAllEnvs()
     vi.resetModules()
   })
 
   it('is a no-op when SENTRY_DSN is not set', async () => {
-    delete process.env.SENTRY_DSN
+    vi.stubEnv('VITE_SENTRY_DSN', '')
     const { initCrashReporter } = await import('../electron/services/crashReporter')
     initCrashReporter()
     expect(mockSentryInit).not.toHaveBeenCalled()
   })
 
   it('calls Sentry.init with tracesSampleRate 0 when SENTRY_DSN is set', async () => {
-    process.env.SENTRY_DSN = 'https://fake@o0.ingest.sentry.io/0'
+    vi.stubEnv('VITE_SENTRY_DSN', 'https://fake@o0.ingest.sentry.io/0')
     const { initCrashReporter } = await import('../electron/services/crashReporter')
     initCrashReporter()
     expect(mockSentryInit).toHaveBeenCalledOnce()
     const [cfg] = mockSentryInit.mock.calls[0]
     expect(cfg.tracesSampleRate).toBe(0)
-    expect(cfg.attachScreenshot).toBe(false)
-    delete process.env.SENTRY_DSN
-  })
+    expect(cfg.attachScreenshot).toBe(false)  })
 
   it('beforeSend strips user identity and breadcrumbs', async () => {
-    process.env.SENTRY_DSN = 'https://fake@o0.ingest.sentry.io/0'
+    vi.stubEnv('VITE_SENTRY_DSN', 'https://fake@o0.ingest.sentry.io/0')
     const { initCrashReporter } = await import('../electron/services/crashReporter')
     initCrashReporter()
     const [cfg] = mockSentryInit.mock.calls[0]
@@ -263,12 +265,10 @@ describe('crashReporter', () => {
     expect(result).not.toBeNull()
     expect(result.user).toBeUndefined()
     expect(result.breadcrumbs).toBeUndefined()
-    expect(result.extra).toBeUndefined()
-    delete process.env.SENTRY_DSN
-  })
+    expect(result.extra).toBeUndefined()  })
 
   it('beforeSend redacts absolute paths in stack frames', async () => {
-    process.env.SENTRY_DSN = 'https://fake@o0.ingest.sentry.io/0'
+    vi.stubEnv('VITE_SENTRY_DSN', 'https://fake@o0.ingest.sentry.io/0')
     const { initCrashReporter } = await import('../electron/services/crashReporter')
     initCrashReporter()
     const [cfg] = mockSentryInit.mock.calls[0]
@@ -287,12 +287,10 @@ describe('crashReporter', () => {
     const result = cfg.beforeSend(event)
     const frame = result.exception.values[0].stacktrace.frames[0]
     expect(frame.filename).toBe('main.ts')
-    expect(frame.abs_path).toBeUndefined()
-    delete process.env.SENTRY_DSN
-  })
+    expect(frame.abs_path).toBeUndefined()  })
 
   it('beforeSend scrubs hostname (server_name) and device context', async () => {
-    process.env.SENTRY_DSN = 'https://fake@o0.ingest.sentry.io/0'
+    vi.stubEnv('VITE_SENTRY_DSN', 'https://fake@o0.ingest.sentry.io/0')
     const { initCrashReporter } = await import('../electron/services/crashReporter')
     initCrashReporter()
     const [cfg] = mockSentryInit.mock.calls[0]
@@ -309,12 +307,10 @@ describe('crashReporter', () => {
     expect(result.server_name).toBeUndefined()
     expect(result.contexts.device).toBeUndefined()
     // os context is just version strings — kept for triage
-    expect(result.contexts.os).toBeDefined()
-    delete process.env.SENTRY_DSN
-  })
+    expect(result.contexts.os).toBeDefined()  })
 
   it('closeCrashReporter flushes Sentry only after init', async () => {
-    process.env.SENTRY_DSN = 'https://fake@o0.ingest.sentry.io/0'
+    vi.stubEnv('VITE_SENTRY_DSN', 'https://fake@o0.ingest.sentry.io/0')
     const mod = await import('../electron/services/crashReporter')
 
     // Never initialised → close is a no-op
@@ -324,7 +320,5 @@ describe('crashReporter', () => {
     // After init, close tears down
     mod.initCrashReporter()
     await mod.closeCrashReporter()
-    expect(mockSentryClose).toHaveBeenCalledOnce()
-    delete process.env.SENTRY_DSN
-  })
+    expect(mockSentryClose).toHaveBeenCalledOnce()  })
 })

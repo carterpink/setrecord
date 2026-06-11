@@ -55,3 +55,9 @@ jobs:
 
       - name: Build (renderer + main, no installer)
         run: npm run build
+
+      - name: Smoke test — app actually launches & renders
+        # Opens the built app via Playwright's Electron driver and asserts the
+        # renderer mounts with no boot error. Catches packaging/boot breakage that
+        # unit tests never exercise. The ~1.9GB model is not needed (loads lazily).
+        run: npm run test:smoke
