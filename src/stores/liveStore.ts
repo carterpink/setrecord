@@ -323,7 +323,14 @@ export const useLiveStore = create<LiveState>((set, get) => {
       }
     },
 
-    applyIndexProgress: (p) => set({ isLive: true, status: 'indexing', indexProgress: p }),
+    applyIndexProgress: (p) =>
+      // Keep updating progress, but never downgrade a track the screen/metadata
+      // sensors already locked while the audio index is still building.
+      set((s) => ({
+        isLive: true,
+        status: s.status === 'locked' ? 'locked' : 'indexing',
+        indexProgress: p
+      })),
 
     setReady: (s) =>
       set({

@@ -4,8 +4,9 @@
  * Pipeline:
  *   1. Parse `database V2` → metadata Track[] (no cues — those live in files).
  *   2. Parse `Subcrates/*.crate` → Playlist tree (folder nesting via `%%`).
- *   3. Hand the normalised ImportPayload to the shared `applyImport()` writer.
- *   4. (Caller) schedule a background pass to extract cues/beatgrids from files.
+ *   3. Parse `History/` → gig sessions (source='serato', method='imported-history').
+ *   4. Hand the normalised ImportPayload to the shared `applyImport()` writer.
+ *   5. (Caller) schedule a background pass to extract cues/beatgrids from files.
  *
  * Mirrors electron/services/rekordbox/index.ts so both sources converge on the
  * same writer.
@@ -20,6 +21,7 @@ import { parseDatabaseV2, seratoRecordToTrack } from './databaseReader'
 import { parseCrate, buildPlaylistsFromCrates, type SeratoCrateFile } from './crateReader'
 import { databaseV2Path, detectSerato, SERATO_LABEL } from './detect'
 import { runSeratoCueQueue } from './cueExtractor'
+import { readSeratoHistory } from './historyReader'
 
 const yieldToEventLoop = (): Promise<void> => new Promise((resolve) => setImmediate(resolve))
 
@@ -59,8 +61,20 @@ export async function readSeratoLibrary(
     console.error('[serato] crate parsing failed', err)
   }
 
-  // 3. Serato History (gig sessions) is a separate DB and out of scope for v1.
-  return { tracks, playlists, sessions: [] }
+  // 3. Gig sessions from History/history.database + History/Sessions/*.session.
+  let sessions: ImportPayload['sessions'] = []
+  try {
+    const parsed = readSeratoHistory(seratoDir, byAbsPath)
+    sessions = parsed.filter((s) => s.trackIds.length > 0)
+    console.log(
+      `[serato] history: ${parsed.length} session(s), ${sessions.length} non-empty, ` +
+        `${sessions.reduce((n, s) => n + s.trackIds.length, 0)} track refs`
+    )
+  } catch (err) {
+    console.error('[serato] history parsing failed', err)
+  }
+
+  return { tracks, playlists, sessions, sessionSource: 'serato' }
 }
 
 /** Read + parse every `.crate` file in a `_Serato_` folder's Subcrates dir. */
@@ -88,7 +102,7 @@ export const seratoProvider: LibrarySourceProvider = {
     readsMetadata: true,
     readsPlaylists: true,
     readsCuesInline: false, // cues/beatgrids live in file tags → deferred postImport()
-    readsSessions: false, // Serato History is a separate DB, out of scope for v1
+    readsSessions: true, // History/Sessions/*.session → play_sessions (source='serato')
     requiresConsentGate: false, // plain `database V2` + crate files
     importRouting: 'payload',
     stability: 'stable'

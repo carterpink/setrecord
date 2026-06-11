@@ -199,7 +199,13 @@
       "updated_one": "{{count}} show atualizado.",
       "updated_other": "{{count}} shows atualizados.",
       "apply": "Aplicar aos shows correspondentes"
-    }
+    },
+    "methodRecorded": "gravado",
+    "methodRecordedTitle": "Capturado ao vivo pelo Flight Recorder — dados de reprodução verificados",
+    "methodImported": "importado",
+    "methodImportedTitle": "Importado do seu histórico do Rekordbox — dados de reprodução verificados",
+    "methodMarked": "marcado",
+    "methodMarkedTitle": "Marcado como tocado manualmente — fica no seu diário, não conta nas estatísticas"
   },
   "health": {
     "title": "Saúde",

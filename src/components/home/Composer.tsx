@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
+import { useReducedMotion } from 'framer-motion'
 import { useTranslation, Trans } from 'react-i18next'
 import { Mic, AudioLines, ArrowUp, StopCircle, Lock } from 'lucide-react'
+import { motion, AnimatePresence } from '@/components/shared/Motion'
 
 export type ComposerPhase = 'idle' | 'listening' | 'thinking'
 
@@ -39,6 +41,8 @@ function NeuralField(): React.JSX.Element {
  * are driven by HomeSurface. Drives a `--lvl` swell var so the breathing light
  * behind the box reacts to listening / thinking.
  */
+const SNAPPY = [0.32, 0.72, 0.12, 1] as const
+
 export function Composer({
   phase,
   value,
@@ -57,6 +61,7 @@ export function Composer({
   const rootRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
   const rafRef = useRef(0)
+  const prefersReducedMotion = useReducedMotion()
 
   const listening = phase === 'listening'
   const thinking = phase === 'thinking'
@@ -118,19 +123,42 @@ export function Composer({
       <div className="box">
         <div className="box-inner glass-3 box-glow">
           <div className="box-input-row">
-            <textarea
-              ref={taRef}
-              className="box-text"
-              rows={1}
-              value={value}
-              placeholder={listening ? '' : placeholder}
-              onChange={(e) => onChange(e.target.value)}
-              onKeyDown={keyDown}
-              onFocus={onFocus}
-              onBlur={onBlur}
-              readOnly={listening}
-              aria-label={t('composer.askAria')}
-            />
+            <div className="box-text-wrap">
+              <textarea
+                ref={taRef}
+                className="box-text"
+                rows={1}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                onKeyDown={keyDown}
+                onFocus={onFocus}
+                onBlur={onBlur}
+                readOnly={listening}
+                aria-label={t('composer.askAria')}
+              />
+              <AnimatePresence mode="wait" initial={false}>
+                {!value && !listening && (
+                  <motion.span
+                    key={placeholder}
+                    className="composer-placeholder"
+                    aria-hidden="true"
+                    initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 5 }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                      transition: { duration: 0.32, ease: SNAPPY }
+                    }}
+                    exit={{
+                      opacity: 0,
+                      y: prefersReducedMotion ? 0 : -4,
+                      transition: { duration: 0.18, ease: SNAPPY }
+                    }}
+                  >
+                    {placeholder}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </div>
             {showMic && (
               <button
                 type="button"

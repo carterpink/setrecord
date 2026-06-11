@@ -199,7 +199,13 @@
       "updated_one": "Updated {{count}} gig.",
       "updated_other": "Updated {{count}} gigs.",
       "apply": "Apply to matching gigs"
-    }
+    },
+    "methodRecorded": "recorded",
+    "methodRecordedTitle": "Captured live by the Flight Recorder — verified play data",
+    "methodImported": "imported",
+    "methodImportedTitle": "Imported from your Rekordbox history — verified play data",
+    "methodMarked": "marked",
+    "methodMarkedTitle": "Marked as performed by hand — kept in your diary, not counted in stats"
   },
   "health": {
     "title": "Health",

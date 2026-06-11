@@ -686,6 +686,155 @@ export function updateTrackFilePath(
   )
 }
 
+// ── Bulk operations (power-user multi-select) ───────────────────────────────
+
+/**
+ * Remove tracks from the SetRecord database only — the audio files on disk are
+ * never touched. set_tracks / session_tracks / set_reactions reference tracks(id)
+ * without ON DELETE CASCADE (foreign_keys is ON), so their rows are cleared first;
+ * track_tags cascades but is cleared explicitly for symmetry. Returns the number
+ * of track rows actually deleted. Wrapped in a single transaction.
+ */
+export function deleteTracks(db: Database.Database, ids: string[]): number {
+  if (ids.length === 0) return 0
+  const delSetTracks = db.prepare('DELETE FROM set_tracks WHERE track_id = ?')
+  const delSessionTracks = db.prepare('DELETE FROM session_tracks WHERE track_id = ?')
+  const delReactions = db.prepare('DELETE FROM set_reactions WHERE track_id = ?')
+  const delTags = db.prepare('DELETE FROM track_tags WHERE track_id = ?')
+  const delTrack = db.prepare('DELETE FROM tracks WHERE id = ?')
+  let removed = 0
+  const tx = db.transaction(() => {
+    for (const id of ids) {
+      delSetTracks.run(id)
+      delSessionTracks.run(id)
+      delReactions.run(id)
+      delTags.run(id)
+      removed += delTrack.run(id).changes
+    }
+  })
+  tx()
+  return removed
+}
+
+/**
+ * Re-insert previously-deleted track rows (Undo for a bulk remove). Membership in
+ * sets / sessions is intentionally not restored — the track returns to the library
+ * but not to any set it was in. Reuses the chunked batch insert.
+ */
+export function restoreTracks(db: Database.Database, tracks: Track[]): void {
+  batchInsertTracks(db, tracks)
+}
+
+export interface BulkTrackMetaPatch {
+  bpm?: number
+  key?: string
+  genre?: string
+  rating?: number
+  color?: string
+  comment?: string
+}
+
+/** Apply the same metadata patch to many tracks. Only provided fields change. */
+export function bulkUpdateTrackMeta(
+  db: Database.Database,
+  ids: string[],
+  patch: BulkTrackMetaPatch
+): void {
+  const cols: string[] = []
+  const baseVals: (string | number)[] = []
+  if (patch.bpm != null) {
+    cols.push('bpm = ?')
+    baseVals.push(patch.bpm)
+  }
+  if (patch.key != null) {
+    cols.push('key = ?')
+    baseVals.push(patch.key)
+  }
+  if (patch.genre != null) {
+    cols.push('genre = ?')
+    baseVals.push(patch.genre)
+  }
+  if (patch.rating != null) {
+    cols.push('rating = ?')
+    baseVals.push(patch.rating)
+  }
+  if (patch.color != null) {
+    cols.push('color = ?')
+    baseVals.push(patch.color)
+  }
+  if (patch.comment != null) {
+    cols.push('comment = ?')
+    baseVals.push(patch.comment)
+  }
+  if (cols.length === 0 || ids.length === 0) return
+  const stmt = db.prepare(`UPDATE tracks SET ${cols.join(', ')} WHERE id = ?`)
+  const tx = db.transaction(() => {
+    for (const id of ids) stmt.run(...baseVals, id)
+  })
+  tx()
+}
+
+/** Set the same user energy (1-10) on many tracks in one transaction. */
+export function bulkSetEnergy(db: Database.Database, ids: string[], energy: number): void {
+  if (ids.length === 0) return
+  const clamped = Math.max(1, Math.min(10, Math.round(energy)))
+  const stmt = db.prepare(
+    "UPDATE tracks SET energy = ?, energy_raw = NULL, energy_source = 'user' WHERE id = ?"
+  )
+  const tx = db.transaction(() => {
+    for (const id of ids) stmt.run(clamped, id)
+  })
+  tx()
+}
+
+/**
+ * Bulk tag edit across many tracks for one category.
+ *  - 'replace' overwrites the category with `values`
+ *  - 'add' unions `values` into each track's existing values
+ *  - 'remove' strips `values` from each track's existing values
+ * All writes become user overrides (so the auto-tagger won't clobber them).
+ */
+export function bulkSetUserTags(
+  db: Database.Database,
+  ids: string[],
+  category: TagCategory,
+  values: string[],
+  mode: 'add' | 'remove' | 'replace'
+): void {
+  if (ids.length === 0) return
+  const readStmt = db.prepare(
+    "SELECT value FROM track_tags WHERE track_id = ? AND category = ? AND value != ''"
+  )
+  const tx = db.transaction(() => {
+    for (const id of ids) {
+      let next: string[]
+      if (mode === 'replace') {
+        next = values
+      } else {
+        const current = (readStmt.all(id, category) as Array<{ value: string }>).map((r) => r.value)
+        next =
+          mode === 'add'
+            ? Array.from(new Set([...current, ...values]))
+            : current.filter((v) => !values.includes(v))
+      }
+      setUserTags(db, id, category, next)
+    }
+  })
+  tx()
+}
+
+/** Set the lifecycle state on many tracks (user override) in one transaction. */
+export function bulkSetLifecycle(db: Database.Database, ids: string[], state: string | null): void {
+  if (ids.length === 0) return
+  const stmt = db.prepare(
+    "UPDATE tracks SET lifecycle_state = ?, lifecycle_source = 'user' WHERE id = ?"
+  )
+  const tx = db.transaction(() => {
+    for (const id of ids) stmt.run(state, id)
+  })
+  tx()
+}
+
 // ───────── Energy analysis ─────────
 
 export function updateTrackEnergy(
@@ -1135,6 +1284,7 @@ function rowToPlaySession(row: Record<string, unknown>): PlaySession {
     setSlot: (row.set_slot as PlaySession['setSlot']) || undefined,
     duration: (row.duration as number) || undefined,
     setId: (row.set_id as string) || undefined,
+    method: ((row.method as string) || 'user-asserted') as PlaySession['method'],
     createdAt: row.created_at as string,
     trackCount: (row.track_count as number) ?? 0
   }
@@ -1153,8 +1303,8 @@ export function createSession(
   const now = new Date().toISOString()
 
   const insertSession = db.prepare(`
-    INSERT INTO play_sessions (id, name, source, performed_at, venue, duration, set_id, created_at)
-    VALUES (@id, @name, @source, @performedAt, @venue, @duration, @setId, @createdAt)
+    INSERT INTO play_sessions (id, name, source, performed_at, venue, duration, set_id, created_at, method)
+    VALUES (@id, @name, @source, @performedAt, @venue, @duration, @setId, @createdAt, @method)
   `)
   const insertTrack = db.prepare(`
     INSERT INTO session_tracks (id, session_id, track_id, play_order, played_at)
@@ -1170,7 +1320,8 @@ export function createSession(
       venue: session.venue ?? null,
       duration: session.duration ?? null,
       setId: session.setId ?? null,
-      createdAt: now
+      createdAt: now,
+      method: session.method ?? 'user-asserted'
     })
     for (let i = 0; i < trackIds.length; i++) {
       insertTrack.run({
@@ -1222,9 +1373,9 @@ export function createLiveSession(
 
   const insertSession = db.prepare(`
     INSERT INTO play_sessions
-      (id, name, source, performed_at, venue, duration, set_id, created_at, venue_source)
+      (id, name, source, performed_at, venue, duration, set_id, created_at, venue_source, method)
     VALUES
-      (@id, @name, 'setrecord', @performedAt, @venue, @duration, NULL, @createdAt, 'user')
+      (@id, @name, 'setrecord', @performedAt, @venue, @duration, NULL, @createdAt, 'user', 'live-recorded')
   `)
   const insertTrack = db.prepare(`
     INSERT INTO session_tracks
@@ -1644,10 +1795,25 @@ export function bulkAssignSessions(
   return matches.length
 }
 
+/** Result of markSetAsPerformed — distinguishes a fresh log from a same-day duplicate. */
+export interface MarkPerformedResult {
+  sessionId: string
+  /** True when an asserted session for this set already exists on the same local
+   * calendar day and `force` was not set — sessionId is the EXISTING session. */
+  alreadyPerformedToday: boolean
+}
+
 /**
- * Reads the ordered set_tracks for a SetRecord set, creates a play_sessions row
- * (source='setrecord', set_id linked), and increments play_count / updates
- * last_played on each track if the performed date is newer. All in one transaction.
+ * Reads the ordered set_tracks for a SetRecord set and creates a play_sessions
+ * diary row (source='setrecord', method='user-asserted', set_id linked).
+ *
+ * This is a CLAIM, not evidence: it deliberately does NOT touch
+ * tracks.play_count / last_played, and the memory layer ignores
+ * user-asserted sessions. Only the Flight Recorder and imported history count.
+ *
+ * Dedup: one asserted session per set per local calendar day. A duplicate
+ * returns the existing session with alreadyPerformedToday=true unless
+ * opts.force is set (the renderer confirms with the user first).
  */
 export function markSetAsPerformed(
   db: Database.Database,
@@ -1659,8 +1825,9 @@ export function markSetAsPerformed(
     city?: string
     country?: string
     setSlot?: PlaySession['setSlot']
+    force?: boolean
   } = {}
-): string | null {
+): MarkPerformedResult | null {
   const setRow = db.prepare('SELECT * FROM sets WHERE id = ?').get(setId) as
     | Record<string, unknown>
     | undefined
@@ -1675,19 +1842,20 @@ export function markSetAsPerformed(
   const trackIds = stRows.map((r) => r.track_id)
   const performedAt = opts.performedAt ?? new Date().toISOString()
 
-  // Dedup guard: if a session for this set already exists within the last 60 seconds
-  // (same set_id + performed_at within a 1-minute window), return the existing id
-  // rather than creating a duplicate. This prevents smoke-test or rapid UI re-clicks
-  // from flooding the transition graph with phantom sessions.
-  const existing = db
-    .prepare(
-      `SELECT id FROM play_sessions
-       WHERE source = 'setrecord' AND set_id = ?
-         AND ABS(CAST((julianday(performed_at) - julianday(?)) * 86400 AS INTEGER)) < 60
-       LIMIT 1`
-    )
-    .get(setId, performedAt) as { id: string } | undefined
-  if (existing) return existing.id
+  // Dedup guard: one asserted session per set per local calendar day. Re-clicks
+  // and smoke tests get the existing session back; a genuine "I really did play
+  // it twice today" goes through with force after the renderer confirms.
+  if (!opts.force) {
+    const existing = db
+      .prepare(
+        `SELECT id FROM play_sessions
+         WHERE method = 'user-asserted' AND set_id = ?
+           AND date(performed_at, 'localtime') = date(?, 'localtime')
+         LIMIT 1`
+      )
+      .get(setId, performedAt) as { id: string } | undefined
+    if (existing) return { sessionId: existing.id, alreadyPerformedToday: true }
+  }
 
   const sessionId = crypto.randomUUID()
   const now = new Date().toISOString()
@@ -1707,24 +1875,14 @@ export function markSetAsPerformed(
   const insertSession = db.prepare(`
     INSERT INTO play_sessions
       (id, name, source, performed_at, venue, duration, set_id, created_at,
-       event_type, city, country, set_slot, venue_source)
+       event_type, city, country, set_slot, venue_source, method)
     VALUES
       (@id, @name, @source, @performedAt, @venue, @duration, @setId, @createdAt,
-       @eventType, @city, @country, @setSlot, 'user')
+       @eventType, @city, @country, @setSlot, 'user', 'user-asserted')
   `)
   const insertTrack = db.prepare(`
     INSERT INTO session_tracks (id, session_id, track_id, play_order, played_at)
     VALUES (@id, @sessionId, @trackId, @playOrder, @playedAt)
-  `)
-  const updatePlayCount = db.prepare(`
-    UPDATE tracks
-    SET
-      play_count = play_count + 1,
-      last_played = CASE
-        WHEN last_played IS NULL OR last_played < @performedAt THEN @performedAt
-        ELSE last_played
-      END
-    WHERE id = @trackId
   `)
 
   const tx = db.transaction(() => {
@@ -1750,25 +1908,28 @@ export function markSetAsPerformed(
         playOrder: i,
         playedAt: performedAt
       })
-      updatePlayCount.run({ trackId: trackIds[i], performedAt })
     }
   })
   tx()
-  return sessionId
+  return { sessionId, alreadyPerformedToday: false }
 }
 
 /**
- * Wipe all source='rekordbox' sessions and bulk-insert a fresh batch.
- * Never touches source='setrecord' or source='manual' sessions.
- * Idempotent — safe to call on every XML re-import.
+ * Wipe all sessions of the given imported `source` ('rekordbox' | 'serato')
+ * and bulk-insert a fresh batch. Never touches other sources ('setrecord',
+ * 'manual', or the other importer's sessions).
+ * Idempotent — safe to call on every re-import.
  *
  * User-edited gig metadata is preserved across the wipe: before deleting we
- * snapshot every rekordbox session whose venue_source='user', keyed by
+ * snapshot every same-source session whose venue_source='user', keyed by
  * (name|performed_at), then re-apply it onto the freshly inserted row with the
  * same key. Auto-parsed venues (venue_source='auto') are recomputed each import.
+ *
+ * All inserted sessions carry method='imported-history' (v23 provenance model).
  */
-export function replaceRekordboxSessions(
+export function replaceImportedSessions(
   db: Database.Database,
+  source: 'rekordbox' | 'serato',
   sessions: Array<{
     name: string
     performedAt: string | null
@@ -1779,8 +1940,8 @@ export function replaceRekordboxSessions(
 ): void {
   const insertSession = db.prepare(`
     INSERT INTO play_sessions
-      (id, name, source, performed_at, venue, duration, set_id, created_at, venue_source)
-    VALUES (@id, @name, 'rekordbox', @performedAt, @venue, NULL, NULL, @createdAt, @venueSource)
+      (id, name, source, performed_at, venue, duration, set_id, created_at, venue_source, method)
+    VALUES (@id, @name, @source, @performedAt, @venue, NULL, NULL, @createdAt, @venueSource, 'imported-history')
   `)
   const insertTrack = db.prepare(`
     INSERT INTO session_tracks (id, session_id, track_id, play_order, played_at)
@@ -1815,16 +1976,16 @@ export function replaceRekordboxSessions(
       .prepare(
         `SELECT name, performed_at, venue, event_type, city, country, set_slot
          FROM play_sessions
-         WHERE source = 'rekordbox' AND venue_source = 'user'`
+         WHERE source = ? AND venue_source = 'user'`
       )
-      .all() as Array<Record<string, unknown>>
+      .all(source) as Array<Record<string, unknown>>
     const preserved = new Map<string, Record<string, unknown>>()
     for (const r of preservedRows) {
       preserved.set(sessionKey(r.name as string, (r.performed_at as string) ?? null), r)
     }
 
-    // Delete only rekordbox-sourced sessions (cascade clears session_tracks).
-    db.exec("DELETE FROM play_sessions WHERE source = 'rekordbox'")
+    // Delete only this importer's sessions (cascade clears session_tracks).
+    db.prepare('DELETE FROM play_sessions WHERE source = ?').run(source)
 
     const now = new Date().toISOString()
     for (const s of sessions) {
@@ -1832,6 +1993,7 @@ export function replaceRekordboxSessions(
       insertSession.run({
         id: sessionId,
         name: s.name,
+        source,
         performedAt: s.performedAt,
         venue: s.venue,
         venueSource: s.venueSource ?? 'auto',
@@ -2059,32 +2221,35 @@ export function undismissDuplicateGroup(db: Database.Database, normalisedKey: st
 }
 
 /**
- * Remove duplicate setrecord sessions: when the same set was marked as performed
- * multiple times in a short burst (e.g. from automated tests or a rapid UI re-click),
- * keep only the earliest session per set_id and delete the rest.
+ * Remove duplicate USER-ASSERTED sessions: when the same set was marked as
+ * performed multiple times on the same local calendar day (automated tests,
+ * rapid UI re-clicks, historic click spam), keep only the earliest session per
+ * (set_id, day) and delete the rest.
  *
- * Safe to run on every launch — idempotent, never touches rekordbox sessions.
- * Returns the number of duplicate sessions removed.
+ * Deliberately scoped to method='user-asserted': live-recorded and imported
+ * sessions are evidence and are never pruned, and a set genuinely performed on
+ * different days keeps one diary entry per day.
+ *
+ * Safe to run on every launch — idempotent. Returns the number removed.
  */
 export function pruneDuplicateSetRecordSessions(db: Database.Database): number {
-  // Find set_ids that have more than one setrecord session
   const duplicates = db
     .prepare(
       `
-      SELECT set_id, COUNT(*) AS cnt, MIN(created_at) AS keep_created_at
+      SELECT set_id, date(performed_at, 'localtime') AS day, COUNT(*) AS cnt
       FROM play_sessions
-      WHERE source = 'setrecord' AND set_id IS NOT NULL
-      GROUP BY set_id
+      WHERE method = 'user-asserted' AND set_id IS NOT NULL
+      GROUP BY set_id, day
       HAVING cnt > 1
     `
     )
-    .all() as Array<{ set_id: string; cnt: number; keep_created_at: string }>
+    .all() as Array<{ set_id: string; day: string | null; cnt: number }>
 
   if (duplicates.length === 0) return 0
 
   let removed = 0
   const tx = db.transaction(() => {
-    for (const { set_id, keep_created_at } of duplicates) {
+    for (const { set_id, day } of duplicates) {
       // Keep the one session with the earliest created_at; delete all others.
       // If two have the same created_at (e.g. tests with identical timestamps),
       // SQLite's rowid ordering picks a deterministic winner.
@@ -2092,19 +2257,20 @@ export function pruneDuplicateSetRecordSessions(db: Database.Database): number {
         .prepare(
           `
           DELETE FROM play_sessions
-          WHERE source = 'setrecord'
+          WHERE method = 'user-asserted'
             AND set_id = ?
+            AND date(performed_at, 'localtime') IS ?
             AND id NOT IN (
               SELECT id FROM play_sessions
-              WHERE source = 'setrecord' AND set_id = ?
+              WHERE method = 'user-asserted' AND set_id = ?
+                AND date(performed_at, 'localtime') IS ?
               ORDER BY created_at ASC, rowid ASC
               LIMIT 1
             )
         `
         )
-        .run(set_id, set_id)
+        .run(set_id, day, set_id, day)
       removed += result.changes
-      void keep_created_at // used only in query above via MIN()
     }
   })
   tx()

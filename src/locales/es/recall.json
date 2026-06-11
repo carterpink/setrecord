@@ -199,7 +199,13 @@
       "updated_one": "{{count}} bolo actualizado.",
       "updated_other": "{{count}} bolos actualizados.",
       "apply": "Aplicar a los bolos coincidentes"
-    }
+    },
+    "methodRecorded": "grabado",
+    "methodRecordedTitle": "Capturado en vivo por el Flight Recorder — datos de reproducción verificados",
+    "methodImported": "importado",
+    "methodImportedTitle": "Importado de tu historial de Rekordbox — datos de reproducción verificados",
+    "methodMarked": "marcado",
+    "methodMarkedTitle": "Marcado como tocado manualmente — se guarda en tu diario, no cuenta en las estadísticas"
   },
   "health": {
     "title": "Salud",

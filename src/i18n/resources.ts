@@ -13,6 +13,7 @@ import enLearn from '@/locales/en/learn.json'
 import enSuggestions from '@/locales/en/suggestions.json'
 import enModals from '@/locales/en/modals.json'
 import enShared from '@/locales/en/shared.json'
+import enPower from '@/locales/en/power.json'
 
 import esCommon from '@/locales/es/common.json'
 import esSettings from '@/locales/es/settings.json'
@@ -27,6 +28,7 @@ import esLearn from '@/locales/es/learn.json'
 import esSuggestions from '@/locales/es/suggestions.json'
 import esModals from '@/locales/es/modals.json'
 import esShared from '@/locales/es/shared.json'
+import esPower from '@/locales/es/power.json'
 
 import deCommon from '@/locales/de/common.json'
 import deSettings from '@/locales/de/settings.json'
@@ -41,6 +43,7 @@ import deLearn from '@/locales/de/learn.json'
 import deSuggestions from '@/locales/de/suggestions.json'
 import deModals from '@/locales/de/modals.json'
 import deShared from '@/locales/de/shared.json'
+import dePower from '@/locales/de/power.json'
 
 import frCommon from '@/locales/fr/common.json'
 import frSettings from '@/locales/fr/settings.json'
@@ -55,6 +58,7 @@ import frLearn from '@/locales/fr/learn.json'
 import frSuggestions from '@/locales/fr/suggestions.json'
 import frModals from '@/locales/fr/modals.json'
 import frShared from '@/locales/fr/shared.json'
+import frPower from '@/locales/fr/power.json'
 
 import ptBrCommon from '@/locales/pt-BR/common.json'
 import ptBrSettings from '@/locales/pt-BR/settings.json'
@@ -69,6 +73,7 @@ import ptBrLearn from '@/locales/pt-BR/learn.json'
 import ptBrSuggestions from '@/locales/pt-BR/suggestions.json'
 import ptBrModals from '@/locales/pt-BR/modals.json'
 import ptBrShared from '@/locales/pt-BR/shared.json'
+import ptBrPower from '@/locales/pt-BR/power.json'
 
 /** Namespaces loaded for every language. `common` is the i18next default. */
 export const NAMESPACES = [
@@ -84,7 +89,8 @@ export const NAMESPACES = [
   'learn',
   'suggestions',
   'modals',
-  'shared'
+  'shared',
+  'power'
 ] as const
 
 export const DEFAULT_NAMESPACE = 'common'
@@ -108,7 +114,8 @@ export const resources: Resource = {
     learn: enLearn,
     suggestions: enSuggestions,
     modals: enModals,
-    shared: enShared
+    shared: enShared,
+    power: enPower
   },
   es: {
     common: esCommon,
@@ -123,7 +130,8 @@ export const resources: Resource = {
     learn: esLearn,
     suggestions: esSuggestions,
     modals: esModals,
-    shared: esShared
+    shared: esShared,
+    power: esPower
   },
   de: {
     common: deCommon,
@@ -138,7 +146,8 @@ export const resources: Resource = {
     learn: deLearn,
     suggestions: deSuggestions,
     modals: deModals,
-    shared: deShared
+    shared: deShared,
+    power: dePower
   },
   fr: {
     common: frCommon,
@@ -153,7 +162,8 @@ export const resources: Resource = {
     learn: frLearn,
     suggestions: frSuggestions,
     modals: frModals,
-    shared: frShared
+    shared: frShared,
+    power: frPower
   },
   'pt-BR': {
     common: ptBrCommon,
@@ -168,6 +178,7 @@ export const resources: Resource = {
     learn: ptBrLearn,
     suggestions: ptBrSuggestions,
     modals: ptBrModals,
-    shared: ptBrShared
+    shared: ptBrShared,
+    power: ptBrPower
   }
 }

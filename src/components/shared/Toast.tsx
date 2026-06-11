@@ -90,6 +90,19 @@ export function Toast({ toast }: Props): React.JSX.Element {
             onDone={() => dismiss(toast.id)}
           />
         )}
+        {toast.action && (
+          <button
+            type="button"
+            className="toast-action"
+            onClick={(e) => {
+              e.stopPropagation()
+              toast.action?.onClick()
+              dismiss(toast.id)
+            }}
+          >
+            {toast.action.label}
+          </button>
+        )}
       </div>
       <button
         type="button"

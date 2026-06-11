@@ -20,7 +20,9 @@
   "performed": {
     "logged": "“{{name}}” registrado como tocado.",
     "markError": "Não foi possível marcar este set como tocado.",
-    "markFailed": "Algo deu errado ao marcar o set como tocado."
+    "markFailed": "Algo deu errado ao marcar o set como tocado.",
+    "alreadyToday": "“{{name}}” já foi registrado como tocado hoje.",
+    "logAgain": "Registrar de novo"
   },
   "empty": {
     "readyTitle": "“{{name}}” — pronto quando você quiser.",

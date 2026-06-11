@@ -110,6 +110,12 @@
     "privacyNote": "Your library, track titles, file paths, your device name, and personal data are never included. Off by default. Turning it off stops reporting immediately; turning it on takes effect after restarting {{app}}.",
     "toggleAria": "Toggle crash reporting"
   },
+  "sentry": {
+    "label": "Error tracking",
+    "caption": "Opt in to send anonymized error and performance data when {{app}} encounters problems. This helps us fix bugs faster and keep things stable.",
+    "privacyNote": "Reports are redacted: no library contents, track titles, file paths, or personal data. Off by default. Changes take effect immediately.",
+    "toggleAria": "Toggle error tracking"
+  },
   "flightRecorder": {
     "label": "Set Flight Recorder",
     "caption": "Record a lo-fi audio reference of your set from the room mic while you're live, so you can play it back later. The tracklist is always saved — this adds the audio.",

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DJ_PLAYLISTS Version="1.0.0">
+  <PRODUCT Name="Rekordbox" Version="6.5.0" Company="Pioneer"/>
+  <COLLECTION Entries="20">
+    <TRACK TrackID="1" Name="Deep Pulse" Artist="Maya Chen" Album="Nocturne" Composer="Maya Chen" Genre="Deep House" BPM="126" BitRate="320" Colour="0" DateAdded="2025-01-15" Duration="480" Key="10m" Label="Midnight Collective" Mix="" Rating="5"/>
+    <TRACK TrackID="2" Name="Electric Dreams" Artist="James Rivers" Album="Neon Nights" Composer="James Rivers" Genre="Tech House" BPM="128" BitRate="320" Colour="0" DateAdded="2025-01-14" Duration="420" Key="12m" Label="Pulse Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="3" Name="Basement Flow" Artist="Sofia Dias" Album="Underground" Composer="Sofia Dias" Genre="House" BPM="130" BitRate="320" Colour="0" DateAdded="2025-01-13" Duration="480" Key="4M" Label="Deep Vibes" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="4" Name="Cosmic Drift" Artist="Lex Stone" Album="Space Travels" Composer="Lex Stone" Genre="Progressive House" BPM="124" BitRate="320" Colour="0" DateAdded="2025-01-12" Duration="540" Key="9m" Label="Astral Sound" Mix="" Rating="3"/>
+    <TRACK TrackID="5" Name="Midnight Chase" Artist="Priya Patel" Album="Night Moves" Composer="Priya Patel" Genre="Techno" BPM="135" BitRate="320" Colour="0" DateAdded="2025-01-11" Duration="480" Key="6M" Label="Dark Matter" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="6" Name="Golden Hour" Artist="Marco Rossi" Album="Time Flow" Composer="Marco Rossi" Genre="Deep House" BPM="122" BitRate="320" Colour="0" DateAdded="2025-01-10" Duration="420" Key="8m" Label="Warm Sound" Mix="" Rating="5"/>
+    <TRACK TrackID="7" Name="Crystal Waters" Artist="Emma White" Album="Reflections" Composer="Emma White" Genre="House" BPM="128" BitRate="320" Colour="0" DateAdded="2025-01-09" Duration="480" Key="1m" Label="Crystal Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="8" Name="Neon City" Artist="Alex Black" Album="Urban Lights" Composer="Alex Black" Genre="Tech House" BPM="132" BitRate="320" Colour="0" DateAdded="2025-01-08" Duration="480" Key="5m" Label="Neon Waves" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="9" Name="Velvet Motion" Artist="Sarah Kim" Album="Smooth Rides" Composer="Sarah Kim" Genre="Deep House" BPM="120" BitRate="320" Colour="0" DateAdded="2025-01-07" Duration="420" Key="3M" Label="Velvet Touch" Mix="" Rating="3"/>
+    <TRACK TrackID="10" Name="Thunder Road" Artist="Jordan Lee" Album="Electric Storm" Composer="Jordan Lee" Genre="Techno" BPM="138" BitRate="320" Colour="0" DateAdded="2025-01-06" Duration="480" Key="7M" Label="Storm Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="11" Name="Smooth Ride" Artist="Lisa Garcia" Album="Easy Flows" Composer="Lisa Garcia" Genre="House" BPM="125" BitRate="320" Colour="0" DateAdded="2025-01-05" Duration="480" Key="11m" Label="Easy Street" Mix="" Rating="5"/>
+    <TRACK TrackID="12" Name="Dark Horizons" Artist="Tom Jenkins" Album="Night Tales" Composer="Tom Jenkins" Genre="Techno" BPM="140" BitRate="320" Colour="0" DateAdded="2025-01-04" Duration="480" Key="2m" Label="Dark Matter" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="13" Name="Sunrise Bliss" Artist="Nina Costa" Album="Morning Light" Composer="Nina Costa" Genre="Deep House" BPM="118" BitRate="320" Colour="0" DateAdded="2025-01-03" Duration="420" Key="9M" Label="Morning Mist" Mix="" Rating="3"/>
+    <TRACK TrackID="14" Name="Hypnotic Beat" Artist="Chris Lopez" Album="Rhythm Machine" Composer="Chris Lopez" Genre="Tech House" BPM="131" BitRate="320" Colour="0" DateAdded="2025-01-02" Duration="480" Key="4m" Label="Beat Master" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="15" Name="Silent Nights" Artist="Diana Foster" Album="Peaceful Sounds" Composer="Diana Foster" Genre="House" BPM="123" BitRate="320" Colour="0" DateAdded="2025-01-01" Duration="480" Key="6m" Label="Peace Records" Mix="" Rating="4"/>
+    <TRACK TrackID="16" Name="Stereo Vision" Artist="David Moore" Album="Visual Beats" Composer="David Moore" Genre="Progressive House" BPM="127" BitRate="320" Colour="0" DateAdded="2024-12-31" Duration="540" Key="10M" Label="Vision Sound" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="17" Name="Fire and Ice" Artist="Ruby Kane" Album="Extremes" Composer="Ruby Kane" Genre="Techno" BPM="136" BitRate="320" Colour="0" DateAdded="2024-12-30" Duration="480" Key="1M" Label="Extreme Records" Mix="" Rating="4"/>
+    <TRACK TrackID="18" Name="Liquid Dreams" Artist="Kai Wilson" Album="Flow State" Composer="Kai Wilson" Genre="Deep House" BPM="121" BitRate="320" Colour="0" DateAdded="2024-12-29" Duration="420" Key="7m" Label="Liquid Sound" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="19" Name="Urban Jungle" Artist="Maya Chen" Album="City Life" Composer="Maya Chen" Genre="Tech House" BPM="129" BitRate="320" Colour="0" DateAdded="2024-12-28" Duration="480" Key="3m" Label="City Beats" Mix="" Rating="3"/>
+    <TRACK TrackID="20" Name="Midnight Rain" Artist="Lucas Berg" Album="Weather Patterns" Composer="Lucas Berg" Genre="House" BPM="126" BitRate="320" Colour="0" DateAdded="2024-12-27" Duration="480" Key="11M" Label="Rain Records" Mix="Original Mix" Rating="4"/>
+  </COLLECTION>
+  <PLAYLISTS>
+    <PLAYLIST Name="Deep Vibes" Entries="7">
+      <TRACK_ID ID="1"/>
+      <TRACK_ID ID="3"/>
+      <TRACK_ID ID="6"/>
+      <TRACK_ID ID="9"/>
+      <TRACK_ID ID="13"/>
+      <TRACK_ID ID="18"/>
+      <TRACK_ID ID="11"/>
+    </PLAYLIST>
+    <PLAYLIST Name="Techno Energy" Entries="5">
+      <TRACK_ID ID="5"/>
+      <TRACK_ID ID="10"/>
+      <TRACK_ID ID="12"/>
+      <TRACK_ID ID="17"/>
+      <TRACK_ID ID="2"/>
+    </PLAYLIST>
+    <PLAYLIST Name="Late Night" Entries="8">
+      <TRACK_ID ID="4"/>
+      <TRACK_ID ID="8"/>
+      <TRACK_ID ID="14"/>
+      <TRACK_ID ID="16"/>
+      <TRACK_ID ID="19"/>
+      <TRACK_ID ID="15"/>
+      <TRACK_ID ID="20"/>
+      <TRACK_ID ID="7"/>
+    </PLAYLIST>
+  </PLAYLISTS>
+</DJ_PLAYLISTS>

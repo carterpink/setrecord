@@ -29,6 +29,7 @@ import { BEGINNER_TOOLTIP_COPY } from '@/utils/learnMode/coachmarks'
 import { GhostTrackCard } from './GhostTrackCard'
 import { TimelineTrackCard } from './TimelineTrackCard'
 import { CollaborateButton } from '@/components/collab/CollaborateButton'
+import { launchProfile } from '@/config/launchProfile'
 
 const VIEWS: readonly TimelineCurveView[] = ['Energy', 'BPM'] as const
 
@@ -102,15 +103,24 @@ export function TimelinePanel(): React.JSX.Element {
   const toast = useToastStore.getState()
   const [marking, setMarking] = useState(false)
 
-  async function handleMarkPerformed(): Promise<void> {
+  async function handleMarkPerformed(force = false): Promise<void> {
     if (!currentSet || tracks.length < 2 || !window.setrecord) return
     setMarking(true)
     try {
-      const sessionId = await window.setrecord.historyMarkPerformed(currentSet.id)
-      if (!sessionId) {
+      const result = await window.setrecord.historyMarkPerformed(currentSet.id, { force })
+      if (!result) {
         toast.error(t('performed.markError'))
         return
       }
+      if (result.alreadyPerformedToday) {
+        toast.push({
+          kind: 'warning',
+          message: t('performed.alreadyToday', { name: currentSet.name }),
+          action: { label: t('performed.logAgain'), onClick: () => void handleMarkPerformed(true) }
+        })
+        return
+      }
+      const sessionId = result.sessionId
       const flagged = await window.setrecord.lifecycleFlaggedInSession(sessionId)
       if (flagged.length > 0) {
         showPostGigPrompt({ sessionId, setName: currentSet.name, tracks: flagged })
@@ -228,7 +238,7 @@ export function TimelinePanel(): React.JSX.Element {
             </div>
           )}
         </div>
-        <CollaborateButton />
+        {launchProfile.collab && <CollaborateButton />}
         {currentSet && tracks.length >= 2 && (
           <Button
             variant="ghost"

@@ -16,6 +16,7 @@
  */
 
 import ElectronStore from 'electron-store'
+import { getDurableClockHighWater, persistClockHighWater, latestIso } from './licenseAnchors'
 
 interface OnlineCheck {
   /** License id (payload.id) this answer applies to — guards against a new key inheriting an old verdict. */
@@ -40,16 +41,22 @@ const DEFAULTS: LicenseLocalState = {
 const store = new ElectronStore<LicenseLocalState>({ name: 'license-state', defaults: DEFAULTS })
 
 export function getLastSeenAt(): string | null {
-  return store.get('lastSeenAt') ?? null
+  // Reconcile the user-editable JSON with the durable keychain anchor — the
+  // furthest clock ever seen wins, so wiping the JSON can't reset the guard.
+  return latestIso(store.get('lastSeenAt') ?? null, getDurableClockHighWater())
 }
 
 /** Advance the high-water mark. Only ever moves forward, never backward. */
 export function recordSeenNow(nowMs: number = Date.now()): void {
+  const iso = new Date(nowMs).toISOString()
   const prev = getLastSeenAt()
   const prevMs = prev ? Date.parse(prev) : 0
   if (!Number.isFinite(prevMs) || nowMs > prevMs) {
-    store.set('lastSeenAt', new Date(nowMs).toISOString())
+    store.set('lastSeenAt', iso)
   }
+  // Mirror into the keychain (throttled internally) so a JSON wipe can't roll
+  // the rollback guard back to zero.
+  persistClockHighWater(iso)
 }
 
 export function getOnlineCheck(): OnlineCheck | null {

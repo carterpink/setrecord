@@ -1,5 +1,7 @@
 import type Database from 'better-sqlite3'
 
+import { pruneDuplicateSetRecordSessions } from './queries'
+
 /**
  * Run pending schema migrations in order.
  * Each migration is idempotent — safe to re-run on any startup.
@@ -415,4 +417,96 @@ export function runMigrations(db: Database.Database): void {
   `)
 
   db.prepare('INSERT OR REPLACE INTO schema_version VALUES (22)').run()
+
+  // v23: play provenance — verified-only memory model.
+  // `method` records HOW a session entered the diary:
+  //   'live-recorded'    — Flight Recorder heard it (audio timeline / recording exists)
+  //   'imported-history' — Rekordbox history (second-hand but evidence-based)
+  //   'user-asserted'    — "Mark as Performed" click; a claim, not evidence.
+  // Asserted sessions stay in the gig diary but contribute NOTHING to
+  // tracks.play_count / last_played or the memory layer. The one-time backfill
+  // below (guarded by the column-missing check so it never re-runs) classifies
+  // every existing session, collapses same-day duplicate asserted sessions,
+  // and strips historic asserted inflation back out of the per-track tallies.
+  const colsV23 = (
+    db.prepare('PRAGMA table_info(play_sessions)').all() as Array<{ name: string }>
+  ).map((c) => c.name)
+
+  if (!colsV23.includes('method')) {
+    db.exec("ALTER TABLE play_sessions ADD COLUMN method TEXT NOT NULL DEFAULT 'user-asserted'")
+
+    const backfill = db.transaction(() => {
+      // 1. Classify existing sessions by the evidence they carry.
+      db.exec("UPDATE play_sessions SET method = 'imported-history' WHERE source = 'rekordbox'")
+      db.exec(`
+        UPDATE play_sessions SET method = 'live-recorded'
+        WHERE source = 'setrecord'
+          AND (
+            id IN (SELECT session_id FROM set_recordings)
+            OR id IN (SELECT session_id FROM session_tracks WHERE start_ms IS NOT NULL)
+          )
+      `)
+      // Remainder keeps the column default 'user-asserted'.
+
+      // 2. Snapshot, per track, how many asserted sessions touched it and on
+      //    which exact timestamps — BEFORE pruning, so plays added by sessions
+      //    the prune deletes are still subtracted. markSetAsPerformed added
+      //    exactly +1 play per track per asserted session, so this subtraction
+      //    removes precisely the asserted inflation while leaving counts
+      //    seeded from the Rekordbox XML PlayCount attribute intact.
+      const assertedRows = db
+        .prepare(
+          `SELECT st.track_id AS track_id, COUNT(*) AS cnt,
+                  GROUP_CONCAT(ps.performed_at, char(31)) AS dates
+           FROM session_tracks st
+           JOIN play_sessions ps ON ps.id = st.session_id
+           WHERE ps.method = 'user-asserted'
+           GROUP BY st.track_id`
+        )
+        .all() as Array<{ track_id: string; cnt: number; dates: string | null }>
+
+      // 3. Collapse same-day duplicate asserted sessions (click spam).
+      pruneDuplicateSetRecordSessions(db)
+
+      // 4. Verified evidence per track: session count + newest played date.
+      const verifiedRows = db
+        .prepare(
+          `SELECT st.track_id AS track_id, COUNT(*) AS cnt,
+                  MAX(COALESCE(st.played_at, ps.performed_at)) AS last_played
+           FROM session_tracks st
+           JOIN play_sessions ps ON ps.id = st.session_id
+           WHERE ps.method != 'user-asserted'
+           GROUP BY st.track_id`
+        )
+        .all() as Array<{ track_id: string; cnt: number; last_played: string | null }>
+      const verified = new Map(verifiedRows.map((r) => [r.track_id, r]))
+
+      const getTrack = db.prepare('SELECT play_count, last_played FROM tracks WHERE id = ?')
+      const setCounts = db.prepare('UPDATE tracks SET play_count = ?, last_played = ? WHERE id = ?')
+
+      for (const a of assertedRows) {
+        const t = getTrack.get(a.track_id) as
+          | { play_count: number; last_played: string | null }
+          | undefined
+        if (!t) continue
+        const v = verified.get(a.track_id)
+        const newCount = Math.max(v?.cnt ?? 0, (t.play_count ?? 0) - a.cnt, 0)
+        // last_played is only rolled back when it exactly matches an asserted
+        // session timestamp (millisecond ISO strings — a coincidental match with
+        // an XML-seeded date is practically impossible). It falls back to the
+        // newest verified evidence, or NULL when there is none.
+        const assertedDates = new Set((a.dates ?? '').split(String.fromCharCode(31)))
+        let newLast = t.last_played
+        if (t.last_played && assertedDates.has(t.last_played)) {
+          newLast = v?.last_played ?? null
+        }
+        setCounts.run(newCount, newLast, a.track_id)
+      }
+    })
+    backfill()
+  }
+
+  db.exec('CREATE INDEX IF NOT EXISTS idx_play_sessions_method ON play_sessions(method)')
+
+  db.prepare('INSERT OR REPLACE INTO schema_version VALUES (23)').run()
 }

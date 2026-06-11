@@ -10,14 +10,28 @@
  * wrapped so a bad file or decode can never crash the main process.
  */
 import { spawn } from 'child_process'
+import { createHash } from 'crypto'
+import { readFileSync, writeFileSync } from 'fs'
+import { join } from 'path'
+import { app } from 'electron'
 import ffmpegPath from 'ffmpeg-static'
 import {
   addToIndex,
   fingerprint,
   FP_SAMPLE_RATE,
+  FP_FRAME_SIZE,
+  FP_HOP_SIZE,
+  FP_MAX_BIN,
+  FP_MIN_BIN,
+  FP_PEAKS_PER_FRAME,
+  FP_PEAK_REL_FLOOR,
+  FP_TARGET_DT_MIN,
+  FP_TARGET_DT_MAX,
+  FP_FANOUT,
   type FingerprintIndex,
   type MatchResult
 } from './fingerprint'
+import { encodeIndex, decodeIndex, CODEC_VERSION } from './fingerprintCodec'
 import { LiveDetector, fingerprintMatcher, LIVE_COMMIT_STREAK, type NowPlaying } from './liveSource'
 import { getLiveNextUp } from '../../algorithms/liveSuggestions'
 import { computeSetHealth } from '../../algorithms/setHealth'
@@ -26,8 +40,22 @@ import type { Track, Set as DJSet } from '../../../src/types'
 
 const FFMPEG: string | null = (ffmpegPath as unknown as string | null) ?? null
 
-/** Seconds of each track indexed. Covers the window a track is likely playing. */
-const INDEX_SECONDS = 90
+/**
+ * Seconds of each track fingerprinted into the index. This MUST cover wherever
+ * in the track the DJ might actually be playing live: a probe captured from the
+ * breakdown, the second drop, or the outro can only be identified if that part
+ * of the track is in the index. The old value (90s) only covered intros, so the
+ * moment a track played past ~1:30 the audio matcher returned nothing and the
+ * HUD sat on "listening…" forever — the core reason live mode "didn't work".
+ *
+ * 600s covers essentially every club track end-to-end. Longer files (hour-long
+ * mix recordings / podcasts that happen to live in the library) are capped here
+ * to bound index memory and build time. The validated harness
+ * (tests/fingerprintRealAudio.test.ts) indexes 180s and only ever probes from
+ * *within* the indexed window — which is exactly why it scored 90–100% while the
+ * shipped 90s index failed on real playback.
+ */
+const INDEX_SECONDS = 600
 /** Parallel ffmpeg decodes while building the index. */
 const BUILD_CONCURRENCY = 4
 /** BPM half-window for the Set Health candidate pool. */
@@ -127,6 +155,8 @@ function decode(filePath: string, seconds: number): Promise<Float32Array | null>
 
 let index: FingerprintIndex | null = null
 let indexedTrackCount = 0
+/** Library signature the current `index` was built/loaded from (staleness key). */
+let indexSignature: string | null = null
 let detector: LiveDetector | null = null
 let library: Track[] = []
 let recent: Track[] = []
@@ -136,6 +166,101 @@ let cachedHealth = 0
 
 export function isIndexReady(): boolean {
   return index !== null
+}
+
+// ───────── index persistence (cache across launches) ─────────
+
+/** Where the cached fingerprint index lives on disk. */
+function indexFilePath(): string {
+  return join(app.getPath('userData'), 'live-fingerprint-index.bin')
+}
+
+/**
+ * Identity of the DSP parameters + coverage the index was built with. Any change
+ * here changes the landmark hashes (or what's covered), so a cache built with a
+ * different signature is incompatible and must be rebuilt.
+ */
+function fingerprintParamSig(): string {
+  return [
+    CODEC_VERSION,
+    INDEX_SECONDS,
+    FP_SAMPLE_RATE,
+    FP_FRAME_SIZE,
+    FP_HOP_SIZE,
+    FP_MAX_BIN,
+    FP_MIN_BIN,
+    FP_PEAKS_PER_FRAME,
+    FP_PEAK_REL_FLOOR,
+    FP_TARGET_DT_MIN,
+    FP_TARGET_DT_MAX,
+    FP_FANOUT
+  ].join(',')
+}
+
+/**
+ * Cheap content signature of the indexable library: which tracks, where, and how
+ * big. Changes when a track is added, removed, repathed, or its file replaced —
+ * exactly the cases that should invalidate a cached index. Avoids statting files
+ * (uses the DB's stored fileSize), so it's fast even on a large library.
+ */
+function librarySignature(tracks: Track[]): string {
+  const usable = tracks
+    .filter((t) => !t.missingFile && t.filePath)
+    .map((t) => `${t.id}|${t.filePath}|${t.fileSize ?? 0}`)
+    .sort()
+  const h = createHash('sha1').update(usable.join('\n')).digest('hex')
+  return `${usable.length}:${h}`
+}
+
+interface IndexMeta {
+  paramSig: string
+  librarySig: string
+  indexedTracks: number
+}
+
+/** True when the in-process index exists AND still matches `tracks` (so a
+ *  re-import or file change correctly forces a rebuild, not a stale match). */
+export function isIndexFresh(tracks: Track[]): boolean {
+  return index !== null && indexSignature === librarySignature(tracks)
+}
+
+/** Persist the current index to disk (best-effort — a failure just means the
+ *  next launch rebuilds). */
+function persistIndex(librarySig: string): void {
+  if (!index) return
+  try {
+    const meta: IndexMeta = {
+      paramSig: fingerprintParamSig(),
+      librarySig,
+      indexedTracks: indexedTrackCount
+    }
+    writeFileSync(indexFilePath(), encodeIndex(index, meta))
+  } catch (err) {
+    console.error('[live] index persist failed', err)
+  }
+}
+
+/**
+ * Restore the fingerprint index from disk for `tracks`. Returns true (and sets
+ * the live index) when a valid cache matching the current library + DSP params
+ * exists; false means the caller must rebuild. Never throws.
+ */
+export function loadPersistedIndex(tracks: Track[]): boolean {
+  try {
+    const sig = librarySignature(tracks)
+    const decoded = decodeIndex(readFileSync(indexFilePath()))
+    if (!decoded) return false
+    const meta = decoded.meta as Partial<IndexMeta> | null
+    if (!meta || meta.paramSig !== fingerprintParamSig() || meta.librarySig !== sig) {
+      return false // stale: params or library changed since it was cached
+    }
+    index = decoded.index
+    indexedTrackCount = meta.indexedTracks ?? 0
+    indexSignature = sig
+    return true
+  } catch {
+    return false // no cache yet, or unreadable
+  }
 }
 
 // ───────── flight recorder (auto-tracklist of the live set) ─────────
@@ -237,6 +362,9 @@ export async function buildLiveIndex(
   await Promise.all(Array.from({ length: BUILD_CONCURRENCY }, () => worker()))
   index = next
   indexedTrackCount = usable.length
+  indexSignature = librarySignature(tracks)
+  // Cache to disk so the next launch restores instantly instead of rebuilding.
+  persistIndex(indexSignature)
 }
 
 /**

@@ -24,7 +24,7 @@ import { net } from 'electron'
  * Set this to your deployed Worker URL after running `npm run deploy` in the
  * fulfilment repo. Leave null until the backend is live.
  */
-export const LICENSE_API_BASE: string | null = 'https://setrecord-fulfilment.carterpinkmusic.workers.dev'
+export const LICENSE_API_BASE: string | null = 'https://setsense-fulfilment.carterpinkmusic.workers.dev'
 
 const REQUEST_TIMEOUT_MS = 5000
 

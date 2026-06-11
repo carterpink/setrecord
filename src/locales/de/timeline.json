@@ -20,7 +20,9 @@
   "performed": {
     "logged": "„{{name}}“ als gespielt protokolliert.",
     "markError": "Dieses Set konnte nicht als gespielt markiert werden.",
-    "markFailed": "Beim Markieren des Sets als gespielt ist etwas schiefgelaufen."
+    "markFailed": "Beim Markieren des Sets als gespielt ist etwas schiefgelaufen.",
+    "alreadyToday": "„{{name}}“ ist heute bereits als gespielt protokolliert.",
+    "logAgain": "Erneut protokollieren"
   },
   "empty": {
     "readyTitle": "„{{name}}“ — bereit, wann immer du willst.",

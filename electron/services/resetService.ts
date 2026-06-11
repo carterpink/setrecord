@@ -10,6 +10,10 @@
  *  - Keychain secrets (license key, device id, YouTube key) — Pro stays
  *    activated; a reset is not a sign-out. The license bookkeeping JSON is
  *    cleared, but the signed key in the keychain is untouched.
+ *  - The durable trial/clock anchors in the keychain (see licenseAnchors.ts). A
+ *    Fresh Start clears the local trial-state.json, but the keychain remembers
+ *    that this device already consumed its 7-day trial — so a reset can no longer
+ *    farm a fresh trial. The free trial is once per device, by design.
  *  - The bundled/downloaded ML models in userData/models — heavy, not user data.
  *  - The user's actual audio files — SetRecord never owns or moves those.
  *
@@ -54,12 +58,14 @@ export function freshStart(): void {
   // 2. electron-store backed state, reset in-place to DEFAULTS.
   clearSettings() //   preferences.json — re-arms onboarding (hasCompletedOnboarding=false)
   clearProgress() //   progress.json — activation funnel + weekly streak
-  clearTrial() //      trial-state.json — trial re-arms on next import
+  clearTrial() //      trial-state.json (local only) — the durable keychain anchor
+  //                   survives, so the trial does NOT re-arm on this device
   clearLicenseLocalState() // license-state.json — clock high-water + online-check cache
 
   // 3. On-disk caches. Artwork is regenerated on import; energy is recomputed.
   removeIfExists(getArtworkCacheDir())
   removeIfExists(join(app.getPath('userData'), 'energy-cache.json'))
+  removeIfExists(join(app.getPath('userData'), 'live-fingerprint-index.bin')) // live mode rebuilds it
 
   // Keychain secrets and userData/models are intentionally left in place.
 }

@@ -199,7 +199,13 @@
       "updated_one": "{{count}} date mise à jour.",
       "updated_other": "{{count}} dates mises à jour.",
       "apply": "Appliquer aux dates correspondantes"
-    }
+    },
+    "methodRecorded": "enregistré",
+    "methodRecordedTitle": "Capté en live par le Flight Recorder — données de lecture vérifiées",
+    "methodImported": "importé",
+    "methodImportedTitle": "Importé depuis ton historique Rekordbox — données de lecture vérifiées",
+    "methodMarked": "marqué",
+    "methodMarkedTitle": "Marqué comme joué manuellement — conservé dans ton journal, non compté dans les stats"
   },
   "health": {
     "title": "Santé",

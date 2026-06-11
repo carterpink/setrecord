@@ -92,6 +92,26 @@ linux:
   category: Utility
 appImage:
   artifactName: ${name}-${version}.${ext}
+# Electron fuses — compile-time security flags flipped into the packaged binary
+# (electron-builder applies these before code-signing and embeds the asar
+# integrity hash automatically). Anti-tamper hardening for the offline licence
+# model: the whole Pro decision is local JS in app.asar, so without integrity
+# validation an installed copy could be unpacked, `isProEntitled()` patched to
+# `return true`, and repacked. With these on, Electron refuses to load a tampered
+# asar and the binary can no longer be coerced into a generic Node runtime.
+#
+# NOTE: requires a packaged-build smoke test before release (the app must launch
+# and the bundled llama.cpp model must still load) — these flags only take effect
+# in a real `electron-builder --mac` artifact, never in `electron-vite build`/CI.
+# grantFileProtocolExtraPrivileges is left at its default (true): the renderer is
+# loaded from file:// in production, so disabling it could break startup.
+electronFuses:
+  runAsNode: false # no ELECTRON_RUN_AS_NODE → can't turn the signed app into a Node shell
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false # no --inspect attach to the packaged app
+  enableEmbeddedAsarIntegrityValidation: true # refuse a modified app.asar
+  onlyLoadAppFromAsar: true # only run code from the (integrity-checked) asar
 npmRebuild: false
 # Update feed (NFR-1001). This defines WHERE releases live; it does NOT turn on
 # auto-install. electron-builder only publishes when invoked with `--publish`

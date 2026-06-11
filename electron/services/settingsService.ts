@@ -43,9 +43,14 @@ export interface AppSettings {
   /**
    * Opt-in anonymous crash reporting via Sentry.
    * Off by default. Never sends library contents, track titles, file paths, or personal data.
-   * Changes take effect on the next app launch.
+   * Changes take effect immediately.
    */
   crashReportingEnabled: boolean
+  /**
+   * Opt-in to Sentry error tracking (frontend). Off by default.
+   * Changes take effect immediately.
+   */
+  sentryOptIn: boolean
   /**
    * Opt-in to the Flight Recorder's lo-fi room-mic AUDIO capture while live. Off by
    * default: the auto-tracklist is always recorded, but capturing audio of the room
@@ -120,6 +125,7 @@ const DEFAULTS: AppSettings = {
   rekordboxDbConsent: false,
   autoDetectRekordbox: true,
   crashReportingEnabled: false,
+  sentryOptIn: false,
   flightRecorderEnabled: false,
   reactionCaptureEnabled: false,
   keyNotation: 'camelot',
@@ -164,6 +170,7 @@ export function getSettings(): AppSettings {
     rekordboxDbConsent: store.get('rekordboxDbConsent') ?? false,
     autoDetectRekordbox: store.get('autoDetectRekordbox') ?? true,
     crashReportingEnabled: store.get('crashReportingEnabled') ?? false,
+    sentryOptIn: store.get('sentryOptIn') ?? false,
     flightRecorderEnabled: store.get('flightRecorderEnabled') ?? false,
     reactionCaptureEnabled: store.get('reactionCaptureEnabled') ?? false,
     keyNotation: store.get('keyNotation') ?? 'camelot',

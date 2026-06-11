@@ -64,8 +64,12 @@ async function buildSequences(): Promise<string[][]> {
   const sessions = getSessions(db)
   const sequences: string[][] = []
 
-  // Performed sessions
+  // Performed sessions — verified evidence only. A "Mark as Performed" claim
+  // (method='user-asserted') duplicates its saved set's sequence, which is
+  // already included below; counting it again would double-weight transitions
+  // on the strength of an unverified click.
   for (const session of sessions) {
+    if (session.method === 'user-asserted') continue
     if (session.trackCount < 2) continue
     const sessionTracks = getSessionTracks(db, session.id)
     const ids = sessionTracks.sort((a, b) => a.playOrder - b.playOrder).map((st) => st.trackId)

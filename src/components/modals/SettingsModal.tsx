@@ -20,6 +20,7 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import { APP_NAME } from '@/utils/constants'
+import { launchProfile } from '@/config/launchProfile'
 import type { CDJModel, ImportSource, LanguagePreference, LicenseActivationError } from '@/types'
 import type {
   InspectResult as BackupInspectResult,
@@ -747,6 +748,7 @@ export function SettingsModal(): React.JSX.Element {
   const [checkingUpdate, setCheckingUpdate] = useState(false)
   const [clearingArtwork, setClearingArtwork] = useState(false)
   const [artworkCacheBytes, setArtworkCacheBytes] = useState<number | null>(null)
+  const [sentryOptIn, setSentryOptIn] = useState(false)
 
   useEffect(() => {
     if (typeof window.setrecord === 'undefined') return
@@ -762,6 +764,7 @@ export function SettingsModal(): React.JSX.Element {
       setLastImportAt(s.lastImportAt ?? null)
       setAutoDetectRekordbox(s.autoDetectRekordbox ?? true)
       setCrashReportingEnabled(s.crashReportingEnabled ?? false)
+      setSentryOptIn(s.sentryOptIn ?? false)
       setFlightRecorderEnabled(s.flightRecorderEnabled ?? false)
       setReactionCaptureEnabled(s.reactionCaptureEnabled ?? false)
       setAutoTaggingEnabled(s.autoTaggingEnabled ?? true)
@@ -814,6 +817,7 @@ export function SettingsModal(): React.JSX.Element {
         learnModeEnabled: learnMode,
         autoDetectRekordbox,
         crashReportingEnabled,
+        sentryOptIn,
         flightRecorderEnabled,
         reactionCaptureEnabled,
         autoTaggingEnabled,
@@ -1711,30 +1715,34 @@ export function SettingsModal(): React.JSX.Element {
                         </div>
                       </div>
 
-                      <div className="field-group">
-                        <div
-                          className="ss-label"
-                          id="settings-tagroute-label"
-                          style={{ display: 'block', marginBottom: 8 }}
-                        >
-                          {t('tagRoute.label')}
+                      {launchProfile.rekordboxNativeTagWrite && (
+                        <div className="field-group">
+                          <div
+                            className="ss-label"
+                            id="settings-tagroute-label"
+                            style={{ display: 'block', marginBottom: 8 }}
+                          >
+                            {t('tagRoute.label')}
+                          </div>
+                          <SegmentedControl
+                            options={[t('tagRoute.xml'), t('tagRoute.native')]}
+                            value={
+                              defaultTagExportRoute === 'native'
+                                ? t('tagRoute.native')
+                                : t('tagRoute.xml')
+                            }
+                            onChange={(v) =>
+                              setDefaultTagExportRoute(
+                                v === t('tagRoute.native') ? 'native' : 'xml'
+                              )
+                            }
+                            ariaLabelledby="settings-tagroute-label"
+                          />
+                          <div className="ss-caption" style={{ opacity: 0.55, marginTop: 6 }}>
+                            {t('tagRoute.caption')}
+                          </div>
                         </div>
-                        <SegmentedControl
-                          options={[t('tagRoute.xml'), t('tagRoute.native')]}
-                          value={
-                            defaultTagExportRoute === 'native'
-                              ? t('tagRoute.native')
-                              : t('tagRoute.xml')
-                          }
-                          onChange={(v) =>
-                            setDefaultTagExportRoute(v === t('tagRoute.native') ? 'native' : 'xml')
-                          }
-                          ariaLabelledby="settings-tagroute-label"
-                        />
-                        <div className="ss-caption" style={{ opacity: 0.55, marginTop: 6 }}>
-                          {t('tagRoute.caption')}
-                        </div>
-                      </div>
+                      )}
 
                       {rekordboxDbConsent && (
                         <div className="field-group">
@@ -1808,6 +1816,46 @@ export function SettingsModal(): React.JSX.Element {
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                            <Shield
+                              size={18}
+                              strokeWidth={1.6}
+                              style={{ marginTop: 2, opacity: 0.8, flexShrink: 0 }}
+                              aria-hidden="true"
+                            />
+                            <div>
+                              <div className="ss-label">{t('sentry.label')}</div>
+                              <div
+                                className="ss-caption"
+                                style={{ opacity: 0.65, marginTop: 2, lineHeight: 1.5 }}
+                              >
+                                {t('sentry.caption')}
+                              </div>
+                              <div
+                                className="ss-caption"
+                                style={{ opacity: 0.5, marginTop: 6, lineHeight: 1.45 }}
+                              >
+                                {t('sentry.privacyNote')}
+                              </div>
+                            </div>
+                          </div>
+                          <Toggle
+                            on={sentryOptIn}
+                            onChange={setSentryOptIn}
+                            aria-label={t('sentry.toggleAria')}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="field-group">
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            gap: 16
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                             <Mic
                               size={18}
                               strokeWidth={1.6}
@@ -1837,7 +1885,7 @@ export function SettingsModal(): React.JSX.Element {
                           />
                         </div>
 
-                        {flightRecorderEnabled && (
+                        {flightRecorderEnabled && launchProfile.reactionCapture && (
                           <div
                             style={{
                               display: 'flex',

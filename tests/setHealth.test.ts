@@ -8,7 +8,10 @@ import { computeSetHealth, type SetHealthInput } from '../electron/algorithms/se
 import { makeTrack } from './fixtures'
 
 /** Build N candidates around a base, varying key/bpm/energy via the callback. */
-function candidates(n: number, fn: (i: number) => Partial<Parameters<typeof makeTrack>[0]>) {
+function candidates(
+  n: number,
+  fn: (i: number) => Partial<Parameters<typeof makeTrack>[0]>
+): ReturnType<typeof makeTrack>[] {
   return Array.from({ length: n }, (_, i) => makeTrack({ id: `c${i}`, ...fn(i) }))
 }
 

@@ -9,6 +9,7 @@ function session(id: string, overrides: Partial<PlaySession> = {}): PlaySession 
     id,
     name: `Gig ${id}`,
     source: 'setrecord',
+    method: 'live-recorded',
     venue: `Venue ${id}`,
     createdAt: '2025-01-01T00:00:00Z',
     trackCount: 0,

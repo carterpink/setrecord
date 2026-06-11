@@ -20,7 +20,9 @@
   "performed": {
     "logged": "Logged “{{name}}” as performed.",
     "markError": "Could not mark this set as performed.",
-    "markFailed": "Something went wrong marking the set performed."
+    "markFailed": "Something went wrong marking the set performed.",
+    "alreadyToday": "“{{name}}” is already logged as performed today.",
+    "logAgain": "Log again"
   },
   "empty": {
     "readyTitle": "“{{name}}” — ready when you are.",

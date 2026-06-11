@@ -1,0 +1,36 @@
+Cut / hide before v1 — ranked by risk
+1. B2B Real-Time Collaboration — HIDE behind flag
+src/collab/*, src/stores/collabStore.ts, src/components/collab/*, server/collab-relay/server.mjs
+	•	Why it goes: Explicitly on the PRD do-not-ship list. It's a networked feature with no auth — the invite code is a plaintext base64 secret; anyone who sees it joins your session. Shipping that at a paid launch is a security headline waiting to happen. It also needs a cloud relay you'd have to operate/pay for, and it competes with the core "my crate, my memory" single-player prop.
+	•	Verdict: Hide entirely (it's well-built — preserve it behind VITE_COLLAB_RELAY_URL/feature flag for a deliberate v2 launch). Do not expose any Invite/Join UI in v1.
+2. Rekordbox MyTag native DB write — HIDE the native path
+electron/services/rekordbox/myTagWriter.ts, RekordboxTagExportModal.tsx, Settings defaultTagExportRoute
+	•	Why it goes: This writes directly into the user's live Rekordbox master.db. The code's own comment says it's "not validated against real RB6/RB7". A schema/USN bug here corrupts a DJ's library — the single worst outcome for a memory app whose pitch is "trust me with your crate." The backup mitigates but doesn't eliminate.
+	•	Verdict: Good news — it already defaults to 'xml' (safe). For v1, remove the Settings toggle so the native path can't be enabled at all. Keep XML-only (the comment-field export is mature and zero-risk). Re-enable after a real validation spike.
+3. Reaction Capture (Black Box Phase 3) — HIDE the toggle
+electron/services/blackbox/reactionPipeline.ts, crowdIsolation.ts, SettingsModal toggle
+	•	Why it goes: Marked EXPERIMENTAL, defaults off, validated only on synthetic signals (no real-booth test). It presents crowd-energy/"what landed" claims it cannot yet back. A confident-looking number that's wrong is worse than no number.
+	•	Verdict: Keep the code, but remove the user-facing Settings toggle for v1 (dev-flag only). Don't let a paying user enable unvalidated DSP and trust the output.
+4. Engine DJ export & import — HIDE or hard "Beta" label
+electron/services/engine/dbWriter.ts, import/providers/engineDj.ts
+	•	Why it goes: Export writes to Engine's m.db with no backup taken (unlike the Rekordbox path) and is less validated. Import is explicitly beta: true, "untested on real hardware," with cue/beatgrid decoding deferred. Two write/parse surfaces for a second ecosystem you can't QA.
+	•	Verdict: Cut from v1, or at minimum gate behind a clearly-labeled Beta and add a pre-write backup. Rekordbox is your beachhead; ship that clean, add Engine when validated.
+5. SetRecord Live — real-time HUD suggestions — HIDE the "next track" overlay; keep the recorder
+src/components/live/LiveOverlay.tsx, audioFeed.ts, electron/services/live/fingerprint.ts
+	•	The nuance that matters: Live's Flight Recorder (auto-tracklist + local audio) is the data source for your free memory features (Gigs, Venues, Combos). Don't cut that — it's how the crate "remembers."
+	•	What's risky is the real-time HUD that suggests the next track: it needs a loopback audio device most booth setups don't have, has a known fail mode on tempo shift without key-lock, and a low-confidence "Listening…" state that reads as broken. That's your #1 "why doesn't this work?" support generator, and "suggest my next track live" actively competes with the prep-and-memory prop.
+	•	Verdict: Keep the recorder (auto-tracklist + local lo-fi audio). Hide/label-Beta the live suggestion overlay. If you keep it, gate it behind a setup wizard that detects the loopback device first.
+6. Beatport export — HIDE behind flag
+src/utils/beatportMatch.ts, electron/services/beatport/csvExport.ts
+	•	Why it goes: Heuristic title/BPM matching with no authoritative API → variable accuracy and "why is this match wrong?" tickets. It's a buying/export workflow, not a memory feature. Surface area without proportional pull for v1.
+	•	Verdict: Flag it off; revisit post-launch.
+
+Watch list — trim if you want a tighter v1 (lower stakes)
+	•	Constellation / Graph (Pro) — recall/graph/*. A "every possible next track" network viz is pretty but has a fuzzy job-to-be-done and adds a whole canvas subsystem. Candidate to hide and see if anyone misses it.
+	•	Learn Mode (full Pro tooltips everywhere) — src/components/learn/*. Keep the free beginner explainers (they serve onboarding/core). The Pro "tooltips on everything" tier is a lot of surface not in the PRD — consider deferring.
+	•	Identity share card — IdentityShareCard.tsx. Identity itself is a lovely free memory payoff — keep it. But the external share action is the "social sharing" the PRD warned off; if it exports/posts anywhere, hide that button for v1 (keep the in-app Wrapped).
+	•	Transcription / voice input — already optional with text fallback; just make sure it ships default-off so a missing 140 MB model / native binding never greets a new user with an error.
+	•	i18n (5 languages) — only the chrome is translated; the AI answers stay English. A half-Spanish app invites "why is this still English?" tickets. Low-stakes (it falls back cleanly), but consider English-only for v1.
+
+Don't touch — these are the product
+Library import, the Home conversational ask, Uncover, Rediscover, Combos, Gigs, Venues, Health, the Flight Recorder's auto-tracklist, auto-tagger, album artwork, Rekordbox XML import/export, Set Architect, Smart Filter, Cue Editor. These reinforce the memory prop and are mature.

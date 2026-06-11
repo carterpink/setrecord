@@ -110,6 +110,12 @@
     "privacyNote": "Tu biblioteca, los títulos de las pistas, las rutas de archivo, el nombre de tu dispositivo y los datos personales nunca se incluyen. Desactivado por defecto. Desactivarlo detiene los informes de inmediato; activarlo surte efecto tras reiniciar {{app}}.",
     "toggleAria": "Activar informes de fallos"
   },
+  "sentry": {
+    "label": "Seguimiento de errores",
+    "caption": "Opta por enviar datos anónimos de errores y rendimiento cuando {{app}} encuentra problemas. Esto nos ayuda a corregir fallos más rápido y a mantener todo estable.",
+    "privacyNote": "Los informes están filtrados: sin contenido de biblioteca, títulos de pistas, rutas de archivo ni datos personales. Desactivado por defecto. Los cambios surten efecto inmediatamente.",
+    "toggleAria": "Activar seguimiento de errores"
+  },
   "flightRecorder": {
     "label": "Grabadora de sesión",
     "caption": "Graba una referencia de audio lo-fi de tu sesión desde el micrófono de la sala mientras actúas, para reproducirla después. El tracklist siempre se guarda; esto añade el audio.",

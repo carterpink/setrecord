@@ -102,17 +102,22 @@ export function FeedbackModal(): React.JSX.Element {
     <Modal
       onClose={closeModal}
       ariaLabel={t('feedback.title')}
-      maxWidth={460}
+      className="feedback-modal"
+      style={{
+        width: 640,
+        maxWidth: 'calc(100vw - 48px)',
+        height: 'min(680px, calc(100vh - 48px))'
+      }}
       bloom={{ icon: 'mail', tone: 'lime' }}
     >
       <div className="modal-header">
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
           <span className="ss-h2">{t('feedback.title')}</span>
-          <span className="ss-caption" style={{ marginLeft: 10, color: 'var(--text-tertiary)' }}>
+          <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
             {t('feedback.subtitle')}
           </span>
         </div>
-        <IconButton icon={X} size="sm" aria-label={t('common.close')} onClick={closeModal} />
+        <IconButton icon={X} size="sm" aria-label={t('common.close')} onClick={closeModal} style={{ flexShrink: 0 }} />
       </div>
 
       <div className="modal-body">

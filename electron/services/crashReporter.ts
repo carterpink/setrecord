@@ -3,7 +3,7 @@ import type { ErrorEvent } from '@sentry/electron/main'
 
 // Populated at build/launch time via the SENTRY_DSN environment variable.
 // Never hard-coded here — see .env.example for how to configure it.
-const DSN = process.env.SENTRY_DSN ?? ''
+const DSN = import.meta.env.VITE_SENTRY_DSN ?? ''
 
 // Tracks whether init() has run this session, so closeCrashReporter() can tear
 // down on opt-out and we never double-initialise.

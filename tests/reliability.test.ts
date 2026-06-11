@@ -102,7 +102,7 @@ describe('setStore auto-save', () => {
   })
 
   afterEach(() => {
-    // @ts-expect-error
+    // @ts-expect-error - window is non-optional on globalThis; deleting the test stub
     delete global.window
     vi.useRealTimers()
   })
@@ -201,7 +201,7 @@ describe('ErrorBoundary', () => {
   it('componentDidCatch logs the error without rethrowing', async () => {
     const { ErrorBoundary } = await import('../src/components/shared/ErrorBoundary')
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    // @ts-expect-error
+    // @ts-expect-error - constructing the component directly without the full React props
     const instance = new ErrorBoundary({ label: 'test-panel' })
     const err = new Error('crash')
     expect(() =>

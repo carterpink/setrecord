@@ -111,6 +111,32 @@ interface LibraryState {
   /** Clear a user override so the category re-infers (Pro). */
   resetTrackTagsToAuto: (trackId: string, category?: TagCategory) => Promise<void>
   updateTrackMeta: (trackId: string, fields: { bpm?: number; key?: string }) => Promise<void>
+  // ── Bulk operations (power-user multi-select) ─────────────────────────────
+  /** Bulk-edit metadata across many tracks (Pro). Resolves false if not entitled. */
+  bulkUpdateMeta: (
+    ids: string[],
+    patch: {
+      bpm?: number
+      key?: string
+      genre?: string
+      rating?: number
+      color?: string
+      comment?: string
+    }
+  ) => Promise<boolean>
+  /** Bulk-set energy across many tracks (Pro). */
+  bulkSetEnergy: (ids: string[], energy: number) => Promise<boolean>
+  /** Bulk tag edit for one category across many tracks (Pro). */
+  bulkSetTags: (
+    ids: string[],
+    category: TagCategory,
+    values: string[],
+    mode: 'add' | 'remove' | 'replace'
+  ) => Promise<boolean>
+  /** Remove many tracks from the DB only (files untouched). Returns removed rows for Undo. */
+  bulkDelete: (ids: string[]) => Promise<Track[]>
+  /** Re-insert removed tracks (Undo). */
+  bulkRestore: (tracks: Track[]) => Promise<void>
   relinkTrackFile: (trackId: string) => Promise<string | null>
   applyFileStatusChanges: (changes: Array<{ id: string; missing: boolean }>) => void
   refreshFileHealth: () => Promise<void>
@@ -245,6 +271,63 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       )
     set((s) => ({ tracks: patch(s.tracks), searchResults: patch(s.searchResults) }))
     await window.setrecord.updateTrackMeta(trackId, fields)
+  },
+
+  bulkUpdateMeta: async (ids, fields) => {
+    const ok = await window.setrecord.tracksBulkUpdateMeta(ids, fields)
+    if (!ok) return false
+    const idSet = new Set(ids)
+    const delta: Partial<Track> = {
+      ...(fields.bpm != null ? { bpm: fields.bpm } : {}),
+      ...(fields.key != null ? { key: fields.key } : {}),
+      ...(fields.genre != null ? { genre: fields.genre } : {}),
+      ...(fields.rating != null ? { rating: fields.rating } : {}),
+      ...(fields.color != null ? { color: fields.color } : {}),
+      ...(fields.comment != null ? { comment: fields.comment } : {})
+    }
+    const patch = (arr: Track[]): Track[] =>
+      arr.map((t) => (idSet.has(t.id) ? { ...t, ...delta } : t))
+    set((s) => ({ tracks: patch(s.tracks), searchResults: patch(s.searchResults) }))
+    return true
+  },
+
+  bulkSetEnergy: async (ids, energy) => {
+    const clamped = Math.max(1, Math.min(10, Math.round(energy)))
+    const ok = await window.setrecord.tracksBulkSetEnergy(ids, clamped)
+    if (!ok) return false
+    const idSet = new Set(ids)
+    const patch = (arr: Track[]): Track[] =>
+      arr.map((t) =>
+        idSet.has(t.id) ? { ...t, energy: clamped, energySource: 'user' as EnergySource } : t
+      )
+    set((s) => ({ tracks: patch(s.tracks), searchResults: patch(s.searchResults) }))
+    return true
+  },
+
+  bulkSetTags: async (ids, category, values, mode) => {
+    const ok = await window.setrecord.tracksBulkSetTags(ids, category, values, mode)
+    if (!ok) return false
+    // Tags aren't patched optimistically (the merge logic lives in main) — reload
+    // so the Tags view and per-track tags reflect the new state. Selection survives
+    // (ids remain valid, so the retain guard keeps them).
+    await get().loadLibrary()
+    return true
+  },
+
+  bulkDelete: async (ids) => {
+    const { removed } = await window.setrecord.tracksDelete(ids)
+    const idSet = new Set(ids)
+    const filter = (arr: Track[]): Track[] => arr.filter((t) => !idSet.has(t.id))
+    set((s) => {
+      const tracks = filter(s.tracks)
+      return { tracks, searchResults: filter(s.searchResults), hasLibrary: tracks.length > 0 }
+    })
+    return removed
+  },
+
+  bulkRestore: async (tracks) => {
+    await window.setrecord.tracksRestore(tracks)
+    await get().loadLibrary()
   },
 
   relinkTrackFile: async (trackId) => {

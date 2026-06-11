@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/electron/main'
 import {
   app,
   shell,
@@ -13,6 +14,24 @@ import { existsSync, createReadStream, promises as fsp } from 'fs'
 import { Readable } from 'node:stream'
 import { join, resolve } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+
+// Initialize Sentry with opt-in capability. DSN from environment; disabled if not provided.
+const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN || ''
+let sentryOptIn = false
+
+if (SENTRY_DSN) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    environment: is.dev ? 'development' : 'production',
+    tracesSampleRate: 1.0,
+    beforeSend(event) {
+      return sentryOptIn ? event : null
+    },
+    beforeSendTransaction(transaction) {
+      return sentryOptIn ? transaction : null
+    }
+  })
+}
 import {
   buildLiveIndex,
   startLive,
@@ -21,7 +40,8 @@ import {
   processDetectedTrack,
   matchText,
   readNowPlaying,
-  isIndexReady,
+  isIndexFresh,
+  loadPersistedIndex,
   liveStatus,
   beginRecordingSession,
   setLiveVenue,
@@ -43,6 +63,13 @@ import { initDb, getDb, resetDb, getDbPath } from './db/schema'
 import {
   getAllTracks,
   getTrackById,
+  deleteTracks,
+  restoreTracks,
+  bulkUpdateTrackMeta,
+  bulkSetEnergy,
+  bulkSetUserTags,
+  bulkSetLifecycle,
+  type BulkTrackMetaPatch,
   getLibraryStats,
   countTracks,
   getAllSets,
@@ -111,6 +138,7 @@ import { startRelay, stopRelay } from './services/collab/relayServer'
 import { retagLibrary, retagTrack } from './services/tagging/tagger'
 import type {
   Set as DJSet,
+  Track,
   LibraryFilters,
   ArchitectParams,
   CuePoint,
@@ -178,6 +206,7 @@ import { exportSetToEngineUsb } from './services/engine/engineExport'
 import { exportSet, exportLibraryTagsXml } from './services/exportService'
 import { exportBeatportCsv } from './services/beatport/csvExport'
 import { writeMyTags } from './services/rekordbox/myTagWriter'
+import { launchProfile } from './config/launchProfile'
 import {
   getSettings,
   setSettings,
@@ -186,7 +215,7 @@ import {
 } from './services/settingsService'
 import type { AppSettings } from './services/settingsService'
 import { freshStart } from './services/resetService'
-import { initCrashReporter, closeCrashReporter } from './services/crashReporter'
+import { closeCrashReporter } from './services/crashReporter'
 import { initLogger, getSessionId } from './services/logging/logger'
 import { buildFeedbackBody, shouldAttachDiagnostics } from './services/logging/feedbackDiagnostics'
 import { buildLogBundle } from './services/logging/exportBundle'
@@ -200,6 +229,7 @@ import {
   isProEntitled
 } from './services/licenseService'
 import { loadDeviceId, getDeviceId } from './services/licensing/deviceId'
+import { loadLicenseAnchors } from './services/licensing/licenseAnchors'
 import { startTrial } from './services/licensing/trialStore'
 import {
   getProgress,
@@ -210,7 +240,11 @@ import {
   type ProgressState,
   type FirstEvent
 } from './services/progressService'
-import { ACTIVATION_SCHEME, parseActivationUrl } from './services/licensing/signingKey'
+import {
+  ACTIVATION_SCHEME,
+  parseActivationUrl,
+  directCheckoutUrl
+} from './services/licensing/signingKey'
 import { getGateway } from './services/licensing/gateway'
 import {
   listUSBDevices,
@@ -258,8 +292,9 @@ function mediaMimeType(filePath: string): string {
 }
 
 // Dev-only: expose the Chromium DevTools Protocol when SETSENSE_CDP=<port> is set,
-// so automated tooling can attach to the renderer. Inert in normal/production runs.
-if (process.env.SETSENSE_CDP) {
+// so automated tooling can attach to the renderer. Hard-gated on !app.isPackaged so a
+// stray env var can never open `remote-allow-origins: *` on a shipped build.
+if (!app.isPackaged && process.env.SETSENSE_CDP) {
   app.commandLine.appendSwitch('remote-debugging-port', process.env.SETSENSE_CDP)
   app.commandLine.appendSwitch('remote-allow-origins', '*')
 }
@@ -930,14 +965,38 @@ function registerIpcHandlers(): void {
 
       // Build the audio fingerprint index in the background (fallback sensor for
       // your own files); progress only to the main window, never blocks listening.
-      if (!isIndexReady()) {
-        buildLiveIndex(lib, (done, total) => {
-          if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send('live:index-progress', { done, total })
+      // Wire the audio fingerprint matcher. Try the on-disk cache from a previous
+      // launch first (restores instantly); only rebuild if it's missing or the
+      // library changed since. isIndexFresh covers an in-session re-import too.
+      if (!isIndexFresh(lib)) {
+        if (loadPersistedIndex(lib)) {
+          startLive(getAllTracks(getDb())) // re-wire with the restored index — no rebuild
+          if (overlayWindow && !overlayWindow.isDestroyed()) {
+            overlayWindow.webContents.send('live:ready', liveStatus())
           }
-        })
-          .then(() => startLive(getAllTracks(getDb()))) // re-wire audio matcher
-          .catch((err) => console.error('[live] index build failed', err))
+        } else {
+          buildLiveIndex(lib, (done, total) => {
+            // Drive the overlay's "Preparing library…" state, not just the main
+            // window's progress surface — the main window is minimised during a
+            // live set, so without this the DJ sees a silent "listening…" for the
+            // whole build while the audio matcher has nothing to match against.
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('live:index-progress', { done, total })
+            }
+            if (overlayWindow && !overlayWindow.isDestroyed()) {
+              overlayWindow.webContents.send('live:index-progress', { done, total })
+            }
+          })
+            .then(() => {
+              startLive(getAllTracks(getDb())) // re-wire the audio matcher with the built index
+              // Index is live now — tell the overlay so it leaves "Preparing…" and
+              // starts identifying tracks from the audio fingerprint sensor.
+              if (overlayWindow && !overlayWindow.isDestroyed()) {
+                overlayWindow.webContents.send('live:ready', liveStatus())
+              }
+            })
+            .catch((err) => console.error('[live] index build failed', err))
+        }
       }
     } catch (err) {
       console.error('[live] start failed', err)
@@ -1037,7 +1096,7 @@ function registerIpcHandlers(): void {
         // EXPERIMENTAL: if enabled, analyse crowd reaction in the background
         // (decode + NLMS is heavy and not needed synchronously). Notify the
         // renderer when rows land so the Brief/Résumé can refresh.
-        if (getSettings().reactionCaptureEnabled) {
+        if (launchProfile.reactionCapture && getSettings().reactionCaptureEnabled) {
           void analyzeSessionReactions(getDb(), id)
             .then(() => {
               if (mainWindow && !mainWindow.isDestroyed()) {
@@ -1153,6 +1212,10 @@ function registerIpcHandlers(): void {
    * read → applyImport → shared housekeeping → optional deferred postImport().
    */
   ipcMain.handle('import:run', async (_event, sourceId: LibrarySourceId, libraryPath: string) => {
+    // v1 launch gate: the Engine DJ importer is beta / untested on real hardware.
+    if (sourceId === 'engine-dj' && !launchProfile.engineImport) {
+      throw new Error('Engine DJ import is not available in this build.')
+    }
     const provider = getProvider(sourceId)
     if (!provider) throw new Error(`Unknown import source: ${sourceId}`)
     if (provider.capabilities.importRouting !== 'payload') {
@@ -1426,6 +1489,15 @@ function registerIpcHandlers(): void {
 
   // Advanced: write native MyTags straight into master.db (auto-backup + rollback).
   ipcMain.handle('tags:write-mytags', async () => {
+    // v1 launch gate: the native master.db write path is hidden until validated
+    // against real RB6/RB7 (see myTagWriter). Force users to the safe XML route.
+    if (!launchProfile.rekordboxNativeTagWrite) {
+      return {
+        success: false,
+        error:
+          'Native Rekordbox tag write-back is not available in this build. Use the XML option instead.'
+      }
+    }
     if (!isProEntitled()) return { success: false, error: 'pro_required' }
     const detection = await detectRekordbox()
     if (!detection.installed || !detection.dbPath) {
@@ -1549,6 +1621,53 @@ function registerIpcHandlers(): void {
     updateTrackEnergy(getDb(), trackId, Math.max(1, Math.min(10, Math.round(energy))), null, 'user')
   })
 
+  // ── Bulk operations (power-user multi-select) ───────────────────────────────
+  // Remove from the DB only — audio files on disk are never touched. Returns the
+  // deleted Track rows so the renderer can offer an Undo. Free (your own data).
+  ipcMain.handle('tracks:delete', (_e, ids: string[]) => {
+    const db = getDb()
+    const removed = ids.map((id) => getTrackById(db, id)).filter((t): t is Track => t != null)
+    const count = deleteTracks(db, ids)
+    return { count, removed }
+  })
+
+  ipcMain.handle('tracks:restore', (_e, tracks: Track[]) => {
+    restoreTracks(getDb(), tracks)
+  })
+
+  // Bulk metadata edit is a Pro power-feature.
+  ipcMain.handle('tracks:bulk-update-meta', (_e, ids: string[], patch: BulkTrackMetaPatch) => {
+    if (!isProEntitled()) return false
+    bulkUpdateTrackMeta(getDb(), ids, patch)
+    return true
+  })
+
+  ipcMain.handle('tracks:bulk-set-energy', (_e, ids: string[], energy: number) => {
+    if (!isProEntitled()) return false
+    bulkSetEnergy(getDb(), ids, energy)
+    return true
+  })
+
+  ipcMain.handle(
+    'tracks:bulk-set-tags',
+    (
+      _e,
+      ids: string[],
+      category: TagCategory,
+      values: string[],
+      mode: 'add' | 'remove' | 'replace'
+    ) => {
+      if (!isProEntitled()) return false
+      bulkSetUserTags(getDb(), ids, category, values, mode)
+      return true
+    }
+  )
+
+  // Bulk lifecycle is free (organising your own library).
+  ipcMain.handle('tracks:bulk-set-lifecycle', (_e, ids: string[], state: string | null) => {
+    bulkSetLifecycle(getDb(), ids, state)
+  })
+
   // ── Audio raw bytes (for waveform decoding) ──────────────────────────────
   // Reads an audio file as a Buffer so the renderer can feed it to WaveSurfer
   // via loadBlob(). Avoids relying on the `media://` scheme's renderer-side
@@ -1594,7 +1713,16 @@ function registerIpcHandlers(): void {
     if (partial.crashReportingEnabled === false) {
       await closeCrashReporter()
     }
+    // Update Sentry opt-in status immediately.
+    if (typeof partial.sentryOptIn === 'boolean') {
+      sentryOptIn = partial.sentryOptIn
+    }
     return next
+  })
+
+  // Update Sentry opt-in status from renderer (called at startup to sync preference).
+  ipcMain.handle('sentry:set-opt-in', (_e, optIn: boolean) => {
+    sentryOptIn = optIn && !!SENTRY_DSN
   })
 
   // Artwork cache management (Settings → Privacy & data).
@@ -1677,19 +1805,37 @@ function registerIpcHandlers(): void {
       plan: 'monthly' | 'annual' | 'lifetime' | 'tip',
       _tipAmount?: number
     ): Promise<boolean> => {
+      // Every URL we hand the OS must be a Lemon Squeezy link, so a compromised
+      // renderer can never coax us into opening an arbitrary one.
+      const isLemonSqueezy = (raw: string): boolean => {
+        try {
+          const host = new URL(raw).host.toLowerCase()
+          return host === 'lemonsqueezy.com' || host.endsWith('.lemonsqueezy.com')
+        } catch {
+          return false
+        }
+      }
       try {
         // Tips route through a different flow (not yet wired to the MoR backend).
         if (plan === 'tip') return false
-        // Ask the fulfilment backend to create a hosted checkout bound to this
-        // device. Store variant ids + the API key live server-side, never here.
-        const res = await getGateway().checkout({ plan, deviceId: getDeviceId() })
-        if (!res.reachable || !res.url) return false
-        // Only ever hand the OS a Lemon Squeezy URL, so a compromised renderer
-        // can't coax us into opening an arbitrary link.
-        const host = new URL(res.url).host.toLowerCase()
-        if (host !== 'lemonsqueezy.com' && !host.endsWith('.lemonsqueezy.com')) return false
-        await shell.openExternal(res.url)
-        return true
+        const deviceId = getDeviceId()
+        // Preferred path: ask the fulfilment backend to create a device-bound
+        // hosted checkout (it can mint + auto-activate a key on return). Store
+        // variant ids + the API key live server-side, never here.
+        const res = await getGateway().checkout({ plan, deviceId })
+        if (res.reachable && res.url && isLemonSqueezy(res.url)) {
+          await shell.openExternal(res.url)
+          return true
+        }
+        // Fallback: a configured direct Lemon Squeezy buy link. Lets the button
+        // open the real checkout even before the Worker is deployed (returns null
+        // until LEMONSQUEEZY_BUY_URLS is filled in — then it lights up).
+        const direct = directCheckoutUrl(plan, deviceId)
+        if (direct && isLemonSqueezy(direct)) {
+          await shell.openExternal(direct)
+          return true
+        }
+        return false
       } catch (err) {
         console.error('[license:checkout] failed', err)
         return false
@@ -1862,16 +2008,20 @@ function registerIpcHandlers(): void {
   // Pre-gig "Brief": a game plan from the DJ's own history at a venue / event type.
   ipcMain.handle('history:brief', (_e, venue: string, eventType?: VenueType) => {
     const db = getDb()
-    const sessions: BriefSession[] = getSessions(db).map((s) => ({
-      id: s.id,
-      performedAt: s.performedAt ?? s.createdAt,
-      venue: s.venue,
-      city: s.city,
-      eventType: s.eventType,
-      setSlot: s.setSlot,
-      durationSec: s.duration,
-      trackIds: getSessionTracks(db, s.id).map((st) => st.trackId)
-    }))
+    // Verified gigs only — a "Mark as Performed" claim is not evidence that a
+    // track landed at this venue, so it never feeds the Brief's PROVEN list.
+    const sessions: BriefSession[] = getSessions(db)
+      .filter((s) => s.method !== 'user-asserted')
+      .map((s) => ({
+        id: s.id,
+        performedAt: s.performedAt ?? s.createdAt,
+        venue: s.venue,
+        city: s.city,
+        eventType: s.eventType,
+        setSlot: s.setSlot,
+        durationSec: s.duration,
+        trackIds: getSessionTracks(db, s.id).map((st) => st.trackId)
+      }))
     const reactions: BriefReactionRow[] = []
     for (const s of sessions) {
       for (const r of getReactionsForSession(db, s.id)) {
@@ -1897,13 +2047,16 @@ function registerIpcHandlers(): void {
     const db = getDb()
     const track = getAllTracks(db).find((t) => t.id === trackId)
     if (!track) return null
-    const sessions: ResumeSession[] = getSessionsForTrack(db, trackId).map((s) => ({
-      id: s.id,
-      performedAt: s.performedAt ?? s.createdAt,
-      venue: s.venue,
-      eventType: s.eventType,
-      trackIds: getSessionTracks(db, s.id).map((st) => st.trackId)
-    }))
+    // Same verified-only rule as the Brief: asserted sessions are diary, not evidence.
+    const sessions: ResumeSession[] = getSessionsForTrack(db, trackId)
+      .filter((s) => s.method !== 'user-asserted')
+      .map((s) => ({
+        id: s.id,
+        performedAt: s.performedAt ?? s.createdAt,
+        venue: s.venue,
+        eventType: s.eventType,
+        trackIds: getSessionTracks(db, s.id).map((st) => st.trackId)
+      }))
     const reactions: ResumeReaction[] = getReactionsForTrack(db, trackId).map((r) => ({
       sessionId: r.sessionId,
       trackId: r.trackId,
@@ -1981,6 +2134,7 @@ function registerIpcHandlers(): void {
         city?: string
         country?: string
         setSlot?: SetSlot
+        force?: boolean
       } = {}
     ) => {
       return markSetAsPerformed(getDb(), setId, opts)
@@ -2129,12 +2283,6 @@ app.whenReady().then(async () => {
   // file under userData/logs. Safe before crash reporting / DB init.
   initLogger()
 
-  // Init crash reporting before anything else so errors during startup are captured.
-  // Only runs when the user has explicitly opted in; default is off.
-  if (getSettings().crashReportingEnabled) {
-    initCrashReporter()
-  }
-
   // Windows/Linux cold start: the deep-link (or our dev --activate-url flag)
   // rides in on this process's argv. Buffer it now; the renderer drains it on mount.
   handleActivationArgv(process.argv)
@@ -2147,6 +2295,11 @@ app.whenReady().then(async () => {
   // Load (or mint on first run) the anonymous device id before any license read,
   // so device-binding checks have a stable id to compare against.
   await loadDeviceId()
+
+  // Hydrate the durable anti-abuse anchors (trial start + clock high-water) from
+  // the keychain before any trial/license read, so an electron-store wipe or a
+  // Fresh Start can't re-arm the free trial or reset the clock-rollback guard.
+  await loadLicenseAnchors()
 
   // Reflect the persisted opt-in so getStatus() is accurate before any ask.
   // We do NOT auto-load the model here — that stays lazy (first ask / enable).
@@ -2281,6 +2434,27 @@ app.whenReady().then(async () => {
   session.defaultSession.setPermissionCheckHandler((_wc, permission, _origin, details) => {
     return grantPermission(permission, details as unknown as { mediaTypes?: string[] })
   })
+
+  // Production-only CSP tightening (defense-in-depth). The static index.html meta
+  // CSP must keep `script-src 'unsafe-inline'` for Vite's dev HMR runtime, but the
+  // packaged renderer ships only hashed module scripts — no inline scripts at all.
+  // So in packaged builds we layer on a response-header CSP that drops
+  // 'unsafe-inline' from script-src. Browsers enforce ALL delivered policies, so
+  // the effective script-src becomes the intersection (no inline) while the meta
+  // policy still governs every other directive. This only adds restriction: if the
+  // header never fires (or for a non-document response) the meta policy still
+  // stands, so there is no path to a regression. Dev is untouched.
+  if (app.isPackaged) {
+    const HARDENED_CSP = "script-src 'self' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:"
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Content-Security-Policy': [HARDENED_CSP]
+        }
+      })
+    })
+  }
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)

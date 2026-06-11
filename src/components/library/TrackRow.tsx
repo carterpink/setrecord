@@ -1,17 +1,16 @@
 import clsx from 'clsx'
 import { useTranslation } from 'react-i18next'
 import { useDraggable } from '@dnd-kit/core'
-import { AlertCircle, History, ShoppingCart, Volume2 } from 'lucide-react'
+import { AlertCircle, Check, History, ShoppingCart, Volume2 } from 'lucide-react'
 import type { Track } from '@/types'
 import { EnergyChip } from '@/components/shared/EnergyChip'
 import { KeyChip } from '@/components/shared/KeyChip'
 import { BpmChip } from '@/components/shared/BpmChip'
 import { InlineWaveform } from '@/components/shared/InlineWaveform'
-import { TagChip } from '@/components/library/tags/TagChip'
-import { rowDisplayTags } from '@/utils/tagging/taxonomy'
 import { useClickOrDoubleClick } from '@/hooks/useClickOrDoubleClick'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { usePlaybackStore } from '@/stores/playbackStore'
+import { useSelectionStore } from '@/stores/selectionStore'
 import { toMediaUrl } from '@/utils/mediaUrl'
 
 interface TrackRowProps {
@@ -20,12 +19,18 @@ interface TrackRowProps {
   inSet?: boolean
   compact?: boolean
   selected?: boolean
+  /** Part of the multi-selection (power-user bulk selection). */
+  multiSelected?: boolean
+  /** A selection exists somewhere — keep checkboxes visible even without hover. */
+  selectionActive?: boolean
   onClick?: () => void
   onDoubleClick?: () => void
   onContextMenu?: (e: React.MouseEvent) => void
   /** Keyboard-triggered context menu (Shift+F10 / ContextMenu key). */
   onMenuKey?: (coords: { x: number; y: number }) => void
   onShowCombos?: () => void
+  /** Toggle this row's membership in the multi-selection (checkbox / modifier-click). */
+  onSelectToggle?: (mods: { shiftKey: boolean }) => void
 }
 
 export function TrackRow({
@@ -34,11 +39,14 @@ export function TrackRow({
   inSet,
   compact,
   selected,
+  multiSelected,
+  selectionActive,
   onClick,
   onDoubleClick,
   onContextMenu,
   onMenuKey,
-  onShowCombos
+  onShowCombos,
+  onSelectToggle
 }: TrackRowProps): React.JSX.Element {
   const { t } = useTranslation('library')
   const isPhantom = track.phantom === true
@@ -51,15 +59,20 @@ export function TrackRow({
     playing && !missing ? t('trackRow.nowPlaying') : '',
     inSet ? t('trackRow.alreadyInSet') : '',
     isPhantom ? t('trackRow.phantomStatus') : missing ? t('trackRow.fileNotFoundStatus') : '',
-    selected ? t('trackRow.selectedStatus') : ''
+    selected ? t('trackRow.selectedStatus') : '',
+    multiSelected ? t('trackRow.selectedStatus') : ''
   ]
     .filter(Boolean)
     .join(' ')
 
-  // Shared keydown: Enter selects; Shift+F10 / ContextMenu key opens the menu.
+  // Shared keydown: Enter selects; Space toggles multi-selection; Shift+F10 /
+  // ContextMenu key opens the menu.
   function handleKeyDown(e: React.KeyboardEvent): void {
     if (e.key === 'Enter' && !unavailable) {
       onClick?.()
+    } else if (e.key === ' ' && onSelectToggle && !unavailable) {
+      e.preventDefault()
+      onSelectToggle({ shiftKey: e.shiftKey })
     } else if ((e.shiftKey && e.key === 'F10') || e.key === 'ContextMenu') {
       if (!onMenuKey) return
       e.preventDefault()
@@ -69,7 +82,14 @@ export function TrackRow({
   }
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `lib-${track.id}`,
-    data: { source: 'library', track },
+    // When this row is part of a multi-selection, carry the whole selection so a
+    // single drag drops them all onto the timeline (read non-reactively — the row
+    // re-renders whenever `multiSelected` flips, keeping this fresh).
+    data: {
+      source: 'library',
+      track,
+      ...(multiSelected ? { selectedTrackIds: [...useSelectionStore.getState().selectedIds] } : {})
+    },
     disabled: unavailable
   })
 
@@ -79,6 +99,37 @@ export function TrackRow({
   const useDisambiguation = !!onClick && !!onDoubleClick
   const handleClick = useDisambiguation ? disambiguated.onClick : onClick
   const handleDoubleClick = useDisambiguation ? disambiguated.onDoubleClick : onDoubleClick
+
+  // A modifier-click (Cmd/Ctrl/Shift) drives multi-selection instead of preview.
+  function handleRowClick(e: React.MouseEvent): void {
+    if (onSelectToggle && (e.metaKey || e.ctrlKey || e.shiftKey)) {
+      onSelectToggle({ shiftKey: e.shiftKey })
+      return
+    }
+    handleClick?.()
+  }
+
+  // Selection checkbox — shared by both layouts. Stops propagation so toggling
+  // never starts a preview or a drag.
+  const checkbox =
+    onSelectToggle && !unavailable ? (
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={!!multiSelected}
+        aria-label={t('trackRow.selectToggle')}
+        className="track-row__checkbox"
+        tabIndex={-1}
+        onClick={(e) => {
+          e.stopPropagation()
+          onSelectToggle({ shiftKey: e.shiftKey })
+        }}
+        onPointerDown={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
+      >
+        {multiSelected && <Check size={11} strokeWidth={3} />}
+      </button>
+    ) : null
 
   // Only subscribe to currentTime when this row is the playing one — avoids
   // re-rendering every other row on every audio tick.
@@ -95,13 +146,15 @@ export function TrackRow({
           playing && !missing && 'playing',
           inSet && 'in-set',
           unavailable && 'missing',
-          isPhantom && 'phantom'
+          isPhantom && 'phantom',
+          multiSelected && 'track-row--selected',
+          selectionActive && 'selection-active'
         )}
         style={{
           cursor: unavailable ? 'default' : isDragging ? 'grabbing' : 'grab',
           opacity: isDragging ? 0.5 : unavailable ? 0.55 : 1
         }}
-        onClick={unavailable ? undefined : handleClick}
+        onClick={unavailable ? undefined : handleRowClick}
         onDoubleClick={unavailable ? undefined : handleDoubleClick}
         onContextMenu={unavailable ? undefined : onContextMenu}
         onKeyDown={handleKeyDown}
@@ -116,6 +169,7 @@ export function TrackRow({
         {...(unavailable ? {} : { ...listeners, ...attributes })}
       >
         {srStatus && <span className="sr-only">{srStatus}</span>}
+        {checkbox}
         <div className="compact-meta">
           <span className="compact-title">{track.title}</span>
           <span className="compact-sep" aria-hidden="true">
@@ -154,7 +208,9 @@ export function TrackRow({
         playing && !missing && 'playing',
         inSet && 'in-set',
         unavailable && 'missing',
-        isPhantom && 'phantom'
+        isPhantom && 'phantom',
+        multiSelected && 'track-row--selected',
+        selectionActive && 'selection-active'
       )}
       style={{
         cursor: unavailable ? 'default' : isDragging ? 'grabbing' : 'grab',
@@ -166,7 +222,7 @@ export function TrackRow({
             : '"art meta bpm key nrg"',
         rowGap: playing && !missing ? 6 : 0
       }}
-      onClick={unavailable ? undefined : handleClick}
+      onClick={unavailable ? undefined : handleRowClick}
       onDoubleClick={unavailable ? undefined : handleDoubleClick}
       onContextMenu={unavailable ? undefined : onContextMenu}
       onKeyDown={handleKeyDown}
@@ -181,6 +237,7 @@ export function TrackRow({
       {...(unavailable ? {} : { ...listeners, ...attributes })}
     >
       {srStatus && <span className="sr-only">{srStatus}</span>}
+      {checkbox}
       <div
         className="track-art"
         style={{
@@ -269,21 +326,6 @@ export function TrackRow({
             track.artist
           )}
         </div>
-        {!unavailable && track.tags && track.tags.length > 0 && (
-          <div
-            style={{
-              display: 'flex',
-              gap: 4,
-              marginTop: 4,
-              flexWrap: 'nowrap',
-              overflow: 'hidden'
-            }}
-          >
-            {rowDisplayTags(track.tags, 3).map((t) => (
-              <TagChip key={`${t.category}:${t.value}`} category={t.category} value={t.value} />
-            ))}
-          </div>
-        )}
       </div>
       <div className="track-bpm" style={{ gridArea: 'bpm' }}>
         <BpmChip>{track.bpm}</BpmChip>

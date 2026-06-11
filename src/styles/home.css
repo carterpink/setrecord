@@ -58,6 +58,19 @@
   opacity: 0.85;
   pointer-events: none;
 }
+/* Crossfade layers + breathing wrapper for the cycling bloom (BloomCycle). Each
+   layer stacks on the same footprint so the outgoing/incoming blooms overlap. */
+.home-bloom .bloom-layer,
+.home-bloom .bloom-breathe {
+  position: absolute;
+  inset: 0;
+  will-change: transform, opacity;
+}
+.home-bloom .bloom-fill {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
 [data-theme='aurora'] .home-bloom {
   display: none;
 }
@@ -258,11 +271,13 @@
   max-width: 720px;
 }
 
-/* neural field — breathing light behind the box */
+/* neural field — breathing light that sits ONLY behind the glass (clipped to the
+   box footprint), so its colour washes through the frosted sheet without throwing
+   a big glowing aura out around the box. */
 .home .neural {
   position: absolute;
-  inset: -14px;
-  border-radius: var(--radius-xl);
+  inset: 0;
+  border-radius: 24px;
   overflow: hidden;
   pointer-events: none;
   z-index: 0;
@@ -272,8 +287,10 @@
 .home .neural .blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(30px);
-  opacity: calc(0.62 * var(--neural));
+  /* Heavily blurred + gently saturated so the hues melt into one another behind
+     the glass (a soft colour wash, not five distinct rainbow blobs). */
+  filter: blur(44px) saturate(1.05);
+  opacity: calc(0.5 * var(--neural));
   mix-blend-mode: screen;
   transform: translate(-50%, -50%) scale(1);
   will-change: transform, opacity;
@@ -359,7 +376,12 @@
   background: radial-gradient(circle, rgba(var(--lime), 0.7), transparent 70%);
 }
 .home .composer.listening .neural {
-  animation: home-neural-breathe 2.4s var(--ease-expo) infinite;
+  animation: home-neural-breathe 3s var(--ease-inout) infinite;
+}
+/* While listening the white rim brightens with the live input level — the glass
+   edge catches more light as you speak. No colour, just a clean swell. */
+.home .composer.listening .box-inner::after {
+  opacity: calc(0.5 + 0.45 * var(--lvl, 0.4));
 }
 .home .composer.thinking .neural .blob {
   opacity: calc(0.7 * var(--neural));
@@ -388,51 +410,154 @@
   }
 }
 
-/* the box itself */
+/* the box itself — no padding ring; the glass sheet fills it and the bloom halo
+   feathers behind it (see .neural). */
 .home .box {
   position: relative;
   z-index: 1;
-  border-radius: var(--radius-xl);
-  padding: 6px;
+  border-radius: 24px;
   transition: box-shadow var(--dur-state) var(--ease-expo);
 }
 .home .box-inner {
-  border-radius: 24px;
+  position: relative;
+  isolation: isolate;
+  border-radius: 26px;
   padding: 16px 16px 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* ---- Apple "Liquid Glass" — bespoke for this one hero element ----
+     A clear, light-bending sheet rather than a flat frosted panel. It is highly
+     transparent (a faint white veil over a thin dark floor that only protects the
+     text), and the backdrop is brightened + saturated so the glass concentrates
+     the bloom light the way a real lens does. Depth comes entirely from the bevel
+     (--bevel, applied via .box-glow), the bright edge rim (::after) and the top
+     sheen + corner gleam (::before). */
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.13) 0%,
+      rgba(255, 255, 255, 0.04) 30%,
+      rgba(255, 255, 255, 0.015) 100%
+    ),
+    linear-gradient(180deg, rgba(18, 19, 23, 0.2), rgba(8, 9, 12, 0.4));
+  backdrop-filter: blur(12px) saturate(165%) brightness(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(165%) brightness(1.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  /* Thick-glass bevel: a bright top lip + broad inner top glow, faint side glints,
+     and a deep bottom inner shadow that reads as the glass's own thickness. Held
+     in a var so every focus/listening state can re-compose it with its outer
+     shadow without losing the bevel. */
+  --bevel:
+    inset 0 1.5px 0.5px rgba(255, 255, 255, 0.55),
+    inset 0 7px 18px -9px rgba(255, 255, 255, 0.22),
+    inset 1.5px 0 1px -1px rgba(255, 255, 255, 0.28),
+    inset -1.5px 0 1px -1px rgba(255, 255, 255, 0.2),
+    inset 0 -14px 26px -16px rgba(0, 0, 0, 0.5),
+    inset 0 -1px 0.5px rgba(255, 255, 255, 0.16);
 }
+/* Specular sheen — a broad sheet-of-light wash down from the top edge plus a
+   soft gleam pooling in the top-left corner, the way light catches a tilted pane
+   of glass. Pure white; any colour comes only from the bloom passing through. */
+.home .box-inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(75% 60% at 22% -8%, rgba(255, 255, 255, 0.2), transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 28%);
+  opacity: 0.9;
+  transition: opacity var(--dur-state) var(--ease-expo);
+}
+.home .composer.focused .box-inner::before,
+.home .composer:focus-within .box-inner::before {
+  opacity: 1;
+}
+/* Bevel rim — a bright white edge that's strongest along the top and bottom lips
+   (where a real glass slab catches and refracts light) and faint down the sides.
+   This is the crisp liquid-glass edge. Mask-compositing keeps only the ring. */
+.home .box-inner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0.25) 16%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0.14) 80%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0.7;
+  transition: opacity var(--dur-state) var(--ease-expo);
+}
+.home .composer.focused .box-inner::after,
+.home .composer:focus-within .box-inner::after {
+  opacity: 0.95;
+}
+/* Keep the real content above the sheen + rim. */
+.home .box-input-row,
+.home .box-actions,
+.home .listen-bar {
+  position: relative;
+  z-index: 1;
+}
+/* Resting: the glass bevel (--bevel) + a soft layered drop shadow so the slab
+   floats above the canvas. */
 .home .box-glow {
   box-shadow:
-    0 0 0 0.5px var(--border-emphasis),
-    0 22px 70px rgba(0, 0, 0, 0.45),
-    0 0 60px rgba(94, 234, 212, calc(0.08 * var(--glow)));
+    var(--bevel),
+    0 30px 60px -18px rgba(0, 0, 0, 0.65),
+    0 8px 24px -12px rgba(0, 0, 0, 0.5);
 }
-.home .composer.focused .box-glow {
-  box-shadow:
-    0 0 0 1px rgba(200, 255, 61, calc(0.3 * var(--glow))),
-    0 22px 70px rgba(0, 0, 0, 0.5),
-    0 0 70px rgba(200, 255, 61, calc(0.1 * var(--glow)));
-}
-/* WCAG 2.4.7 — guaranteed keyboard-focus ring on the input, independent of the
-   JS `.focused` class and the --glow variable (which can be 0). */
+/* Focused (click / autofocus): same bevel, a deeper lift and a faint white halo —
+   no coloured ring. The brighter rim (above) carries the affordance for pointers. */
+.home .composer.focused .box-glow,
 .home .composer:focus-within .box-glow {
   box-shadow:
+    var(--bevel),
+    0 32px 66px -16px rgba(0, 0, 0, 0.7),
+    0 0 30px rgba(255, 255, 255, calc(0.06 * var(--glow)));
+}
+/* WCAG 2.4.7 — guaranteed keyboard-focus ring, only for keyboard users so the
+   accessible high-contrast outline never shows on plain click / autofocus. */
+.home .composer:has(.box-text:focus-visible) .box-glow {
+  box-shadow:
+    var(--bevel),
     0 0 0 2px var(--accent),
-    0 22px 70px rgba(0, 0, 0, 0.5);
+    0 32px 66px -16px rgba(0, 0, 0, 0.7);
 }
 .home .composer.listening .box-glow {
   box-shadow:
-    0 0 0 1px rgba(200, 255, 61, calc(0.34 * var(--glow))),
-    0 22px 80px rgba(0, 0, 0, 0.5),
-    0 0 90px rgba(200, 255, 61, calc(0.14 * var(--glow)));
+    var(--bevel),
+    0 32px 72px -16px rgba(0, 0, 0, 0.7),
+    0 0 44px rgba(255, 255, 255, calc(0.07 * var(--glow)));
 }
 
 .home .box-input-row {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+.home .box-text-wrap {
+  flex: 1;
+  position: relative;
+  min-width: 0;
 }
 
 /* Slim docked variant — under a live conversation the box loses its hint row
@@ -444,7 +569,7 @@
   min-height: 26px;
 }
 .home .box-text {
-  flex: 1;
+  width: 100%;
   min-height: 30px;
   max-height: 160px;
   overflow-y: auto;
@@ -458,7 +583,21 @@
   padding: 4px 2px;
 }
 .home .box-text::placeholder {
+  color: transparent;
+}
+.home .composer-placeholder {
+  position: absolute;
+  top: 4px;
+  left: 2px;
+  right: 0;
+  pointer-events: none;
+  user-select: none;
   color: var(--text-tertiary);
+  font: 400 17px/1.45 var(--font-sans);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .home .box-text::-webkit-scrollbar {
   width: 6px;
@@ -514,8 +653,8 @@
   transform: translateY(-1px);
 }
 .home .mic-btn.live {
-  background: rgba(200, 255, 61, calc(0.14 * var(--glow)));
-  border-color: rgba(200, 255, 61, 0.45);
+  background: rgba(var(--lime), calc(0.14 * var(--glow)));
+  border-color: rgba(var(--lime), 0.45);
   color: var(--accent);
 }
 .home .send-btn {
@@ -556,36 +695,53 @@
 }
 .home .eq {
   display: inline-flex;
-  align-items: flex-end;
-  gap: 2px;
+  align-items: center;
+  gap: 2.5px;
   height: 16px;
 }
+/* Smooth symmetric waveform — GPU scaleY from the centre (not jumpy height), each
+   bar on its own duration so the flow never visibly loops, with a soft neon glow
+   and a gradient fill. Reads as a calm, magical breathing voiceprint. */
 .home .eq span {
   width: 3px;
-  background: var(--accent);
-  border-radius: 2px;
-  height: 30%;
-  animation: home-eq 0.9s ease-in-out infinite;
+  height: 100%;
+  border-radius: 3px;
+  transform: scaleY(0.28);
+  transform-origin: center;
+  background: linear-gradient(180deg, var(--accent), rgba(var(--mint), 0.9));
+  box-shadow: 0 0 7px rgba(var(--lime), 0.5);
+  animation: home-eq 1.4s var(--ease-inout) infinite;
+  will-change: transform, opacity;
+}
+.home .eq span:nth-child(1) {
+  animation-duration: 1.5s;
+  animation-delay: -0.2s;
 }
 .home .eq span:nth-child(2) {
-  animation-delay: 0.15s;
+  animation-duration: 1.15s;
+  animation-delay: -0.05s;
 }
 .home .eq span:nth-child(3) {
-  animation-delay: 0.3s;
+  animation-duration: 1.75s;
+  animation-delay: -0.45s;
 }
 .home .eq span:nth-child(4) {
-  animation-delay: 0.45s;
+  animation-duration: 1.25s;
+  animation-delay: -0.15s;
 }
 .home .eq span:nth-child(5) {
-  animation-delay: 0.6s;
+  animation-duration: 1.55s;
+  animation-delay: -0.32s;
 }
 @keyframes home-eq {
   0%,
   100% {
-    height: 25%;
+    transform: scaleY(0.26);
+    opacity: 0.7;
   }
   50% {
-    height: 100%;
+    transform: scaleY(1);
+    opacity: 1;
   }
 }
 .home .stop-link {
@@ -766,7 +922,7 @@
 }
 .home .fpill.on {
   background: var(--accent-dim-12);
-  border-color: rgba(200, 255, 61, 0.4);
+  border-color: rgba(var(--lime), 0.4);
   color: var(--accent);
 }
 .home .fpill .mono {
@@ -905,7 +1061,7 @@
 }
 .home .row-add:hover {
   background: var(--accent-dim-12);
-  border-color: rgba(200, 255, 61, 0.35);
+  border-color: rgba(var(--lime), 0.35);
   color: var(--accent);
 }
 
@@ -927,8 +1083,8 @@
 }
 .home .sugg-card.best {
   box-shadow:
-    0 0 0 1px rgba(200, 255, 61, calc(0.45 * var(--glow))),
-    0 12px 32px rgba(200, 255, 61, calc(0.1 * var(--glow)));
+    0 0 0 1px rgba(var(--lime), calc(0.45 * var(--glow))),
+    0 12px 32px rgba(var(--lime), calc(0.1 * var(--glow)));
 }
 .home .sugg-row {
   display: flex;
@@ -967,7 +1123,7 @@
 .home .reason-chip.accent {
   background: var(--accent-dim-12);
   color: var(--accent);
-  border-color: rgba(200, 255, 61, 0.3);
+  border-color: rgba(var(--lime), 0.3);
 }
 .home .best-badge {
   position: absolute;
@@ -1371,8 +1527,14 @@
   .home .neural,
   .home .neural .blob,
   .home .composer.listening .neural,
-  .home .composer.thinking .neural {
+  .home .composer.thinking .neural,
+  .home .composer.listening .box-inner::after,
+  .home .eq span {
     animation: none !important;
+  }
+  /* Keep the waveform legible (mid height) when motion is off. */
+  .home .eq span {
+    transform: scaleY(0.6);
   }
   .home .greeting,
   .home .examples,

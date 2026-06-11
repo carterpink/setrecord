@@ -58,14 +58,21 @@ export function UpgradeModal(): React.JSX.Element {
   const setCount = useSetStore((s) => s.savedSets.length)
   const gigCount = useRecallStore((s) => s.gigs.length)
 
-  // Annual is pre-selected: defaults are chosen disproportionately (default bias),
-  // and annual is also the centre-stage card and the best value vs the monthly decoy.
-  const [plan, setPlan] = useState<PlanChoice>('annual')
+  // Lifetime is pre-selected and presented as the hero (default bias + endowment):
+  // for a "your memory, forever" product, owning it outright is the emotional close,
+  // it carries the best margin and zero churn, and it anchors the subscriptions below
+  // as the lighter-commitment alternative rather than the headline ask.
+  const [plan, setPlan] = useState<PlanChoice>('lifetime')
 
   const [keyInput, setKeyInput] = useState('')
   const [activating, setActivating] = useState(false)
   const [activationError, setActivationError] = useState<LicenseActivationError | null>(null)
   const [showKeyEntry, setShowKeyEntry] = useState(false)
+  // Which checkout button is mid-flight (the network round-trip can take up to
+  // 5s), and whether the last attempt failed to open. 'tip:<amount>' tags a tip
+  // so only the pressed pill spins, never the plan CTA.
+  const [checkingOut, setCheckingOut] = useState<string | null>(null)
+  const [checkoutFailed, setCheckoutFailed] = useState(false)
   const autoActivatedRef = useRef(false)
 
   const feature = upgradeContext ? PRO_FEATURES[upgradeContext] : null
@@ -95,8 +102,31 @@ export function UpgradeModal(): React.JSX.Element {
         ? t('upgrade.ctaAnnual', { price: PRO_PRICING.annual.price })
         : t('upgrade.ctaMonthly', { price: PRO_PRICING.monthly.price })
 
-  const handleCheckout = (plan: 'monthly' | 'annual' | 'lifetime' | 'tip', tip?: number): void => {
-    void checkout(plan, tip)
+  // Open the hosted checkout. checkout() resolves false when the browser couldn't
+  // be launched — gateway unreachable (offline / worker down), no URL returned, or
+  // an unsupported flow. We surface that instead of leaving a dead button: show a
+  // retry-able error and reveal the licence-key fallback so a returning buyer (or
+  // anyone offline at a venue) still has a path to Pro.
+  const handleCheckout = async (
+    plan: 'monthly' | 'annual' | 'lifetime' | 'tip',
+    tip?: number
+  ): Promise<void> => {
+    if (checkingOut) return
+    const token = plan === 'tip' ? `tip:${tip ?? 0}` : plan
+    setCheckingOut(token)
+    setCheckoutFailed(false)
+    try {
+      const opened = await checkout(plan, tip)
+      if (!opened) {
+        setCheckoutFailed(true)
+        setShowKeyEntry(true)
+      }
+    } catch {
+      setCheckoutFailed(true)
+      setShowKeyEntry(true)
+    } finally {
+      setCheckingOut(null)
+    }
   }
 
   const handleActivate = async (rawKey?: string): Promise<void> => {
@@ -142,7 +172,12 @@ export function UpgradeModal(): React.JSX.Element {
       <div className="modal-header">
         <div className="upgrade-title">
           <Sparkles size={18} strokeWidth={1.7} className="upgrade-title-icon" aria-hidden="true" />
-          <span className="ss-h2">{t('upgrade.proTitle', { app: APP_NAME })}</span>
+          <div className="upgrade-title-text">
+            <span className="ss-h2">{t('upgrade.proTitle', { app: APP_NAME })}</span>
+            {!(isPro && !onTrial) && (
+              <span className="upgrade-tagline">{t('upgrade.tagline')}</span>
+            )}
+          </div>
         </div>
         <IconButton icon={X} size="sm" aria-label={t('common.close')} onClick={closeModal} />
       </div>
@@ -211,63 +246,95 @@ export function UpgradeModal(): React.JSX.Element {
             )}
 
             <div className="upgrade-plans" role="radiogroup" aria-label={t('upgrade.choosePlan')}>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={plan === 'monthly'}
-                className={`upgrade-plan${plan === 'monthly' ? ' is-selected' : ''}`}
-                onClick={() => setPlan('monthly')}
-              >
-                <span className="ss-label">{t('upgrade.planMonthly')}</span>
-                <div className="upgrade-plan-price">
-                  <span className="upgrade-plan-amount">{PRO_PRICING.monthly.price}</span>
-                  <span className="upgrade-plan-period">{PRO_PRICING.monthly.period}</span>
-                </div>
-                <span className="upgrade-plan-sub">{PRO_PRICING.monthly.sub}</span>
-              </button>
-
-              <button
-                type="button"
-                role="radio"
-                aria-checked={plan === 'annual'}
-                className={`upgrade-plan upgrade-plan-featured${plan === 'annual' ? ' is-selected' : ''}`}
-                onClick={() => setPlan('annual')}
-              >
-                <span className="upgrade-plan-badge">{t('upgrade.recommended')}</span>
-                <span className="ss-label">{t('upgrade.planAnnual')}</span>
-                <div className="upgrade-plan-price">
-                  <span className="upgrade-plan-amount">{PRO_PRICING.annual.price}</span>
-                  <span className="upgrade-plan-period">{PRO_PRICING.annual.period}</span>
-                </div>
-                <span className="upgrade-plan-permonth">
-                  {t('upgrade.billedYearly', { perMonth: PRO_PRICING.annual.perMonth })}
-                </span>
-                <span className="upgrade-plan-save">{PRO_PRICING.annual.save}</span>
-              </button>
-
+              {/* Hero — lifetime. The headline choice: own it outright, forever. */}
               <button
                 type="button"
                 role="radio"
                 aria-checked={plan === 'lifetime'}
-                className={`upgrade-plan${plan === 'lifetime' ? ' is-selected' : ''}`}
+                className={`upgrade-hero${plan === 'lifetime' ? ' is-selected' : ''}`}
                 onClick={() => setPlan('lifetime')}
               >
-                <span className="ss-label">{t('upgrade.planLifetime')}</span>
-                <div className="upgrade-plan-price">
-                  <span className="upgrade-plan-amount">{PRO_PRICING.lifetime.price}</span>
-                  <span className="upgrade-plan-period">{PRO_PRICING.lifetime.period}</span>
+                <span className="upgrade-hero-badge">{t('upgrade.bestValue')}</span>
+                <div className="upgrade-hero-main">
+                  <div className="upgrade-hero-text">
+                    <span className="ss-label">{t('upgrade.planLifetime')}</span>
+                    <span className="upgrade-hero-sub">
+                      {t('upgrade.lifetimeHero', { app: APP_NAME })}
+                    </span>
+                  </div>
+                  <div className="upgrade-plan-price upgrade-hero-price">
+                    <span className="upgrade-plan-amount">{PRO_PRICING.lifetime.price}</span>
+                    <span className="upgrade-plan-period">{PRO_PRICING.lifetime.period}</span>
+                  </div>
                 </div>
-                <span className="upgrade-plan-sub">{t('upgrade.lifetimeSub')}</span>
               </button>
+
+              <div className="upgrade-subs-label">{t('upgrade.orSubscribe')}</div>
+
+              <div className="upgrade-subs">
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={plan === 'annual'}
+                  className={`upgrade-sub${plan === 'annual' ? ' is-selected' : ''}`}
+                  onClick={() => setPlan('annual')}
+                >
+                  <span className="upgrade-sub-head">
+                    <span className="ss-label">{t('upgrade.planAnnual')}</span>
+                    <span className="upgrade-sub-save">{PRO_PRICING.annual.save}</span>
+                  </span>
+                  <span className="upgrade-sub-price">
+                    <span className="upgrade-sub-amount">{PRO_PRICING.annual.price}</span>
+                    <span className="upgrade-sub-period">{PRO_PRICING.annual.period}</span>
+                  </span>
+                  <span className="upgrade-sub-foot">
+                    {t('upgrade.billedYearly', { perMonth: PRO_PRICING.annual.perMonth })}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={plan === 'monthly'}
+                  className={`upgrade-sub${plan === 'monthly' ? ' is-selected' : ''}`}
+                  onClick={() => setPlan('monthly')}
+                >
+                  <span className="upgrade-sub-head">
+                    <span className="ss-label">{t('upgrade.planMonthly')}</span>
+                  </span>
+                  <span className="upgrade-sub-price">
+                    <span className="upgrade-sub-amount">{PRO_PRICING.monthly.price}</span>
+                    <span className="upgrade-sub-period">{PRO_PRICING.monthly.period}</span>
+                  </span>
+                  <span className="upgrade-sub-foot">{PRO_PRICING.monthly.sub}</span>
+                </button>
+              </div>
             </div>
 
             <Button
               variant="primary"
-              onClick={() => handleCheckout(plan)}
-              style={{ width: '100%', marginBottom: 18 }}
+              className="upgrade-cta"
+              onClick={() => void handleCheckout(plan)}
+              disabled={checkingOut !== null}
+              style={{ width: '100%', marginBottom: 8 }}
             >
-              {ctaLabel}
+              {checkingOut === plan ? (
+                <span className="upgrade-cta-loading">
+                  <Loader2 size={16} className="spin" aria-hidden="true" />
+                  {t('upgrade.opening')}
+                </span>
+              ) : (
+                ctaLabel
+              )}
             </Button>
+
+            {checkoutFailed ? (
+              <p className="upgrade-checkout-error" role="alert">
+                {t('upgrade.checkoutError')}
+              </p>
+            ) : (
+              <p className="upgrade-trust">{t('upgrade.trustLine')}</p>
+            )}
 
             <ul className="upgrade-benefits">
               {PRO_BENEFITS.map((b) => (
@@ -278,27 +345,34 @@ export function UpgradeModal(): React.JSX.Element {
               ))}
             </ul>
 
-            <div className="upgrade-tip">
-              <div className="upgrade-tip-head">
-                <Heart size={15} strokeWidth={1.7} aria-hidden="true" />
-                <span className="ss-label">{t('upgrade.tipHead')}</span>
+            {TIP_AMOUNTS.length > 0 && (
+              <div className="upgrade-tip">
+                <div className="upgrade-tip-head">
+                  <Heart size={15} strokeWidth={1.7} aria-hidden="true" />
+                  <span className="ss-label">{t('upgrade.tipHead')}</span>
+                </div>
+                <p className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
+                  {t('upgrade.tipBlurb', { app: APP_NAME })}
+                </p>
+                <div className="upgrade-tip-amounts">
+                  {TIP_AMOUNTS.map((amount) => (
+                    <button
+                      key={amount}
+                      type="button"
+                      className="upgrade-tip-btn"
+                      disabled={checkingOut !== null}
+                      onClick={() => void handleCheckout('tip', amount)}
+                    >
+                      {checkingOut === `tip:${amount}` ? (
+                        <Loader2 size={14} className="spin" aria-hidden="true" />
+                      ) : (
+                        `$${amount}`
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <p className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                {t('upgrade.tipBlurb', { app: APP_NAME })}
-              </p>
-              <div className="upgrade-tip-amounts">
-                {TIP_AMOUNTS.map((amount) => (
-                  <button
-                    key={amount}
-                    type="button"
-                    className="upgrade-tip-btn"
-                    onClick={() => handleCheckout('tip', amount)}
-                  >
-                    ${amount}
-                  </button>
-                ))}
-              </div>
-            </div>
+            )}
 
             <div className="upgrade-restore">
               <p className="ss-caption" style={{ color: 'var(--text-tertiary)', marginBottom: 8 }}>

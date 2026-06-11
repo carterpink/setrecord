@@ -11,6 +11,7 @@ import type { LibrarySourceId, LibrarySourceProvider, SourceDetection } from './
 import { rekordboxProvider } from './providers/rekordbox'
 import { engineDjProvider } from './providers/engineDj'
 import { seratoProvider } from '../serato'
+import { launchProfile } from '../../config/launchProfile'
 
 /** Insertion order is the order shown in the picker. */
 export const providers: Record<LibrarySourceId, LibrarySourceProvider> = {
@@ -28,8 +29,12 @@ export function getProvider(id: LibrarySourceId): LibrarySourceProvider | undefi
  * degrades to an `unknown`-error entry rather than failing the whole probe.
  */
 export async function detectAllSources(): Promise<SourceDetection[]> {
+  // v1 launch gate: keep the beta Engine DJ importer out of the picker.
+  const visible = Object.values(providers).filter(
+    (p) => p.id !== 'engine-dj' || launchProfile.engineImport
+  )
   return Promise.all(
-    Object.values(providers).map(async (p) => {
+    visible.map(async (p) => {
       try {
         return await p.detect()
       } catch (err) {

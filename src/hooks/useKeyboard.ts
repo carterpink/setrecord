@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
+import { useSelectionStore } from '@/stores/selectionStore'
+import { useLicenseStore } from '@/stores/licenseStore'
 
 /**
  * Global keyboard shortcut handler. Mount once in AppShell.
@@ -39,6 +41,29 @@ export function useKeyboard(): void {
         return
       }
 
+      // ⌘P — command palette (Pro). Toggles; paywalls when not entitled.
+      if (cmd && e.key === 'p' && !inInput) {
+        e.preventDefault()
+        const ui = useUiStore.getState()
+        if (ui.openModal === 'commandPalette') {
+          ui.closeModal()
+        } else if (useLicenseStore.getState().license.tier === 'pro') {
+          ui.showModal('commandPalette')
+        } else {
+          ui.showUpgrade('commandPalette')
+        }
+        return
+      }
+
+      // ? — keyboard shortcut cheat-sheet (free). Toggles.
+      if (e.key === '?' && !inInput) {
+        e.preventDefault()
+        const ui = useUiStore.getState()
+        if (ui.openModal === 'shortcutsHelp') ui.closeModal()
+        else ui.showModal('shortcutsHelp')
+        return
+      }
+
       // ⌘N — new set
       if (cmd && e.key === 'n') {
         if (!inInput) {
@@ -48,12 +73,29 @@ export function useKeyboard(): void {
         return
       }
 
-      // Escape — close open modal
+      // ⌘A — select every track in the library Collection list
+      if (cmd && e.key === 'a' && !inInput) {
+        const { mode } = useUiStore.getState()
+        const { orderedIds, selectAll } = useSelectionStore.getState()
+        if (mode === 'Library' && orderedIds.length > 0) {
+          e.preventDefault()
+          selectAll()
+          return
+        }
+      }
+
+      // Escape — close open modal, else clear an active selection
       if (e.key === 'Escape') {
         const { openModal, closeModal } = useUiStore.getState()
         if (openModal) {
           e.preventDefault()
           closeModal()
+          return
+        }
+        const sel = useSelectionStore.getState()
+        if (sel.selectedIds.size > 0) {
+          e.preventDefault()
+          sel.clear()
         }
         return
       }

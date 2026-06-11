@@ -4,14 +4,18 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   AlignJustify,
   ArrowDownUp,
+  Flag,
   Folder,
   ListMusic,
+  ListPlus,
   Menu,
   Music,
+  Pencil,
   SlidersHorizontal,
+  Trash2,
   X
 } from 'lucide-react'
-import type { ComboResult, LibraryTab, Track } from '@/types'
+import type { AudioFormat, ComboResult, CrateRule, LibraryTab, SmartCrate, Track } from '@/types'
 import { SearchInput } from '@/components/shared/SearchInput'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { NoLibraryState } from '@/components/shared/NoLibraryState'
@@ -23,14 +27,19 @@ import { useLibraryStore } from '@/stores/libraryStore'
 import { usePlaybackStore } from '@/stores/playbackStore'
 import { useSetStore } from '@/stores/setStore'
 import { useUiStore } from '@/stores/uiStore'
+import { useSelectionStore } from '@/stores/selectionStore'
 import { camelotCompatible } from '@/utils/camelot'
 import { TrackRow } from './TrackRow'
 import { SetListRow } from './SetListRow'
 import { PlaylistSidebar } from './PlaylistSidebar'
 import { CratesLibraryTab } from './CratesLibraryTab'
 import { TagEditorPopover } from './tags/TagEditorPopover'
-import { TrackContextMenu } from './TrackContextMenu'
+import { TrackContextMenu, type MenuItem } from './TrackContextMenu'
+import { SelectionToolbar } from './SelectionToolbar'
+import { LibraryListHeader, type SortColumn } from './LibraryListHeader'
 import { useTrackInspectStore } from '@/stores/trackInspectStore'
+import { useIsPro } from '@/stores/licenseStore'
+import { useToastStore } from '@/stores/toastStore'
 
 const TABS: readonly LibraryTab[] = ['Collection', 'Crates', 'Sets'] as const
 
@@ -144,9 +153,27 @@ export function LibraryPanel(): React.JSX.Element {
   } = useUiStore()
   const { startPreview, previewTrack, isPlaying } = usePlaybackStore()
 
+  // ── Multi-selection (power-user bulk actions) ─────────────────────────────
+  const { t: tp } = useTranslation('power')
+  const isPro = useIsPro()
+  const selectedIds = useSelectionStore((s) => s.selectedIds)
+  const selectionCount = selectedIds.size
+  const handleSelectToggle = useCallback((track: Track, mods: { shiftKey: boolean }) => {
+    const sel = useSelectionStore.getState()
+    if (mods.shiftKey && sel.anchorId) sel.selectRange(sel.anchorId, track.id)
+    else sel.toggle(track.id)
+  }, [])
+
   // ── Sort state ────────────────────────────────────────────────────────────
   const [sortField, setSortField] = useState<SortField>('artist')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
+  function handleSort(field: SortColumn): void {
+    if (field === sortField) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    else {
+      setSortField(field)
+      setSortDir('asc')
+    }
+  }
 
   // ── Filter state ──────────────────────────────────────────────────────────
   const [filters, setFilters] = useState<TrackFilters>({})
@@ -279,6 +306,19 @@ export function LibraryPanel(): React.JSX.Element {
     })
   }, [smartFiltered, sortField, sortDir])
 
+  // Publish the current Collection ordering so range-select and ⌘A resolve even
+  // from the global keyboard handler. Drop selected ids that left the library.
+  useEffect(() => {
+    useSelectionStore.getState().setOrderedIds(displayTracks.map((t) => t.id))
+  }, [displayTracks])
+  useEffect(() => {
+    useSelectionStore.getState().retain(new Set(tracks.map((t) => t.id)))
+  }, [tracks])
+  // Selection only lives in the Collection list — drop it when leaving the tab.
+  useEffect(() => {
+    if (tab !== 'Collection') useSelectionStore.getState().clear()
+  }, [tab])
+
   const playingTrackId = previewTrack && isPlaying ? previewTrack.id : null
   const rowHeight = libraryDensity === 'compact' ? 40 : 56
   // eslint-disable-next-line react-hooks/incompatible-library -- false positive: useVirtualizer is a valid hook, not a memo-incompatible utility
@@ -315,6 +355,83 @@ export function LibraryPanel(): React.JSX.Element {
   function handleEditCues(track: Track): void {
     startPreview(track)
     showModal('cueEditor')
+  }
+
+  // Bulk context-menu variant: shown when a multi-selection is right-clicked.
+  const ctxBulk = !!ctxMenu && selectedIds.has(ctxMenu.track.id) && selectionCount > 1
+  function buildBulkItems(): MenuItem[] {
+    const ids = [...selectedIds]
+    const count = selectionCount
+    const selTracks = tracks.filter((tr) => selectedIds.has(tr.id))
+    const toast = useToastStore.getState()
+    const sel = useSelectionStore.getState()
+    return [
+      {
+        icon: ListPlus,
+        label: tp('context.addToSet', { count }),
+        action: () => {
+          useSetStore.getState().addTracksToCurrent(selTracks)
+          toast.success(tp('toolbar.addedToSet', { count }))
+          sel.clear()
+        }
+      },
+      {
+        icon: Pencil,
+        label: tp('context.edit', { count }),
+        action: () => {
+          if (isPro) showModal('bulkEdit')
+          else useUiStore.getState().showUpgrade('bulkEdit')
+        }
+      },
+      {
+        icon: Flag,
+        label: tp('context.flag', { count }),
+        action: () => {
+          void window.setrecord.lifecycleFlagForGig(ids)
+          toast.success(tp('toolbar.flagged', { count }))
+          sel.clear()
+        }
+      },
+      {
+        icon: Trash2,
+        label: tp('context.remove', { count }),
+        action: () => showModal('removeConfirm')
+      },
+      { icon: X, label: tp('context.clear'), action: () => useSelectionStore.getState().clear() }
+    ]
+  }
+
+  // Save the active filter set as a reusable Smart Crate (Pro). The fuzzy search
+  // term isn't representable as a rule, so only the structured filters carry over.
+  async function saveFilterAsCrate(): Promise<void> {
+    if (!anyActive(filters)) {
+      useToastStore.getState().info(tp('saveCrate.empty'))
+      return
+    }
+    if (!isPro) {
+      useUiStore.getState().showUpgrade('smartCrates')
+      return
+    }
+    const rule: CrateRule = {}
+    if (filters.bpmMin != null) rule.bpmMin = filters.bpmMin
+    if (filters.bpmMax != null) rule.bpmMax = filters.bpmMax
+    if (filters.energyMin != null) rule.energyMin = filters.energyMin
+    if (filters.energyMax != null) rule.energyMax = filters.energyMax
+    if (filters.key) rule.keyExact = filters.key
+    if (filters.genre) rule.genreIncludes = filters.genre
+    if (filters.format && filters.format.length === 1)
+      rule.format = filters.format[0] as AudioFormat
+    const parts: string[] = []
+    if (filters.bpmMin != null || filters.bpmMax != null)
+      parts.push(`${filters.bpmMin ?? 60}–${filters.bpmMax ?? 200} BPM`)
+    if (filters.energyMin != null || filters.energyMax != null)
+      parts.push(`E${filters.energyMin ?? 1}–${filters.energyMax ?? 10}`)
+    if (filters.key) parts.push(filters.key)
+    if (filters.genre) parts.push(filters.genre)
+    const name = parts.join(' · ') || tp('saveCrate.defaultName')
+    const crate: SmartCrate = { id: crypto.randomUUID(), name, rules: [rule], match: 'all' }
+    await window.setrecord.recallSaveCrate(crate)
+    useToastStore.getState().success(tp('saveCrate.saved', { name }))
   }
 
   // ── Active filter chip helpers ────────────────────────────────────────────
@@ -522,9 +639,20 @@ export function LibraryPanel(): React.JSX.Element {
                     </div>
                   </div>
                   {anyActive(filters) && (
-                    <button className="filter-clear-all ss-caption" onClick={() => setFilters({})}>
-                      {t('filters.clearAll')}
-                    </button>
+                    <div className="filter-footer">
+                      <button
+                        className="filter-save-crate ss-caption"
+                        onClick={() => void saveFilterAsCrate()}
+                      >
+                        {tp('saveCrate.button')}
+                      </button>
+                      <button
+                        className="filter-clear-all ss-caption"
+                        onClick={() => setFilters({})}
+                      >
+                        {t('filters.clearAll')}
+                      </button>
+                    </div>
                   )}
                 </div>
               </motion.div>
@@ -698,6 +826,10 @@ export function LibraryPanel(): React.JSX.Element {
 
             {!isLoading && !hasLibrary && <NoLibraryState body={t('empty.noLibrary')} />}
 
+            {!isLoading && hasLibrary && libraryDensity === 'standard' && (
+              <LibraryListHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+            )}
+
             {!isLoading && hasLibrary && (
               <div
                 ref={scrollContainerRef}
@@ -748,8 +880,11 @@ export function LibraryPanel(): React.JSX.Element {
                             inSet={setTrackIds.has(track.id)}
                             playing={previewTrack?.id === track.id && isPlaying}
                             selected={selectedLibraryTrackId === track.id}
+                            multiSelected={selectedIds.has(track.id)}
+                            selectionActive={selectionCount > 0}
                             compact={libraryDensity === 'compact'}
                             onClick={() => {
+                              useSelectionStore.getState().clear()
                               setSelectedLibraryTrack(track.id)
                               useSetStore.getState().setSelectedTrack(null)
                               startPreview(track)
@@ -758,6 +893,7 @@ export function LibraryPanel(): React.JSX.Element {
                             onContextMenu={(e) => handleContextMenu(track, e)}
                             onMenuKey={(c) => setCtxMenu({ track, x: c.x, y: c.y })}
                             onShowCombos={() => handleShowCombos(track)}
+                            onSelectToggle={(mods) => handleSelectToggle(track, mods)}
                           />
                         </div>
                       )
@@ -766,6 +902,7 @@ export function LibraryPanel(): React.JSX.Element {
                 )}
               </div>
             )}
+            <SelectionToolbar />
           </div>
         </div>
       )}
@@ -828,6 +965,8 @@ export function LibraryPanel(): React.JSX.Element {
             setTagEditorTrack(ctxMenu.track)
             setCtxMenu(null)
           }}
+          bulkItems={ctxBulk ? buildBulkItems() : undefined}
+          bulkHeader={ctxBulk ? tp('context.header', { count: selectionCount }) : undefined}
         />
       )}
 
@@ -835,7 +974,6 @@ export function LibraryPanel(): React.JSX.Element {
       {tagEditorTrack && (
         <TagEditorPopover track={tagEditorTrack} onClose={() => setTagEditorTrack(null)} />
       )}
-
 
       {/* Combos popover */}
       {combosData && (

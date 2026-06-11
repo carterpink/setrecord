@@ -26,6 +26,10 @@
   /* -------- Accent (electric lime) — identical across themes -------- */
   --accent: #CFFF04;
   --accent-hover: #B8E600;
+  /* Bloom tone that tracks the active accent (lime/cyan/magenta/violet). A tab or
+     section can override this to re-tint its grain blooms; components read it via
+     getComputedStyle rather than hardcoding a tone. */
+  --bloom-tone: lime;
   --accent-dim-12: rgba(207, 255, 4, 0.12);
   --accent-dim-30: rgba(207, 255, 4, 0.3); /* focus rings */
 

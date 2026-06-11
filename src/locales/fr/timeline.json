@@ -20,7 +20,9 @@
   "performed": {
     "logged": "« {{name}} » enregistré comme joué.",
     "markError": "Impossible de marquer ce set comme joué.",
-    "markFailed": "Une erreur est survenue lors du marquage du set comme joué."
+    "markFailed": "Une erreur est survenue lors du marquage du set comme joué.",
+    "alreadyToday": "« {{name}} » est déjà consigné comme joué aujourd’hui.",
+    "logAgain": "Consigner à nouveau"
   },
   "empty": {
     "readyTitle": "« {{name}} » — prêt quand tu veux.",

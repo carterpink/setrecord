@@ -19,6 +19,8 @@ export type ProFeature =
   | 'autoTagger'
   | 'hostCollab'
   | 'graph'
+  | 'bulkEdit'
+  | 'commandPalette'
 
 export interface ProFeatureMeta {
   /** Sentence-case feature name for the paywall headline. */
@@ -66,7 +68,16 @@ export const PRO_FEATURES: Record<ProFeature, ProFeatureMeta> = {
   },
   graph: {
     label: 'Constellation',
-    blurb: 'See where every track could go next — harmonic and BPM-compatible mixes you haven’t tried yet.'
+    blurb:
+      'See where every track could go next — harmonic and BPM-compatible mixes you haven’t tried yet.'
+  },
+  bulkEdit: {
+    label: 'Bulk editing',
+    blurb: 'Select many tracks and edit tags, energy and metadata — or export them — in one move.'
+  },
+  commandPalette: {
+    label: 'Command palette',
+    blurb: 'Press ⌘P to jump to any track, crate, set or action instantly.'
   }
 }
 
@@ -104,7 +115,13 @@ export const PRO_PRICING = {
   }
 } as const
 
-export const TIP_AMOUNTS = [5, 12, 25] as const
+/**
+ * Suggested tip amounts (USD). Empty = the tip section is hidden entirely:
+ * the checkout backend has no tip product yet, so showing the pills would
+ * surface buttons that can only fail. Re-populate once a Lemon Squeezy
+ * pay-what-you-want tip variant exists and main.ts routes plan==='tip' to it.
+ */
+export const TIP_AMOUNTS: readonly number[] = []
 
 /** The value props shown on the paywall — order = priority. */
 export const PRO_BENEFITS: readonly string[] = [

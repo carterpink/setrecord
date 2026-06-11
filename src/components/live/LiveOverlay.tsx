@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronUp, ChevronDown, Sparkles, AudioLines, Building2 } from 'lucide-react'
 import { useLiveStore, type LiveNextUp } from '@/stores/liveStore'
+import { launchProfile } from '@/config/launchProfile'
 import { interactiveHandlers } from './clickThrough'
 import { LiveActivation } from './LiveActivation'
 import './liveHud.css'
@@ -128,6 +129,22 @@ export function LiveOverlay(): React.JSX.Element | null {
               t('strip.listening')
             )}
           </span>
+          {launchProfile.liveHudBeta && (
+            <span
+              title="Live next-track suggestions are in beta"
+              style={{
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                padding: '1px 5px',
+                borderRadius: 4,
+                color: 'var(--accent)',
+                border: '1px solid color-mix(in srgb, var(--accent) 45%, transparent)'
+              }}
+            >
+              BETA
+            </span>
+          )}
           <span className="lv-timer">{clock(elapsedSec)}</span>
 
           {recording && (

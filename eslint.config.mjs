@@ -9,8 +9,10 @@ import eslintPluginJsxA11y from 'eslint-plugin-jsx-a11y'
 export default defineConfig(
   // .claude holds local Claude Code skill helpers (run-desktop driver/test
   // scripts); scripts/ holds dev-only build tooling (icon generation, license
-  // minting) — non-product, excluded from packaging and not part of the app.
-  { ignores: ['**/node_modules', '**/dist', '**/out', '.claude/**', 'scripts/**'] },
+  // minting); presentation/ holds the standalone case-study deck generator
+  // (its own node_modules + package.json) — all non-product, excluded from
+  // packaging and not part of the app.
+  { ignores: ['**/node_modules', '**/dist', '**/out', '.claude/**', 'scripts/**', 'presentation/**'] },
   tseslint.configs.recommended,
   eslintPluginReact.configs.flat.recommended,
   eslintPluginReact.configs.flat['jsx-runtime'],

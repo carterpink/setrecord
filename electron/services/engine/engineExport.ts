@@ -212,7 +212,22 @@ export async function exportSetToEngineUsb(
     }
 
     onProgress({ processed: total, total, phase: 'writing' })
-    writeDatabaseFile(join(engineLibDir, 'm.db'), (db) =>
+    const mdbPath = join(engineLibDir, 'm.db')
+    // The drive may already hold an Engine library — back it up before we
+    // overwrite it. Mirrors the mandatory-backup safety of the Rekordbox native
+    // write path; abort rather than clobber a library we couldn't preserve.
+    if (existsSync(mdbPath)) {
+      const ts = new Date().toISOString().replace(/[:.]/g, '-')
+      try {
+        await copyFile(mdbPath, `${mdbPath}.setrecord-backup-${ts}`)
+      } catch (err) {
+        return {
+          success: false,
+          error: `Couldn't back up the existing Engine library before writing, so the export was aborted to keep it safe. (${err instanceof Error ? err.message : String(err)})`
+        }
+      }
+    }
+    writeDatabaseFile(mdbPath, (db) =>
       populateEngineDatabase(db, { uuid, playlistTitle: set.name, tracks: inputs })
     )
     writeDatabaseFile(join(engineLibDir, 'p.db'), (db) => populatePerformanceDatabase(db, uuid))

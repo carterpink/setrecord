@@ -110,6 +110,12 @@
     "privacyNote": "Ta bibliothèque, les titres des morceaux, les chemins de fichiers, le nom de ton appareil et tes données personnelles ne sont jamais inclus. Désactivé par défaut. Le désactiver arrête les rapports immédiatement ; l’activer prend effet après le redémarrage de {{app}}.",
     "toggleAria": "Activer les rapports de plantage"
   },
+  "sentry": {
+    "label": "Suivi des erreurs",
+    "caption": "Accepte d’envoyer des données anonymes sur les erreurs et performances quand {{app}} rencontre des problèmes. Cela nous aide à corriger les bugs plus vite et à tout maintenir stable.",
+    "privacyNote": "Les rapports sont expurgés : pas de contenu de bibliothèque, titres de morceaux, chemins de fichiers ni données personnelles. Désactivé par défaut. Les modifications prennent effet immédiatement.",
+    "toggleAria": "Activer le suivi des erreurs"
+  },
   "flightRecorder": {
     "label": "Enregistreur de set",
     "caption": "Enregistre une référence audio lo-fi de ton set via le micro de la salle pendant que tu joues, pour la réécouter plus tard. La tracklist est toujours enregistrée — ceci ajoute l'audio.",

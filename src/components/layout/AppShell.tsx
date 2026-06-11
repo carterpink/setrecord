@@ -25,6 +25,10 @@ import { FeedbackModal } from '@/components/modals/FeedbackModal'
 import { IdentityReadyModal } from '@/components/modals/IdentityReadyModal'
 import { PostGigPromptModal } from '@/components/modals/PostGigPromptModal'
 import { UpgradeModal } from '@/components/modals/UpgradeModal'
+import { BulkEditModal } from '@/components/modals/BulkEditModal'
+import { RemoveConfirmModal } from '@/components/modals/RemoveConfirmModal'
+import { CommandPalette } from '@/components/shared/CommandPalette'
+import { ShortcutsOverlay } from '@/components/shared/ShortcutsOverlay'
 import { RecallPanel } from '@/components/recall/RecallPanel'
 import { CollabLayer } from '@/components/collab/CollabLayer'
 import Atmosphere from '@/components/atmosphere/Atmosphere'
@@ -35,6 +39,7 @@ import { DragPreviewCard } from '@/components/timeline/DragPreviewCard'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { useTagStore } from '@/stores/tagStore'
 import { useSetStore } from '@/stores/setStore'
+import { useSelectionStore } from '@/stores/selectionStore'
 import { useUiStore } from '@/stores/uiStore'
 import { useLicenseStore } from '@/stores/licenseStore'
 import { useProgressStore } from '@/stores/progressStore'
@@ -261,6 +266,21 @@ export function AppShell(): React.JSX.Element {
     const overData = over.data.current as { source?: string; setTrack?: SetTrack } | undefined
 
     if (data?.source === 'library' && data.track) {
+      // Multi-drag: when the dragged row is part of a multi-selection, drop them
+      // all (appended in library order). Insert-at-index is single-track only.
+      const multiIds = (data as { selectedTrackIds?: string[] }).selectedTrackIds
+      if (
+        multiIds &&
+        multiIds.length > 1 &&
+        multiIds.includes(data.track.id) &&
+        (over.id === 'timeline-droppable' || overData?.source === 'timeline')
+      ) {
+        const idSet = new Set(multiIds)
+        const chosen = useLibraryStore.getState().tracks.filter((tr) => idSet.has(tr.id))
+        useSetStore.getState().addTracksToCurrent(chosen)
+        useSelectionStore.getState().clear()
+        return
+      }
       // Dropped on a specific timeline card → insert above/below based on cursor Y
       // relative to the card's vertical midpoint. Matches Apple Music / Rekordbox UX.
       if (overData?.source === 'timeline' && overData.setTrack) {
@@ -385,6 +405,26 @@ export function AppShell(): React.JSX.Element {
         {openModal === 'identityReady' && (
           <ErrorBoundary key="identityReady" label="Identity Ready">
             <IdentityReadyModal />
+          </ErrorBoundary>
+        )}
+        {openModal === 'bulkEdit' && (
+          <ErrorBoundary key="bulkEdit" label="Bulk Edit">
+            <BulkEditModal />
+          </ErrorBoundary>
+        )}
+        {openModal === 'removeConfirm' && (
+          <ErrorBoundary key="removeConfirm" label="Remove Tracks">
+            <RemoveConfirmModal />
+          </ErrorBoundary>
+        )}
+        {openModal === 'commandPalette' && (
+          <ErrorBoundary key="commandPalette" label="Command Palette">
+            <CommandPalette />
+          </ErrorBoundary>
+        )}
+        {openModal === 'shortcutsHelp' && (
+          <ErrorBoundary key="shortcutsHelp" label="Keyboard Shortcuts">
+            <ShortcutsOverlay />
           </ErrorBoundary>
         )}
         {onboardingVisible && (

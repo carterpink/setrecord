@@ -115,6 +115,14 @@ export const useLicenseStore = create<LicenseStoreState>((set, get) => ({
   can: (_feature) => get().license.tier === 'pro'
 }))
 
+// Dev aid: expose the licence store so tooling can drive paywall states (free,
+// trial, trial-expired) during local testing — the renderer otherwise defaults
+// to a Pro preview state with no licensing backend.
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  ;(window as unknown as { __ssLicenseStore?: typeof useLicenseStore }).__ssLicenseStore =
+    useLicenseStore
+}
+
 /** Reactive selector — true when the current tier is Pro. */
 export function useIsPro(): boolean {
   return useLicenseStore((s) => s.license.tier === 'pro')

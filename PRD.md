@@ -1,3 +1,11 @@
+> ⚠️ **ARCHIVED — historical v1.0 spec (kept for context, not current truth).**
+> This was the original pre-build specification. The shipped product has since
+> diverged (e.g. React 19 not 18; a bundled on-device conversational LLM that
+> this doc explicitly said the app "is not"). **The living source of truth is
+> [`REQUIREMENTS.md`](REQUIREMENTS.md)** (with per-item Implemented/Partial/Planned
+> status), plus the docs in [`docs/`](docs/). Do not treat the "single source of
+> truth" language below as still operative — read this as a design archive.
+
 SetRecord — Product Requirements Document v1.0
 For Claude Code. Read this entire document before writing a single line of code.
 

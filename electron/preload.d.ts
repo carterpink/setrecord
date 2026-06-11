@@ -1,4 +1,3 @@
-import type { ElectronAPI } from '@electron-toolkit/preload'
 import type {
   ExportResult as BackupExportResult,
   InspectResult as BackupInspectResult,
@@ -111,7 +110,6 @@ export interface EngineExportProgress {
 
 declare global {
   interface Window {
-    electron: ElectronAPI
     setrecord: {
       // Library
       importLibrary: (xmlPath: string) => Promise<ImportResult>
@@ -176,6 +174,28 @@ declare global {
       setTrackEnergy: (trackId: string, energy: number) => Promise<void>
       updateTrackMeta: (trackId: string, fields: { bpm?: number; key?: string }) => Promise<void>
       relinkTrackFile: (trackId: string) => Promise<string | null>
+      // Bulk operations (power-user multi-select)
+      tracksDelete: (ids: string[]) => Promise<{ count: number; removed: Track[] }>
+      tracksRestore: (tracks: Track[]) => Promise<void>
+      tracksBulkUpdateMeta: (
+        ids: string[],
+        patch: {
+          bpm?: number
+          key?: string
+          genre?: string
+          rating?: number
+          color?: string
+          comment?: string
+        }
+      ) => Promise<boolean>
+      tracksBulkSetEnergy: (ids: string[], energy: number) => Promise<boolean>
+      tracksBulkSetTags: (
+        ids: string[],
+        category: TagCategory,
+        values: string[],
+        mode: 'add' | 'remove' | 'replace'
+      ) => Promise<boolean>
+      tracksBulkSetLifecycle: (ids: string[], state: string | null) => Promise<void>
       // Auto-tags
       tagsCoverage: () => Promise<TagCoverage>
       tagsForTrack: (trackId: string) => Promise<TrackTag[]>
@@ -202,6 +222,7 @@ declare global {
       // Settings (Phase 8)
       getSettings: () => Promise<AppSettings>
       setSettings: (partial: Partial<AppSettings>) => Promise<AppSettings>
+      sentrySetOptIn: (optIn: boolean) => Promise<void>
       // Artwork cache management
       artworkCacheStats: () => Promise<{ files: number; bytes: number }>
       artworkClearCache: () => Promise<{ removed: number; bytesFreed: number }>
@@ -286,8 +307,9 @@ declare global {
           city?: string
           country?: string
           setSlot?: SetSlot
+          force?: boolean
         }
-      ) => Promise<string | null>
+      ) => Promise<{ sessionId: string; alreadyPerformedToday: boolean } | null>
       historyDelete: (sessionId: string) => Promise<void>
       historyImportFile: () => Promise<{ sessions: number; tracks: number }>
       setTrackLifecycle: (

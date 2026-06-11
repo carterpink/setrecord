@@ -43,7 +43,8 @@ function makeDb(): Database.Database {
       city TEXT,
       country TEXT,
       set_slot TEXT,
-      venue_source TEXT NOT NULL DEFAULT 'user'
+      venue_source TEXT NOT NULL DEFAULT 'user',
+      method TEXT NOT NULL DEFAULT 'user-asserted'
     );
     CREATE TABLE session_tracks (
       id TEXT PRIMARY KEY,

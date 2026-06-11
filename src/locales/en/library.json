@@ -105,6 +105,7 @@
     "phantomStatus": "Phantom — not in your library.",
     "fileNotFoundStatus": "File not found.",
     "selectedStatus": "Selected.",
+    "selectToggle": "Select track",
     "phantomTrackCompact": "Phantom track",
     "phantomTrackTitle": "Phantom track — buy or download to enable",
     "fileNotFound": "File not found",

@@ -134,3 +134,47 @@ export function checkoutUrl(
   }
   return `https://${COMMERCE_HOST}/checkout?plan=${plan}&${redirect}`
 }
+
+// ── Direct Lemon Squeezy checkout (Worker-independent fallback) ───────────────
+//
+// The primary checkout path asks the fulfilment Worker to create a device-bound
+// hosted checkout (best: it can mint + auto-activate a key on return). But until
+// that Worker is deployed, a checkout button that depends on it opens nothing.
+//
+// These are the plain "Share / Buy" links for each Lemon Squeezy product variant
+// (LS dashboard → Products → variant → Share). They open the REAL hosted checkout
+// directly, no Worker required. We append the anonymous device_id as checkout
+// custom data so that once the LS webhook → Worker fulfilment is live, the same
+// purchase still binds to this machine.
+//
+// ⚠️ FILL THESE IN with your three buy links (store id 399849; variants
+// monthly 1757549 / annual 1757552 / lifetime 1757534). Format:
+//   https://<your-store>.lemonsqueezy.com/buy/<variant-uuid>
+// Leave a value null to keep that plan on the Worker-only path.
+export const LEMONSQUEEZY_BUY_URLS: Record<'monthly' | 'annual' | 'lifetime', string | null> = {
+  monthly: null,
+  annual: null,
+  lifetime: null
+}
+
+/**
+ * Build a direct Lemon Squeezy checkout URL for a plan, or null when no buy link
+ * is configured for it. Carries the device id as checkout custom data and asks LS
+ * to skip its success page so a future Worker fulfilment can drive the redirect.
+ */
+export function directCheckoutUrl(
+  plan: 'monthly' | 'annual' | 'lifetime',
+  deviceId: string
+): string | null {
+  const base = LEMONSQUEEZY_BUY_URLS[plan]
+  if (!base) return null
+  try {
+    const url = new URL(base)
+    // LS prefill convention: ?checkout[custom][key]=value flows to the order
+    // webhook. device_id lets the Worker bind the minted key to this machine.
+    url.searchParams.set('checkout[custom][device_id]', deviceId)
+    return url.toString()
+  } catch {
+    return null
+  }
+}

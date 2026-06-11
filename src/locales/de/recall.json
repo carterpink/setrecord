@@ -199,7 +199,13 @@
       "updated_one": "{{count}} Gig aktualisiert.",
       "updated_other": "{{count}} Gigs aktualisiert.",
       "apply": "Auf passende Gigs anwenden"
-    }
+    },
+    "methodRecorded": "aufgenommen",
+    "methodRecordedTitle": "Live vom Flight Recorder erfasst — verifizierte Play-Daten",
+    "methodImported": "importiert",
+    "methodImportedTitle": "Aus deiner Rekordbox-History importiert — verifizierte Play-Daten",
+    "methodMarked": "markiert",
+    "methodMarkedTitle": "Manuell als gespielt markiert — bleibt im Tagebuch, zählt nicht in die Statistik"
   },
   "health": {
     "title": "Zustand",

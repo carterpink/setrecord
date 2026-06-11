@@ -10,13 +10,33 @@ import '@fontsource/space-grotesk/700.css'
 import '@fontsource-variable/fraunces/full.css'
 import './styles/globals.css'
 import './styles/grit.css' // editorial layer — loaded LAST so it wins
+import './styles/power-user.css' // power-user suite (selection, palette, …)
 import './i18n'
 import App from './App'
 import { initTheme } from './utils/theme'
 import { installBackgroundAnimationPause } from './utils/backgroundAnimations'
+import { initSentryRenderer } from './utils/sentry'
 
 // Apply the persisted theme (grit default) before first paint.
 initTheme()
+
+// Initialize Sentry. Fetch the user's opt-in preference from settings and pass it in.
+if (typeof window.setrecord !== 'undefined') {
+  window.setrecord
+    .getSettings()
+    .then((s) => {
+      initSentryRenderer(s.sentryOptIn ?? false)
+      // Sync the main process's Sentry opt-in status
+      void window.setrecord.sentrySetOptIn(s.sentryOptIn ?? false)
+    })
+    .catch(() => {
+      // Settings unavailable — disable Sentry
+      initSentryRenderer(false)
+    })
+} else {
+  // Not in Electron context (e.g. dev browser) — disable Sentry
+  initSentryRenderer(false)
+}
 
 const root = createRoot(document.getElementById('root')!)
 const params = new URLSearchParams(window.location.search)

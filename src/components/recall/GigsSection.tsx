@@ -10,7 +10,10 @@ import {
   Sparkles,
   ChevronDown,
   ClipboardList,
-  Copy
+  Copy,
+  Mic,
+  FileInput,
+  PenLine
 } from 'lucide-react'
 import type { PlaySession, SessionMetadataPatch, SessionTrack, VenueType, SetSlot } from '@/types'
 import { useRecallStore } from '@/stores/recallStore'
@@ -145,6 +148,30 @@ function GigRow({ gig }: { gig: PlaySession }): React.JSX.Element {
               <span className="gig-auto-badge" title={t('gigs.autoBadgeTitle')}>
                 <Sparkles size={10} strokeWidth={1.5} /> {t('gigs.autoBadge')}
               </span>
+            )}
+          </span>
+          <span
+            className="gig-chip gig-chip-soft"
+            title={
+              gig.method === 'live-recorded'
+                ? t('gigs.methodRecordedTitle')
+                : gig.method === 'imported-history'
+                  ? t('gigs.methodImportedTitle')
+                  : t('gigs.methodMarkedTitle')
+            }
+          >
+            {gig.method === 'live-recorded' ? (
+              <>
+                <Mic size={12} strokeWidth={1.5} /> {t('gigs.methodRecorded')}
+              </>
+            ) : gig.method === 'imported-history' ? (
+              <>
+                <FileInput size={12} strokeWidth={1.5} /> {t('gigs.methodImported')}
+              </>
+            ) : (
+              <>
+                <PenLine size={12} strokeWidth={1.5} /> {t('gigs.methodMarked')}
+              </>
             )}
           </span>
           {gig.eventType && <span className="gig-chip gig-chip-soft">{gig.eventType}</span>}

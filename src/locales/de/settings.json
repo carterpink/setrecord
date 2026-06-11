@@ -110,6 +110,12 @@
     "privacyNote": "Deine Bibliothek, Track-Titel, Dateipfade, dein Gerätename und persönliche Daten werden nie übermittelt. Standardmäßig aus. Ausschalten stoppt die Berichte sofort; Einschalten wird nach einem Neustart von {{app}} wirksam.",
     "toggleAria": "Absturzberichte umschalten"
   },
+  "sentry": {
+    "label": "Fehlertracking",
+    "caption": "Stimme dem Senden anonymer Fehler- und Leistungsdaten zu, wenn {{app}} auf Probleme stößt. Das hilft uns, Bugs schneller zu beheben und alles stabil zu halten.",
+    "privacyNote": "Berichte sind reduziert: keine Bibliotheksinhalte, Track-Titel, Dateipfade oder persönliche Daten. Standardmäßig aus. Änderungen werden sofort wirksam.",
+    "toggleAria": "Fehlertracking umschalten"
+  },
   "flightRecorder": {
     "label": "Set-Flugschreiber",
     "caption": "Nimm während des Auflegens über das Raummikrofon eine Lo-Fi-Audioreferenz deines Sets auf, um sie später abzuspielen. Die Tracklist wird immer gespeichert – dies ergänzt das Audio.",

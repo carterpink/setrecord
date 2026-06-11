@@ -15,6 +15,10 @@ type ModalName =
   | 'postGigPrompt'
   | 'upgrade'
   | 'identityReady'
+  | 'bulkEdit'
+  | 'removeConfirm'
+  | 'commandPalette'
+  | 'shortcutsHelp'
 
 interface PostGigPromptData {
   sessionId: string

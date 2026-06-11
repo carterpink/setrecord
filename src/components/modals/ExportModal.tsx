@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation, Trans } from 'react-i18next'
 import { APP_NAME } from '@/utils/constants'
+import { launchProfile } from '@/config/launchProfile'
 import {
   AlertTriangle,
   CheckCircle,
@@ -503,6 +504,23 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                           }}
                         >
                           {t('export.cardEngineTitle')}
+                          <span
+                            style={{
+                              marginLeft: 8,
+                              fontSize: 10,
+                              fontWeight: 700,
+                              letterSpacing: '0.06em',
+                              textTransform: 'uppercase',
+                              color: 'var(--accent)',
+                              border:
+                                '1px solid color-mix(in srgb, var(--accent) 45%, transparent)',
+                              borderRadius: 4,
+                              padding: '1px 5px',
+                              verticalAlign: 'middle'
+                            }}
+                          >
+                            Beta
+                          </span>
                         </span>
                         <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
                           {t('export.cardEngineBody')}
@@ -510,46 +528,48 @@ export function ExportModal({ validateOnly = false }: ExportModalProps): React.J
                       </div>
                     </button>
 
-                    <button
-                      type="button"
-                      className="glass-1 format-card"
-                      onClick={handleSelectBeatport}
-                      style={{
-                        display: 'flex',
-                        gap: 12,
-                        textAlign: 'left',
-                        padding: '14px',
-                        borderRadius: 'var(--radius-md)',
-                        cursor: 'pointer',
-                        alignItems: 'flex-start'
-                      }}
-                    >
-                      <ListMusic
-                        size={20}
-                        style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }}
-                        aria-hidden="true"
-                      />
-                      <div>
-                        <span
-                          className="ss-body-sm"
-                          style={{
-                            color: 'var(--text-primary)',
-                            display: 'block',
-                            fontWeight: 600
-                          }}
-                        >
-                          {t('export.cardBeatportTitle')}
-                        </span>
-                        <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
-                          <Trans
-                            t={t}
-                            i18nKey="export.cardBeatportBody"
-                            values={{ app: APP_NAME }}
-                            components={[<code key="0" />]}
-                          />
-                        </span>
-                      </div>
-                    </button>
+                    {launchProfile.beatportExport && (
+                      <button
+                        type="button"
+                        className="glass-1 format-card"
+                        onClick={handleSelectBeatport}
+                        style={{
+                          display: 'flex',
+                          gap: 12,
+                          textAlign: 'left',
+                          padding: '14px',
+                          borderRadius: 'var(--radius-md)',
+                          cursor: 'pointer',
+                          alignItems: 'flex-start'
+                        }}
+                      >
+                        <ListMusic
+                          size={20}
+                          style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }}
+                          aria-hidden="true"
+                        />
+                        <div>
+                          <span
+                            className="ss-body-sm"
+                            style={{
+                              color: 'var(--text-primary)',
+                              display: 'block',
+                              fontWeight: 600
+                            }}
+                          >
+                            {t('export.cardBeatportTitle')}
+                          </span>
+                          <span className="ss-caption" style={{ color: 'var(--text-tertiary)' }}>
+                            <Trans
+                              t={t}
+                              i18nKey="export.cardBeatportBody"
+                              values={{ app: APP_NAME }}
+                              components={[<code key="0" />]}
+                            />
+                          </span>
+                        </div>
+                      </button>
+                    )}
                   </div>
                 )}
               </>

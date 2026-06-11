@@ -4,6 +4,13 @@ import { useTranslation } from 'react-i18next'
 import { Award, Disc3, History, Play, Plus, Search, Tag, Zap } from 'lucide-react'
 import type { Track } from '@/types'
 
+export interface MenuItem {
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>
+  label: string
+  action: () => void
+  disabled?: boolean
+}
+
 interface TrackContextMenuProps {
   track: Track
   x: number
@@ -17,13 +24,10 @@ interface TrackContextMenuProps {
   onShowCombos: () => void
   onShowResume: () => void
   onEditTags: () => void
-}
-
-interface MenuItem {
-  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>
-  label: string
-  action: () => void
-  disabled?: boolean
+  /** When a multi-selection is right-clicked, these replace the single-track items. */
+  bulkItems?: MenuItem[]
+  /** Header label for the bulk variant (e.g. "12 selected"). */
+  bulkHeader?: string
 }
 
 export function TrackContextMenu({
@@ -38,7 +42,9 @@ export function TrackContextMenu({
   onEditCues,
   onShowCombos,
   onShowResume,
-  onEditTags
+  onEditTags,
+  bulkItems,
+  bulkHeader
 }: TrackContextMenuProps): React.ReactPortal {
   const { t } = useTranslation('library')
   const menuRef = useRef<HTMLDivElement>(null)
@@ -94,7 +100,8 @@ export function TrackContextMenu({
 
   const unavailable = track.missingFile === true || track.phantom === true
 
-  const items: MenuItem[] = [
+  const isBulk = !!bulkItems && bulkItems.length > 0
+  const singleItems: MenuItem[] = [
     {
       icon: Play,
       label: t('contextMenu.preview'),
@@ -140,6 +147,7 @@ export function TrackContextMenu({
       action: onEditTags
     }
   ]
+  const items: MenuItem[] = isBulk ? bulkItems! : singleItems
 
   return createPortal(
     <div
@@ -150,7 +158,7 @@ export function TrackContextMenu({
       style={{ position: 'fixed', left: clampedX, top: clampedY, zIndex: 9999 }}
       onKeyDown={onMenuKeyDown}
     >
-      <div className="ctx-menu-header ss-caption">{track.title}</div>
+      <div className="ctx-menu-header ss-caption">{isBulk ? bulkHeader : track.title}</div>
       {items.map((item) => (
         <button
           key={item.label}

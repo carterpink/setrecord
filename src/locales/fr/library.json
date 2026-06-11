@@ -105,6 +105,7 @@
     "phantomStatus": "Phantom — pas dans votre bibliothèque.",
     "fileNotFoundStatus": "Fichier introuvable.",
     "selectedStatus": "Sélectionné.",
+    "selectToggle": "Sélectionner le morceau",
     "phantomTrackCompact": "Morceau phantom",
     "phantomTrackTitle": "Morceau phantom — achetez ou téléchargez pour l’activer",
     "fileNotFound": "Fichier introuvable",

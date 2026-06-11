@@ -13,7 +13,7 @@ let _db: Database.Database | null = null
  * whether it needs to take a pre-migration safety backup. A test pins this to
  * the real max version so the two can't drift.
  */
-export const LATEST_SCHEMA_VERSION = 22
+export const LATEST_SCHEMA_VERSION = 23
 
 export function getDb(): Database.Database {
   if (!_db) throw new Error('DB not initialised — call initDb() first')
@@ -144,7 +144,8 @@ export function resetDb({ quarantine = true }: { quarantine?: boolean } = {}): v
   }
 }
 
-function createSchema(db: Database.Database): void {
+// Exported for tests (migration backfill tests rebuild a pre-v23 DB from it).
+export function createSchema(db: Database.Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS tracks (
       id TEXT PRIMARY KEY,
@@ -258,7 +259,8 @@ function createSchema(db: Database.Database): void {
       city TEXT,
       country TEXT,
       set_slot TEXT,
-      venue_source TEXT NOT NULL DEFAULT 'user'
+      venue_source TEXT NOT NULL DEFAULT 'user',
+      method TEXT NOT NULL DEFAULT 'user-asserted'
     );
 
     CREATE TABLE IF NOT EXISTS session_tracks (
@@ -277,6 +279,7 @@ function createSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_session_tracks_track ON session_tracks(track_id);
     CREATE INDEX IF NOT EXISTS idx_play_sessions_performed ON play_sessions(performed_at);
     CREATE INDEX IF NOT EXISTS idx_play_sessions_venue ON play_sessions(venue);
+    CREATE INDEX IF NOT EXISTS idx_play_sessions_method ON play_sessions(method);
 
     CREATE TABLE IF NOT EXISTS smart_crates (
       id TEXT PRIMARY KEY,

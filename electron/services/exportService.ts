@@ -26,8 +26,9 @@ function encodeFilePath(filePath: string): string {
 }
 
 /**
- * Format a track's tags into Rekordbox's MyTag-in-comments syntax `/* a / b *​/`,
- * merged with any existing comment. Rekordbox shows these in the Comments column
+ * Format a track's tags into Rekordbox's MyTag-in-comments syntax (the labels
+ * wrapped in a slash-star ... star-slash block, e.g. "a / b"), merged with any
+ * existing comment. Rekordbox shows these in the Comments column
  * and they survive XML import — the safe, non-destructive tag hand-off.
  */
 export function formatTagsComment(tags: TrackTag[] | undefined, existing?: string): string {

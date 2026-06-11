@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DJ_PLAYLISTS Version="1.0.0">
+  <PRODUCT Name="Rekordbox" Version="6.5.0" Company="Pioneer"/>
+  <COLLECTION Entries="150">
+    <TRACK TrackID="1" Name="Deep Pulse" Artist="Maya Chen" Album="Nocturne" Composer="Maya Chen" Genre="Deep House" BPM="126" BitRate="320" Colour="0" DateAdded="2025-01-15" Duration="480" Key="10m" Label="Midnight Collective" Mix="" Rating="5"/>
+    <TRACK TrackID="2" Name="Electric Dreams" Artist="James Rivers" Album="Neon Nights" Composer="James Rivers" Genre="Tech House" BPM="128" BitRate="320" Colour="0" DateAdded="2025-01-14" Duration="420" Key="12m" Label="Pulse Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="3" Name="Basement Flow" Artist="Sofia Dias" Album="Underground" Composer="Sofia Dias" Genre="House" BPM="130" BitRate="320" Colour="0" DateAdded="2025-01-13" Duration="480" Key="4M" Label="Deep Vibes" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="4" Name="Cosmic Drift" Artist="Lex Stone" Album="Space Travels" Composer="Lex Stone" Genre="Progressive House" BPM="124" BitRate="320" Colour="0" DateAdded="2025-01-12" Duration="540" Key="9m" Label="Astral Sound" Mix="" Rating="3"/>
+    <TRACK TrackID="5" Name="Midnight Chase" Artist="Priya Patel" Album="Night Moves" Composer="Priya Patel" Genre="Techno" BPM="135" BitRate="320" Colour="0" DateAdded="2025-01-11" Duration="480" Key="6M" Label="Dark Matter" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="6" Name="Golden Hour" Artist="Marco Rossi" Album="Time Flow" Composer="Marco Rossi" Genre="Deep House" BPM="122" BitRate="320" Colour="0" DateAdded="2025-01-10" Duration="420" Key="8m" Label="Warm Sound" Mix="" Rating="5"/>
+    <TRACK TrackID="7" Name="Crystal Waters" Artist="Emma White" Album="Reflections" Composer="Emma White" Genre="House" BPM="128" BitRate="320" Colour="0" DateAdded="2025-01-09" Duration="480" Key="1m" Label="Crystal Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="8" Name="Neon City" Artist="Alex Black" Album="Urban Lights" Composer="Alex Black" Genre="Tech House" BPM="132" BitRate="320" Colour="0" DateAdded="2025-01-08" Duration="480" Key="5m" Label="Neon Waves" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="9" Name="Velvet Motion" Artist="Sarah Kim" Album="Smooth Rides" Composer="Sarah Kim" Genre="Deep House" BPM="120" BitRate="320" Colour="0" DateAdded="2025-01-07" Duration="420" Key="3M" Label="Velvet Touch" Mix="" Rating="3"/>
+    <TRACK TrackID="10" Name="Thunder Road" Artist="Jordan Lee" Album="Electric Storm" Composer="Jordan Lee" Genre="Techno" BPM="138" BitRate="320" Colour="0" DateAdded="2025-01-06" Duration="480" Key="7M" Label="Storm Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="11" Name="Smooth Ride" Artist="Lisa Garcia" Album="Easy Flows" Composer="Lisa Garcia" Genre="House" BPM="125" BitRate="320" Colour="0" DateAdded="2025-01-05" Duration="480" Key="11m" Label="Easy Street" Mix="" Rating="5"/>
+    <TRACK TrackID="12" Name="Dark Horizons" Artist="Tom Jenkins" Album="Night Tales" Composer="Tom Jenkins" Genre="Techno" BPM="140" BitRate="320" Colour="0" DateAdded="2025-01-04" Duration="480" Key="2m" Label="Dark Matter" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="13" Name="Sunrise Bliss" Artist="Nina Costa" Album="Morning Light" Composer="Nina Costa" Genre="Deep House" BPM="118" BitRate="320" Colour="0" DateAdded="2025-01-03" Duration="420" Key="9M" Label="Morning Mist" Mix="" Rating="3"/>
+    <TRACK TrackID="14" Name="Hypnotic Beat" Artist="Chris Lopez" Album="Rhythm Machine" Composer="Chris Lopez" Genre="Tech House" BPM="131" BitRate="320" Colour="0" DateAdded="2025-01-02" Duration="480" Key="4m" Label="Beat Master" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="15" Name="Silent Nights" Artist="Diana Foster" Album="Peaceful Sounds" Composer="Diana Foster" Genre="House" BPM="123" BitRate="320" Colour="0" DateAdded="2025-01-01" Duration="480" Key="6m" Label="Peace Records" Mix="" Rating="4"/>
+    <TRACK TrackID="16" Name="Stereo Vision" Artist="David Moore" Album="Visual Beats" Composer="David Moore" Genre="Progressive House" BPM="127" BitRate="320" Colour="0" DateAdded="2024-12-31" Duration="540" Key="10M" Label="Vision Sound" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="17" Name="Fire and Ice" Artist="Ruby Kane" Album="Extremes" Composer="Ruby Kane" Genre="Techno" BPM="136" BitRate="320" Colour="0" DateAdded="2024-12-30" Duration="480" Key="1M" Label="Extreme Records" Mix="" Rating="4"/>
+    <TRACK TrackID="18" Name="Liquid Dreams" Artist="Kai Wilson" Album="Flow State" Composer="Kai Wilson" Genre="Deep House" BPM="121" BitRate="320" Colour="0" DateAdded="2024-12-29" Duration="420" Key="7m" Label="Liquid Sound" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="19" Name="Urban Jungle" Artist="Maya Chen" Album="City Life" Composer="Maya Chen" Genre="Tech House" BPM="129" BitRate="320" Colour="0" DateAdded="2024-12-28" Duration="480" Key="3m" Label="City Beats" Mix="" Rating="3"/>
+    <TRACK TrackID="20" Name="Midnight Rain" Artist="Lucas Berg" Album="Weather Patterns" Composer="Lucas Berg" Genre="House" BPM="126" BitRate="320" Colour="0" DateAdded="2024-12-27" Duration="480" Key="11M" Label="Rain Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="21" Name="Rising Sun" Artist="Victor Huang" Album="Dawn Break" Composer="Victor Huang" Genre="Progressive House" BPM="122" BitRate="320" Colour="0" DateAdded="2024-12-26" Duration="540" Key="8M" Label="Sunrise Records" Mix="" Rating="5"/>
+    <TRACK TrackID="22" Name="Waves Crash" Artist="Ocean Deep" Album="Sea State" Composer="Ocean Deep" Genre="Deep House" BPM="124" BitRate="320" Colour="0" DateAdded="2024-12-25" Duration="480" Key="2M" Label="Ocean Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="23" Name="Pulse Motion" Artist="River Flow" Album="Movement" Composer="River Flow" Genre="Tech House" BPM="130" BitRate="320" Colour="0" DateAdded="2024-12-24" Duration="480" Key="5M" Label="Motion Records" Mix="" Rating="5"/>
+    <TRACK TrackID="24" Name="Rhythm State" Artist="Beat Master" Album="Beat Box" Composer="Beat Master" Genre="Techno" BPM="137" BitRate="320" Colour="0" DateAdded="2024-12-23" Duration="480" Key="8m" Label="Beat Records" Mix="Original Mix" Rating="3"/>
+    <TRACK TrackID="25" Name="Sonic Waves" Artist="Sound Wave" Album="Wave Form" Composer="Sound Wave" Genre="House" BPM="128" BitRate="320" Colour="0" DateAdded="2024-12-22" Duration="480" Key="10M" Label="Sonic Records" Mix="" Rating="4"/>
+    <TRACK TrackID="26" Name="Deep Space" Artist="Astro Nova" Album="Galactic" Composer="Astro Nova" Genre="Progressive House" BPM="125" BitRate="320" Colour="0" DateAdded="2024-12-21" Duration="540" Key="1M" Label="Space Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="27" Name="Night Vision" Artist="Dark Star" Album="Night Sky" Composer="Dark Star" Genre="Techno" BPM="140" BitRate="320" Colour="0" DateAdded="2024-12-20" Duration="480" Key="4M" Label="Night Records" Mix="" Rating="4"/>
+    <TRACK TrackID="28" Name="Bright Light" Artist="Sunny Day" Album="Day Time" Composer="Sunny Day" Genre="Deep House" BPM="120" BitRate="320" Colour="0" DateAdded="2024-12-19" Duration="420" Key="6M" Label="Light Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="29" Name="Motion Flow" Artist="Tempo King" Album="Speed Control" Composer="Tempo King" Genre="Tech House" BPM="133" BitRate="320" Colour="0" DateAdded="2024-12-18" Duration="480" Key="9m" Label="Tempo Records" Mix="" Rating="3"/>
+    <TRACK TrackID="30" Name="Echo Sound" Artist="Echo Man" Album="Echo Box" Composer="Echo Man" Genre="House" BPM="127" BitRate="320" Colour="0" DateAdded="2024-12-17" Duration="480" Key="7M" Label="Echo Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="31" Name="Groove Master" Artist="Funk Soul" Album="Funk Time" Composer="Funk Soul" Genre="Deep House" BPM="122" BitRate="320" Colour="0" DateAdded="2024-12-16" Duration="420" Key="3m" Label="Funk Records" Mix="" Rating="5"/>
+    <TRACK TrackID="32" Name="Bass Power" Artist="Low End" Album="Bass House" Composer="Low End" Genre="Tech House" BPM="132" BitRate="320" Colour="0" DateAdded="2024-12-15" Duration="480" Key="5m" Label="Bass Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="33" Name="Treble High" Artist="High Note" Album="High Sound" Composer="High Note" Genre="Techno" BPM="139" BitRate="320" Colour="0" DateAdded="2024-12-14" Duration="480" Key="2m" Label="High Records" Mix="" Rating="5"/>
+    <TRACK TrackID="34" Name="Crystal Clear" Artist="Pure Sound" Album="Clarity" Composer="Pure Sound" Genre="House" BPM="125" BitRate="320" Colour="0" DateAdded="2024-12-13" Duration="480" Key="11m" Label="Clear Records" Mix="Original Mix" Rating="3"/>
+    <TRACK TrackID="35" Name="Infinite Loop" Artist="Circle Drift" Album="Loops" Composer="Circle Drift" Genre="Progressive House" BPM="126" BitRate="320" Colour="0" DateAdded="2024-12-12" Duration="540" Key="10M" Label="Loop Records" Mix="" Rating="4"/>
+    <TRACK TrackID="36" Name="Time Machine" Artist="Future Sound" Album="Time Travel" Composer="Future Sound" Genre="Deep House" BPM="119" BitRate="320" Colour="0" DateAdded="2024-12-11" Duration="420" Key="8m" Label="Time Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="37" Name="Reality Check" Artist="Real Deal" Album="Reality" Composer="Real Deal" Genre="Tech House" BPM="131" BitRate="320" Colour="0" DateAdded="2024-12-10" Duration="480" Key="4M" Label="Reality Records" Mix="" Rating="4"/>
+    <TRACK TrackID="38" Name="Dream State" Artist="Dream Maker" Album="Dreams" Composer="Dream Maker" Genre="Techno" BPM="138" BitRate="320" Colour="0" DateAdded="2024-12-09" Duration="480" Key="6m" Label="Dream Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="39" Name="Myth Legend" Artist="Old Stories" Album="Ancient Times" Composer="Old Stories" Genre="House" BPM="124" BitRate="320" Colour="0" DateAdded="2024-12-08" Duration="480" Key="9M" Label="Myth Records" Mix="" Rating="3"/>
+    <TRACK TrackID="40" Name="Modern Age" Artist="New Era" Album="Future Beats" Composer="New Era" Genre="Progressive House" BPM="128" BitRate="320" Colour="0" DateAdded="2024-12-07" Duration="540" Key="1M" Label="Modern Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="41" Name="Classic Vibe" Artist="Golden Era" Album="Old School" Composer="Golden Era" Genre="Deep House" BPM="121" BitRate="320" Colour="0" DateAdded="2024-12-06" Duration="420" Key="7m" Label="Classic Records" Mix="" Rating="5"/>
+    <TRACK TrackID="42" Name="Future Vision" Artist="Tech Genius" Album="Tomorrow" Composer="Tech Genius" Genre="Tech House" BPM="130" BitRate="320" Colour="0" DateAdded="2024-12-05" Duration="480" Key="3m" Label="Future Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="43" Name="Past Memories" Artist="Memory Lane" Album="Nostalgia" Composer="Memory Lane" Genre="Techno" BPM="136" BitRate="320" Colour="0" DateAdded="2024-12-04" Duration="480" Key="2M" Label="Memory Records" Mix="" Rating="5"/>
+    <TRACK TrackID="44" Name="Present Moment" Artist="Now Master" Album="Right Now" Composer="Now Master" Genre="House" BPM="127" BitRate="320" Colour="0" DateAdded="2024-12-03" Duration="480" Key="10M" Label="Present Records" Mix="Original Mix" Rating="3"/>
+    <TRACK TrackID="45" Name="Eternal Flame" Artist="Forever Fire" Album="Burning" Composer="Forever Fire" Genre="Progressive House" BPM="123" BitRate="320" Colour="0" DateAdded="2024-12-02" Duration="540" Key="5M" Label="Eternal Records" Mix="" Rating="4"/>
+    <TRACK TrackID="46" Name="Wild Nature" Artist="Nature Sound" Album="Wild Life" Composer="Nature Sound" Genre="Deep House" BPM="120" BitRate="320" Colour="0" DateAdded="2024-12-01" Duration="420" Key="8m" Label="Nature Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="47" Name="Urban Energy" Artist="City Pulse" Album="Metropolitan" Composer="City Pulse" Genre="Tech House" BPM="133" BitRate="320" Colour="0" DateAdded="2024-11-30" Duration="480" Key="4m" Label="Urban Records" Mix="" Rating="4"/>
+    <TRACK TrackID="48" Name="Rural Peace" Artist="Country Side" Album="Countryside" Composer="Country Side" Genre="Techno" BPM="134" BitRate="320" Colour="0" DateAdded="2024-11-29" Duration="480" Key="6M" Label="Rural Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="49" Name="Mountain High" Artist="Peak Sound" Album="Heights" Composer="Peak Sound" Genre="House" BPM="125" BitRate="320" Colour="0" DateAdded="2024-11-28" Duration="480" Key="11m" Label="Mountain Records" Mix="" Rating="3"/>
+    <TRACK TrackID="50" Name="Valley Low" Artist="Low Point" Album="Depth" Composer="Low Point" Genre="Progressive House" BPM="126" BitRate="320" Colour="0" DateAdded="2024-11-27" Duration="540" Key="7M" Label="Valley Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="51" Name="Ocean Breeze" Artist="Sea Spray" Album="Coastal" Composer="Sea Spray" Genre="Deep House" BPM="118" BitRate="320" Colour="0" DateAdded="2024-11-26" Duration="420" Key="9m" Label="Ocean Records" Mix="" Rating="5"/>
+    <TRACK TrackID="52" Name="Desert Wind" Artist="Sand Dunes" Album="Sahara" Composer="Sand Dunes" Genre="Tech House" BPM="129" BitRate="320" Colour="0" DateAdded="2024-11-25" Duration="480" Key="3M" Label="Desert Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="53" Name="Forest Green" Artist="Tree Shade" Album="Woodland" Composer="Tree Shade" Genre="Techno" BPM="137" BitRate="320" Colour="0" DateAdded="2024-11-24" Duration="480" Key="2m" Label="Forest Records" Mix="" Rating="5"/>
+    <TRACK TrackID="54" Name="Arctic Chill" Artist="Ice Crystal" Album="Frozen" Composer="Ice Crystal" Genre="House" BPM="128" BitRate="320" Colour="0" DateAdded="2024-11-23" Duration="480" Key="1M" Label="Arctic Records" Mix="Original Mix" Rating="3"/>
+    <TRACK TrackID="55" Name="Tropical Heat" Artist="Sun Burst" Album="Summer" Composer="Sun Burst" Genre="Progressive House" BPM="124" BitRate="320" Colour="0" DateAdded="2024-11-22" Duration="540" Key="10M" Label="Tropical Records" Mix="" Rating="4"/>
+    <TRACK TrackID="56" Name="Autumn Leaves" Artist="Fall Colors" Album="Harvest" Composer="Fall Colors" Genre="Deep House" BPM="122" BitRate="320" Colour="0" DateAdded="2024-11-21" Duration="420" Key="8m" Label="Autumn Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="57" Name="Spring Bloom" Artist="Fresh Start" Album="Renewal" Composer="Fresh Start" Genre="Tech House" BPM="131" BitRate="320" Colour="0" DateAdded="2024-11-20" Duration="480" Key="5m" Label="Spring Records" Mix="" Rating="4"/>
+    <TRACK TrackID="58" Name="Winter Snow" Artist="Cold Snap" Album="Blizzard" Composer="Cold Snap" Genre="Techno" BPM="140" BitRate="320" Colour="0" DateAdded="2024-11-19" Duration="480" Key="4M" Label="Winter Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="59" Name="Sunrise Glow" Artist="Morning Rays" Album="Dawn" Composer="Morning Rays" Genre="House" BPM="120" BitRate="320" Colour="0" DateAdded="2024-11-18" Duration="480" Key="6m" Label="Sunrise Records" Mix="" Rating="3"/>
+    <TRACK TrackID="60" Name="Sunset Orange" Artist="Evening Light" Album="Dusk" Composer="Evening Light" Genre="Progressive House" BPM="125" BitRate="320" Colour="0" DateAdded="2024-11-17" Duration="540" Key="9M" Label="Sunset Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="61" Name="Midnight Blue" Artist="Dark Hour" Album="Night Time" Composer="Dark Hour" Genre="Deep House" BPM="119" BitRate="320" Colour="0" DateAdded="2024-11-16" Duration="420" Key="7m" Label="Midnight Records" Mix="" Rating="5"/>
+    <TRACK TrackID="62" Name="Noon Bright" Artist="Peak Light" Album="Midday" Composer="Peak Light" Genre="Tech House" BPM="132" BitRate="320" Colour="0" DateAdded="2024-11-15" Duration="480" Key="3m" Label="Noon Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="63" Name="Twilight Hour" Artist="Between Times" Album="Transition" Composer="Between Times" Genre="Techno" BPM="135" BitRate="320" Colour="0" DateAdded="2024-11-14" Duration="480" Key="2M" Label="Twilight Records" Mix="" Rating="5"/>
+    <TRACK TrackID="64" Name="Daylight Hours" Artist="Sun Time" Album="Daytime" Composer="Sun Time" Genre="House" BPM="126" BitRate="320" Colour="0" DateAdded="2024-11-13" Duration="480" Key="1M" Label="Day Records" Mix="Original Mix" Rating="3"/>
+    <TRACK TrackID="65" Name="Shadow Dance" Artist="Dark Mover" Album="Shadow Box" Composer="Dark Mover" Genre="Progressive House" BPM="127" BitRate="320" Colour="0" DateAdded="2024-11-12" Duration="540" Key="10M" Label="Shadow Records" Mix="" Rating="4"/>
+    <TRACK TrackID="66" Name="Light Show" Artist="Bright Display" Album="Illumination" Composer="Bright Display" Genre="Deep House" BPM="121" BitRate="320" Colour="0" DateAdded="2024-11-11" Duration="420" Key="8m" Label="Light Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="67" Name="Sound Wave" Artist="Audio Master" Album="Frequency" Composer="Audio Master" Genre="Tech House" BPM="130" BitRate="320" Colour="0" DateAdded="2024-11-10" Duration="480" Key="5m" Label="Sound Records" Mix="" Rating="4"/>
+    <TRACK TrackID="68" Name="Silence Deep" Artist="Quiet Mind" Album="Stillness" Composer="Quiet Mind" Genre="Techno" BPM="138" BitRate="320" Colour="0" DateAdded="2024-11-09" Duration="480" Key="4M" Label="Silence Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="69" Name="Volume Peak" Artist="Max Sound" Album="Loudness" Composer="Max Sound" Genre="House" BPM="128" BitRate="320" Colour="0" DateAdded="2024-11-08" Duration="480" Key="6m" Label="Volume Records" Mix="" Rating="3"/>
+    <TRACK TrackID="70" Name="Frequency Low" Artist="Sub Bass" Album="Low Frequencies" Composer="Sub Bass" Genre="Progressive House" BPM="124" BitRate="320" Colour="0" DateAdded="2024-11-07" Duration="540" Key="9M" Label="Frequency Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="71" Name="Frequency High" Artist="High Pitch" Album="High Frequencies" Composer="High Pitch" Genre="Deep House" BPM="120" BitRate="320" Colour="0" DateAdded="2024-11-06" Duration="420" Key="7m" Label="High Freq Records" Mix="" Rating="5"/>
+    <TRACK TrackID="72" Name="Harmony Peace" Artist="Chord Master" Album="Harmonies" Composer="Chord Master" Genre="Tech House" BPM="133" BitRate="320" Colour="0" DateAdded="2024-11-05" Duration="480" Key="3m" Label="Harmony Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="73" Name="Discord Clash" Artist="Noise Maker" Album="Discordance" Composer="Noise Maker" Genre="Techno" BPM="139" BitRate="320" Colour="0" DateAdded="2024-11-04" Duration="480" Key="2M" Label="Discord Records" Mix="" Rating="5"/>
+    <TRACK TrackID="74" Name="Melody Sweet" Artist="Tune Writer" Album="Melodies" Composer="Tune Writer" Genre="House" BPM="122" BitRate="320" Colour="0" DateAdded="2024-11-03" Duration="480" Key="1M" Label="Melody Records" Mix="Original Mix" Rating="3"/>
+    <TRACK TrackID="75" Name="Rhythm Steady" Artist="Beat King" Album="Rhythms" Composer="Beat King" Genre="Progressive House" BPM="127" BitRate="320" Colour="0" DateAdded="2024-11-02" Duration="540" Key="10M" Label="Rhythm Records" Mix="" Rating="4"/>
+    <TRACK TrackID="76" Name="Tempo Fast" Artist="Speed Demon" Album="Fast Beats" Composer="Speed Demon" Genre="Deep House" BPM="123" BitRate="320" Colour="0" DateAdded="2024-11-01" Duration="420" Key="8m" Label="Fast Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="77" Name="Tempo Slow" Artist="Chill Master" Album="Slow Beats" Composer="Chill Master" Genre="Tech House" BPM="119" BitRate="320" Colour="0" DateAdded="2024-10-31" Duration="480" Key="5m" Label="Slow Records" Mix="" Rating="4"/>
+    <TRACK TrackID="78" Name="Energy Rush" Artist="Power Surge" Album="Energy" Composer="Power Surge" Genre="Techno" BPM="142" BitRate="320" Colour="0" DateAdded="2024-10-30" Duration="480" Key="4M" Label="Energy Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="79" Name="Calm Serenity" Artist="Peace Maker" Album="Calmness" Composer="Peace Maker" Genre="House" BPM="116" BitRate="320" Colour="0" DateAdded="2024-10-29" Duration="480" Key="6m" Label="Calm Records" Mix="" Rating="3"/>
+    <TRACK TrackID="80" Name="Chaos Storm" Artist="Wild Tornado" Album="Chaos" Composer="Wild Tornado" Genre="Progressive House" BPM="136" BitRate="320" Colour="0" DateAdded="2024-10-28" Duration="540" Key="9M" Label="Chaos Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="81" Name="Order System" Artist="Structure Man" Album="Order" Composer="Structure Man" Genre="Deep House" BPM="125" BitRate="320" Colour="0" DateAdded="2024-10-27" Duration="420" Key="7m" Label="Order Records" Mix="" Rating="5"/>
+    <TRACK TrackID="82" Name="Logic Gate" Artist="Mind Processor" Album="Logic" Composer="Mind Processor" Genre="Tech House" BPM="131" BitRate="320" Colour="0" DateAdded="2024-10-26" Duration="480" Key="3m" Label="Logic Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="83" Name="Emotion Pure" Artist="Heart Felt" Album="Emotions" Composer="Heart Felt" Genre="Techno" BPM="137" BitRate="320" Colour="0" DateAdded="2024-10-25" Duration="480" Key="2M" Label="Emotion Records" Mix="" Rating="5"/>
+    <TRACK TrackID="84" Name="Spirit Free" Artist="Soul Seeker" Album="Spirit" Composer="Soul Seeker" Genre="House" BPM="128" BitRate="320" Colour="0" DateAdded="2024-10-24" Duration="480" Key="1M" Label="Spirit Records" Mix="Original Mix" Rating="3"/>
+    <TRACK TrackID="85" Name="Matter Form" Artist="Solid State" Album="Physical" Composer="Solid State" Genre="Progressive House" BPM="126" BitRate="320" Colour="0" DateAdded="2024-10-23" Duration="540" Key="10M" Label="Matter Records" Mix="" Rating="4"/>
+    <TRACK TrackID="86" Name="Energy Wave" Artist="Force Field" Album="Energy" Composer="Force Field" Genre="Deep House" BPM="120" BitRate="320" Colour="0" DateAdded="2024-10-22" Duration="420" Key="8m" Label="Energy Records 2" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="87" Name="Motion Blur" Artist="Fast Track" Album="Movement" Composer="Fast Track" Genre="Tech House" BPM="132" BitRate="320" Colour="0" DateAdded="2024-10-21" Duration="480" Key="5m" Label="Motion Records" Mix="" Rating="4"/>
+    <TRACK TrackID="88" Name="Static Still" Artist="No Motion" Album="Stillness" Composer="No Motion" Genre="Techno" BPM="140" BitRate="320" Colour="0" DateAdded="2024-10-20" Duration="480" Key="4M" Label="Static Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="89" Name="Dynamic Change" Artist="Constant Shift" Album="Change" Composer="Constant Shift" Genre="House" BPM="127" BitRate="320" Colour="0" DateAdded="2024-10-19" Duration="480" Key="6m" Label="Dynamic Records" Mix="" Rating="3"/>
+    <TRACK TrackID="90" Name="Balance Point" Artist="Even Scale" Album="Equilibrium" Composer="Even Scale" Genre="Progressive House" BPM="124" BitRate="320" Colour="0" DateAdded="2024-10-18" Duration="540" Key="9M" Label="Balance Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="91" Name="Imbalance Edge" Artist="Tilt Master" Album="Imbalance" Composer="Tilt Master" Genre="Deep House" BPM="119" BitRate="320" Colour="0" DateAdded="2024-10-17" Duration="420" Key="7m" Label="Edge Records" Mix="" Rating="5"/>
+    <TRACK TrackID="92" Name="Symmetry Perfect" Artist="Mirror Man" Album="Reflection" Composer="Mirror Man" Genre="Tech House" BPM="130" BitRate="320" Colour="0" DateAdded="2024-10-16" Duration="480" Key="3m" Label="Symmetry Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="93" Name="Asymmetry Art" Artist="Unique Form" Album="Uniqueness" Composer="Unique Form" Genre="Techno" BPM="135" BitRate="320" Colour="0" DateAdded="2024-10-15" Duration="480" Key="2M" Label="Asymmetry Records" Mix="" Rating="5"/>
+    <TRACK TrackID="94" Name="Pattern Repeat" Artist="Loop Cycle" Album="Patterns" Composer="Loop Cycle" Genre="House" BPM="125" BitRate="320" Colour="0" DateAdded="2024-10-14" Duration="480" Key="1M" Label="Pattern Records" Mix="Original Mix" Rating="3"/>
+    <TRACK TrackID="95" Name="Chaos Random" Artist="Random Walk" Album="Randomness" Composer="Random Walk" Genre="Progressive House" BPM="128" BitRate="320" Colour="0" DateAdded="2024-10-13" Duration="540" Key="10M" Label="Chaos Records 2" Mix="" Rating="4"/>
+    <TRACK TrackID="96" Name="Focus Intent" Artist="Intention Keeper" Album="Focus" Composer="Intention Keeper" Genre="Deep House" BPM="121" BitRate="320" Colour="0" DateAdded="2024-10-12" Duration="420" Key="8m" Label="Focus Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="97" Name="Attention Detail" Artist="Detail Seeker" Album="Details" Composer="Detail Seeker" Genre="Tech House" BPM="133" BitRate="320" Colour="0" DateAdded="2024-10-11" Duration="480" Key="5m" Label="Attention Records" Mix="" Rating="4"/>
+    <TRACK TrackID="98" Name="Overview Big" Artist="Big Picture" Album="Overview" Composer="Big Picture" Genre="Techno" BPM="138" BitRate="320" Colour="0" DateAdded="2024-10-10" Duration="480" Key="4M" Label="Overview Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="99" Name="Micro Small" Artist="Small Scale" Album="Microscopic" Composer="Small Scale" Genre="House" BPM="126" BitRate="320" Colour="0" DateAdded="2024-10-09" Duration="480" Key="6m" Label="Micro Records" Mix="" Rating="3"/>
+    <TRACK TrackID="100" Name="Macro Large" Artist="Large Scale" Album="Macroscopic" Composer="Large Scale" Genre="Progressive House" BPM="123" BitRate="320" Colour="0" DateAdded="2024-10-08" Duration="540" Key="9M" Label="Macro Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="101" Name="Infinite Vast" Artist="End Less" Album="Infinity" Composer="End Less" Genre="Deep House" BPM="118" BitRate="320" Colour="0" DateAdded="2024-10-07" Duration="420" Key="7m" Label="Infinite Records" Mix="" Rating="5"/>
+    <TRACK TrackID="102" Name="Finite Bound" Artist="Limited Time" Album="Finitude" Composer="Limited Time" Genre="Tech House" BPM="131" BitRate="320" Colour="0" DateAdded="2024-10-06" Duration="480" Key="3m" Label="Finite Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="103" Name="Eternal Time" Artist="Forever Young" Album="Eternally" Composer="Forever Young" Genre="Techno" BPM="136" BitRate="320" Colour="0" DateAdded="2024-10-05" Duration="480" Key="2M" Label="Eternal Records 2" Mix="" Rating="5"/>
+    <TRACK TrackID="104" Name="Moment Now" Artist="Present Tense" Album="Right Now" Composer="Present Tense" Genre="House" BPM="127" BitRate="320" Colour="0" DateAdded="2024-10-04" Duration="480" Key="1M" Label="Moment Records" Mix="Original Mix" Rating="3"/>
+    <TRACK TrackID="105" Name="Future Close" Artist="Near Tomorrow" Album="Soon" Composer="Near Tomorrow" Genre="Progressive House" BPM="124" BitRate="320" Colour="0" DateAdded="2024-10-03" Duration="540" Key="10M" Label="Future Records 2" Mix="" Rating="4"/>
+    <TRACK TrackID="106" Name="Past Gone" Artist="Memory Fading" Album="Forgotten" Composer="Memory Fading" Genre="Deep House" BPM="120" BitRate="320" Colour="0" DateAdded="2024-10-02" Duration="420" Key="8m" Label="Past Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="107" Name="History Book" Artist="Time Keeper" Album="Historical" Composer="Time Keeper" Genre="Tech House" BPM="132" BitRate="320" Colour="0" DateAdded="2024-10-01" Duration="480" Key="5m" Label="History Records" Mix="" Rating="4"/>
+    <TRACK TrackID="108" Name="Mystery Secret" Artist="Hidden Truth" Album="Secretive" Composer="Hidden Truth" Genre="Techno" BPM="139" BitRate="320" Colour="0" DateAdded="2024-09-30" Duration="480" Key="4M" Label="Mystery Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="109" Name="Clarity Clear" Artist="Obvious Truth" Album="Clarity" Composer="Obvious Truth" Genre="House" BPM="128" BitRate="320" Colour="0" DateAdded="2024-09-29" Duration="480" Key="6m" Label="Clarity Records" Mix="" Rating="3"/>
+    <TRACK TrackID="110" Name="Complexity Deep" Artist="Intricate Mind" Album="Complex" Composer="Intricate Mind" Genre="Progressive House" BPM="125" BitRate="320" Colour="0" DateAdded="2024-09-28" Duration="540" Key="9M" Label="Complexity Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="111" Name="Simplicity Pure" Artist="Easy Mind" Album="Simple" Composer="Easy Mind" Genre="Deep House" BPM="119" BitRate="320" Colour="0" DateAdded="2024-09-27" Duration="420" Key="7m" Label="Simple Records" Mix="" Rating="5"/>
+    <TRACK TrackID="112" Name="Chaos Theory" Artist="Science Mind" Album="Scientific" Composer="Science Mind" Genre="Tech House" BPM="130" BitRate="320" Colour="0" DateAdded="2024-09-26" Duration="480" Key="3m" Label="Science Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="113" Name="Order Perfect" Artist="System Master" Album="Systematic" Composer="System Master" Genre="Techno" BPM="137" BitRate="320" Colour="0" DateAdded="2024-09-25" Duration="480" Key="2M" Label="Order Records 2" Mix="" Rating="5"/>
+    <TRACK TrackID="114" Name="Quantum Jump" Artist="Leap Master" Album="Quantum" Composer="Leap Master" Genre="House" BPM="126" BitRate="320" Colour="0" DateAdded="2024-09-24" Duration="480" Key="1M" Label="Quantum Records" Mix="Original Mix" Rating="3"/>
+    <TRACK TrackID="115" Name="Reality Check" Artist="Real Deal" Album="Reality" Composer="Real Deal" Genre="Progressive House" BPM="127" BitRate="320" Colour="0" DateAdded="2024-09-23" Duration="540" Key="10M" Label="Reality Records 2" Mix="" Rating="4"/>
+    <TRACK TrackID="116" Name="Dream Maker" Artist="Imagination Peak" Album="Dreams" Composer="Imagination Peak" Genre="Deep House" BPM="121" BitRate="320" Colour="0" DateAdded="2024-09-22" Duration="420" Key="8m" Label="Dream Records 2" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="117" Name="Vision Quest" Artist="Eye Opener" Album="Visions" Composer="Eye Opener" Genre="Tech House" BPM="133" BitRate="320" Colour="0" DateAdded="2024-09-21" Duration="480" Key="5m" Label="Vision Records" Mix="" Rating="4"/>
+    <TRACK TrackID="118" Name="Illusion Game" Artist="Trickster Mind" Album="Illusions" Composer="Trickster Mind" Genre="Techno" BPM="140" BitRate="320" Colour="0" DateAdded="2024-09-20" Duration="480" Key="4M" Label="Illusion Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="119" Name="Reality Shift" Artist="Transform Master" Album="Transformation" Composer="Transform Master" Genre="House" BPM="124" BitRate="320" Colour="0" DateAdded="2024-09-19" Duration="480" Key="6m" Label="Transform Records" Mix="" Rating="3"/>
+    <TRACK TrackID="120" Name="Perception Wide" Artist="Open Mind" Album="Perception" Composer="Open Mind" Genre="Progressive House" BPM="128" BitRate="320" Colour="0" DateAdded="2024-09-18" Duration="540" Key="9M" Label="Perception Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="121" Name="Meaning Deep" Artist="Significance" Album="Meaning" Composer="Significance" Genre="Deep House" BPM="120" BitRate="320" Colour="0" DateAdded="2024-09-17" Duration="420" Key="7m" Label="Meaning Records" Mix="" Rating="5"/>
+    <TRACK TrackID="122" Name="Purpose Clear" Artist="Goal Master" Album="Purpose" Composer="Goal Master" Genre="Tech House" BPM="131" BitRate="320" Colour="0" DateAdded="2024-09-16" Duration="480" Key="3m" Label="Purpose Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="123" Name="Intent Strong" Artist="Will Power" Album="Intention" Composer="Will Power" Genre="Techno" BPM="138" BitRate="320" Colour="0" DateAdded="2024-09-15" Duration="480" Key="2M" Label="Intent Records" Mix="" Rating="5"/>
+    <TRACK TrackID="124" Name="Action Bold" Artist="Brave Heart" Album="Courage" Composer="Brave Heart" Genre="House" BPM="125" BitRate="320" Colour="0" DateAdded="2024-09-14" Duration="480" Key="1M" Label="Action Records" Mix="Original Mix" Rating="3"/>
+    <TRACK TrackID="125" Name="Reaction Fast" Artist="Quick Mind" Album="Responses" Composer="Quick Mind" Genre="Progressive House" BPM="127" BitRate="320" Colour="0" DateAdded="2024-09-13" Duration="540" Key="10M" Label="Reaction Records" Mix="" Rating="4"/>
+    <TRACK TrackID="126" Name="Consequence Real" Artist="Impact Master" Album="Effects" Composer="Impact Master" Genre="Deep House" BPM="119" BitRate="320" Colour="0" DateAdded="2024-09-12" Duration="420" Key="8m" Label="Consequence Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="127" Name="Cause Effect" Artist="Connection Maker" Album="Causality" Composer="Connection Maker" Genre="Tech House" BPM="132" BitRate="320" Colour="0" DateAdded="2024-09-11" Duration="480" Key="5m" Label="Cause Records" Mix="" Rating="4"/>
+    <TRACK TrackID="128" Name="Flow Stream" Artist="Water Master" Album="Flow" Composer="Water Master" Genre="Techno" BPM="135" BitRate="320" Colour="0" DateAdded="2024-09-10" Duration="480" Key="4M" Label="Flow Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="129" Name="Block Wall" Artist="Obstacle Maker" Album="Blockage" Composer="Obstacle Maker" Genre="House" BPM="126" BitRate="320" Colour="0" DateAdded="2024-09-09" Duration="480" Key="6m" Label="Block Records" Mix="" Rating="3"/>
+    <TRACK TrackID="130" Name="Path Clear" Artist="Way Finder" Album="Direction" Composer="Way Finder" Genre="Progressive House" BPM="123" BitRate="320" Colour="0" DateAdded="2024-09-08" Duration="540" Key="9M" Label="Path Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="131" Name="Journey Long" Artist="Traveler Soul" Album="Adventures" Composer="Traveler Soul" Genre="Deep House" BPM="121" BitRate="320" Colour="0" DateAdded="2024-09-07" Duration="420" Key="7m" Label="Journey Records" Mix="" Rating="5"/>
+    <TRACK TrackID="132" Name="Destination Near" Artist="End Seeker" Album="Arrival" Composer="End Seeker" Genre="Tech House" BPM="129" BitRate="320" Colour="0" DateAdded="2024-09-06" Duration="480" Key="3m" Label="Destination Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="133" Name="Adventure Calls" Artist="Explorer Soul" Album="Exploring" Composer="Explorer Soul" Genre="Techno" BPM="136" BitRate="320" Colour="0" DateAdded="2024-09-05" Duration="480" Key="2M" Label="Adventure Records" Mix="" Rating="5"/>
+    <TRACK TrackID="134" Name="Safety Home" Artist="Comfort Seeker" Album="Home" Composer="Comfort Seeker" Genre="House" BPM="124" BitRate="320" Colour="0" DateAdded="2024-09-04" Duration="480" Key="1M" Label="Safety Records" Mix="Original Mix" Rating="3"/>
+    <TRACK TrackID="135" Name="Freedom Open" Artist="Liberation Master" Album="Freedom" Composer="Liberation Master" Genre="Progressive House" BPM="128" BitRate="320" Colour="0" DateAdded="2024-09-03" Duration="540" Key="10M" Label="Freedom Records" Mix="" Rating="4"/>
+    <TRACK TrackID="136" Name="Constraint Bind" Artist="Limitation Keeper" Album="Limits" Composer="Limitation Keeper" Genre="Deep House" BPM="118" BitRate="320" Colour="0" DateAdded="2024-09-02" Duration="420" Key="8m" Label="Constraint Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="137" Name="Expansion Grow" Artist="Growth Master" Album="Expansion" Composer="Growth Master" Genre="Tech House" BPM="133" BitRate="320" Colour="0" DateAdded="2024-09-01" Duration="480" Key="5m" Label="Growth Records" Mix="" Rating="4"/>
+    <TRACK TrackID="138" Name="Contraction Small" Artist="Shrink Master" Album="Contraction" Composer="Shrink Master" Genre="Techno" BPM="137" BitRate="320" Colour="0" DateAdded="2024-08-31" Duration="480" Key="4M" Label="Contraction Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="139" Name="Connection Link" Artist="Bridge Builder" Album="Connections" Composer="Bridge Builder" Genre="House" BPM="127" BitRate="320" Colour="0" DateAdded="2024-08-30" Duration="480" Key="6m" Label="Connection Records" Mix="" Rating="3"/>
+    <TRACK TrackID="140" Name="Separation Part" Artist="Distance Maker" Album="Separation" Composer="Distance Maker" Genre="Progressive House" BPM="125" BitRate="320" Colour="0" DateAdded="2024-08-29" Duration="540" Key="9M" Label="Separation Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="141" Name="Union Together" Artist="Unity Master" Album="Unity" Composer="Unity Master" Genre="Deep House" BPM="120" BitRate="320" Colour="0" DateAdded="2024-08-28" Duration="420" Key="7m" Label="Union Records" Mix="" Rating="5"/>
+    <TRACK TrackID="142" Name="Division Split" Artist="Divide Keeper" Album="Division" Composer="Divide Keeper" Genre="Tech House" BPM="130" BitRate="320" Colour="0" DateAdded="2024-08-27" Duration="480" Key="3m" Label="Division Records" Mix="Original Mix" Rating="4"/>
+    <TRACK TrackID="143" Name="Multiply Growth" Artist="Expansion King" Album="Multiplication" Composer="Expansion King" Genre="Techno" BPM="139" BitRate="320" Colour="0" DateAdded="2024-08-26" Duration="480" Key="2M" Label="Multiply Records" Mix="" Rating="5"/>
+    <TRACK TrackID="144" Name="Subtract Less" Artist="Reduction Master" Album="Subtraction" Composer="Reduction Master" Genre="House" BPM="126" BitRate="320" Colour="0" DateAdded="2024-08-25" Duration="480" Key="1M" Label="Subtract Records" Mix="Original Mix" Rating="3"/>
+    <TRACK TrackID="145" Name="Addition More" Artist="Sum Master" Album="Addition" Composer="Sum Master" Genre="Progressive House" BPM="124" BitRate="320" Colour="0" DateAdded="2024-08-24" Duration="540" Key="10M" Label="Addition Records" Mix="" Rating="4"/>
+    <TRACK TrackID="146" Name="Total Complete" Artist="Whole Master" Album="Totality" Composer="Whole Master" Genre="Deep House" BPM="122" BitRate="320" Colour="0" DateAdded="2024-08-23" Duration="420" Key="8m" Label="Total Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="147" Name="Partial Some" Artist="Fraction Master" Album="Fractions" Composer="Fraction Master" Genre="Tech House" BPM="131" BitRate="320" Colour="0" DateAdded="2024-08-22" Duration="480" Key="5m" Label="Partial Records" Mix="" Rating="4"/>
+    <TRACK TrackID="148" Name="Whole Circle" Artist="Complete Master" Album="Completeness" Composer="Complete Master" Genre="Techno" BPM="140" BitRate="320" Colour="0" DateAdded="2024-08-21" Duration="480" Key="4M" Label="Whole Records" Mix="Original Mix" Rating="5"/>
+    <TRACK TrackID="149" Name="Half Moon" Artist="Semi Master" Album="Halves" Composer="Semi Master" Genre="House" BPM="128" BitRate="320" Colour="0" DateAdded="2024-08-20" Duration="480" Key="6m" Label="Half Records" Mix="" Rating="3"/>
+    <TRACK TrackID="150" Name="Quarter Beat" Artist="Quarter Master" Album="Quarters" Composer="Quarter Master" Genre="Progressive House" BPM="125" BitRate="320" Colour="0" DateAdded="2024-08-19" Duration="540" Key="9M" Label="Quarter Records" Mix="Original Mix" Rating="4"/>
+  </COLLECTION>
+  <PLAYLISTS>
+    <PLAYLIST Name="House Essentials" Entries="15">
+      <TRACK_ID ID="3"/>
+      <TRACK_ID ID="7"/>
+      <TRACK_ID ID="11"/>
+      <TRACK_ID ID="15"/>
+      <TRACK_ID ID="25"/>
+      <TRACK_ID ID="34"/>
+      <TRACK_ID ID="39"/>
+      <TRACK_ID ID="44"/>
+      <TRACK_ID ID="49"/>
+      <TRACK_ID ID="54"/>
+      <TRACK_ID ID="59"/>
+      <TRACK_ID ID="64"/>
+      <TRACK_ID ID="69"/>
+      <TRACK_ID ID="74"/>
+      <TRACK_ID ID="79"/>
+    </PLAYLIST>
+    <PLAYLIST Name="Deep House Vibes" Entries="12">
+      <TRACK_ID ID="1"/>
+      <TRACK_ID ID="6"/>
+      <TRACK_ID ID="9"/>
+      <TRACK_ID ID="13"/>
+      <TRACK_ID ID="18"/>
+      <TRACK_ID ID="22"/>
+      <TRACK_ID ID="28"/>
+      <TRACK_ID ID="31"/>
+      <TRACK_ID ID="36"/>
+      <TRACK_ID ID="41"/>
+      <TRACK_ID ID="46"/>
+      <TRACK_ID ID="51"/>
+    </PLAYLIST>
+    <PLAYLIST Name="Tech House Grooves" Entries="12">
+      <TRACK_ID ID="2"/>
+      <TRACK_ID ID="8"/>
+      <TRACK_ID ID="14"/>
+      <TRACK_ID ID="19"/>
+      <TRACK_ID ID="23"/>
+      <TRACK_ID ID="29"/>
+      <TRACK_ID ID="32"/>
+      <TRACK_ID ID="37"/>
+      <TRACK_ID ID="42"/>
+      <TRACK_ID ID="47"/>
+      <TRACK_ID ID="52"/>
+      <TRACK_ID ID="57"/>
+    </PLAYLIST>
+    <PLAYLIST Name="Techno Pulse" Entries="12">
+      <TRACK_ID ID="5"/>
+      <TRACK_ID ID="10"/>
+      <TRACK_ID ID="12"/>
+      <TRACK_ID ID="17"/>
+      <TRACK_ID ID="24"/>
+      <TRACK_ID ID="27"/>
+      <TRACK_ID ID="33"/>
+      <TRACK_ID ID="38"/>
+      <TRACK_ID ID="43"/>
+      <TRACK_ID ID="48"/>
+      <TRACK_ID ID="53"/>
+      <TRACK_ID ID="58"/>
+    </PLAYLIST>
+    <PLAYLIST Name="Progressive Journey" Entries="10">
+      <TRACK_ID ID="4"/>
+      <TRACK_ID ID="16"/>
+      <TRACK_ID ID="21"/>
+      <TRACK_ID ID="26"/>
+      <TRACK_ID ID="35"/>
+      <TRACK_ID ID="40"/>
+      <TRACK_ID ID="45"/>
+      <TRACK_ID ID="50"/>
+      <TRACK_ID ID="55"/>
+      <TRACK_ID ID="60"/>
+    </PLAYLIST>
+    <PLAYLIST Name="Night Set" Entries="20">
+      <TRACK_ID ID="1"/>
+      <TRACK_ID ID="5"/>
+      <TRACK_ID ID="8"/>
+      <TRACK_ID ID="10"/>
+      <TRACK_ID ID="12"/>
+      <TRACK_ID ID="17"/>
+      <TRACK_ID ID="20"/>
+      <TRACK_ID ID="24"/>
+      <TRACK_ID ID="27"/>
+      <TRACK_ID ID="33"/>
+      <TRACK_ID ID="38"/>
+      <TRACK_ID ID="43"/>
+      <TRACK_ID ID="48"/>
+      <TRACK_ID ID="53"/>
+      <TRACK_ID ID="58"/>
+      <TRACK_ID ID="63"/>
+      <TRACK_ID ID="68"/>
+      <TRACK_ID ID="73"/>
+      <TRACK_ID ID="78"/>
+      <TRACK_ID ID="83"/>
+    </PLAYLIST>
+    <PLAYLIST Name="Peak Time" Entries="15">
+      <TRACK_ID ID="5"/>
+      <TRACK_ID ID="10"/>
+      <TRACK_ID ID="12"/>
+      <TRACK_ID ID="17"/>
+      <TRACK_ID ID="27"/>
+      <TRACK_ID ID="33"/>
+      <TRACK_ID ID="38"/>
+      <TRACK_ID ID="43"/>
+      <TRACK_ID ID="48"/>
+      <TRACK_ID ID="53"/>
+      <TRACK_ID ID="58"/>
+      <TRACK_ID ID="63"/>
+      <TRACK_ID ID="68"/>
+      <TRACK_ID ID="78"/>
+      <TRACK_ID ID="83"/>
+    </PLAYLIST>
+    <PLAYLIST Name="Chill Session" Entries="12">
+      <TRACK_ID ID="6"/>
+      <TRACK_ID ID="9"/>
+      <TRACK_ID ID="13"/>
+      <TRACK_ID ID="18"/>
+      <TRACK_ID ID="21"/>
+      <TRACK_ID ID="28"/>
+      <TRACK_ID ID="31"/>
+      <TRACK_ID ID="36"/>
+      <TRACK_ID ID="41"/>
+      <TRACK_ID ID="46"/>
+      <TRACK_ID ID="51"/>
+      <TRACK_ID ID="56"/>
+    </PLAYLIST>
+    <PLAYLIST Name="BPM 120-128" Entries="14">
+      <TRACK_ID ID="1"/>
+      <TRACK_ID ID="6"/>
+      <TRACK_ID ID="7"/>
+      <TRACK_ID ID="9"/>
+      <TRACK_ID ID="11"/>
+      <TRACK_ID ID="13"/>
+      <TRACK_ID ID="15"/>
+      <TRACK_ID ID="18"/>
+      <TRACK_ID ID="20"/>
+      <TRACK_ID ID="21"/>
+      <TRACK_ID ID="22"/>
+      <TRACK_ID ID="25"/>
+      <TRACK_ID ID="26"/>
+      <TRACK_ID ID="28"/>
+    </PLAYLIST>
+    <PLAYLIST Name="BPM 128-140" Entries="16">
+      <TRACK_ID ID="2"/>
+      <TRACK_ID ID="3"/>
+      <TRACK_ID ID="5"/>
+      <TRACK_ID ID="8"/>
+      <TRACK_ID ID="10"/>
+      <TRACK_ID ID="12"/>
+      <TRACK_ID ID="14"/>
+      <TRACK_ID ID="16"/>
+      <TRACK_ID ID="17"/>
+      <TRACK_ID ID="19"/>
+      <TRACK_ID ID="23"/>
+      <TRACK_ID ID="24"/>
+      <TRACK_ID ID="27"/>
+      <TRACK_ID ID="29"/>
+      <TRACK_ID ID="30"/>
+      <TRACK_ID ID="32"/>
+    </PLAYLIST>
+  </PLAYLISTS>
+</DJ_PLAYLISTS>

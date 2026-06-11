@@ -110,6 +110,12 @@
     "privacyNote": "Sua biblioteca, os títulos das faixas, os caminhos de arquivo, o nome do seu dispositivo e dados pessoais nunca são incluídos. Desativado por padrão. Desativá-lo interrompe os relatórios imediatamente; ativá-lo passa a valer após reiniciar o {{app}}.",
     "toggleAria": "Alternar relatórios de falha"
   },
+  "sentry": {
+    "label": "Rastreamento de erros",
+    "caption": "Opte por enviar dados anônimos de erros e desempenho quando {{app}} encontrar problemas. Isto nos ajuda a corrigir bugs mais rápido e a manter tudo estável.",
+    "privacyNote": "Os relatórios são higienizados: nenhum conteúdo de biblioteca, títulos de faixas, caminhos de arquivo ou dados pessoais. Desativado por padrão. As alterações entram em vigor imediatamente.",
+    "toggleAria": "Alternar rastreamento de erros"
+  },
   "flightRecorder": {
     "label": "Gravador de set",
     "caption": "Grave uma referência de áudio lo-fi do seu set pelo microfone da sala enquanto você toca, para ouvir depois. A tracklist é sempre salva — isto adiciona o áudio.",

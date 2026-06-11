@@ -1102,6 +1102,11 @@ export interface PlaySession {
   duration?: number
   /** Links back to a SetRecord set when source='setrecord'. */
   setId?: string
+  /** HOW this session entered the diary — the provenance that decides whether it
+   * counts. 'live-recorded' = Flight Recorder evidence; 'imported-history' =
+   * Rekordbox history; 'user-asserted' = "Mark as Performed" claim (diary-only,
+   * excluded from play counts, stats and the memory layer). */
+  method: 'live-recorded' | 'user-asserted' | 'imported-history'
   createdAt: string
   /** Derived from the session_tracks count — not stored in the sessions row itself. */
   trackCount: number

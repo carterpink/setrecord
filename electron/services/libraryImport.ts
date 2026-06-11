@@ -9,7 +9,7 @@ import {
   getExistingTrackIdsByPath,
   getLibraryStats,
   replaceAllPlaylists,
-  replaceRekordboxSessions
+  replaceImportedSessions
 } from '../db/queries'
 import { parseSessionMeta } from './rekordbox/sessionMeta'
 
@@ -25,6 +25,8 @@ import { parseSessionMeta } from './rekordbox/sessionMeta'
 export interface ImportPayload {
   tracks: Track[]
   playlists: Playlist[]
+  /** Which importer owns `sessions` (defaults to 'rekordbox'). */
+  sessionSource?: 'rekordbox' | 'serato'
   sessions: Array<{
     name: string
     performedAt: string | null
@@ -378,7 +380,7 @@ async function parseHistoryXml(
     )
 
     if (nonEmpty.length > 0) {
-      replaceRekordboxSessions(db, nonEmpty)
+      replaceImportedSessions(db, 'rekordbox', nonEmpty)
     }
 
     return {
@@ -463,7 +465,7 @@ export async function applyImport(
   try {
     const nonEmpty = payload.sessions.filter((s) => s.trackIds.length > 0)
     if (nonEmpty.length > 0) {
-      replaceRekordboxSessions(db, nonEmpty)
+      replaceImportedSessions(db, payload.sessionSource ?? 'rekordbox', nonEmpty)
     }
   } catch (err) {
     console.error('[import] session write failed', err)

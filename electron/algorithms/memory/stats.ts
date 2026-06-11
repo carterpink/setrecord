@@ -3,8 +3,13 @@
  *
  * One function per metric, all deterministic and offline. Detection lives in
  * src/utils/statsIntent.ts; this module turns a detected metric into a
- * normalized {kind, stats?, count?, narration} answer the renderer and the eval
- * harness both consume. No DB / electron deps — callers pass plain arrays.
+ * normalized {kind, stats?, count?, narration} answer. No DB / electron deps —
+ * callers pass plain arrays.
+ *
+ * STATUS: part of the eval-harness intelligence engine (see
+ * electron/algorithms/memory/README.md). Reached only via tests/eval/driver.ts
+ * today — the runtime app produces `kind: 'stats'` through homeStore's own path,
+ * not through this module. Kept as the canonical target implementation.
  */
 
 import type { Track } from '../../../src/types'

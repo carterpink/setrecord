@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { electronAPI } from '@electron-toolkit/preload'
 import type { LiveDataPayload } from './services/live/liveEngine'
 import type {
   ExportResult as BackupExportResult,
@@ -256,6 +255,38 @@ const setrecord = {
   relinkTrackFile: (trackId: string): Promise<string | null> =>
     ipcRenderer.invoke('library:relink-file', trackId),
 
+  // ── Bulk operations (power-user multi-select) ───────────────────────────────
+  /** Remove tracks from the DB only (never the files on disk). Returns deleted rows for Undo. */
+  tracksDelete: (ids: string[]): Promise<{ count: number; removed: Track[] }> =>
+    ipcRenderer.invoke('tracks:delete', ids),
+  /** Re-insert previously-deleted tracks (Undo). */
+  tracksRestore: (tracks: Track[]): Promise<void> => ipcRenderer.invoke('tracks:restore', tracks),
+  /** Bulk metadata edit (Pro). Resolves false when not entitled. */
+  tracksBulkUpdateMeta: (
+    ids: string[],
+    patch: {
+      bpm?: number
+      key?: string
+      genre?: string
+      rating?: number
+      color?: string
+      comment?: string
+    }
+  ): Promise<boolean> => ipcRenderer.invoke('tracks:bulk-update-meta', ids, patch),
+  /** Bulk energy set (Pro). Resolves false when not entitled. */
+  tracksBulkSetEnergy: (ids: string[], energy: number): Promise<boolean> =>
+    ipcRenderer.invoke('tracks:bulk-set-energy', ids, energy),
+  /** Bulk tag edit for one category (Pro). Resolves false when not entitled. */
+  tracksBulkSetTags: (
+    ids: string[],
+    category: TagCategory,
+    values: string[],
+    mode: 'add' | 'remove' | 'replace'
+  ): Promise<boolean> => ipcRenderer.invoke('tracks:bulk-set-tags', ids, category, values, mode),
+  /** Bulk lifecycle set (free). */
+  tracksBulkSetLifecycle: (ids: string[], state: string | null): Promise<void> =>
+    ipcRenderer.invoke('tracks:bulk-set-lifecycle', ids, state),
+
   // ── Auto-tags ─────────────────────────────────────────────────────────────
   tagsCoverage: (): Promise<TagCoverage> => ipcRenderer.invoke('tags:coverage'),
 
@@ -305,6 +336,9 @@ const setrecord = {
 
   setSettings: (partial: Partial<AppSettings>) =>
     ipcRenderer.invoke('settings:set', partial) as Promise<AppSettings>,
+
+  // Update Sentry opt-in status in the main process.
+  sentrySetOptIn: (optIn: boolean): Promise<void> => ipcRenderer.invoke('sentry:set-opt-in', optIn),
 
   // Artwork cache management (Settings → Privacy & data)
   artworkCacheStats: () =>
@@ -463,8 +497,10 @@ const setrecord = {
       city?: string
       country?: string
       setSlot?: SetSlot
+      force?: boolean
     }
-  ): Promise<string | null> => ipcRenderer.invoke('history:mark-performed', setId, opts ?? {}),
+  ): Promise<{ sessionId: string; alreadyPerformedToday: boolean } | null> =>
+    ipcRenderer.invoke('history:mark-performed', setId, opts ?? {}),
 
   historyDelete: (sessionId: string): Promise<void> =>
     ipcRenderer.invoke('history:delete', sessionId),
@@ -646,16 +682,17 @@ const setrecord = {
   liveDiscardSession: (): Promise<void> => ipcRenderer.invoke('live:discard-session')
 }
 
+// Only the curated, fully-typed `setrecord` surface is bridged. The generic
+// `@electron-toolkit/preload` `electronAPI` (arbitrary-channel ipcRenderer) is
+// deliberately NOT exposed — it had zero callers and would let any renderer XSS
+// invoke every main-process channel, defeating the point of the explicit API.
 if (process.contextIsolated) {
   try {
-    contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('setrecord', setrecord)
   } catch (error) {
     console.error(error)
   }
 } else {
-  // @ts-expect-error declared in preload.d.ts
-  window.electron = electronAPI
   // @ts-expect-error declared in preload.d.ts
   window.setrecord = setrecord
 }
