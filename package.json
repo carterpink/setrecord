@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:smoke": "node tests/smoke/launch.smoke.mjs",
+    "check:ffmpeg": "node scripts/check-ffmpeg-redistributable.mjs",
     "bench": "npm run bench:node",
     "bench:node": "vitest run --config vitest.bench.config.ts",
     "bench:fixtures": "vitest run --config vitest.fixtures.config.ts",

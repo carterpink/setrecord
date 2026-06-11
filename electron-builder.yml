@@ -34,8 +34,17 @@ extraResources:
     to: models
     filter:
       - '**/*'
+  # Third-party license notices (FFmpeg LGPL, etc.) — shipped in the app bundle
+  # to satisfy attribution/notice obligations. See THIRD_PARTY_LICENSES.md.
+  - from: THIRD_PARTY_LICENSES.md
+    to: THIRD_PARTY_LICENSES.md
 asarUnpack:
   - resources/**
+  # ffmpeg-static ships an extensionless native executable. A binary inside the
+  # asar archive cannot be spawned (child_process needs a real on-disk path), so
+  # it MUST be unpacked. The resolved path is rewritten app.asar → app.asar.unpacked
+  # at runtime in electron/services/ffmpegBinary.ts.
+  - node_modules/ffmpeg-static/**
   # node-llama-cpp loads native llama.cpp binaries at runtime — must live outside the asar.
   - node_modules/node-llama-cpp/**
   - node_modules/@node-llama-cpp/**

@@ -17,7 +17,7 @@ import { join } from 'path'
 import { spawn } from 'child_process'
 import { cpus } from 'os'
 import { app } from 'electron'
-import ffmpegPath from 'ffmpeg-static'
+import { FFMPEG_BIN } from './ffmpegBinary'
 import { getDb } from '../db/schema'
 import {
   countPendingEnergyTracks,
@@ -39,9 +39,6 @@ import {
 
 /** How much of each track to analyse, in seconds. */
 const ANALYSIS_SECONDS = 60
-
-// ffmpeg-static returns null at typecheck because it's `any`. Cast for safety.
-const FFMPEG_BIN: string | null = (ffmpegPath as unknown as string | null) ?? null
 
 // ───────── ffmpeg PCM decode ─────────
 

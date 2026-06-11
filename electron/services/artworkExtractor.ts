@@ -20,7 +20,7 @@ import { spawn } from 'child_process'
 import { cpus } from 'os'
 import { join } from 'path'
 import { app } from 'electron'
-import ffmpegPath from 'ffmpeg-static'
+import { FFMPEG_BIN } from './ffmpegBinary'
 import { getDb } from '../db/schema'
 import {
   countPendingArtworkTracks,
@@ -39,9 +39,6 @@ import type { ArtworkSource } from '../../src/types'
  */
 const ARTWORK_SIZE = 128
 const EXTRACT_TIMEOUT_MS = 15_000
-
-// ffmpeg-static returns null at typecheck because it's `any`. Cast for safety.
-const FFMPEG_BIN: string | null = (ffmpegPath as unknown as string | null) ?? null
 
 let _cacheDir: string | null = null
 

@@ -14,7 +14,7 @@ import { createHash } from 'crypto'
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { app } from 'electron'
-import ffmpegPath from 'ffmpeg-static'
+import { FFMPEG_BIN as FFMPEG } from '../ffmpegBinary'
 import {
   addToIndex,
   fingerprint,
@@ -37,8 +37,6 @@ import { getLiveNextUp } from '../../algorithms/liveSuggestions'
 import { computeSetHealth } from '../../algorithms/setHealth'
 import { matchNowPlaying, type NowPlayingMatch } from '../../algorithms/nowPlayingMatch'
 import type { Track, Set as DJSet } from '../../../src/types'
-
-const FFMPEG: string | null = (ffmpegPath as unknown as string | null) ?? null
 
 /**
  * Seconds of each track fingerprinted into the index. This MUST cover wherever

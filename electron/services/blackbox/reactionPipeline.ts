@@ -13,12 +13,10 @@
  * alignment), analyzeReaction falls back to the room-energy envelope (low confidence).
  */
 import { spawn } from 'child_process'
-import ffmpegPath from 'ffmpeg-static'
+import { FFMPEG_BIN as FFMPEG } from '../ffmpegBinary'
 import type Database from 'better-sqlite3'
 import { analyzeReaction } from './crowdIsolation'
 import { getRecordingForSession, getSessionTracks, upsertReaction } from '../../db/queries'
-
-const FFMPEG: string | null = (ffmpegPath as unknown as string | null) ?? null
 
 /** Analysis sample rate — low enough to keep the (one-shot, background) NLMS cheap. */
 const ANALYSIS_RATE = 16_000
