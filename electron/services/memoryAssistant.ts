@@ -295,7 +295,9 @@ SLOTS (fill any that apply, omit the rest)
 - sort: ${SORTS.join(', ')}. "most played"=mostPlayed, "newest"=recent, "rarest"=leastPlayed, "best/top rated"=rating, "surprise/random"=random.
 - limit: a requested count (e.g. "10 tracks" → 10).
 
-If a PREVIOUS request JSON is given and the new message refines it ("make it slower", "only in 8A", "more of those"), MERGE: keep prior slots and change only what's mentioned.`
+If a PREVIOUS request JSON is given and the new message refines it ("make it slower", "only in 8A", "more of those"), MERGE: keep prior slots and change only what's mentioned.
+
+ROBUSTNESS: the user may type slang, dialect or misspellings — "oi mate give us some fisher" means smart_filter with text "fisher"; "wot r my fastst trax" means smart_filter sorted bpmDesc. Read through the noise to the intent, silently fix obvious typos in slot values (artist/genre names), and NEVER answer "unknown" just because of spelling or phrasing. "unknown" is only for requests truly unrelated to their music library.`
 
 // ─── Routing ──────────────────────────────────────────────────────────────────
 

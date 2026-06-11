@@ -1,6 +1,34 @@
 # SetRecord Intelligence & Play-History Plan
 
-Status: **ENGINE LAYER COMPLETE — eval 210/210 (100%)** · Updated: 2026-06-05 · Branch: `feat/ai-eval-harness`
+Status: **LIVE-APP WIRED + ROBUSTNESS LAYER — eval 210/210 + 20/20 noisy (100%)** · Updated: 2026-06-11 · Branch: `feat/grit-redesign`
+
+> ## 2026-06-11 update — runbook §9A executed + bulletproof parsing
+> - **The cascade now powers the live chat.** `src/intelligence/resolve.ts` is the
+>   single source of truth: `homeStore.run` executes it directly (renderer-side,
+>   over libraryStore tracks + sessions/playlists fetched once via the read-only
+>   history IPC and cached 60s in `src/intelligence/context.ts`); the harness
+>   driver re-exports the same module, so the engine scored 210/210 IS the engine
+>   the app ships. Bespoke rich cards (forgotten/warmup/after/duplicates/shazam)
+>   keep their dedicated path; knowledge/clarify/action answers ride the note card.
+> - **Slang + typo robustness (`src/intelligence/normalize.ts` + `fuzzy.ts`).**
+>   Raw query resolves first (proven behaviour untouched); only on a miss does a
+>   second pass run with dialect rewritten ("oi mate give us some fisher" →
+>   "give me fisher"), txt-speak canonicalized, filler stripped, and typos
+>   repaired by Damerau-Levenshtein against an intent lexicon + the user's OWN
+>   library vocabulary ("fihser"→Fisher, "tecno"→techno). Corrections only ever
+>   land on words the engine understands or the library contains — honesty rails
+>   hold (absent artists stay honest misses; verified by test).
+> - **Model harness completed (D1 closed).** `memoryAiEnabled` defaults true;
+>   the Qwen route() is the grammar-constrained fallback for hard unknowns, now
+>   fed the NORMALIZED query, with an explicit robustness clause in its system
+>   prompt (never "unknown" for spelling/slang). Order: cascade → model →
+>   deterministic ask → typo-corrected text search. Every query lands somewhere.
+> - **New suite:** `tests/eval/robustness.test.ts` — 20 slang/typo/txt-speak
+>   cases (incl. the founder's "oi mate give us some fisher") — 20/20, model-off,
+>   CI-stable. Full matrix still 210/210.
+> - **Remaining:** founder smoke-test in the running app (engine itself is
+>   harness-proven; the new surface is ctx fetch over IPC + result mapping),
+>   plus the original B/C/D/E follow-ups below.
 
 > ## TL;DR for when you're back
 > - The deterministic intelligence engine now passes **all 210 eval prompts (100%)**, up from a 27/210 (13%) baseline — fully offline, no APIs. Run: `npx vitest run tests/eval/eval.test.ts` (scorecard → `tests/eval/scorecard.md`).

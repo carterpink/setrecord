@@ -8,7 +8,8 @@
  * pass-rate is a like-for-like measure of engine quality over time.
  */
 
-import type { Track, LibrarySearchParams } from '../../src/types'
+import type { Track } from '../../src/types'
+import type { EngineResult } from '../../src/intelligence/types'
 
 /** A logged gig (mirrors play_sessions + its ordered session_tracks). */
 export interface FixtureSession {
@@ -46,53 +47,11 @@ export interface EvalCtx {
 }
 
 /**
- * Normalized engine output. Every resolution path collapses to this shape so a
- * case predicate can inspect results uniformly regardless of which engine branch
- * produced them.
+ * Normalized engine output — now defined ONCE in src/intelligence/types.ts (the
+ * live app and the harness share the exact same contract) and re-exported here
+ * so the case files keep their stable import path.
  */
-export type EngineKind =
-  | 'tracks' // a track list (search / filter / discovery / similarity)
-  | 'set' // a sequenced set/mix
-  | 'combos' // "after X" / opener / closer candidates
-  | 'sequences' // recurring multi-track runs
-  | 'stats' // analytics / counts / breakdowns
-  | 'count' // a single count answer
-  | 'gig' // gig-history answer (sessions / per-track timeline)
-  | 'knowledge' // DJ-theory answer from the curated KB
-  | 'clarify' // asked the user to disambiguate
-  | 'action' // a write/export/delete intent (gated on confirmation)
-  | 'empty' // understood, but nothing matched (honest zero result)
-  | 'unknown' // could not map the request
-
-export interface EngineResult {
-  /** Best-effort label of the resolved intent/path (for debugging). */
-  intent: string
-  kind: EngineKind
-  /** Human-facing narration shown above the result. */
-  narration: string
-  /** Track list for kind 'tracks' / flattened candidates. */
-  tracks?: Track[]
-  /** Sequenced set for kind 'set'. */
-  set?: Track[]
-  /** Label/value pairs for kind 'stats'. */
-  stats?: { label: string; value: string }[]
-  /** Single numeric answer for kind 'count'. */
-  count?: number
-  /** Sessions returned for kind 'gig'. */
-  sessions?: FixtureSession[]
-  /** Recurring track runs for kind 'sequences'. */
-  sequences?: { tracks: Track[]; count: number }[]
-  /** The search params the engine actually executed (for introspection). */
-  params?: LibrarySearchParams
-  /** Source track for "after X" / "similar to X". */
-  sourceTrack?: Track | null
-  /** Disambiguation question for kind 'clarify'. */
-  clarifyQuestion?: string
-  /** KB topic id for kind 'knowledge'. */
-  knowledgeTopic?: string
-  /** True when the engine requires explicit confirmation before acting. */
-  needsConfirmation?: boolean
-}
+export type { EngineKind, EngineResult } from '../../src/intelligence/types'
 
 export type Complexity = 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert'
 export type CaseType = 'DATA' | 'KNOW' | 'BOTH' | 'ACTION'

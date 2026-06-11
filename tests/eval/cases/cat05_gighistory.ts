@@ -5,7 +5,9 @@ import { ids, isHonestEmpty } from './helpers'
 
 /** Sessions returned by a gig answer (kind 'gig'). */
 function sessionsOf(r: EngineResult): FixtureSession[] {
-  return r.sessions ?? []
+  // ResolveSession is a structural relaxation of FixtureSession; in the harness
+  // the sessions ARE the fixtures we passed in, so the narrow-back is safe.
+  return (r.sessions ?? []) as FixtureSession[]
 }
 function sessionIds(r: EngineResult): string[] {
   return sessionsOf(r).map((s) => s.id)

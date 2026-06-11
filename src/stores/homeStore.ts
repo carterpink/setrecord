@@ -26,6 +26,9 @@ import {
 } from '@/utils/homeQuery'
 import { useLibraryStore } from '@/stores/libraryStore'
 import { isProUser } from '@/utils/premium'
+import { resolveQuery, normalizeForEngine } from '@/intelligence/resolve'
+import { buildResolveCtx } from '@/intelligence/context'
+import type { EngineResult } from '@/intelligence/types'
 
 const CONVO_KEY = 'setrecord-home-convos'
 const MAX_CONVOS = 50
@@ -680,11 +683,15 @@ async function resolveViaAsk(query: string): Promise<TurnPatch | null> {
   }
 }
 
-/** Last-resort plain text search so there's always *some* result. */
-async function resolveViaText(query: string): Promise<TurnPatch> {
+/**
+ * Last-resort plain text search so there's always *some* result. Searches the
+ * normalized (slang-stripped, typo-corrected) text when it differs, while the
+ * narration keeps the user's own words.
+ */
+async function resolveViaText(query: string, searchText?: string): Promise<TurnPatch> {
   const filters: HomeFilters = {
     kind: 'generic',
-    params: { text: query, sort: 'mostPlayed', limit: 25 },
+    params: { text: searchText || query, sort: 'mostPlayed', limit: 25 },
     ask: false,
     query,
     narration: `tracks matching “${query}”`
@@ -695,6 +702,91 @@ async function resolveViaText(query: string): Promise<TurnPatch> {
     followups: ['Surprise me', 'My most played', 'Find my forgotten gems'],
     result: await execute(filters)
   }
+}
+
+/**
+ * Map a cascade EngineResult onto a turn patch. Returns null only for a hard
+ * 'unknown' — the one case where the local model gets its shot.
+ */
+function engineToPatch(eng: EngineResult, query: string): TurnPatch | null {
+  if (eng.kind === 'unknown') return null
+
+  const readAs = eng.correctedQuery ? `understood as “${eng.correctedQuery}”` : undefined
+
+  // When the cascade executed a real search, keep its params so the edit panel
+  // and persisted re-runs replay the actual query instead of a blank ask.
+  const filters: HomeFilters =
+    eng.kind === 'tracks' && eng.params
+      ? {
+          kind: 'generic',
+          params: eng.params,
+          ask: false,
+          query,
+          narration: readAs ?? describeParams(eng.params)
+        }
+      : genericAsk(query, readAs ?? (eng.narration.slice(0, 80) || 'your request'))
+
+  const defaultFollowups = ['Surprise me', 'Find my forgotten gems', 'What’s my sound?']
+  let result: HomeResult
+  let followups = defaultFollowups
+
+  switch (eng.kind) {
+    case 'tracks':
+    case 'combos':
+      result = (eng.tracks ?? []).length
+        ? { kind: 'tracks', tracks: eng.tracks ?? [], narration: eng.narration }
+        : { kind: 'empty', note: eng.narration }
+      followups = ['More like the first one', 'Build a set from these', 'Surprise me']
+      break
+    case 'set':
+      result = (eng.set ?? []).length
+        ? { kind: 'tracks', tracks: eng.set ?? [], narration: eng.narration }
+        : { kind: 'empty', note: eng.narration }
+      followups = ['Make it longer', 'A touch slower to start', 'Only the never-played ones']
+      break
+    case 'sequences':
+      result = (eng.sequences ?? []).length
+        ? { kind: 'sequences', sequences: eng.sequences ?? [], narration: eng.narration }
+        : { kind: 'empty', note: eng.narration }
+      break
+    case 'stats':
+      result = { kind: 'stats', stats: eng.stats ?? [], narration: eng.narration }
+      break
+    case 'count':
+      result = {
+        kind: 'count',
+        count: eng.count ?? 0,
+        sample: (eng.tracks ?? []).slice(0, 6),
+        narration: eng.narration
+      }
+      break
+    case 'gig':
+      result = (eng.tracks ?? []).length
+        ? { kind: 'tracks', tracks: eng.tracks ?? [], narration: eng.narration }
+        : {
+            kind: 'stats',
+            stats: (eng.sessions ?? []).map((s) => ({
+              label: [s.performedAt, s.venue ?? s.name ?? 'gig'].filter(Boolean).join(' — '),
+              value: `${s.trackIds.length} tracks`
+            })),
+            narration: eng.narration
+          }
+      followups = ['What did I play last time?', 'My most played at that venue']
+      break
+    case 'knowledge':
+    case 'clarify':
+    case 'action':
+      // Text-first answers ride the note card: the KB answer, the
+      // disambiguation question, or the gated action description.
+      result = { kind: 'empty', note: eng.clarifyQuestion ?? eng.narration }
+      break
+    case 'empty':
+    default:
+      result = { kind: 'empty', note: eng.narration }
+      break
+  }
+
+  return { kind: 'generic', filters, followups, result }
 }
 
 /** Context (previous route) we feed the model so refinements work. */
@@ -788,19 +880,36 @@ export const useHomeStore = create<HomeState>((set, get) => ({
 
     let patch: TurnPatch
     try {
-      if (useModel) {
-        // Model first → deterministic keyword ask → plain text search. Always lands.
-        patch =
-          (await resolveViaModel(q, get().lastContext)) ??
-          (await resolveViaAsk(q)) ??
-          (await resolveViaText(q))
-      } else {
+      if (interp.kind !== 'generic') {
+        // Bespoke rich-card kinds (forgotten/warmup/after/duplicates/shazam)
+        // keep their dedicated deterministic path + UI.
         patch = {
           kind: interp.kind,
           filters: interp.filters,
           followups: interp.followups,
           result: await execute(interp.filters)
         }
+      } else {
+        // The proven intelligence cascade — the SAME resolveQuery the eval
+        // harness scores at 210/210: knowledge → stats → maintenance → venue →
+        // brief → gigs → transitions → discovery → set-build → mood → key/BPM →
+        // actions → clarify → deterministic search, with slang stripped and
+        // typos repaired against the user's own library when the raw query
+        // can't be mapped.
+        const ctx = await buildResolveCtx()
+        const eng = resolveQuery(q, ctx)
+        let resolved = engineToPatch(eng, q)
+        if (!resolved) {
+          // Hard unknown → the local model translates language → structured
+          // query (grammar-constrained; it can't invent tracks), then the
+          // deterministic keyword ask, then a typo-corrected text search.
+          const nq = normalizeForEngine(q, ctx.tracks)
+          resolved =
+            (await resolveViaModel(nq, get().lastContext)) ??
+            (await resolveViaAsk(nq)) ??
+            (await resolveViaText(q, nq))
+        }
+        patch = resolved
       }
     } catch {
       patch = {
