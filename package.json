@@ -28,7 +28,8 @@
     "build:unpack": "npm run fetch-model && npm run build && electron-builder --dir",
     "icons": "node scripts/generate-icons.mjs",
     "fetch-model": "node scripts/fetch-model.mjs",
-    "build:mac": "npm run icons && npm run build:ffmpeg && npm run check:ffmpeg && npm run fetch-model && electron-vite build && electron-builder --mac"
+    "build:mac": "npm run icons && npm run build:ffmpeg && npm run check:ffmpeg && npm run fetch-model && electron-vite build && electron-builder --mac",
+    "resign:local": "codesign --force --deep --sign - \"$(find dist -maxdepth 2 -name 'SetRecord.app' | head -1)\" && echo '✓ re-signed ad-hoc for LOCAL testing only — the .app now launches. (Real releases are signed+notarized by Apple via release.yml.)'"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
