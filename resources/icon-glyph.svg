@@ -1,0 +1,12 @@
+<!--
+  SetRecord glyph — the monochrome, 1-colour cut of the brand mark.
+  Use for favicon, embroidery, watermarks, and wordmark lockups where the
+  squircle tile is not wanted. `currentColor` so it inherits text colour;
+  override `stroke` as needed. A solid letterform survives in one ink.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <g transform="translate(512 512) skewX(-9) translate(-512 -512)">
+    <path d="M 635 276 A 150 150 0 1 0 512 512 A 150 150 0 1 1 389 748"
+          fill="none" stroke="currentColor" stroke-width="124" stroke-linecap="butt" />
+  </g>
+</svg>

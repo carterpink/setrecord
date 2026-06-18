@@ -1,0 +1,149 @@
+import { useTranslation } from 'react-i18next'
+import {
+  Sparkles,
+  Telescope,
+  Layers,
+  Fingerprint,
+  ArrowLeftRight,
+  HeartPulse,
+  Tag,
+  MapPin,
+  Building2,
+  Waypoints
+} from 'lucide-react'
+import type { RecallSection } from '@/types'
+import { useRecallStore } from '@/stores/recallStore'
+import { useLibraryStore } from '@/stores/libraryStore'
+import { useCanUse } from '@/stores/licenseStore'
+import { ProLock } from '@/components/shared/ProGate'
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
+import { NoLibraryState } from '@/components/shared/NoLibraryState'
+import GrainBloom, { type BloomTone } from '@/components/atmosphere/GrainBloom'
+import { type BloomIcon } from '@/components/atmosphere/bloomIcons'
+import { UncoverSection } from './UncoverSection'
+import { RediscoverSection } from './RediscoverSection'
+import { CratesSection } from './CratesSection'
+import { IdentitySection } from './IdentitySection'
+import { CombosSection } from './CombosSection'
+import { GigsSection } from './GigsSection'
+import { VenuesSection } from './VenuesSection'
+import { HealthSection } from './HealthSection'
+import { TagsSection } from './TagsSection'
+import { GraphSection } from './graph/GraphSection'
+
+const NAV: { id: RecallSection; labelKey: string; icon: typeof Sparkles }[] = [
+  { id: 'graph', labelKey: 'nav.graph', icon: Waypoints },
+  { id: 'crates', labelKey: 'nav.crates', icon: Layers },
+  { id: 'tags', labelKey: 'nav.tags', icon: Tag },
+  { id: 'uncover', labelKey: 'nav.uncover', icon: Telescope },
+  { id: 'rediscover', labelKey: 'nav.rediscover', icon: Sparkles },
+  { id: 'combos', labelKey: 'nav.combos', icon: ArrowLeftRight },
+  { id: 'gigs', labelKey: 'nav.gigs', icon: MapPin },
+  { id: 'venues', labelKey: 'nav.venues', icon: Building2 },
+  { id: 'identity', labelKey: 'nav.identity', icon: Fingerprint },
+  { id: 'health', labelKey: 'nav.health', icon: HeartPulse }
+]
+
+// Each recall section's corner bloom is that tab's OWN lucide glyph (see NAV
+// above) — the grain takes the exact icon shape, so the decoration reads as a
+// large, soft echo of the active tab.
+const SECTION_BLOOM: Record<RecallSection, { icon: BloomIcon; tone: BloomTone }> = {
+  graph: { icon: 'waypoints', tone: 'cyan' },
+  crates: { icon: 'layers', tone: 'lime' },
+  tags: { icon: 'tag', tone: 'magenta' },
+  uncover: { icon: 'telescope', tone: 'cyan' },
+  rediscover: { icon: 'sparkles', tone: 'violet' },
+  combos: { icon: 'arrowLeftRight', tone: 'lime' },
+  gigs: { icon: 'mapPin', tone: 'magenta' },
+  venues: { icon: 'building2', tone: 'cyan' },
+  identity: { icon: 'fingerprint', tone: 'lime' },
+  health: { icon: 'heartPulse', tone: 'violet' },
+  conversations: { icon: 'brain', tone: 'lime' }
+}
+
+export function RecallPanel(): React.JSX.Element {
+  const { t } = useTranslation('recall')
+  const section = useRecallStore((s) => s.section)
+  const setSection = useRecallStore((s) => s.setSection)
+  const hasLibrary = useLibraryStore((s) => s.hasLibrary)
+  const isPro = useCanUse('recall')
+  const activeLabel = NAV.find((n) => n.id === section)
+    ? t(NAV.find((n) => n.id === section)!.labelKey)
+    : t('nav.fallback')
+
+  // Pricing re-cut (2026-06): the memory surface is the free hook. Free tier now
+  // gets the full "rear-view mirror" — Gigs history, Identity/Wrapped, Rediscover,
+  // Uncover, Combos and the Health headline — so a DJ falls in love with seeing
+  // their own world reflected back BEFORE any paywall. Only the forward-looking
+  // "windshield" stays Pro: the Crates custom rule builder here, plus Set
+  // Architect / Suggestions / Export / Cue editor (gated elsewhere in Build).
+  // Health drill-down and Tags overrides self-gate inside their own sections.
+  return (
+    <div className="recall">
+      <aside className="recall-nav glass-1">
+        {NAV.map(({ id, labelKey, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            className={`recall-nav-item${section === id ? ' active' : ''}`}
+            onClick={() => setSection(id)}
+          >
+            <Icon size={18} strokeWidth={1.5} />
+            <span>{t(labelKey)}</span>
+          </button>
+        ))}
+      </aside>
+
+      <div className="recall-body grit-bloomhost">
+        {/* Per-section neon glyph in the corner (skipped for the graph, which has
+            its own full-bleed dark constellation canvas + film grain). */}
+        {hasLibrary && section !== 'graph' && (
+          <GrainBloom
+            className="grainbloom--recall"
+            icon={SECTION_BLOOM[section].icon}
+            tone={SECTION_BLOOM[section].tone}
+            sizeFrac={0.82}
+            seed={9}
+          />
+        )}
+        {/* Each section is isolated: a crash in one is caught here (keyed by
+            section so it's a fresh boundary per view, with resetKeys as a
+            belt-and-braces auto-reset on navigation). The nav above stays
+            outside the boundary, so the user can always switch away. */}
+        <ErrorBoundary key={section} label={activeLabel} variant="section" resetKeys={[section]}>
+          {!hasLibrary ? (
+            <div className="recall-scroll">
+              <NoLibraryState body={t('panel.noLibrary')} />
+            </div>
+          ) : (
+            <>
+              {/* Only Crates' rule builder is Pro now; Tags browse is a free
+                  taste (overrides + Rekordbox export self-gate inside Tags). */}
+              {!isPro && section === 'crates' ? (
+                <div className="recall-scroll">
+                  <ProLock feature="smartCrates" />
+                </div>
+              ) : section === 'graph' ? (
+                <GraphSection />
+              ) : section === 'tags' ? (
+                <TagsSection />
+              ) : section === 'uncover' ? (
+                <UncoverSection />
+              ) : (
+                <div className="recall-scroll">
+                  {section === 'rediscover' && <RediscoverSection />}
+                  {section === 'crates' && <CratesSection />}
+                  {section === 'identity' && <IdentitySection />}
+                  {section === 'combos' && <CombosSection />}
+                  {section === 'gigs' && <GigsSection />}
+                  {section === 'venues' && <VenuesSection />}
+                  {section === 'health' && <HealthSection />}
+                </div>
+              )}
+            </>
+          )}
+        </ErrorBoundary>
+      </div>
+    </div>
+  )
+}

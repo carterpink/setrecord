@@ -1,0 +1,40 @@
+{
+  "generatedAt": "2026-06-03T14:26:34.179Z",
+  "commit": null,
+  "results": [
+    {
+      "id": "coldStart",
+      "metric": 1073.0859170000003,
+      "unit": "ms",
+      "budget": 3000,
+      "pass": true,
+      "detail": {
+        "median": 1073.0859170000003,
+        "p90": 1105.506958,
+        "samples": [
+          1012.6573330000001,
+          1061.4748749999999,
+          1073.0859170000003,
+          1097.6845410000005,
+          1105.506958
+        ]
+      }
+    },
+    {
+      "id": "scroll",
+      "metric": 0,
+      "unit": "pct",
+      "budget": 1,
+      "pass": true,
+      "detail": {
+        "frames": 176,
+        "fps": 60,
+        "medianFrameMs": 16.7,
+        "dropThresholdMs": 25,
+        "dropped": 0,
+        "droppedPct": 0,
+        "longest": 17.700000000000273
+      }
+    }
+  ]
+}

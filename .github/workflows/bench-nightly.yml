@@ -1,0 +1,64 @@
+name: Benchmarks (nightly)
+
+# NFR-107 · Tier A-full + Tier B. Runs the budgets that don't fit a PR gate:
+#   • Full 10k import incl. SQLite — needs better-sqlite3 on the Node ABI.
+#   • Cold start + 10k scroll — needs a built app + a renderer.
+# Advisory: surfaces regressions as artifacts/trends; release tags gate hard.
+
+on:
+  schedule:
+    - cron: '0 7 * * *' # 07:00 UTC daily
+  workflow_dispatch: {}
+  push:
+    tags:
+      - 'v*' # release tags — benches gate hard against absolute budgets here
+
+concurrency:
+  group: bench-nightly
+  cancel-in-progress: true
+
+jobs:
+  bench:
+    name: Full import · Cold start · Scroll
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ── Tier A-full: end-to-end import (needs Node-ABI better-sqlite3) ──
+      - name: Rebuild better-sqlite3 for the Node ABI
+        run: npm rebuild better-sqlite3
+
+      - name: Benchmark — full 10k import
+        run: npm run bench:node
+
+      - name: Restore Electron ABI for native modules
+        run: npm run rebuild
+
+      # ── Tier B: build the app, emit fixtures, drive the renderer ──
+      - name: Build app (renderer + main)
+        run: npm run build
+
+      - name: Emit benchmark fixtures
+        run: npm run bench:fixtures
+
+      - name: Benchmark — cold start + scroll
+        # Tier B needs a windowing/GL context; provide a software GL fallback.
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: npm run bench:app
+
+      - name: Upload all benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-results-nightly
+          path: bench/results/*.json
+          if-no-files-found: ignore

@@ -1,0 +1,169 @@
+{
+  "search": {
+    "placeholder": "Buscar en biblioteca, sets, cue points…",
+    "tip": "También busca en las etiquetas de cue points — prueba “intro” o “drop”",
+    "dismissTip": "Descartar consejo"
+  },
+  "sort": {
+    "byAria": "Ordenar por",
+    "byTitle": "Ordenar biblioteca",
+    "ascending": "Orden ascendente — haz clic para descendente",
+    "descending": "Orden descendente — haz clic para ascendente",
+    "ascendingTitle": "Ascendente",
+    "descendingTitle": "Descendente",
+    "fields": {
+      "artist": "Artista",
+      "title": "Título",
+      "bpm": "BPM",
+      "energy": "Energía",
+      "key": "Tonalidad",
+      "dateAdded": "Fecha de adición",
+      "playCount": "Reproducciones",
+      "duration": "Duración",
+      "rating": "Valoración"
+    }
+  },
+  "toolbar": {
+    "filterAria": "Filtrar biblioteca",
+    "filterTitle": "Filtrar",
+    "standardViewAria": "Cambiar a vista estándar",
+    "compactViewAria": "Cambiar a vista compacta",
+    "standardViewTitle": "Vista estándar",
+    "compactViewTitle": "Vista compacta"
+  },
+  "filters": {
+    "bpm": "BPM",
+    "energy": "Energía",
+    "key": "Tonalidad",
+    "anyKey": "Cualquiera",
+    "genre": "Género",
+    "genrePlaceholder": "p. ej. tech house",
+    "format": "Formato",
+    "clearAll": "Borrar todos los filtros",
+    "chipBpmMin": "BPM ≥ {{value}}",
+    "chipBpmMax": "BPM ≤ {{value}}",
+    "chipEnergyMin": "Energía ≥ {{value}}",
+    "chipEnergyMax": "Energía ≤ {{value}}",
+    "chipKey": "Tonalidad: {{value}}",
+    "chipGenre": "Género: {{value}}"
+  },
+  "banner": {
+    "showingPlaylist": "Mostrando playlist <0>{{name}}</0>",
+    "showAllTracks": "Mostrar todas las pistas",
+    "showingFit": "Mostrando pistas que encajan con <0>{{title}}</0>",
+    "clearSmartFilter": "Quitar filtro inteligente"
+  },
+  "empty": {
+    "noLibrary": "Aquí vive cada pista que has preparado en Rekordbox — con búsqueda, ordenable y lista para soltar en un set. Importa tu biblioteca para llenarla.",
+    "noCompatible": "No se encontraron pistas compatibles. Prueba a ampliar el rango de BPM o a desactivar el filtro inteligente.",
+    "noFilterMatch": "Ninguna pista coincide con los filtros activos.",
+    "noPlaylistTracks": "No hay pistas en “{{name}}”.",
+    "noSearchMatch": "Ninguna pista coincide con “{{query}}”"
+  },
+  "sets": {
+    "emptyTitle": "Aún no hay sets guardados",
+    "emptyBody": "Crea un set en la línea de tiempo y aparecerá aquí.",
+    "meta_one": "{{count}} pista · {{duration}} · {{date}}",
+    "meta_other": "{{count}} pistas · {{duration}} · {{date}}"
+  },
+  "combos": {
+    "dialogAria": "Pistas reproducidas después de {{title}}",
+    "after": "Después de",
+    "close": "Cerrar",
+    "empty": "Aún no hay historial de reproducción. Importa tus datos de actuación de Rekordbox para ver esto.",
+    "count": "{{count}}×"
+  },
+  "crates": {
+    "back": "Todos los crates",
+    "count_one": "{{count}} pista",
+    "count_other": "{{count}} pistas",
+    "evaluating": "Evaluando crate…",
+    "showingFirst": "Mostrando las primeras {{shown}} de {{total}}.",
+    "loading": "Cargando crates…",
+    "hint": "Los crates se rellenan solos según reglas. Créalos y edítalos en la pestaña Recall."
+  },
+  "playlistSidebar": {
+    "show": "Mostrar playlists",
+    "hide": "Ocultar playlists",
+    "heading": "Playlists",
+    "allTracks": "Todas las pistas"
+  },
+  "contextMenu": {
+    "actionsAria": "Acciones para {{title}}",
+    "preview": "Vista previa",
+    "findSimilar": "Buscar pistas similares",
+    "courage": "Atrévete con algo distinto",
+    "addToSet": "Añadir al set",
+    "editCues": "Editar cue points",
+    "playedAfter": "¿Qué he puesto después de esta?",
+    "trackResume": "Currículum del track",
+    "editTags": "Editar etiquetas…"
+  },
+  "trackRow": {
+    "nowPlaying": "Reproduciendo ahora.",
+    "alreadyInSet": "Ya está en tu set.",
+    "phantomStatus": "Phantom — no está en tu biblioteca.",
+    "fileNotFoundStatus": "Archivo no encontrado.",
+    "selectedStatus": "Seleccionada.",
+    "selectToggle": "Seleccionar pista",
+    "phantomTrackCompact": "Pista phantom",
+    "phantomTrackTitle": "Pista phantom — cómprala o descárgala para habilitarla",
+    "fileNotFound": "Archivo no encontrado",
+    "fileNotFoundPath": "Archivo no encontrado: {{path}}",
+    "phantomArtist": "{{artist}} · Phantom — no está en la biblioteca",
+    "playedAfter": "¿Qué he puesto después de esta?"
+  },
+  "tags": {
+    "readingTags": "Leyendo tus etiquetas…",
+    "noTagsYet": "Aún no hay etiquetas",
+    "coverage": "{{tagged}} de {{total}} pistas etiquetadas",
+    "noTagsCaption": "Las etiquetas aparecen automáticamente a medida que se analiza tu biblioteca.",
+    "coverageCaption": "Vibe, Energía, Ideal para y más — {{pct}}% cubierto.",
+    "retagTitle": "Volver a etiquetar toda la biblioteca",
+    "tagging": "Etiquetando {{processed}}/{{total}}",
+    "taggingShort": "Etiquetando…",
+    "retag": "Volver a etiquetar biblioteca",
+    "sendTitlePro": "Escribir estas etiquetas en Rekordbox",
+    "sendTitleFree": "Enviar etiquetas a Rekordbox es una función Pro",
+    "sendToRekordbox": "Enviar a Rekordbox",
+    "browseTagged": "Ver {{count}} pistas etiquetadas como {{label}}",
+    "noTracksTagged": "No hay pistas etiquetadas como {{label}}"
+  },
+  "tagEditor": {
+    "dialogAria": "Editar etiquetas de {{title}}",
+    "heading": "Etiquetas",
+    "close": "Cerrar",
+    "proUpsell": "Editar etiquetas es una función Pro — actualiza para personalizar.",
+    "resetToAuto": "Restablecer a automático"
+  },
+  "tagChip": {
+    "remove": "Quitar {{label}}"
+  },
+  "tagExport": {
+    "dialogAria": "Enviar etiquetas a Rekordbox",
+    "title": "Enviar etiquetas a Rekordbox",
+    "close": "Cerrar",
+    "xmlTitle": "Rekordbox XML",
+    "recommended": "Recomendado",
+    "xmlDetail": "Lo más seguro. Las etiquetas van a la columna Comentarios. Tu biblioteca nunca se modifica.",
+    "directTitle": "Escribir directamente en Rekordbox",
+    "advanced": "Avanzado",
+    "directDetail": "MyTags reales y filtrables. Hace una copia de seguridad primero; Rekordbox debe estar cerrado.",
+    "warning": "Esto escribe directamente en tu biblioteca de Rekordbox. <0>Cierra Rekordbox primero.</0> SetRecord guarda una copia de seguridad con marca de tiempo de tu base de datos antes de escribir, y revierte si algo sale mal.",
+    "bullet1": "Crea un grupo de MyTag “SetRecord” con tus etiquetas",
+    "bullet2": "Solo etiqueta pistas que provienen de tu biblioteca de Rekordbox",
+    "bullet3": "No duplica etiquetas que una pista ya tenga",
+    "back": "Atrás",
+    "backupAndWrite": "Hacer copia y escribir etiquetas",
+    "working": "Trabajando… no tardará mucho.",
+    "backup": "Copia de seguridad: {{path}}",
+    "done": "Listo",
+    "somethingWrong": "Algo salió mal.",
+    "xmlDoneTitle": "Etiquetas exportadas",
+    "xmlDoneDetail": "Se escribieron {{count}} pistas en un archivo XML. En Rekordbox, usa Archivo → Importar colección (tu biblioteca no se sobrescribe) — las etiquetas aparecen en la columna Comentarios.",
+    "xmlFailTitle": "Falló la exportación",
+    "nativeDoneTitle": "Etiquetas escritas en Rekordbox",
+    "nativeDoneDetail": "Se crearon {{tags}} MyTags y se etiquetaron {{tracks}} pistas. Abre Rekordbox y filtra por MyTag para verlas.",
+    "nativeFailTitle": "No se pudieron escribir las etiquetas"
+  }
+}

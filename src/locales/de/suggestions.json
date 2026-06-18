@@ -1,0 +1,46 @@
+{
+  "header": {
+    "title": "Nächster Vorschlag",
+    "refreshAria": "Vorschläge aktualisieren"
+  },
+  "noLibraryBody": "Wähle einen beliebigen Track und {{app}} schlägt vor, was als Nächstes passt — abgestimmt auf Tonart, BPM und Energie. Importiere deine Bibliothek, um Empfehlungen zu erhalten.",
+  "context": {
+    "basedOn": "Basierend auf Track {{position}} — {{title}}",
+    "whatMixesAfter": "Was nach <0>{{title}}</0> passt",
+    "noSelection": "Wähle einen Track in deinem Set oder klicke auf einen Track in der Bibliothek, um Vorschläge zu sehen"
+  },
+  "empty": {
+    "noTrack": {
+      "title": "Kein Track ausgewählt",
+      "body": "Wähle einen Track in deinem Set oder klicke auf einen Track in der Bibliothek, um Vorschläge zu sehen."
+    },
+    "noMatches": {
+      "title": "Keine Treffer gefunden",
+      "body": "Füge deiner Bibliothek mehr Tracks hinzu oder passe den BPM-Bereich an."
+    }
+  },
+  "card": {
+    "bestBadge": "Beste Übereinstimmung",
+    "bestBadgeTitle": "Bewertet nach BPM-Kompatibilität (35%), harmonischer Tonart (35%), Energieübereinstimmung (20%) und Dateiqualität (10%)",
+    "phantomAria": "Phantom-Track — nicht in deiner Bibliothek",
+    "phantomTitle": "Kaufe oder lade diesen Track herunter, um die Vorschau zu aktivieren",
+    "fileNotFoundAria": "Datei nicht gefunden",
+    "fileNotFoundTitle": "Datei nicht gefunden: {{path}}",
+    "pauseAria": "{{title}} pausieren",
+    "previewAria": "{{title}} vorhören",
+    "hideBreakdown": "Punkteaufschlüsselung ausblenden",
+    "showBreakdown": "Punkteaufschlüsselung anzeigen",
+    "score": "Punktzahl {{score}}/100",
+    "breakdown": {
+      "bpmDelta": "BPM-Differenz",
+      "key": "Tonart",
+      "energyDelta": "Energiedifferenz",
+      "total": "Gesamt",
+      "totalValue": "{{score}}/100"
+    }
+  },
+  "chips": {
+    "comboTitle": "Du hast diesen Übergang schon einmal gespielt",
+    "explainAria": "{{label}} erklären"
+  }
+}

@@ -1,0 +1,469 @@
+{
+  "nav": {
+    "crates": "Crates",
+    "tags": "Tags",
+    "uncover": "Descobrir",
+    "rediscover": "Redescobrir",
+    "combos": "Combos",
+    "gigs": "Shows",
+    "venues": "Locais",
+    "identity": "Identidade",
+    "health": "Saúde",
+    "fallback": "Recall",
+    "graph": "Constelação"
+  },
+  "panel": {
+    "noLibrary": "O Recall lê toda a sua coleção — redescobrindo joias esquecidas, mapeando o seu som e traçando as transições que você costuma usar. Importe a sua biblioteca para dar vida a tudo isso."
+  },
+  "ask": {
+    "inputAria": "Pergunte à sua biblioteca",
+    "ghost": "pergunte à sua biblioteca… <0>{{example}}</0>",
+    "searching": "Buscando na sua biblioteca…",
+    "ready": "Pergunte à sua biblioteca em linguagem natural e continue refinando",
+    "importCta": "Importe a sua biblioteca",
+    "importSuffix": " para começar a perguntar — nada nunca sai do seu Mac.",
+    "privacyTitle": "Toda a busca do Recall roda localmente — sem chamadas de API.",
+    "searchingCount": "Buscando na sua biblioteca de {{count}} faixas — nada sai do seu Mac.",
+    "examples": {
+      "0": "as 15 faixas de UK garage que mais toco",
+      "1": "10 bombas de tech house de horário de pico",
+      "2": "deep house em torno de 122 bpm",
+      "3": "melodic techno 124–128 bpm",
+      "4": "minhas joias esquecidas",
+      "5": "faixas que nunca testei ao vivo",
+      "6": "drum & bass mais bem avaliados",
+      "7": "faixas tranquilas de aquecimento",
+      "8": "hard techno acima de 135 bpm",
+      "9": "minhas transições mais comuns",
+      "10": "house com groove a 123 bpm, nunca tocada",
+      "11": "meus melhores fechamentos",
+      "12": "afro house 120–124 bpm",
+      "13": "me surpreenda com 8 bombas",
+      "14": "amapiano em torno de 112 bpm",
+      "15": "minhas aberturas de confiança",
+      "16": "faixas tocadas demais para aposentar",
+      "17": "o deep house mais novo que adicionei",
+      "18": "uk garage 130 bpm",
+      "19": "com o que abro os sets",
+      "20": "músicas que toquei no Hi Ibiza",
+      "21": "todos os sets de julho de 2025",
+      "22": "tech house que toquei em 2025",
+      "23": "meus sets de festival"
+    }
+  },
+  "trackLine": {
+    "fileNotFound": "Arquivo não encontrado: {{path}}",
+    "trackArtist": "{{title}} — {{artist}}",
+    "addToCurrentSet": "Adicionar ao set atual"
+  },
+  "combos": {
+    "title": "Combos",
+    "subtitle": "As transições que você realmente usa — extraídas dos seus sets e do seu histórico de reprodução.",
+    "emptyBody": "Suas transições de confiança e seus becos sem saída aparecem aqui assim que você importar uma biblioteca e criar ou tocar alguns sets.",
+    "searchPlaceholder": "Escolha uma faixa para ver o que você toca depois dela…",
+    "after": "Depois de <0>{{title}}</0> você tocou:",
+    "tracing": "Traçando suas transições…",
+    "noTransitions": "Ainda não há transições registradas a partir desta faixa.",
+    "count": "{{count}}×",
+    "sequencesTitle": "Suas transições mais comuns",
+    "sequencesSubtitle": "Cada par faixa→faixa nos seus sets salvos e nas suas sessões tocadas, ordenado pela frequência com que você usa.",
+    "sequencesEmpty": "Crie alguns sets (ou registre uma sessão tocada) e suas transições de confiança aparecerão aqui.",
+    "deadEndsTitle": "Becos sem saída — faixas das quais você raramente faz transição",
+    "deadEndsSubtitle": "Onde seus sets pousam, mas raramente seguem adiante. Cada uma é uma chance de encontrar um novo encadeamento.",
+    "deadEndsEmpty": "Depois de registrar vários sets tocados, suas faixas terminais aparecerão aqui.",
+    "ended": "terminou {{count}}×"
+  },
+  "conversations": {
+    "trackCount": "{{count}} faixas",
+    "saveAsSet": "Salvar como set",
+    "addToCurrentSet": "Adicionar ao set atual",
+    "defaultSetName": "Seleção da biblioteca",
+    "newConversation": "Nova conversa",
+    "empty": "Ainda não há conversas.",
+    "deleteAria": "Excluir conversa",
+    "welcomeTitle": "Peça faixas, refine, repita",
+    "thinking": "Buscando na sua biblioteca…",
+    "count": "{{count}}×",
+    "starters": {
+      "0": "as 15 faixas de UK garage que mais toco",
+      "1": "10 bombas de tech house de horário de pico",
+      "2": "deep house em torno de 122 bpm",
+      "3": "melodic techno 124–128 bpm, nunca tocada ao vivo",
+      "4": "minhas joias esquecidas",
+      "5": "drum & bass mais bem avaliados"
+    }
+  },
+  "crates": {
+    "title": "Crates",
+    "subtitle": "Crates vivos que se reabastecem sozinhos a partir de regras. Crie um e nunca mais o organize.",
+    "flaggedBanner": "<0>{{count}}</0> faixas marcadas para o seu próximo show",
+    "loading": "Carregando crates…",
+    "trackCount": "{{count}} faixas",
+    "deleteTitle": "Excluir crate",
+    "deleteAria": "Excluir {{name}}",
+    "newCrate": "Novo crate",
+    "evaluating": "Avaliando crate…",
+    "rules": "Regras",
+    "matchMode": "Corresponder a {{match}} de:",
+    "flagBarSelected": "{{count}} selecionadas",
+    "flagForNextGig": "Marcar para o próximo show",
+    "clear": "Limpar",
+    "selectTrackAria": "Selecionar {{title}}",
+    "flaggedPillTitle": "Marcada para o próximo show",
+    "testing": "testando",
+    "showingFirst": "Mostrando as primeiras {{max}} de {{total}} — refine as regras para reduzir.",
+    "builder": {
+      "namePlaceholder": "Nome do crate",
+      "untitledName": "Crate sem título",
+      "matchLabel": "Corresponder a",
+      "matchAll": "todas",
+      "matchAny": "qualquer uma",
+      "matchSuffix": "destas regras:",
+      "pickPlaceholder": "— escolher —",
+      "removeRule": "Remover regra",
+      "addRule": "Adicionar regra",
+      "cancel": "Cancelar",
+      "save": "Salvar crate",
+      "placeholders": {
+        "min": "mín",
+        "max": "máx",
+        "genre": "ex.: techno",
+        "stars": "estrelas",
+        "months": "meses",
+        "count": "quantidade"
+      }
+    },
+    "ruleLabels": {
+      "bpm": "BPM entre",
+      "energy": "Energia entre",
+      "genre": "O gênero inclui",
+      "neverPlayed": "Nunca tocada ao vivo",
+      "rating": "Avaliação de pelo menos",
+      "dormant": "Sem tocar há (meses)",
+      "key": "A tonalidade é exatamente",
+      "keyCompat": "Tonalidade compatível com",
+      "format": "O formato do arquivo é",
+      "missingMeta": "Sem tonalidade ou BPM",
+      "duration": "Duração entre (min)",
+      "playCount": "Número de reproduções"
+    }
+  },
+  "gigs": {
+    "title": "Shows",
+    "subtitleEmpty": "Cada set que você tocou — quando, onde e o quê.",
+    "subtitle": "Cada set que você tocou. Os locais são preenchidos automaticamente a partir dos nomes das suas sessões do histórico — edite-os ou preencha em lote e depois pergunte coisas como “músicas que toquei no Hi Ibiza”.",
+    "noLibraryBody": "Suas sessões tocadas aparecem aqui assim que você importar uma biblioteca com histórico do Rekordbox (ou marcar um set como tocado).",
+    "undated": "Sem data",
+    "showingFiltered": "Mostrando shows {{filter}}",
+    "filtered": "filtrados",
+    "filterAt": "no {{venue}}",
+    "filterIn": "em {{city}}",
+    "filterRange": "{{after}} → {{before}}",
+    "filterSince": "desde {{after}}",
+    "clear": "Limpar",
+    "loading": "Carregando seus shows…",
+    "noMatch": "Nenhum show corresponde a este filtro.",
+    "noSessions": "Ainda não há sessões tocadas — importe o histórico do Rekordbox ou marque um set como tocado.",
+    "viewTracklist": "Ver tracklist",
+    "copyTracklist": "Copiar tracklist",
+    "tracklistCopied": "Tracklist copiada",
+    "recordingLabel": "Gravação do set",
+    "jumpToTrack": "Ir para esta faixa na gravação",
+    "editGig": "Editar show",
+    "addVenue": "Adicionar local",
+    "autoBadge": "auto",
+    "autoBadgeTitle": "Detectado automaticamente a partir do nome da sessão — clique em editar para confirmar",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "fields": {
+      "venue": "Local",
+      "city": "Cidade",
+      "country": "País",
+      "event": "Evento",
+      "slot": "Horário",
+      "from": "De",
+      "to": "Até"
+    },
+    "placeholders": {
+      "venue": "ex.: Hi Ibiza",
+      "city": "ex.: Ibiza",
+      "country": "ex.: Espanha",
+      "bulkVenue": "Hi Ibiza",
+      "bulkCity": "Ibiza"
+    },
+    "noneOption": "—",
+    "bulk": {
+      "toggle": "Atribuir em lote uma residência ou uma série de datas",
+      "needDateBound": "Escolha pelo menos um limite de data.",
+      "needField": "Defina pelo menos um campo para atribuir.",
+      "updated_one": "{{count}} show atualizado.",
+      "updated_other": "{{count}} shows atualizados.",
+      "apply": "Aplicar aos shows correspondentes"
+    },
+    "methodRecorded": "gravado",
+    "methodRecordedTitle": "Capturado ao vivo pelo Flight Recorder — dados de reprodução verificados",
+    "methodImported": "importado",
+    "methodImportedTitle": "Importado do seu histórico do Rekordbox — dados de reprodução verificados",
+    "methodMarked": "marcado",
+    "methodMarkedTitle": "Marcado como tocado manualmente — fica no seu diário, não conta nas estatísticas"
+  },
+  "health": {
+    "title": "Saúde",
+    "subtitle": "Onde está o problema — clique em um número para ver as faixas e corrigi-las no lugar.",
+    "scanning": "Verificando sua biblioteca…",
+    "scoreLabel": "/ 100 de saúde da biblioteca",
+    "scoreInfoAria": "Como isso é calculado?",
+    "proDescription": "Veja exatamente quais faixas estão sem arquivo, tonalidade, BPM ou duplicadas — e corrija-as no lugar.",
+    "cats": {
+      "missingFiles": "Arquivos ausentes",
+      "missingKey": "Sem tonalidade",
+      "missingBpm": "Sem BPM",
+      "unsupported": "Formato não suportado",
+      "notAnalysed": "Ainda não analisado",
+      "duplicateGroups": "Grupos duplicados"
+    },
+    "hints": {
+      "notAnalysed": "O analisador em segundo plano grava a energia a partir do arquivo de áudio — sem precisar do Rekordbox.",
+      "keyBpm": "Tonalidade/BPM vêm do Rekordbox. Defina-os diretamente abaixo ou corrija na origem.",
+      "unsupported": "Os CDJs rejeitam estes formatos — converta para AIFF/WAV/FLAC no Rekordbox."
+    },
+    "analysing": "Analisando",
+    "analysingProgress": " {{processed}}/{{total}}",
+    "analyseAll": "Analisar tudo",
+    "rescanning": "Reescaneando",
+    "rescanAll": "Reescanear tudo",
+    "dupesTitle": "Grupos duplicados — mesmo artista + título",
+    "dupesHint": "Escolha uma para manter — o restante vai para o estado de ciclo de vida Arquivo.",
+    "analyseInProgress": "Análise já em andamento ou nada pendente",
+    "analyseError": "Não foi possível iniciar o analisador: {{error}}",
+    "rescanSuccess": "Caminhos de arquivo reescaneados — Arquivos ausentes atualizados",
+    "rescanError": "Não foi possível reescanear: {{error}}",
+    "errorUnknown": "desconhecido",
+    "row": {
+      "bpmPlaceholder": "BPM",
+      "keyPlaceholder": "Tonalidade…",
+      "relink": "Revincular…",
+      "pendingTitle": "Aguardando o analisador em segundo plano",
+      "pending": "pendente"
+    },
+    "score": {
+      "head": "Como esta pontuação é calculada",
+      "intro": "Arquivos ausentes pesam mais, porque na hora do show um arquivo ausente simplesmente não toca.",
+      "missingFiles": "Arquivos ausentes",
+      "missingKey": "Sem tonalidade",
+      "missingBpm": "Sem BPM",
+      "unsupportedFormats": "Formatos não suportados",
+      "duplicateGroups": "Grupos duplicados",
+      "rulePerFile": "−{{per}} por arquivo, limitado a −{{cap}}",
+      "rulePerGroup": "−{{per}} por grupo, limitado a −{{cap}}"
+    },
+    "dupe": {
+      "keepArchive": "Manter a selecionada, arquivar o restante",
+      "notDuplicate": "Não é duplicata"
+    },
+    "lifecycle": {
+      "title": "Ciclo de vida da faixa",
+      "subtitle": "Como as faixas se movem pela sua biblioteca. “Não testada” significa nunca tocada ao vivo — isso é diferente de “Ainda não analisada” acima.",
+      "new": "Nova",
+      "newTip": "Adicionada nos últimos 30 dias, nunca tocada ao vivo",
+      "untested": "Não testada",
+      "untestedTip": "Nunca tocada ao vivo — adicionada há mais de 30 dias",
+      "testing": "Testando",
+      "testingTip": "1–3 reproduções",
+      "active": "Ativa",
+      "activeTip": "4–9 reproduções, tocada recentemente",
+      "peak": "Rotação máxima",
+      "peakTip": "10+ reproduções, tocada nos últimos 90 dias",
+      "occasional": "Ocasional",
+      "occasionalTip": "Tocada há 90–365 dias",
+      "forgotten": "Esquecida",
+      "forgottenTip": "Tocada pela última vez há 1–3 anos",
+      "archive": "Arquivo",
+      "archiveTip": "Tocada pela última vez há mais de 3 anos, ou arquivada por você"
+    }
+  },
+  "identity": {
+    "reading": "Lendo a sua impressão digital…",
+    "noLibraryTitle": "Sua impressão digital de DJ se forma conforme você toca",
+    "noLibraryBody": "Seus principais gêneros, tonalidades, faixa de BPM e distribuição de energia aparecem aqui no momento em que você importa a sua biblioteca.",
+    "title": "Identidade",
+    "subtitle": "Seu som, no agregado — o formato de tudo o que você coleciona e toca.",
+    "hideShareCard": "Ocultar card de compartilhamento",
+    "shareAsImage": "Compartilhar como imagem",
+    "fillsIn": "Preenche conforme você toca",
+    "noKeyBpm": "Não há faixas suficientes com BPM + tonalidade para montar este gráfico.",
+    "bpmSpread": "Distribuição de BPM",
+    "energyProfile": "Perfil de energia",
+    "libraryGrowth": "Crescimento da biblioteca",
+    "libraryGrowthSub": "faixas adicionadas por trimestre (pela data de adição do arquivo) · reproduções assim que você registrar o histórico",
+    "keyPalette": "Paleta de tonalidades por zona de BPM",
+    "keyPaletteSub": "Como suas escolhas harmônicas mudam ao longo do tempo — a tonalidade dominante fica no topo de cada barra.",
+    "keyByBpmTooltip": "{{range}} BPM · {{key}}: {{count}} faixas",
+    "addedSeries": "adicionadas",
+    "playedSeries": "tocadas",
+    "topGenres": "Principais gêneros",
+    "topArtists": "Principais artistas",
+    "topLabels": "Principais selos",
+    "keySpread": "Distribuição de tonalidades"
+  },
+  "share": {
+    "copied": "Copiado",
+    "copyAsImage": "Copiar como imagem",
+    "downloadPng": "Baixar PNG",
+    "copiedToast": "Card copiado para a área de transferência",
+    "copyError": "Não foi possível copiar: {{error}}",
+    "downloadedToast": "Card baixado",
+    "downloadError": "Não foi possível baixar: {{error}}",
+    "errorUnknown": "desconhecido",
+    "card": {
+      "eyebrow": "SETSENSE · SEU SOM",
+      "totalTracks": "{{count}} faixas",
+      "inYourLibrary": "na sua biblioteca",
+      "topBpmZone": "ZONA DE BPM PRINCIPAL",
+      "topKey": "TONALIDADE PRINCIPAL",
+      "peakEnergy": "ENERGIA MÁXIMA",
+      "definingSound": "SOM QUE TE DEFINE",
+      "genreShare": "{{count}} faixas · {{pct}}% da biblioteca",
+      "topArtistsHeading": "PRINCIPAIS ARTISTAS",
+      "energyProfileHeading": "PERFIL DE ENERGIA",
+      "madeWith": "feito com"
+    }
+  },
+  "rediscover": {
+    "title": "Redescobrir",
+    "subtitle": "Faixas que você costumava tocar, juntando poeira. Traga uma de volta à rotação.",
+    "noLibraryTitle": "As joias esquecidas vêm à tona conforme você toca",
+    "noLibraryBody": "Importe a sua biblioteca e o SetRecord começa a trazer de volta faixas que você adorava, mas não toca há um tempo.",
+    "digging": "Vasculhando os seus crates…",
+    "empty": "Ainda não há joias esquecidas — o histórico de reprodução faz isso crescer com o tempo."
+  },
+  "tags": {
+    "allTags": "Todas as tags",
+    "trackCount": "{{count}} faixas",
+    "noTracks": "Ainda não há faixas com esta tag.",
+    "showingFirst": "Mostrando as primeiras {{max}} de {{total}}."
+  },
+  "uncover": {
+    "title": "Descobrir",
+    "subtitle": "Deslize pelas faixas que a sua biblioteca esqueceu. Para a direita para testar no próximo show, para a esquerda para seguir em frente.",
+    "stats": {
+      "saved": "{{count}} salvas",
+      "skipped": "{{count}} ignoradas",
+      "left": "{{count}} restantes"
+    },
+    "digging": "Desenterrando faixas esquecidas…",
+    "emptyNothing": "Nada enterrado no momento — cada bomba, joia e faixa não testada veio à tona. Importe mais ou volte conforme o seu histórico cresce.",
+    "emptySummary": "Essa é a pilha inteira. Você salvou <0>{{saved}}</0> e ignorou <1>{{skipped}}</1>.",
+    "freshDig": "Começar uma nova busca",
+    "undoTitle": "Desfazer (Z)",
+    "undoAria": "Desfazer o último deslize",
+    "skipTitle": "Ignorar (←)",
+    "skipAria": "Ignorar",
+    "addToSetTitle": "Adicionar ao set atual (↑)",
+    "addToSetAria": "Adicionar ao set atual",
+    "testTitle": "Testar no próximo show (→)",
+    "testAria": "Testar no próximo show",
+    "hint": "<0>←</0> ignorar · <1>↑</1> adicionar ao set · <2>→</2> testar no show · <3>espaço</3> tocar/pausar · <4>Z</4> desfazer",
+    "dir": {
+      "keep": "Testar no show",
+      "dismiss": "Ignorar",
+      "set": "Adicionar ao set"
+    },
+    "source": {
+      "heater": "Bomba esquecida",
+      "gem": "Joia esquecida",
+      "untested": "Nunca testada ao vivo",
+      "audition": "Vale a escuta"
+    },
+    "card": {
+      "pause": "Pausar",
+      "play": "Tocar",
+      "key": "Tonalidade",
+      "bpm": "BPM",
+      "energy": "Energia",
+      "energyValue": "{{value}}/10",
+      "length": "Duração"
+    }
+  },
+  "graph": {
+    "title": "Constelação",
+    "lensLabel": "Lente temporal",
+    "loading": "Mapeando sua biblioteca…",
+    "error": "Não foi possível criar o mapa.",
+    "centeredOn": "Centrado em",
+    "trackCount": "{{count}} faixas",
+    "mode": {
+      "past": "Passado",
+      "future": "Futuro",
+      "diff": "Diferença",
+      "present": "Presente"
+    },
+    "tagline": {
+      "past": "Cada faixa que você mixou, mapeada",
+      "future": "Cada mixagem que você poderia fazer",
+      "diff": "Compatíveis — mas você nunca tentou",
+      "present": "O set que você está montando, agora"
+    },
+    "empty": {
+      "past": {
+        "title": "Nenhuma mixagem mapeada ainda",
+        "body": "Registre ou crie um set e suas faixas começarão a se conectar em uma constelação das transições que você realmente tocou."
+      },
+      "future": {
+        "title": "Sem vizinhos compatíveis",
+        "body": "Nada compatível em harmonia ou ritmo apareceu em torno desta faixa. Tente outra faixa de partida."
+      },
+      "diff": {
+        "title": "Você já mixou todas",
+        "body": "Cada faixa compatível por perto já está no seu histórico — não há pares por descobrir aqui. Tente outra faixa."
+      },
+      "present": {
+        "title": "Nenhum set em andamento",
+        "body": "Abra um set no Build (ou entre ao vivo) e ele acende aqui como um caminho brilhante — cada faixa na ordem de execução."
+      }
+    },
+    "lock": {
+      "future": {
+        "title": "Veja aonde cada faixa pode ir",
+        "body": "Futuro mapeia as mixagens compatíveis em harmonia e BPM escondidas na sua biblioteca. Desbloqueie com o Pro."
+      },
+      "diff": {
+        "title": "Encontre mixagens que você nunca tentou",
+        "body": "Diferença revela pares compatíveis que você nunca tocou — sua próxima transição marcante. Desbloqueie com o Pro."
+      }
+    },
+    "legend": {
+      "mixed": "Já mixadas",
+      "gig": "Tocada num gig",
+      "path": "Seu set, em ordem",
+      "compatible": "Pode mixar",
+      "novel": "Nunca tentou"
+    },
+    "scrub": {
+      "title": "Mixado em",
+      "all": "Tudo"
+    },
+    "scopeLabel": "Escopo",
+    "scope": {
+      "neighborhood": "Ao redor",
+      "library": "Galáxia",
+      "context": "Este set"
+    },
+    "path": {
+      "toggle": "Criar set",
+      "title": "Trajeto",
+      "hint": "Clique nas faixas para encadeá-las num set, em ordem.",
+      "route": "Auto-rota",
+      "add": "Adicionar ao set",
+      "save": "Salvar como set",
+      "remove": "Remover",
+      "clear": "Limpar",
+      "exit": "Sair do modo trajeto",
+      "setName": "Trajeto da constelação"
+    },
+    "search": {
+      "placeholder": "Buscar uma faixa…"
+    },
+    "genreCount": "{{count}} gêneros"
+  }
+}

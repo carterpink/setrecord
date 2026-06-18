@@ -1,0 +1,86 @@
+{
+  "dnd": {
+    "pickedUpLibrary": "{{title}} von {{artist}} aufgenommen. Lege ihn auf der Timeline ab, um ihn dem Set hinzuzufügen.",
+    "pickedUpTimeline": "{{title}} von Position {{position}} aufgenommen.",
+    "pickedUpGeneric": "Track aufgenommen.",
+    "overEmpty": "Track befindet sich über einem leeren Bereich.",
+    "overDropZone": "Über der Ablagezone der Timeline.",
+    "overPosition": "Über Position {{position}}.",
+    "cancelledNoTarget": "Ziehen abgebrochen — kein Ablageziel.",
+    "added": "{{title}} zum Set hinzugefügt.",
+    "moved": "{{title}} auf Position {{position}} verschoben.",
+    "complete": "Ziehen abgeschlossen.",
+    "cancelled": "Ziehen abgebrochen."
+  },
+  "dock": {
+    "setArchitect": "Set Architect",
+    "setArchitectPro": "Set Architect — Pro",
+    "smartFilter": "Intelligenter Filter",
+    "smartFilterPro": "Intelligenter Filter — Pro",
+    "cueEditor": "Cue-Editor",
+    "cueEditorPro": "Cue-Editor — Pro",
+    "cueEditorSelectFirst": "Wähle zuerst einen Track in der Timeline aus",
+    "cueEditorTitle": "Wähle einen Track in deiner Timeline aus, um seine Cue-Punkte zu bearbeiten",
+    "validateSet": "Set prüfen",
+    "validateSetPro": "Set prüfen — Pro",
+    "export": "Export",
+    "exportPro": "Export — Pro"
+  },
+  "volume": {
+    "triggerAria": "Lautstärke {{pct}}%",
+    "triggerTitle": "Vorhör-Lautstärke — {{pct}}%",
+    "panelAria": "Lautstärke",
+    "mute": "Stummschalten",
+    "unmute": "Stummschaltung aufheben"
+  },
+  "setTools": {
+    "newSet": "Neues Set",
+    "newSetTitle": "Ein neues Set starten (⌘N)"
+  },
+  "boothCheck": {
+    "label": "Booth-Check",
+    "value": "{{score}}%",
+    "valueReady": "{{score}}% · bereit für {{hw}}",
+    "checkSet": "Set prüfen",
+    "titleValidated": "Booth-Check: {{score}}% — klicke, um für den Export erneut zu prüfen",
+    "titlePending": "Klicke, um zu prüfen, ob dieses Set auf deinem CDJ funktioniert, bevor du exportierst",
+    "titleEmpty": "Füge Tracks hinzu und führe dann vor dem Export eine CDJ-Kompatibilitätsprüfung durch",
+    "titleProGate": "Die CDJ-Kompatibilitätsprüfung ist eine Pro-Funktion — klicke zum Upgraden"
+  },
+  "live": {
+    "live": "Live",
+    "goLive": "Live gehen",
+    "endTitle": "Live beenden — das schwebende Overlay schließen",
+    "goLiveTitle": "Live gehen — ein transparentes Glas-Overlay, das über Rekordbox schwebt, ausliest, was läuft, und die besten nächsten Schritte anzeigt",
+    "screenPermissionError": "SetRecord Live benötigt die Berechtigung zur Bildschirmaufnahme (Systemeinstellungen → Datenschutz).",
+    "setSaved": "Set in deinem Verlauf gespeichert"
+  },
+  "energy": {
+    "pill": "Energie wird analysiert <0>{{processed}} / {{total}}</0>…",
+    "pillTitle": "Die spektrale Energie jedes Tracks wird analysiert — RMS, Brillanz und Lautheit — um DJ-Energiewerte zu berechnen. Läuft einmal pro Track und wird dann zwischengespeichert."
+  },
+  "menu": {
+    "more": "Mehr",
+    "moreAria": "Weitere Optionen",
+    "importLibrary": "Bibliothek importieren",
+    "sendFeedback": "Feedback senden",
+    "settings": "Einstellungen"
+  },
+  "trial": {
+    "titleLastDay": "Letzter Tag deiner Pro-Testphase — wenn sie endet, verlierst du Set Architect, die KI-Bibliothekssuche und den Export. Klicke, um Pro zu behalten.",
+    "title": "Deine Pro-Testphase endet in {{days}} Tagen — du verlierst Set Architect, die KI-Bibliothekssuche und den Export. Klicke, um Pro zu behalten.",
+    "labelLastDay": "Letzter Pro-Tag",
+    "labelTwoDays": "Noch 2 Pro-Tage",
+    "label": "Test · {{days}} Tage"
+  },
+  "renewal": {
+    "title_one": "Dein Pro-Abo endet in {{count}} Tag — verlängere, um Set Architect, die KI-Bibliothekssuche und den Export zu behalten.",
+    "title_other": "Dein Pro-Abo endet in {{count}} Tagen — verlängere, um Set Architect, die KI-Bibliothekssuche und den Export zu behalten.",
+    "labelTomorrow": "Pro endet morgen — verlängern",
+    "label": "Pro endet in {{days}} Tagen — verlängern"
+  },
+  "actions": {
+    "export": "Export",
+    "goPro": "Pro holen"
+  }
+}

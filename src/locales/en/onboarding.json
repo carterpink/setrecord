@@ -1,0 +1,18 @@
+{
+  "meter": {
+    "libraryAnalysed": "Library analysed",
+    "analysing_one": "Analysing energy — {{count}} track to go",
+    "analysing_other": "Analysing energy — {{count}} tracks to go",
+    "pendingEnergy_one": "{{formattedCount}} track still needs energy analysis",
+    "pendingEnergy_other": "{{formattedCount}} tracks still need energy analysis",
+    "addKeysBpms": "Add keys and BPMs to complete your library"
+  },
+  "checklist": {
+    "heading": "Get set up — {{done}} of {{total}} done",
+    "dismissAria": "Dismiss checklist"
+  },
+  "streak": {
+    "weeksOfPrep_one": "{{count}} week of prep",
+    "weeksOfPrep_other": "{{count}} weeks of prep"
+  }
+}

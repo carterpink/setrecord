@@ -1,0 +1,469 @@
+{
+  "nav": {
+    "crates": "Crates",
+    "tags": "Tags",
+    "uncover": "Uncover",
+    "rediscover": "Rediscover",
+    "combos": "Combos",
+    "gigs": "Gigs",
+    "venues": "Venues",
+    "identity": "Identity",
+    "health": "Health",
+    "fallback": "Recall",
+    "graph": "Constellation"
+  },
+  "panel": {
+    "noLibrary": "Recall reads your whole collection — rediscovering forgotten gems, mapping your sound, and tracing the transitions you reach for. Import your library to bring it to life."
+  },
+  "ask": {
+    "inputAria": "Ask your library",
+    "ghost": "ask your library… <0>{{example}}</0>",
+    "searching": "Searching your library…",
+    "ready": "Ask your library in plain English, then keep refining",
+    "importCta": "Import your library",
+    "importSuffix": " to start asking — nothing ever leaves your Mac.",
+    "privacyTitle": "All Recall search runs locally — no API calls.",
+    "searchingCount": "Searching your library of {{count}} tracks — nothing leaves your Mac.",
+    "examples": {
+      "0": "15 UK garage tracks I play the most",
+      "1": "10 peak-hour tech house bangers",
+      "2": "deep house around 122 bpm",
+      "3": "melodic techno 124–128 bpm",
+      "4": "my forgotten gems",
+      "5": "tracks I’ve never tested live",
+      "6": "highest-rated drum & bass",
+      "7": "chilled warmup tracks",
+      "8": "hard techno over 135 bpm",
+      "9": "my most common transitions",
+      "10": "groovy house 123 bpm, never played",
+      "11": "my best closers",
+      "12": "afro house 120–124 bpm",
+      "13": "surprise me with 8 bangers",
+      "14": "amapiano around 112 bpm",
+      "15": "my go-to openers",
+      "16": "overplayed tracks to retire",
+      "17": "newest deep house I added",
+      "18": "uk garage 130 bpm",
+      "19": "what I open sets with",
+      "20": "songs I played at Hi Ibiza",
+      "21": "all sets in July 2025",
+      "22": "tech house I played in 2025",
+      "23": "my festival sets"
+    }
+  },
+  "trackLine": {
+    "fileNotFound": "File not found: {{path}}",
+    "trackArtist": "{{title}} — {{artist}}",
+    "addToCurrentSet": "Add to current set"
+  },
+  "combos": {
+    "title": "Combos",
+    "subtitle": "The transitions you actually reach for — pulled from your sets and play history.",
+    "emptyBody": "Your go-to transitions and dead-ends appear here once you import a library and build or perform a few sets.",
+    "searchPlaceholder": "Pick a track to see what you play after it…",
+    "after": "After <0>{{title}}</0> you’ve played:",
+    "tracing": "Tracing your transitions…",
+    "noTransitions": "No recorded transitions out of this track yet.",
+    "count": "{{count}}×",
+    "sequencesTitle": "Your most common transitions",
+    "sequencesSubtitle": "Every track→track pair across your saved sets and performed sessions, ranked by how often you use it.",
+    "sequencesEmpty": "Build a couple of sets (or log a performed session) and your go-to transitions show up here.",
+    "deadEndsTitle": "Dead-ends — tracks you rarely transition out of",
+    "deadEndsSubtitle": "Where your sets land but rarely leave. Each one is a place to find a fresh follow-up.",
+    "deadEndsEmpty": "Once you’ve logged several performed sets, your terminal tracks show up here.",
+    "ended": "ended {{count}}×"
+  },
+  "conversations": {
+    "trackCount": "{{count}} tracks",
+    "saveAsSet": "Save as set",
+    "addToCurrentSet": "Add to current set",
+    "defaultSetName": "Library picks",
+    "newConversation": "New conversation",
+    "empty": "No conversations yet.",
+    "deleteAria": "Delete conversation",
+    "welcomeTitle": "Ask for tracks, refine, repeat",
+    "thinking": "Searching your library…",
+    "count": "{{count}}×",
+    "starters": {
+      "0": "15 UK garage tracks I play the most",
+      "1": "10 peak-hour tech house bangers",
+      "2": "deep house around 122 bpm",
+      "3": "melodic techno 124–128 bpm, never played live",
+      "4": "my forgotten gems",
+      "5": "highest-rated drum & bass"
+    }
+  },
+  "crates": {
+    "title": "Crates",
+    "subtitle": "Living crates that re-fill themselves from rules. Build one, never sort it again.",
+    "flaggedBanner": "<0>{{count}}</0> tracks flagged for your next gig",
+    "loading": "Loading crates…",
+    "trackCount": "{{count}} tracks",
+    "deleteTitle": "Delete crate",
+    "deleteAria": "Delete {{name}}",
+    "newCrate": "New crate",
+    "evaluating": "Evaluating crate…",
+    "rules": "Rules",
+    "matchMode": "Match {{match}} of:",
+    "flagBarSelected": "{{count}} selected",
+    "flagForNextGig": "Flag for next gig",
+    "clear": "Clear",
+    "selectTrackAria": "Select {{title}}",
+    "flaggedPillTitle": "Flagged for next gig",
+    "testing": "testing",
+    "showingFirst": "Showing first {{max}} of {{total}} — refine the rules to narrow it down.",
+    "builder": {
+      "namePlaceholder": "Crate name",
+      "untitledName": "Untitled crate",
+      "matchLabel": "Match",
+      "matchAll": "all",
+      "matchAny": "any",
+      "matchSuffix": "of these rules:",
+      "pickPlaceholder": "— pick —",
+      "removeRule": "Remove rule",
+      "addRule": "Add rule",
+      "cancel": "Cancel",
+      "save": "Save crate",
+      "placeholders": {
+        "min": "min",
+        "max": "max",
+        "genre": "e.g. techno",
+        "stars": "stars",
+        "months": "months",
+        "count": "count"
+      }
+    },
+    "ruleLabels": {
+      "bpm": "BPM between",
+      "energy": "Energy between",
+      "genre": "Genre includes",
+      "neverPlayed": "Never played live",
+      "rating": "Rating at least",
+      "dormant": "Not played in (months)",
+      "key": "Key is exactly",
+      "keyCompat": "Key compatible with",
+      "format": "File format is",
+      "missingMeta": "Missing key or BPM",
+      "duration": "Duration between (min)",
+      "playCount": "Play count"
+    }
+  },
+  "gigs": {
+    "title": "Gigs",
+    "subtitleEmpty": "Every set you’ve played — when, where, and what.",
+    "subtitle": "Every set you’ve played. Venues auto-fill from your history-session names — edit or bulk back-fill them, then ask things like “songs I played at Hi Ibiza”.",
+    "noLibraryBody": "Your performed sessions show up here once you import a library with Rekordbox history (or mark a set as performed).",
+    "undated": "Undated",
+    "showingFiltered": "Showing gigs {{filter}}",
+    "filtered": "filtered",
+    "filterAt": "at {{venue}}",
+    "filterIn": "in {{city}}",
+    "filterRange": "{{after}} → {{before}}",
+    "filterSince": "since {{after}}",
+    "clear": "Clear",
+    "loading": "Loading your gigs…",
+    "noMatch": "No gigs match this filter.",
+    "noSessions": "No performed sessions yet — import Rekordbox history or mark a set as performed.",
+    "viewTracklist": "View tracklist",
+    "copyTracklist": "Copy tracklist",
+    "tracklistCopied": "Tracklist copied",
+    "recordingLabel": "Set recording",
+    "jumpToTrack": "Jump to this track in the recording",
+    "editGig": "Edit gig",
+    "addVenue": "Add venue",
+    "autoBadge": "auto",
+    "autoBadgeTitle": "Auto-detected from the session name — click edit to confirm",
+    "save": "Save",
+    "cancel": "Cancel",
+    "fields": {
+      "venue": "Venue",
+      "city": "City",
+      "country": "Country",
+      "event": "Event",
+      "slot": "Slot",
+      "from": "From",
+      "to": "To"
+    },
+    "placeholders": {
+      "venue": "e.g. Hi Ibiza",
+      "city": "e.g. Ibiza",
+      "country": "e.g. Spain",
+      "bulkVenue": "Hi Ibiza",
+      "bulkCity": "Ibiza"
+    },
+    "noneOption": "—",
+    "bulk": {
+      "toggle": "Bulk assign a residency or run of dates",
+      "needDateBound": "Pick at least one date bound.",
+      "needField": "Set at least one field to assign.",
+      "updated_one": "Updated {{count}} gig.",
+      "updated_other": "Updated {{count}} gigs.",
+      "apply": "Apply to matching gigs"
+    },
+    "methodRecorded": "recorded",
+    "methodRecordedTitle": "Captured live by the Flight Recorder — verified play data",
+    "methodImported": "imported",
+    "methodImportedTitle": "Imported from your Rekordbox history — verified play data",
+    "methodMarked": "marked",
+    "methodMarkedTitle": "Marked as performed by hand — kept in your diary, not counted in stats"
+  },
+  "health": {
+    "title": "Health",
+    "subtitle": "Where the rot is — click a number to see the tracks and fix them in place.",
+    "scanning": "Scanning your library…",
+    "scoreLabel": "/ 100 library health",
+    "scoreInfoAria": "How is this calculated?",
+    "proDescription": "See exactly which tracks are missing files, key, BPM or are duplicated — and fix them in place.",
+    "cats": {
+      "missingFiles": "Missing files",
+      "missingKey": "Missing key",
+      "missingBpm": "Missing BPM",
+      "unsupported": "Unsupported format",
+      "notAnalysed": "Not yet analysed",
+      "duplicateGroups": "Duplicate groups"
+    },
+    "hints": {
+      "notAnalysed": "Background analyser writes energy from the audio file — no Rekordbox needed.",
+      "keyBpm": "Key/BPM come from Rekordbox. Set them inline below or fix them upstream.",
+      "unsupported": "CDJs reject these formats — convert to AIFF/WAV/FLAC in Rekordbox."
+    },
+    "analysing": "Analysing",
+    "analysingProgress": " {{processed}}/{{total}}",
+    "analyseAll": "Analyse all",
+    "rescanning": "Re-scanning",
+    "rescanAll": "Re-scan all",
+    "dupesTitle": "Duplicate groups — same artist + title",
+    "dupesHint": "Pick one to keep — the rest move to your Archive lifecycle state.",
+    "analyseInProgress": "Analysis already in progress or nothing pending",
+    "analyseError": "Could not start analyser: {{error}}",
+    "rescanSuccess": "Re-scanned file paths — Missing files updated",
+    "rescanError": "Could not re-scan: {{error}}",
+    "errorUnknown": "unknown",
+    "row": {
+      "bpmPlaceholder": "BPM",
+      "keyPlaceholder": "Key…",
+      "relink": "Relink…",
+      "pendingTitle": "Awaiting background analyser",
+      "pending": "pending"
+    },
+    "score": {
+      "head": "How this score is calculated",
+      "intro": "Missing files hit the hardest because at gig time a missing file just won’t play.",
+      "missingFiles": "Missing files",
+      "missingKey": "Missing key",
+      "missingBpm": "Missing BPM",
+      "unsupportedFormats": "Unsupported formats",
+      "duplicateGroups": "Duplicate groups",
+      "rulePerFile": "−{{per}} per file, capped at −{{cap}}",
+      "rulePerGroup": "−{{per}} per group, capped at −{{cap}}"
+    },
+    "dupe": {
+      "keepArchive": "Keep selected, archive the rest",
+      "notDuplicate": "Not a duplicate"
+    },
+    "lifecycle": {
+      "title": "Track lifecycle",
+      "subtitle": "How tracks move through your library. “Untested” means never played live — that’s separate from “Not yet analysed” above.",
+      "new": "New",
+      "newTip": "Added in the last 30 days, never played live",
+      "untested": "Untested",
+      "untestedTip": "Never played live — added more than 30 days ago",
+      "testing": "Testing",
+      "testingTip": "1–3 plays",
+      "active": "Active",
+      "activeTip": "4–9 plays, played recently",
+      "peak": "Peak rotation",
+      "peakTip": "10+ plays, played within 90 days",
+      "occasional": "Occasional",
+      "occasionalTip": "Played 90–365 days ago",
+      "forgotten": "Forgotten",
+      "forgottenTip": "Last played 1–3 years ago",
+      "archive": "Archive",
+      "archiveTip": "Last played more than 3 years ago, or you archived it"
+    }
+  },
+  "identity": {
+    "reading": "Reading your fingerprint…",
+    "noLibraryTitle": "Your DJ fingerprint fills in as you play",
+    "noLibraryBody": "Your top genres, keys, BPM range and energy spread appear here the moment you import your library.",
+    "title": "Identity",
+    "subtitle": "Your sound, in aggregate — the shape of everything you collect and play.",
+    "hideShareCard": "Hide share card",
+    "shareAsImage": "Share as image",
+    "fillsIn": "Fills in as you play",
+    "noKeyBpm": "Not enough tracks with BPM + key to chart this.",
+    "bpmSpread": "BPM spread",
+    "energyProfile": "Energy profile",
+    "libraryGrowth": "Library growth",
+    "libraryGrowthSub": "tracks added per quarter (by file date added) · plays once you log history",
+    "keyPalette": "Key palette by BPM zone",
+    "keyPaletteSub": "How your harmonic choices shift across tempo — the dominant key sits on top of each stack.",
+    "keyByBpmTooltip": "{{range}} BPM · {{key}}: {{count}} tracks",
+    "addedSeries": "added",
+    "playedSeries": "played",
+    "topGenres": "Top genres",
+    "topArtists": "Top artists",
+    "topLabels": "Top labels",
+    "keySpread": "Key spread"
+  },
+  "share": {
+    "copied": "Copied",
+    "copyAsImage": "Copy as image",
+    "downloadPng": "Download PNG",
+    "copiedToast": "Card copied to clipboard",
+    "copyError": "Could not copy: {{error}}",
+    "downloadedToast": "Card downloaded",
+    "downloadError": "Could not download: {{error}}",
+    "errorUnknown": "unknown",
+    "card": {
+      "eyebrow": "SETSENSE · YOUR SOUND",
+      "totalTracks": "{{count}} tracks",
+      "inYourLibrary": "in your library",
+      "topBpmZone": "TOP BPM ZONE",
+      "topKey": "TOP KEY",
+      "peakEnergy": "PEAK ENERGY",
+      "definingSound": "DEFINING SOUND",
+      "genreShare": "{{count}} tracks · {{pct}}% of library",
+      "topArtistsHeading": "TOP ARTISTS",
+      "energyProfileHeading": "ENERGY PROFILE",
+      "madeWith": "made with"
+    }
+  },
+  "rediscover": {
+    "title": "Rediscover",
+    "subtitle": "Tracks you used to play, gathering dust. Pull one back into rotation.",
+    "noLibraryTitle": "Forgotten gems surface as you play",
+    "noLibraryBody": "Import your library and SetRecord starts resurfacing tracks you used to love but haven’t touched in a while.",
+    "digging": "Digging through your crates…",
+    "empty": "No forgotten gems yet — play history grows this over time."
+  },
+  "tags": {
+    "allTags": "All tags",
+    "trackCount": "{{count}} tracks",
+    "noTracks": "No tracks carry this tag yet.",
+    "showingFirst": "Showing first {{max}} of {{total}}."
+  },
+  "uncover": {
+    "title": "Uncover",
+    "subtitle": "Swipe through the tracks your library forgot. Right to test at your next gig, left to move on.",
+    "stats": {
+      "saved": "{{count}} saved",
+      "skipped": "{{count}} skipped",
+      "left": "{{count}} left"
+    },
+    "digging": "Digging up forgotten tracks…",
+    "emptyNothing": "Nothing buried right now — every heater, gem and untested track has surfaced. Import more or check back as your history grows.",
+    "emptySummary": "That’s the whole stack. You saved <0>{{saved}}</0> and skipped <1>{{skipped}}</1>.",
+    "freshDig": "Start a fresh dig",
+    "undoTitle": "Undo (Z)",
+    "undoAria": "Undo last swipe",
+    "skipTitle": "Skip (←)",
+    "skipAria": "Skip",
+    "addToSetTitle": "Add to current set (↑)",
+    "addToSetAria": "Add to current set",
+    "testTitle": "Test at next gig (→)",
+    "testAria": "Test at next gig",
+    "hint": "<0>←</0> skip · <1>↑</1> add to set · <2>→</2> test at gig · <3>space</3> play/pause · <4>Z</4> undo",
+    "dir": {
+      "keep": "Test at gig",
+      "dismiss": "Skip",
+      "set": "Add to set"
+    },
+    "source": {
+      "heater": "Forgotten heater",
+      "gem": "Forgotten gem",
+      "untested": "Never tested live",
+      "audition": "Worth auditioning"
+    },
+    "card": {
+      "pause": "Pause",
+      "play": "Play",
+      "key": "Key",
+      "bpm": "BPM",
+      "energy": "Energy",
+      "energyValue": "{{value}}/10",
+      "length": "Length"
+    }
+  },
+  "graph": {
+    "title": "Constellation",
+    "lensLabel": "Time lens",
+    "loading": "Mapping your library…",
+    "error": "Couldn't build the map.",
+    "centeredOn": "Centred on",
+    "trackCount": "{{count}} tracks",
+    "mode": {
+      "past": "Past",
+      "future": "Future",
+      "diff": "Diff",
+      "present": "Present"
+    },
+    "tagline": {
+      "past": "Every track you've mixed, mapped",
+      "future": "Every mix you could make",
+      "diff": "Compatible — but you've never tried it",
+      "present": "The set you’re building, right now"
+    },
+    "empty": {
+      "past": {
+        "title": "No mixes mapped yet",
+        "body": "Log a set or build one and your tracks will start connecting into a constellation of the transitions you've actually played."
+      },
+      "future": {
+        "title": "No compatible neighbours",
+        "body": "Nothing harmonically or rhythmically compatible turned up around this track. Try a different seed."
+      },
+      "diff": {
+        "title": "You've mixed them all",
+        "body": "Every compatible track near this one is already in your history — no undiscovered pairs here. Try another seed."
+      },
+      "present": {
+        "title": "No set in progress",
+        "body": "Open a set in Build (or go live) and it lights up here as a glowing path — every track in play order."
+      }
+    },
+    "lock": {
+      "future": {
+        "title": "See where every track could go",
+        "body": "Future maps the harmonic and BPM-compatible mixes hiding in your library. Unlock it with Pro."
+      },
+      "diff": {
+        "title": "Find mixes you've never tried",
+        "body": "Diff surfaces compatible pairs you have never played — your next signature transition. Unlock it with Pro."
+      }
+    },
+    "legend": {
+      "mixed": "Mixed before",
+      "gig": "Played at a gig",
+      "path": "Your set, in order",
+      "compatible": "Could mix",
+      "novel": "Never tried"
+    },
+    "scrub": {
+      "title": "Mixed within",
+      "all": "All"
+    },
+    "scopeLabel": "Scope",
+    "scope": {
+      "neighborhood": "Around",
+      "library": "Galaxy",
+      "context": "This set"
+    },
+    "path": {
+      "toggle": "Build a set",
+      "title": "Path",
+      "hint": "Click tracks to chain them into a set — in order.",
+      "route": "Auto-route",
+      "add": "Add to set",
+      "save": "Save as set",
+      "remove": "Remove",
+      "clear": "Clear",
+      "exit": "Exit path mode",
+      "setName": "Constellation path"
+    },
+    "search": {
+      "placeholder": "Find a track…"
+    },
+    "genreCount": "{{count}} genres"
+  }
+}

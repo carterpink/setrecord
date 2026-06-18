@@ -1,0 +1,181 @@
+{
+  "placeholders": {
+    "talk": "Demande ce que tu veux sur ta bibliothèque — ou parle, tout simplement",
+    "build": "Trouve quelque chose, crée quelque chose ou demande la suite",
+    "tonight": "On prépare quoi ce soir ?"
+  },
+  "greeting": {
+    "lateOne": "Tard, ce soir.",
+    "morning": "Bonjour.",
+    "afternoon": "Bon après-midi.",
+    "evening": "Bonsoir.",
+    "sub": "Que veux-tu faire avec ta bibliothèque ?"
+  },
+  "examples": {
+    "forgotten": "Trouve-moi 10 morceaux que je n’ai pas joués depuis une éternité",
+    "warmup": "Crée-moi une mise en route de 90 minutes autour de 124 bpm",
+    "after": "Qu’est-ce que je joue après {{title}}",
+    "duplicates": "Nettoie mes doublons"
+  },
+  "topBar": {
+    "history": "Historique"
+  },
+  "history": {
+    "title": "Historique",
+    "closeAria": "Fermer l’historique",
+    "newConversation": "Nouvelle conversation",
+    "upsell": "Les conversations gratuites s’effacent à la fermeture de SetRecord. <0>Conserve ton historique avec Pro.</0>",
+    "empty": "Aucune conversation pour l’instant.",
+    "deleteAria": "Supprimer la conversation"
+  },
+  "edgeBar": {
+    "proPitch": "Passe à Pro pour <0>enregistrer cette conversation</0>, créer des sets à partir de ces résultats et les exporter vers tes CDJ."
+  },
+  "voice": {
+    "settingUp": "Configuration de la voix · une seule fois · {{pct}} %",
+    "starting": "Démarrage de la voix…",
+    "unavailable": "La saisie vocale n’est pas encore disponible sur cette machine."
+  },
+  "composer": {
+    "askAria": "Interroge ta bibliothèque",
+    "stop": "Arrêter",
+    "speak": "Parler",
+    "stopAria": "Arrêter l’écoute",
+    "send": "Envoyer",
+    "listening": "À l’écoute — continue",
+    "tapToStop": "appuie pour arrêter",
+    "privacyHint": "Rien ne quitte ton Mac",
+    "sendHint": "<0>↵</0>pour envoyer · <1>⇧↵</1>nouvelle ligne"
+  },
+  "turn": {
+    "warming": "Préparation — ça n’arrive qu’une fois, ensuite c’est instantané.",
+    "reading": "Lecture de ta bibliothèque…",
+    "answerAria": "Réponse",
+    "resultsReady": "Résultats prêts : {{summary}}",
+    "resultsReadyBare": "Résultats prêts"
+  },
+  "interpret": {
+    "lead": "Voici comment je l’ai compris",
+    "refine": "affiner",
+    "modelNote": "Pour celle-ci, j’ai utilisé toute ma compréhension. Reformule si ce n’est pas tout à fait juste.",
+    "footNote": "Modifie ce qui ne va pas — les résultats se mettent à jour instantanément.",
+    "update": "Mettre à jour",
+    "fields": {
+      "notPlayedIn": "Pas joués depuis",
+      "neverPlayedLive": "Jamais joués en live",
+      "howMany": "Combien",
+      "buildsToward": "Monte vers",
+      "length": "Durée",
+      "shape": "Courbe",
+      "mixingOutOf": "Enchaînement depuis",
+      "keepInKey": "Garder en clé",
+      "energy": "Énergie",
+      "matchOn": "Comparer sur",
+      "keep": "Conserver",
+      "orderBy": "Trier par"
+    },
+    "window": {
+      "3 months": "3 mois",
+      "6 months": "6 mois",
+      "12 months": "12 mois"
+    },
+    "toggle": {
+      "on": "oui",
+      "off": "non"
+    },
+    "lengthValue": "{{count}} min",
+    "harmonicOnly": "harmonique uniquement",
+    "shape": {
+      "slowBurn": "Montée lente",
+      "steady": "Régulier"
+    },
+    "energyPreset": {
+      "hold": "Maintenir",
+      "lift": "Relancer"
+    },
+    "match": {
+      "audio": "Audio",
+      "tags": "Tags"
+    },
+    "keepOption": {
+      "highestQuality": "Meilleure qualité",
+      "newest": "Plus récent"
+    },
+    "energyLevel": {
+      "any": "Indifférent",
+      "chill": "Posée",
+      "groovy": "Groovy",
+      "peak": "Peak"
+    },
+    "sort": {
+      "mostPlayed": "Les plus joués",
+      "newest": "Les plus récents",
+      "topRated": "Les mieux notés",
+      "surprise": "Surprends-moi"
+    }
+  },
+  "stepper": {
+    "fewerAria": "Moins",
+    "moreAria": "Plus"
+  },
+  "shared": {
+    "addToCurrentSet": "Ajouter au set actuel"
+  },
+  "after": {
+    "notFound": "Je n’ai pas trouvé ce morceau dans ta bibliothèque.",
+    "titleOne": "Une sortie après {{title}}",
+    "titleOther": "{{count}} sorties après {{title}}",
+    "harmonicFrom": "harmonique depuis ",
+    "fromSets": "d’après tes sets · ",
+    "bestMatch": "Meilleure correspondance",
+    "chips": {
+      "sameKey": "Même clé",
+      "bpmDelta": "{{delta}} bpm",
+      "lifts": "Relance l’énergie",
+      "eases": "Fait redescendre",
+      "holds": "L’énergie se maintient",
+      "doneThis": "Tu l’as fait {{count}}×"
+    }
+  },
+  "duplicates": {
+    "allClear": "Tout est propre — ces doublons ont disparu.",
+    "title": "{{count}} doublons à nettoyer",
+    "meta": "on conserve la meilleure copie de chaque",
+    "keep": "garder",
+    "drop": "écarter",
+    "kbps": "{{count}} kbps",
+    "removeLower": "Supprimer les copies de moindre qualité",
+    "moreGrouped": "{{count}} autres regroupés de la même façon.",
+    "thatsAll": "C’est tout.",
+    "clearAll": "Nettoyer les {{count}}",
+    "clearGroupError": "Impossible de nettoyer ce groupe.",
+    "clearAllError": "Impossible de nettoyer tous les doublons.",
+    "clearedToast": "{{count}} groupes de doublons nettoyés"
+  },
+  "forgotten": {
+    "title": "{{count}} morceaux que tu as laissés au repos",
+    "meta": "les plus anciens d’abord",
+    "moreInList": "+ {{count}} autres dans la liste complète"
+  },
+  "generic": {
+    "libraryPicks": "Sélection de la bibliothèque",
+    "tracksTitle": "{{count}} morceaux",
+    "saveAsSet": "Enregistrer comme set",
+    "addToCurrentSet": "Ajouter au set actuel",
+    "countTitle_one": "{{count}} morceau",
+    "countTitle_other": "{{count}} morceaux"
+  },
+  "warmup": {
+    "title": "Une mise en route de {{minutes}} minutes, en brouillon",
+    "slowBurn": "montée lente",
+    "steady": "régulier",
+    "tracks": "morceaux",
+    "pulledFrom": "tirés de ta bibliothèque",
+    "min": "min",
+    "runtime": "durée",
+    "bpmRamp": "montée de bpm",
+    "moreShaped": "…{{count}} autres, ajustés à la courbe",
+    "notCommitted": "Rien n’est encore validé — ouvre-le pour mixer et réordonner.",
+    "openInBuild": "Ouvrir dans Build"
+  }
+}

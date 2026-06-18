@@ -1,0 +1,18 @@
+{
+  "meter": {
+    "libraryAnalysed": "Biblioteca analisada",
+    "analysing_one": "Analisando energia — falta {{count}} faixa",
+    "analysing_other": "Analisando energia — faltam {{count}} faixas",
+    "pendingEnergy_one": "{{formattedCount}} faixa ainda precisa de análise de energia",
+    "pendingEnergy_other": "{{formattedCount}} faixas ainda precisam de análise de energia",
+    "addKeysBpms": "Adicione tonalidades e BPMs para completar sua biblioteca"
+  },
+  "checklist": {
+    "heading": "Comece a configurar — {{done}} de {{total}} concluídos",
+    "dismissAria": "Dispensar lista"
+  },
+  "streak": {
+    "weeksOfPrep_one": "{{count}} semana de preparação",
+    "weeksOfPrep_other": "{{count}} semanas de preparação"
+  }
+}

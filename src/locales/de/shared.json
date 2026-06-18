@@ -1,0 +1,142 @@
+{
+  "bpm": {
+    "value": "{{bpm}} BPM",
+    "iconLabel": "Was ist BPM?"
+  },
+  "energy": {
+    "analysing": "Energie: wird analysiert…",
+    "pendingAria": "Energie ausstehend",
+    "editableAria": "Energie {{value}} von 10, bearbeitbar",
+    "decreaseAria": "Energie verringern",
+    "increaseAria": "Energie erhöhen",
+    "iconLabel": "Was ist der Energiewert?",
+    "titleOverride": "Energie: {{value}}/10 (manuell gesetzt)",
+    "title": "Energie: {{value}}/10",
+    "valueAria": "Energie {{value}} von 10"
+  },
+  "energyBar": {
+    "aria": "Energie {{level}} von {{max}}"
+  },
+  "key": {
+    "iconLabel": "Was ist eine Camelot-Tonart?",
+    "aria": "Tonart {{key}}"
+  },
+  "errorBoundary": {
+    "chromeLabelled": "{{label}} nicht verfügbar.",
+    "chromeGeneric": "Diese Symbolleiste ist nicht verfügbar.",
+    "reload": "App neu laden",
+    "retry": "Erneut versuchen",
+    "title": "Etwas ist schiefgelaufen",
+    "bodyLabelled": "Im Bereich {{label}} ist ein Fehler aufgetreten.",
+    "bodyGeneric": "In einem Bereich ist ein Fehler aufgetreten.",
+    "exhaustedHint": "Ein Neuladen der App sollte das beheben.",
+    "recoverHint": "Du kannst es erneut versuchen oder zu einer anderen Ansicht wechseln.",
+    "tryAgain": "Erneut versuchen"
+  },
+  "fatalError": {
+    "title": "{{app}} konnte nicht gestartet werden",
+    "body": "Der Anwendungskern wurde nicht geladen. Das bedeutet meist, dass die Installation beschädigt ist. Bitte beende und installiere {{app}} neu oder wende dich an den Support, falls das Problem weiterhin besteht."
+  },
+  "inlineWaveform": {
+    "aria": "Wellenform-Vorschau"
+  },
+  "librarySourceGuide": {
+    "duration": "Dauert etwa 30 Sekunden.",
+    "step1": {
+      "title": "Rekordbox öffnen",
+      "body": "Starte die App auf diesem Mac, falls sie nicht bereits läuft."
+    },
+    "step2": {
+      "title": "Datei › Sammlung im xml-Format exportieren",
+      "body": "In der Menüleiste. Speichere die Datei beliebig — der Schreibtisch ist in Ordnung."
+    },
+    "step3": {
+      "title": "Wähle die Datei unten",
+      "body": "{{app}} liest den Export schreibgeschützt — Rekordbox bleibt unangetastet."
+    }
+  },
+  "noLibrary": {
+    "defaultTitle": "Importiere deine Rekordbox-Bibliothek, um dies freizuschalten",
+    "importButton": "Bibliothek importieren",
+    "guideLink": "So exportierst du Rekordbox-XML"
+  },
+  "playlistSource": {
+    "allLibrary": "Gesamte Bibliothek",
+    "onePlaylist": "1 Playlist",
+    "manyPlaylists": "{{count}} Playlists"
+  },
+  "proGate": {
+    "trialEndedPrefix": "Deine Pro-Testphase ist beendet. {{description}}",
+    "keepPro": "Pro behalten",
+    "unlock": "Mit Pro freischalten"
+  },
+  "search": {
+    "placeholder": "Suchen…"
+  },
+  "toast": {
+    "moveToSet": "Verschieben nach {{name}}",
+    "moveAria": "In ein anderes Set verschieben",
+    "dismiss": "Schließen"
+  },
+  "usb": {
+    "never": "Nie",
+    "today": "Heute",
+    "yesterday": "Gestern",
+    "daysAgo": "Vor {{count}} Tagen",
+    "weeksAgo": "Vor {{count}} Wochen",
+    "monthsAgo": "Vor {{count}} Monaten",
+    "renamedTo": "Umbenannt in „{{name}}“",
+    "renameAria": "USB-Laufwerk umbenennen",
+    "saveNameAria": "Namen speichern",
+    "removedFromTargets": "„{{name}}“ von den Exportzielen entfernt",
+    "setAsTarget": "„{{name}}“ als Exportziel festgelegt",
+    "speedTestFailed": "Geschwindigkeitstest fehlgeschlagen",
+    "removeFavorite": "Aus Favoriten entfernen",
+    "addFavorite": "Zu Favoriten hinzufügen",
+    "removeTarget": "Exportziel entfernen",
+    "markTarget": "Als Exportziel markieren",
+    "defaultTarget": "Standard-Exportziel",
+    "setTarget": "Als Exportziel festlegen",
+    "moreOptions": "Weitere Optionen",
+    "rename": "Umbenennen",
+    "testingSpeed": "Geschwindigkeit wird getestet…",
+    "testSpeed": "Geschwindigkeit testen",
+    "free": "{{size}} frei",
+    "totalUsed": "{{total}} gesamt · {{percent}}% belegt",
+    "filesystem": "Dateisystem",
+    "speed": "Geschwindigkeit",
+    "testing": "Wird getestet…",
+    "speedValue": "~{{speed}} MB/s",
+    "lastExport": "Letzter Export",
+    "exports": "Exporte",
+    "forget": "{{name}} vergessen",
+    "forgetTooltip": "Dieses Gerät vergessen",
+    "forgotten": "„{{name}}“ vergessen",
+    "exportsCount": "{{count}} Exporte",
+    "couldNotScan": "USB-Laufwerke konnten nicht gesucht werden",
+    "trigger": "USB-Laufwerke — {{count}} verbunden",
+    "connectedBadge": "{{count}} verbunden",
+    "drivesTitle": "USB-Laufwerke",
+    "refresh": "Aktualisieren",
+    "refreshAria": "USB-Laufwerke aktualisieren",
+    "closeAria": "USB-Panel schließen",
+    "noneDetected": "Keine USB-Laufwerke erkannt",
+    "plugInHint": "Stecke ein USB-Laufwerk ein und klicke auf Aktualisieren",
+    "pastDrives": "Frühere Laufwerke",
+    "tooltip": "USB-Laufwerke"
+  },
+  "freshStart": {
+    "step.library": "Bibliothek",
+    "step.settings": "Einstellungen",
+    "step.history": "Wiedergabeverlauf",
+    "step.artwork": "Cover",
+    "step.caches": "Caches",
+    "resettingAria": "{{app}} wird zurückgesetzt",
+    "startingFresh": "Neuanfang…",
+    "clearing": "{{app}} wird geleert"
+  },
+  "proWaveform": {
+    "overviewAria": "Übersichts-Wellenform des Tracks. Klicke oder ziehe zum Scrubben; nutze die Wiedergabesteuerung und die Pfeiltasten zur Navigation.",
+    "detailAria": "Detaillierte Wellenform. Klicke oder ziehe, um den Abspielkopf zu setzen; Leertaste startet oder pausiert, Pfeil links und rechts springen um 100 ms."
+  }
+}

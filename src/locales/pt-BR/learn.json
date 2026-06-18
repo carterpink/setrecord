@@ -1,0 +1,29 @@
+{
+  "coachmark": {
+    "dismiss": "Entendi"
+  },
+  "panel": {
+    "header": "Learn Mode"
+  },
+  "tooltip": {
+    "iconLabel": "Mostrar explicação",
+    "dialogAria": "Explicação",
+    "proLocked": "Learn Mode é um recurso Pro. Faça upgrade para desbloquear as explicações."
+  },
+  "diagrams": {
+    "bpm": {
+      "aria": "BPM {{direction}}{{amount}}",
+      "title": "Mudança de BPM: {{direction}}{{amount}}"
+    },
+    "energy": {
+      "aria": "Curva de energia: alvo versus alcançado ao longo do set",
+      "title": "Curva de energia alvo vs. alcançado",
+      "target": "Alvo",
+      "yourSet": "Seu set"
+    },
+    "harmonic": {
+      "aria": "Roda Camelot mostrando {{fromKey}} e {{toKey}}",
+      "title": "Roda Camelot: {{fromKey}} → {{toKey}}"
+    }
+  }
+}

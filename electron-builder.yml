@@ -1,0 +1,148 @@
+appId: com.setrecord.app
+productName: SetRecord
+directories:
+  buildResources: build
+files:
+  - '!**/.vscode/*'
+  - '!**/.DS_Store'
+  # Source trees — only the built output in out/ ships.
+  - '!src/**'
+  - '!electron/**'
+  - '!tests/**'
+  - '!.github/**'
+  # Internal tooling — never ship. Holds the license-minting script (issuer-only).
+  - '!scripts/**'
+  # Docs, audits, PRDs, research notes — all *.md at any depth.
+  - '!*.md'
+  - '!**/*.tsbuildinfo'
+  - '!.editorconfig'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{vite.config.ts,vitest.config.ts,postcss.config.mjs,tailwind.config.ts}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  # Secrets & lockfiles — never package. *.pem is the license signing key.
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml,package-lock.json}'
+  - '!*.pem'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  # ffmpeg-static's prebuilt binary is --enable-nonfree (legally UNREDISTRIBUTABLE)
+  # — never ship it. The app spawns the vendored LGPL build from resources/ffmpeg
+  # instead (see extraResources + electron/services/ffmpegBinary.ts). The package's
+  # JS stays (harmless dev fallback path); only the binary is dropped.
+  - '!node_modules/ffmpeg-static/ffmpeg'
+  - '!node_modules/ffmpeg-static/ffmpeg.exe'
+# The Recall language model (~1.9 GB) ships in the app bundle so "Extended
+# understanding" works offline from first launch. `scripts/fetch-model.mjs`
+# populates resources/models before packaging (wired into build:mac /
+# build:unpack). At runtime it resolves to process.resourcesPath/models — see
+# electron/services/memoryAssistant.ts. Kept out of the asar (extraResources)
+# so the native loader can mmap it directly from disk.
+extraResources:
+  - from: resources/models
+    to: models
+    filter:
+      - '**/*'
+  # Third-party license notices (FFmpeg LGPL, etc.) — shipped in the app bundle
+  # to satisfy attribution/notice obligations. See THIRD_PARTY_LICENSES.md.
+  - from: THIRD_PARTY_LICENSES.md
+    to: THIRD_PARTY_LICENSES.md
+  # The vendored, REDISTRIBUTABLE LGPL ffmpeg binary (built by
+  # scripts/build-ffmpeg-lgpl.sh). Resolves to <Resources>/ffmpeg/ffmpeg at
+  # runtime — see electron/services/ffmpegBinary.ts. Replaces the nonfree
+  # ffmpeg-static binary excluded above.
+  - from: resources/ffmpeg
+    to: ffmpeg
+    filter:
+      - '**/*'
+asarUnpack:
+  - resources/**
+  # node-llama-cpp loads native llama.cpp binaries at runtime — must live outside the asar.
+  - node_modules/node-llama-cpp/**
+  - node_modules/@node-llama-cpp/**
+  # @journeyapps/sqlcipher ships a native .node binary that must be loadable from disk.
+  - node_modules/@journeyapps/sqlcipher/**
+  # smart-whisper (optional) ships whisper.cpp native bindings — must live outside the asar.
+  # Inert when not installed; powers on-device voice in Home when present.
+  - node_modules/smart-whisper/**
+win:
+  executableName: SetRecord
+nsis:
+  artifactName: ${name}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+mac:
+  # DMG only. We deliberately do NOT build the `zip` target: zip exists purely to
+  # feed electron-updater's self-replacing flow, which we don't use — the ~1.9 GB
+  # model is bundled by design (offline from first launch), so a self-replacing
+  # update would be a ~2 GB download per release. Updates are manual-download; the
+  # app just notifies (see `publish` below and README "Auto-update").
+  target:
+    - dmg
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  extendInfo:
+    - NSCameraUsageDescription: Application requests access to the device's camera.
+    - NSMicrophoneUsageDescription: SetRecord uses the microphone for voice input — your speech is transcribed on-device and never leaves your Mac.
+    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
+    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+    # License activation deep-links: setrecord://activate?key=… After checkout the
+    # backend redirects here so the app self-activates. Rename note: the scheme
+    # also lives in electron/services/licensing/signingKey.ts (ACTIVATION_SCHEME).
+    - CFBundleURLTypes:
+        - CFBundleURLName: com.setrecord.app.activation
+          CFBundleURLSchemes:
+            - setrecord
+  # Notarization runs via Apple's notarytool. Credentials are read from the
+  # environment at build time — never hardcode them here. Required env vars:
+  #   APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID
+  # Code signing uses a "Developer ID Application" cert (keychain, or
+  # CSC_LINK + CSC_KEY_PASSWORD). See README "Building & releasing".
+  notarize: true
+dmg:
+  artifactName: ${name}-${version}.${ext}
+linux:
+  target:
+    - AppImage
+    - snap
+    - deb
+  maintainer: electronjs.org
+  category: Utility
+appImage:
+  artifactName: ${name}-${version}.${ext}
+# Electron fuses — compile-time security flags flipped into the packaged binary
+# (electron-builder applies these before code-signing and embeds the asar
+# integrity hash automatically). Anti-tamper hardening for the offline licence
+# model: the whole Pro decision is local JS in app.asar, so without integrity
+# validation an installed copy could be unpacked, `isProEntitled()` patched to
+# `return true`, and repacked. With these on, Electron refuses to load a tampered
+# asar and the binary can no longer be coerced into a generic Node runtime.
+#
+# NOTE: requires a packaged-build smoke test before release (the app must launch
+# and the bundled llama.cpp model must still load) — these flags only take effect
+# in a real `electron-builder --mac` artifact, never in `electron-vite build`/CI.
+# grantFileProtocolExtraPrivileges is left at its default (true): the renderer is
+# loaded from file:// in production, so disabling it could break startup.
+electronFuses:
+  runAsNode: false # no ELECTRON_RUN_AS_NODE → can't turn the signed app into a Node shell
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false # no --inspect attach to the packaged app
+  enableEmbeddedAsarIntegrityValidation: true # refuse a modified app.asar
+  onlyLoadAppFromAsar: true # only run code from the (integrity-checked) asar
+npmRebuild: false
+# Update feed (NFR-1001). This defines WHERE releases live; it does NOT turn on
+# auto-install. electron-builder only publishes when invoked with `--publish`
+# (CI runs `electron-vite build`, never `electron-builder`, so it never auto-
+# publishes). It's where you upload the signed DMG that the in-app update notice
+# links to — see electron/services/updateChecker.ts and README "Auto-update".
+#
+# DECISION (NFR-901): the model is bundled 100%. We are NOT pursuing
+# electron-updater auto-download — with the ~1.9 GB model inside every artifact
+# a self-replacing update is a ~2 GB download per release. Manual-download +
+# in-app "you're behind" notice is the intended, permanent delivery mechanism.
+publish:
+  provider: github
+  owner: carterpink
+  repo: setrecord
+  releaseType: release

@@ -1,0 +1,86 @@
+{
+  "dnd": {
+    "pickedUpLibrary": "Picked up {{title}} by {{artist}}. Drop it on the timeline to add it to the set.",
+    "pickedUpTimeline": "Picked up {{title}} from position {{position}}.",
+    "pickedUpGeneric": "Picked up a track.",
+    "overEmpty": "Track is over an empty area.",
+    "overDropZone": "Hovering the timeline drop zone.",
+    "overPosition": "Hovering position {{position}}.",
+    "cancelledNoTarget": "Drag cancelled — no drop target.",
+    "added": "Added {{title}} to the set.",
+    "moved": "Moved {{title}} to position {{position}}.",
+    "complete": "Drag complete.",
+    "cancelled": "Drag cancelled."
+  },
+  "dock": {
+    "setArchitect": "Set Architect",
+    "setArchitectPro": "Set Architect — Pro",
+    "smartFilter": "Smart filter",
+    "smartFilterPro": "Smart filter — Pro",
+    "cueEditor": "Cue editor",
+    "cueEditorPro": "Cue editor — Pro",
+    "cueEditorSelectFirst": "Select a timeline track first",
+    "cueEditorTitle": "Select a track in your timeline to edit its cue points",
+    "validateSet": "Validate set",
+    "validateSetPro": "Validate set — Pro",
+    "export": "Export",
+    "exportPro": "Export — Pro"
+  },
+  "volume": {
+    "triggerAria": "Volume {{pct}}%",
+    "triggerTitle": "Preview volume — {{pct}}%",
+    "panelAria": "Volume",
+    "mute": "Mute",
+    "unmute": "Unmute"
+  },
+  "setTools": {
+    "newSet": "New set",
+    "newSetTitle": "Start a new set (⌘N)"
+  },
+  "boothCheck": {
+    "label": "Booth check",
+    "value": "{{score}}%",
+    "valueReady": "{{score}}% · {{hw}} ready",
+    "checkSet": "Check set",
+    "titleValidated": "Booth check: {{score}}% — click to re-validate for export",
+    "titlePending": "Click to check this set works on your CDJ before you export",
+    "titleEmpty": "Add tracks, then run a CDJ compatibility check before you export",
+    "titleProGate": "CDJ compatibility check is a Pro feature — click to upgrade"
+  },
+  "live": {
+    "live": "Live",
+    "goLive": "Go Live",
+    "endTitle": "End Live — close the floating overlay",
+    "goLiveTitle": "Go Live — a transparent glass overlay that floats over Rekordbox, reads what’s playing, and surfaces the best next moves",
+    "screenPermissionError": "SetRecord Live needs Screen Recording permission (System Settings → Privacy).",
+    "setSaved": "Set saved to your history"
+  },
+  "energy": {
+    "pill": "Analysing energy <0>{{processed}} / {{total}}</0>…",
+    "pillTitle": "Analysing each track's spectral energy — RMS, brightness, and loudness — to compute DJ energy scores. Runs once per track, then cached."
+  },
+  "menu": {
+    "more": "More",
+    "moreAria": "More options",
+    "importLibrary": "Import library",
+    "sendFeedback": "Send feedback",
+    "settings": "Settings"
+  },
+  "trial": {
+    "titleLastDay": "Last day of your Pro trial — when it ends you’ll lose Set Architect, AI library search and export. Click to keep Pro.",
+    "title": "Your Pro trial ends in {{days}} days — you’ll lose Set Architect, AI library search and export. Click to keep Pro.",
+    "labelLastDay": "Last day of Pro",
+    "labelTwoDays": "2 days of Pro left",
+    "label": "Trial · {{days}} days"
+  },
+  "renewal": {
+    "title_one": "Your Pro subscription ends in {{count}} day — renew to keep Set Architect, AI library search and export.",
+    "title_other": "Your Pro subscription ends in {{count}} days — renew to keep Set Architect, AI library search and export.",
+    "labelTomorrow": "Pro ends tomorrow — renew",
+    "label": "Pro ends in {{days}} days — renew"
+  },
+  "actions": {
+    "export": "Export",
+    "goPro": "Go Pro"
+  }
+}

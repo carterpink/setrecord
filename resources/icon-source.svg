@@ -1,0 +1,43 @@
+<!--
+  SetRecord brand mark — Direction "The Cut".
+
+  A solid, custom "S" monogram: bold geometric bowls, terminals sliced on a
+  shared diagonal (the cut / the crossfade — where one track meets the next),
+  and a slight forward lean for momentum (a set in motion). Solid mass, not a
+  line-and-dot, so it never reads as anything but a confident letterform — and
+  it survives monochrome, favicon, and embroidery.
+
+  Canonical source for both the Electron app icon (rasterized to .icns + .png
+  via scripts/generate-icons.mjs) and the in-app TopBar mark (imported via
+  Vite ?raw and rendered inline). Edit once, regenerate icons after every
+  meaningful change. See icon-glyph.svg for the 1-colour cut.
+
+  Palette (locked):
+    ground  #0C0B12  deep ink (subtle radial depth, NOT glossy)
+    mark    #CDFF4A  electric lime
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <clipPath id="squircle">
+      <path d="M 0 230.4 C 0 126.72, 126.72 0, 230.4 0 L 793.6 0 C 897.28 0, 1024 126.72, 1024 230.4 L 1024 793.6 C 1024 897.28, 897.28 1024, 793.6 1024 L 230.4 1024 C 126.72 1024, 0 897.28, 0 793.6 Z" />
+    </clipPath>
+    <radialGradient id="bg" cx="0.42" cy="0.30" r="1.1">
+      <stop offset="0%" stop-color="#16131F" />
+      <stop offset="55%" stop-color="#0C0B12" />
+      <stop offset="100%" stop-color="#070608" />
+    </radialGradient>
+  </defs>
+
+  <g clip-path="url(#squircle)">
+    <rect width="1024" height="1024" fill="url(#bg)" />
+    <!-- Solid S: two geometric bowls, diagonal cut terminals, sheared for momentum -->
+    <g transform="translate(512 512) skewX(-9) translate(-512 -512)">
+      <path d="M 635 276 A 150 150 0 1 0 512 512 A 150 150 0 1 1 389 748"
+            fill="none" stroke="#CDFF4A" stroke-width="124" stroke-linecap="butt" />
+    </g>
+  </g>
+
+  <!-- Hairline rim: seats the tile on dark UI surfaces -->
+  <path d="M 0 230.4 C 0 126.72, 126.72 0, 230.4 0 L 793.6 0 C 897.28 0, 1024 126.72, 1024 230.4 L 1024 793.6 C 1024 897.28, 897.28 1024, 793.6 1024 L 230.4 1024 C 126.72 1024, 0 897.28, 0 793.6 Z"
+        fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="2" />
+</svg>

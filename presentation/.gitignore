@@ -1,0 +1,5 @@
+# Regenerable build outputs of build.js / gen-assets.js — kept out of git to
+# avoid bloating the repo with large binaries. Rebuild with `node build.js`.
+node_modules/
+SetRecord_DigitalSolutions.pptx
+preview-check.png

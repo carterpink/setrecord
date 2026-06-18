@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <!-- allow-jit + allow-unsigned-executable-memory are required by the V8 JIT
+         and the bundled llama.cpp runtime (node-llama-cpp). We deliberately do
+         NOT grant allow-dyld-environment-variables: under hardened runtime that
+         re-opens DYLD_INSERT_LIBRARIES / DYLD_* injection into the signed,
+         mic-and-files-entitled app, and nothing we bundle loads native code via
+         DYLD env vars (they link normally via rpath). Library validation stays
+         on (disable-library-validation is intentionally absent). -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <!-- Microphone capture for Black Box crowd-reaction recording + voice input.
+         Required under hardened runtime or macOS denies mic access. Camera is
+         intentionally NOT granted: the app's permission handler refuses camera. -->
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
+  </dict>
+</plist>

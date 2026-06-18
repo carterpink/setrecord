@@ -1,0 +1,542 @@
+/* Constellation graph view — full-bleed canvas with floating glass HUD. */
+
+.graph-section {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 0%, #0c1018 0%, #06070a 60%, #050608 100%);
+
+  /* Thread colours — kept in sync with ForceGraphCanvas + GraphLegend. */
+  --graph-mixed: #cfff04; /* Past — transitions you've mixed */
+  --graph-gig: rgba(255, 255, 255, 0.82); /* gig hubs */
+  --graph-present: #ffd166; /* Present — the live path */
+  --graph-compatible: #5eead4; /* Future — feasible mixes */
+  --graph-novel: #5eead4; /* Diff — never tried */
+}
+
+/* Floating key (bottom-right) describing the threads in the active lens. */
+.graph-legend {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: var(--glass-1-bg);
+  backdrop-filter: var(--glass-1-blur);
+  border: var(--glass-1-border);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.graph-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.graph-legend-swatch {
+  width: 14px;
+  height: 3px;
+  border-radius: var(--radius-full);
+  flex: none;
+}
+
+.graph-canvas-wrap {
+  position: absolute;
+  inset: 0;
+}
+
+.graph-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-repeat: repeat;
+  z-index: 2;
+}
+
+/* Floating top HUD: title + mode lens toggle. */
+.graph-hud {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  z-index: 3;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.graph-hud > * {
+  pointer-events: auto;
+}
+
+.graph-hud-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.graph-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--glass-1-bg);
+  backdrop-filter: var(--glass-1-blur);
+  border: var(--glass-1-border);
+}
+
+/* In-graph track search. */
+.graph-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  width: 240px;
+  border-radius: var(--radius-md);
+  background: var(--glass-2-bg);
+  backdrop-filter: var(--glass-2-blur);
+  border: var(--glass-2-border);
+  color: var(--text-tertiary);
+}
+
+.graph-search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.graph-search input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.graph-search-results {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 5;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  max-height: 280px;
+  overflow-y: auto;
+  border-radius: var(--radius-md);
+  background: var(--glass-3-bg);
+  backdrop-filter: var(--glass-3-blur);
+  border: var(--glass-3-border);
+  box-shadow: var(--glass-3-shadow);
+}
+
+.graph-search-results li button {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  transition: background var(--dur-hover);
+}
+
+.graph-search-results li button:hover {
+  background: var(--accent-dim-12);
+}
+
+.graph-search-results .gs-title {
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.graph-search-results .gs-artist {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.graph-title h3 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.graph-title span {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* Right-side control stack: lens toggle over scope switcher. */
+.graph-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* Scope switcher — neighborhood / library / context. */
+.graph-scopes {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-full);
+  background: var(--glass-1-bg);
+  backdrop-filter: var(--glass-1-blur);
+  border: var(--glass-1-border);
+}
+
+.graph-scope-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  transition:
+    background var(--dur-hover) var(--ease-snappy),
+    color var(--dur-hover);
+}
+
+.graph-scope-btn:hover {
+  color: var(--text-primary);
+}
+
+.graph-scope-btn.active {
+  background: var(--surface-2, rgba(255, 255, 255, 0.1));
+  color: var(--text-primary);
+}
+
+/* Mode lens toggle — Past / Present / Future / Diff. */
+.graph-modes {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--radius-full);
+  background: var(--glass-2-bg);
+  backdrop-filter: var(--glass-2-blur);
+  border: var(--glass-2-border);
+}
+
+.graph-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition:
+    background var(--dur-hover) var(--ease-snappy),
+    color var(--dur-hover);
+}
+
+.graph-mode-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+
+.graph-mode-btn.active {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-weight: 600;
+}
+
+.graph-mode-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.graph-mode-soon {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-disabled);
+}
+
+/* Bottom focus chip — what's centred + how big the neighborhood is. */
+.graph-footer {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 28px);
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  background: var(--glass-2-bg);
+  backdrop-filter: var(--glass-2-blur);
+  border: var(--glass-2-border);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.graph-footer strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.graph-footer .graph-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+  box-shadow: 0 0 8px var(--accent);
+}
+
+/* Pro-gate overlay for the forward-looking lenses (Future / Diff). */
+.graph-lock {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* Path-mode toggle (sits under the scope switcher). */
+.graph-path-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  background: var(--glass-1-bg);
+  backdrop-filter: var(--glass-1-blur);
+  border: var(--glass-1-border);
+  transition: color var(--dur-hover);
+}
+
+.graph-path-toggle:hover {
+  color: var(--text-primary);
+}
+
+.graph-path-toggle.active {
+  background: rgba(255, 209, 102, 0.16);
+  color: #ffd166;
+  border-color: rgba(255, 209, 102, 0.4);
+}
+
+/* Path builder — bottom centre, replaces the scrubber while active. */
+.graph-path {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  width: min(680px, calc(100% - 28px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--glass-3-bg);
+  backdrop-filter: var(--glass-3-blur);
+  border: var(--glass-3-border);
+  box-shadow: var(--glass-3-shadow);
+}
+
+.graph-path-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #ffd166;
+}
+
+.graph-path-head strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.graph-path-count {
+  font-size: 11px;
+  color: var(--text-on-accent);
+  background: #ffd166;
+  border-radius: var(--radius-full);
+  padding: 0 7px;
+  font-variant-numeric: tabular-nums;
+}
+
+.graph-path-close {
+  margin-left: auto;
+  color: var(--text-tertiary);
+}
+
+.graph-path-close:hover {
+  color: var(--text-primary);
+}
+
+.graph-path-hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+.graph-path-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 96px;
+  overflow-y: auto;
+}
+
+.graph-path-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 4px;
+  border-radius: var(--radius-full);
+  background: var(--surface-2, rgba(255, 255, 255, 0.08));
+  color: var(--text-primary);
+  font-size: 12px;
+  max-width: 220px;
+}
+
+.graph-path-chip:hover {
+  background: rgba(255, 209, 102, 0.15);
+}
+
+.graph-path-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffd166;
+  color: var(--text-on-accent);
+  font-size: 10px;
+  font-weight: 700;
+  flex: none;
+}
+
+.graph-path-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.graph-path-actions button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--surface-2, rgba(255, 255, 255, 0.06));
+  transition: color var(--dur-hover), background var(--dur-hover);
+}
+
+.graph-path-actions button:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+
+.graph-path-actions button.primary {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.graph-path-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Past time-scrubber — bottom centre. */
+.graph-scrubber {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  background: var(--glass-2-bg);
+  backdrop-filter: var(--glass-2-blur);
+  border: var(--glass-2-border);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.graph-scrubber-title {
+  white-space: nowrap;
+}
+
+.graph-scrubber input[type='range'] {
+  width: 160px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.graph-scrubber-value {
+  min-width: 34px;
+  text-align: right;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Centered overlay states (loading / empty / error). */
+.graph-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 24px;
+  pointer-events: none;
+}
+
+.graph-overlay h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.graph-overlay p {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  max-width: 360px;
+  margin: 0;
+  line-height: 1.5;
+}

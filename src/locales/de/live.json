@@ -1,0 +1,31 @@
+{
+  "device": {
+    "title": "Audioeingang für SetRecord Live – wähle dein Master-/Loopback-Gerät",
+    "ariaLabel": "SetRecord Live Audioeingang",
+    "default": "Standardeingang"
+  },
+  "strip": {
+    "live": "LIVE",
+    "preparing": "Wird vorbereitet… {{percent}} %",
+    "listening": "Höre zu…",
+    "setHealth": "Set-Gesundheit",
+    "health": "Gesundheit",
+    "show": "Einblenden",
+    "hide": "Ausblenden",
+    "collapseAria": "Panels einklappen",
+    "expandAria": "Panels ausklappen",
+    "endAria": "Live beenden"
+  },
+  "nowPlaying": {
+    "title": "Aktueller Titel",
+    "bpm": "BPM",
+    "energy": "Energie {{energy}}",
+    "preparingLibrary": "Deine Bibliothek wird vorbereitet… {{done}}/{{total}}",
+    "listeningForTrack": "Höre auf den Track…"
+  },
+  "bestNext": {
+    "title": "Beste Wahl als Nächstes",
+    "options": "{{n}} Optionen",
+    "empty": "Optionen erscheinen, sobald ein Track erkannt wurde."
+  }
+}

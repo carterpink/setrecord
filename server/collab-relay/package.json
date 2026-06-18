@@ -1,0 +1,17 @@
+{
+  "name": "setrecord-collab-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloud WebSocket relay for SetRecord live Back-to-Back collaboration (rooms + broadcast).",
+  "type": "module",
+  "main": "server.mjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

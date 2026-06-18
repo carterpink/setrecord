@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SetRecord</title>
+    <!--
+      Content Security Policy. Notes:
+      - 'unsafe-inline' + 'unsafe-eval' on script-src are required by Vite's dev
+        HMR runtime and framer-motion's style injection; tightening them needs a
+        nonce pipeline that does not exist yet (audit item, see roadmap).
+      - frame-src allows the YouTube no-cookie embed used by SetDetailsModal.
+      - img-src includes i.ytimg.com for Discover set thumbnails.
+      - media-src has to stay permissive because <audio> reads files via the
+        custom media:// scheme (registered in electron/main.ts with bypassCSP).
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; media-src media: blob:; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://i.ytimg.com; frame-src https://www.youtube-nocookie.com; connect-src 'self' ws: https://cdn.jsdelivr.net https://tessdata.projectnaptha.com blob: data:"
+    />
+    <!-- Fonts are self-hosted via @fontsource (imported in src/main.tsx) — no network fetch. -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,31 @@
+{
+  "device": {
+    "title": "Entrée audio pour SetRecord Live — choisissez votre périphérique master/loopback",
+    "ariaLabel": "Entrée audio SetRecord Live",
+    "default": "Entrée par défaut"
+  },
+  "strip": {
+    "live": "EN DIRECT",
+    "preparing": "Préparation… {{percent}} %",
+    "listening": "Écoute…",
+    "setHealth": "Santé du set",
+    "health": "santé",
+    "show": "Afficher",
+    "hide": "Masquer",
+    "collapseAria": "Réduire les panneaux",
+    "expandAria": "Développer les panneaux",
+    "endAria": "Terminer Live"
+  },
+  "nowPlaying": {
+    "title": "En lecture",
+    "bpm": "BPM",
+    "energy": "Énergie {{energy}}",
+    "preparingLibrary": "Préparation de votre bibliothèque… {{done}}/{{total}}",
+    "listeningForTrack": "Écoute du morceau…"
+  },
+  "bestNext": {
+    "title": "Meilleur suivant",
+    "options": "{{n}} options",
+    "empty": "Les options apparaissent une fois qu’un morceau est identifié."
+  }
+}

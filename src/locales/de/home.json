@@ -1,0 +1,181 @@
+{
+  "placeholders": {
+    "talk": "Frag alles über deine Bibliothek — oder rede einfach drauflos",
+    "build": "Finde etwas, baue etwas oder frag, was als Nächstes kommt",
+    "tonight": "Was bauen wir heute Abend?"
+  },
+  "greeting": {
+    "lateOne": "Spät dran.",
+    "morning": "Guten Morgen.",
+    "afternoon": "Guten Tag.",
+    "evening": "Guten Abend.",
+    "sub": "Was möchtest du mit deiner Bibliothek machen?"
+  },
+  "examples": {
+    "forgotten": "Finde mir 10 Songs, die ich ewig nicht gespielt habe",
+    "warmup": "Bau mir ein 90-minütiges Warm-up um 124 bpm",
+    "after": "Was spiele ich nach {{title}}",
+    "duplicates": "Räum meine Duplikate auf"
+  },
+  "topBar": {
+    "history": "Verlauf"
+  },
+  "history": {
+    "title": "Verlauf",
+    "closeAria": "Verlauf schließen",
+    "newConversation": "Neue Unterhaltung",
+    "upsell": "Kostenlose Chats werden beim Schließen von SetRecord gelöscht. <0>Behalte deinen Verlauf mit Pro.</0>",
+    "empty": "Noch keine Unterhaltungen.",
+    "deleteAria": "Unterhaltung löschen"
+  },
+  "edgeBar": {
+    "proPitch": "Hol dir Pro, um <0>diese Unterhaltung zu speichern</0>, aus diesen Ergebnissen Sets zu bauen und sie auf deine CDJs zu exportieren."
+  },
+  "voice": {
+    "settingUp": "Sprache wird eingerichtet · einmalig · {{pct}}%",
+    "starting": "Sprache wird gestartet…",
+    "unavailable": "Spracheingabe ist auf diesem Gerät noch nicht verfügbar."
+  },
+  "composer": {
+    "askAria": "Frag deine Bibliothek",
+    "stop": "Stopp",
+    "speak": "Sprechen",
+    "stopAria": "Zuhören beenden",
+    "send": "Senden",
+    "listening": "Hört zu — sprich weiter",
+    "tapToStop": "tippen zum Stoppen",
+    "privacyHint": "Nichts verlässt deinen Mac",
+    "sendHint": "<0>↵</0>zum Senden · <1>⇧↵</1>neue Zeile"
+  },
+  "turn": {
+    "warming": "Wird vorbereitet — das passiert einmal, danach geht es sofort.",
+    "reading": "Deine Bibliothek wird gelesen…",
+    "answerAria": "Antwort",
+    "resultsReady": "Ergebnisse bereit: {{summary}}",
+    "resultsReadyBare": "Ergebnisse bereit"
+  },
+  "interpret": {
+    "lead": "So habe ich das verstanden",
+    "refine": "anpassen",
+    "modelNote": "Hierfür habe ich mein volles Verständnis genutzt. Formuliere es um, falls es nicht ganz passt.",
+    "footNote": "Ändere alles, was nicht stimmt — die Ergebnisse aktualisieren sich sofort.",
+    "update": "Aktualisieren",
+    "fields": {
+      "notPlayedIn": "Nicht gespielt seit",
+      "neverPlayedLive": "Nie live gespielt",
+      "howMany": "Wie viele",
+      "buildsToward": "Steigert sich auf",
+      "length": "Länge",
+      "shape": "Verlauf",
+      "mixingOutOf": "Übergang aus",
+      "keepInKey": "In Tonart bleiben",
+      "energy": "Energie",
+      "matchOn": "Abgleich über",
+      "keep": "Behalten",
+      "orderBy": "Sortieren nach"
+    },
+    "window": {
+      "3 months": "3 Monate",
+      "6 months": "6 Monate",
+      "12 months": "12 Monate"
+    },
+    "toggle": {
+      "on": "an",
+      "off": "aus"
+    },
+    "lengthValue": "{{count}} Min.",
+    "harmonicOnly": "nur harmonisch",
+    "shape": {
+      "slowBurn": "Langsamer Aufbau",
+      "steady": "Gleichmäßig"
+    },
+    "energyPreset": {
+      "hold": "Halten",
+      "lift": "Anheben"
+    },
+    "match": {
+      "audio": "Audio",
+      "tags": "Tags"
+    },
+    "keepOption": {
+      "highestQuality": "Höchste Qualität",
+      "newest": "Neueste"
+    },
+    "energyLevel": {
+      "any": "Beliebig",
+      "chill": "Entspannt",
+      "groovy": "Groovig",
+      "peak": "Peak"
+    },
+    "sort": {
+      "mostPlayed": "Meistgespielt",
+      "newest": "Neueste",
+      "topRated": "Bestbewertet",
+      "surprise": "Überrasch mich"
+    }
+  },
+  "stepper": {
+    "fewerAria": "Weniger",
+    "moreAria": "Mehr"
+  },
+  "shared": {
+    "addToCurrentSet": "Zum aktuellen Set hinzufügen"
+  },
+  "after": {
+    "notFound": "Diesen Track konnte ich in deiner Bibliothek nicht finden.",
+    "titleOne": "Ein Weg aus {{title}}",
+    "titleOther": "{{count}} Wege aus {{title}}",
+    "harmonicFrom": "harmonisch aus ",
+    "fromSets": "aus deinen Sets · ",
+    "bestMatch": "Beste Übereinstimmung",
+    "chips": {
+      "sameKey": "Gleiche Tonart",
+      "bpmDelta": "{{delta}} bpm",
+      "lifts": "Hebt die Energie",
+      "eases": "Nimmt zurück",
+      "holds": "Energie bleibt",
+      "doneThis": "Schon {{count}}× gemacht"
+    }
+  },
+  "duplicates": {
+    "allClear": "Alles sauber — diese Duplikate sind weg.",
+    "title": "{{count}} Duplikate zum Aufräumen",
+    "meta": "die jeweils beste Kopie bleibt erhalten",
+    "keep": "behalten",
+    "drop": "verwerfen",
+    "kbps": "{{count}} kbps",
+    "removeLower": "Die schlechteren Kopien entfernen",
+    "moreGrouped": "{{count}} weitere genauso gruppiert.",
+    "thatsAll": "Das sind alle.",
+    "clearAll": "Alle {{count}} aufräumen",
+    "clearGroupError": "Diese Gruppe konnte nicht aufgeräumt werden.",
+    "clearAllError": "Es konnten nicht alle Duplikate aufgeräumt werden.",
+    "clearedToast": "{{count}} Duplikatgruppen aufgeräumt"
+  },
+  "forgotten": {
+    "title": "{{count}} Tracks, die du ruhen lässt",
+    "meta": "älteste zuerst",
+    "moreInList": "+ {{count}} weitere in der vollständigen Liste"
+  },
+  "generic": {
+    "libraryPicks": "Auswahl aus der Bibliothek",
+    "tracksTitle": "{{count}} Tracks",
+    "saveAsSet": "Als Set speichern",
+    "addToCurrentSet": "Zum aktuellen Set hinzufügen",
+    "countTitle_one": "{{count}} Track",
+    "countTitle_other": "{{count}} Tracks"
+  },
+  "warmup": {
+    "title": "Ein {{minutes}}-minütiges Warm-up, als Entwurf",
+    "slowBurn": "langsamer Aufbau",
+    "steady": "gleichmäßig",
+    "tracks": "Tracks",
+    "pulledFrom": "aus deiner Bibliothek gezogen",
+    "min": "Min.",
+    "runtime": "Laufzeit",
+    "bpmRamp": "bpm-Rampe",
+    "moreShaped": "…{{count}} weitere, an die Kurve angepasst",
+    "notCommitted": "Noch nichts ist festgelegt — öffne es zum Mischen und Umsortieren.",
+    "openInBuild": "In Build öffnen"
+  }
+}

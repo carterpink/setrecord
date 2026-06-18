@@ -1,0 +1,469 @@
+{
+  "nav": {
+    "crates": "Cajones",
+    "tags": "Etiquetas",
+    "uncover": "Descubrir",
+    "rediscover": "Redescubrir",
+    "combos": "Combos",
+    "gigs": "Bolos",
+    "venues": "Salas",
+    "identity": "Identidad",
+    "health": "Salud",
+    "fallback": "Recall",
+    "graph": "Constelación"
+  },
+  "panel": {
+    "noLibrary": "Recall lee toda tu colección — redescubriendo joyas olvidadas, mapeando tu sonido y trazando las transiciones que más usas. Importa tu biblioteca para darle vida."
+  },
+  "ask": {
+    "inputAria": "Pregunta a tu biblioteca",
+    "ghost": "pregunta a tu biblioteca… <0>{{example}}</0>",
+    "searching": "Buscando en tu biblioteca…",
+    "ready": "Pregunta a tu biblioteca en lenguaje natural y sigue afinando",
+    "importCta": "Importa tu biblioteca",
+    "importSuffix": " para empezar a preguntar — nada sale nunca de tu Mac.",
+    "privacyTitle": "Toda la búsqueda de Recall corre en local — sin llamadas a API.",
+    "searchingCount": "Buscando en tu biblioteca de {{count}} pistas — nada sale de tu Mac.",
+    "examples": {
+      "0": "las 15 pistas de UK garage que más pincho",
+      "1": "10 temazos de tech house de hora punta",
+      "2": "deep house en torno a 122 bpm",
+      "3": "melodic techno 124–128 bpm",
+      "4": "mis joyas olvidadas",
+      "5": "pistas que nunca he probado en directo",
+      "6": "drum & bass mejor valorado",
+      "7": "pistas tranquilas para calentar",
+      "8": "hard techno por encima de 135 bpm",
+      "9": "mis transiciones más habituales",
+      "10": "house con groove a 123 bpm, sin pinchar",
+      "11": "mis mejores cierres",
+      "12": "afro house 120–124 bpm",
+      "13": "sorpréndeme con 8 temazos",
+      "14": "amapiano en torno a 112 bpm",
+      "15": "mis aperturas de referencia",
+      "16": "pistas demasiado pinchadas para jubilar",
+      "17": "el deep house más nuevo que añadí",
+      "18": "uk garage 130 bpm",
+      "19": "con qué abro mis sets",
+      "20": "canciones que pinché en Hi Ibiza",
+      "21": "todos los sets de julio de 2025",
+      "22": "tech house que pinché en 2025",
+      "23": "mis sets de festival"
+    }
+  },
+  "trackLine": {
+    "fileNotFound": "Archivo no encontrado: {{path}}",
+    "trackArtist": "{{title}} — {{artist}}",
+    "addToCurrentSet": "Añadir al set actual"
+  },
+  "combos": {
+    "title": "Combos",
+    "subtitle": "Las transiciones que de verdad usas — sacadas de tus sets y tu historial de reproducción.",
+    "emptyBody": "Tus transiciones de referencia y tus callejones sin salida aparecen aquí en cuanto importes una biblioteca y crees o pinches unos cuantos sets.",
+    "searchPlaceholder": "Elige una pista para ver qué pinchas después de ella…",
+    "after": "Después de <0>{{title}}</0> has pinchado:",
+    "tracing": "Trazando tus transiciones…",
+    "noTransitions": "Aún no hay transiciones registradas a partir de esta pista.",
+    "count": "{{count}}×",
+    "sequencesTitle": "Tus transiciones más habituales",
+    "sequencesSubtitle": "Cada par pista→pista en tus sets guardados y tus sesiones pinchadas, ordenado por la frecuencia con que lo usas.",
+    "sequencesEmpty": "Crea un par de sets (o registra una sesión pinchada) y tus transiciones de referencia aparecerán aquí.",
+    "deadEndsTitle": "Callejones sin salida — pistas de las que rara vez transicionas",
+    "deadEndsSubtitle": "Donde aterrizan tus sets pero rara vez salen. Cada una es un lugar para encontrar un nuevo enlace.",
+    "deadEndsEmpty": "Una vez que hayas registrado varios sets pinchados, tus pistas terminales aparecerán aquí.",
+    "ended": "terminó {{count}}×"
+  },
+  "conversations": {
+    "trackCount": "{{count}} pistas",
+    "saveAsSet": "Guardar como set",
+    "addToCurrentSet": "Añadir al set actual",
+    "defaultSetName": "Selección de la biblioteca",
+    "newConversation": "Nueva conversación",
+    "empty": "Aún no hay conversaciones.",
+    "deleteAria": "Eliminar conversación",
+    "welcomeTitle": "Pide pistas, afina, repite",
+    "thinking": "Buscando en tu biblioteca…",
+    "count": "{{count}}×",
+    "starters": {
+      "0": "las 15 pistas de UK garage que más pincho",
+      "1": "10 temazos de tech house de hora punta",
+      "2": "deep house en torno a 122 bpm",
+      "3": "melodic techno 124–128 bpm, nunca pinchado en directo",
+      "4": "mis joyas olvidadas",
+      "5": "drum & bass mejor valorado"
+    }
+  },
+  "crates": {
+    "title": "Cajones",
+    "subtitle": "Cajones vivos que se rellenan solos a partir de reglas. Crea uno y no vuelvas a ordenarlo nunca.",
+    "flaggedBanner": "<0>{{count}}</0> pistas marcadas para tu próximo bolo",
+    "loading": "Cargando cajones…",
+    "trackCount": "{{count}} pistas",
+    "deleteTitle": "Eliminar cajón",
+    "deleteAria": "Eliminar {{name}}",
+    "newCrate": "Nuevo cajón",
+    "evaluating": "Evaluando cajón…",
+    "rules": "Reglas",
+    "matchMode": "Coincidir con {{match}} de:",
+    "flagBarSelected": "{{count}} seleccionadas",
+    "flagForNextGig": "Marcar para el próximo bolo",
+    "clear": "Limpiar",
+    "selectTrackAria": "Seleccionar {{title}}",
+    "flaggedPillTitle": "Marcada para el próximo bolo",
+    "testing": "probando",
+    "showingFirst": "Mostrando las primeras {{max}} de {{total}} — afina las reglas para acotarlo.",
+    "builder": {
+      "namePlaceholder": "Nombre del cajón",
+      "untitledName": "Cajón sin título",
+      "matchLabel": "Coincidir con",
+      "matchAll": "todas",
+      "matchAny": "cualquiera",
+      "matchSuffix": "de estas reglas:",
+      "pickPlaceholder": "— elegir —",
+      "removeRule": "Quitar regla",
+      "addRule": "Añadir regla",
+      "cancel": "Cancelar",
+      "save": "Guardar cajón",
+      "placeholders": {
+        "min": "mín",
+        "max": "máx",
+        "genre": "p. ej. techno",
+        "stars": "estrellas",
+        "months": "meses",
+        "count": "número"
+      }
+    },
+    "ruleLabels": {
+      "bpm": "BPM entre",
+      "energy": "Energía entre",
+      "genre": "El género incluye",
+      "neverPlayed": "Nunca pinchada en directo",
+      "rating": "Valoración de al menos",
+      "dormant": "Sin pinchar desde hace (meses)",
+      "key": "La clave es exactamente",
+      "keyCompat": "Clave compatible con",
+      "format": "El formato de archivo es",
+      "missingMeta": "Sin clave ni BPM",
+      "duration": "Duración entre (min)",
+      "playCount": "Número de reproducciones"
+    }
+  },
+  "gigs": {
+    "title": "Bolos",
+    "subtitleEmpty": "Cada set que has pinchado — cuándo, dónde y qué.",
+    "subtitle": "Cada set que has pinchado. Los recintos se autocompletan a partir de los nombres de tus sesiones del historial — edítalos o rellénalos en lote, y luego pregunta cosas como «canciones que pinché en Hi Ibiza».",
+    "noLibraryBody": "Tus sesiones pinchadas aparecen aquí en cuanto importes una biblioteca con historial de Rekordbox (o marques un set como pinchado).",
+    "undated": "Sin fecha",
+    "showingFiltered": "Mostrando bolos {{filter}}",
+    "filtered": "filtrados",
+    "filterAt": "en {{venue}}",
+    "filterIn": "en {{city}}",
+    "filterRange": "{{after}} → {{before}}",
+    "filterSince": "desde {{after}}",
+    "clear": "Limpiar",
+    "loading": "Cargando tus bolos…",
+    "noMatch": "Ningún bolo coincide con este filtro.",
+    "noSessions": "Aún no hay sesiones pinchadas — importa el historial de Rekordbox o marca un set como pinchado.",
+    "viewTracklist": "Ver tracklist",
+    "copyTracklist": "Copiar tracklist",
+    "tracklistCopied": "Tracklist copiada",
+    "recordingLabel": "Grabación del set",
+    "jumpToTrack": "Saltar a esta pista en la grabación",
+    "editGig": "Editar bolo",
+    "addVenue": "Añadir recinto",
+    "autoBadge": "auto",
+    "autoBadgeTitle": "Detectado automáticamente del nombre de la sesión — pulsa editar para confirmar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "fields": {
+      "venue": "Recinto",
+      "city": "Ciudad",
+      "country": "País",
+      "event": "Evento",
+      "slot": "Franja",
+      "from": "Desde",
+      "to": "Hasta"
+    },
+    "placeholders": {
+      "venue": "p. ej. Hi Ibiza",
+      "city": "p. ej. Ibiza",
+      "country": "p. ej. España",
+      "bulkVenue": "Hi Ibiza",
+      "bulkCity": "Ibiza"
+    },
+    "noneOption": "—",
+    "bulk": {
+      "toggle": "Asignar en lote una residencia o una serie de fechas",
+      "needDateBound": "Elige al menos un límite de fecha.",
+      "needField": "Define al menos un campo para asignar.",
+      "updated_one": "{{count}} bolo actualizado.",
+      "updated_other": "{{count}} bolos actualizados.",
+      "apply": "Aplicar a los bolos coincidentes"
+    },
+    "methodRecorded": "grabado",
+    "methodRecordedTitle": "Capturado en vivo por el Flight Recorder — datos de reproducción verificados",
+    "methodImported": "importado",
+    "methodImportedTitle": "Importado de tu historial de Rekordbox — datos de reproducción verificados",
+    "methodMarked": "marcado",
+    "methodMarkedTitle": "Marcado como tocado manualmente — se guarda en tu diario, no cuenta en las estadísticas"
+  },
+  "health": {
+    "title": "Salud",
+    "subtitle": "Dónde está la podredumbre — pulsa un número para ver las pistas y arreglarlas al momento.",
+    "scanning": "Escaneando tu biblioteca…",
+    "scoreLabel": "/ 100 de salud de la biblioteca",
+    "scoreInfoAria": "¿Cómo se calcula esto?",
+    "proDescription": "Mira exactamente qué pistas no tienen archivo, clave o BPM, o están duplicadas — y arréglalas al momento.",
+    "cats": {
+      "missingFiles": "Archivos faltantes",
+      "missingKey": "Sin clave",
+      "missingBpm": "Sin BPM",
+      "unsupported": "Formato no compatible",
+      "notAnalysed": "Aún sin analizar",
+      "duplicateGroups": "Grupos duplicados"
+    },
+    "hints": {
+      "notAnalysed": "El analizador en segundo plano escribe la energía a partir del archivo de audio — sin necesidad de Rekordbox.",
+      "keyBpm": "La clave y el BPM vienen de Rekordbox. Defínelos aquí debajo o corrígelos en el origen.",
+      "unsupported": "Los CDJ rechazan estos formatos — conviértelos a AIFF/WAV/FLAC en Rekordbox."
+    },
+    "analysing": "Analizando",
+    "analysingProgress": " {{processed}}/{{total}}",
+    "analyseAll": "Analizar todo",
+    "rescanning": "Reescaneando",
+    "rescanAll": "Reescanear todo",
+    "dupesTitle": "Grupos duplicados — mismo artista + título",
+    "dupesHint": "Elige una para conservar — el resto pasa a tu estado de ciclo de vida Archivo.",
+    "analyseInProgress": "Análisis ya en curso o nada pendiente",
+    "analyseError": "No se pudo iniciar el analizador: {{error}}",
+    "rescanSuccess": "Rutas de archivo reescaneadas — Archivos faltantes actualizados",
+    "rescanError": "No se pudo reescanear: {{error}}",
+    "errorUnknown": "desconocido",
+    "row": {
+      "bpmPlaceholder": "BPM",
+      "keyPlaceholder": "Clave…",
+      "relink": "Revincular…",
+      "pendingTitle": "A la espera del analizador en segundo plano",
+      "pending": "pendiente"
+    },
+    "score": {
+      "head": "Cómo se calcula esta puntuación",
+      "intro": "Los archivos faltantes son lo que más penaliza, porque en el bolo un archivo que falta simplemente no suena.",
+      "missingFiles": "Archivos faltantes",
+      "missingKey": "Sin clave",
+      "missingBpm": "Sin BPM",
+      "unsupportedFormats": "Formatos no compatibles",
+      "duplicateGroups": "Grupos duplicados",
+      "rulePerFile": "−{{per}} por archivo, con tope en −{{cap}}",
+      "rulePerGroup": "−{{per}} por grupo, con tope en −{{cap}}"
+    },
+    "dupe": {
+      "keepArchive": "Conservar la seleccionada, archivar el resto",
+      "notDuplicate": "No es un duplicado"
+    },
+    "lifecycle": {
+      "title": "Ciclo de vida de la pista",
+      "subtitle": "Cómo se mueven las pistas por tu biblioteca. «Sin probar» significa nunca pinchada en directo — es distinto de «Aún sin analizar» de arriba.",
+      "new": "Nueva",
+      "newTip": "Añadida en los últimos 30 días, nunca pinchada en directo",
+      "untested": "Sin probar",
+      "untestedTip": "Nunca pinchada en directo — añadida hace más de 30 días",
+      "testing": "Probando",
+      "testingTip": "1–3 reproducciones",
+      "active": "Activa",
+      "activeTip": "4–9 reproducciones, pinchada recientemente",
+      "peak": "Rotación máxima",
+      "peakTip": "10+ reproducciones, pinchada en los últimos 90 días",
+      "occasional": "Ocasional",
+      "occasionalTip": "Pinchada hace 90–365 días",
+      "forgotten": "Olvidada",
+      "forgottenTip": "Pinchada por última vez hace 1–3 años",
+      "archive": "Archivo",
+      "archiveTip": "Pinchada por última vez hace más de 3 años, o la archivaste"
+    }
+  },
+  "identity": {
+    "reading": "Leyendo tu huella…",
+    "noLibraryTitle": "Tu huella como DJ se va formando a medida que pinchas",
+    "noLibraryBody": "Tus géneros, claves, rango de BPM y reparto de energía principales aparecen aquí en cuanto importes tu biblioteca.",
+    "title": "Identidad",
+    "subtitle": "Tu sonido, en conjunto — la forma de todo lo que coleccionas y pinchas.",
+    "hideShareCard": "Ocultar tarjeta para compartir",
+    "shareAsImage": "Compartir como imagen",
+    "fillsIn": "Se completa a medida que pinchas",
+    "noKeyBpm": "No hay suficientes pistas con BPM + clave para graficar esto.",
+    "bpmSpread": "Reparto de BPM",
+    "energyProfile": "Perfil de energía",
+    "libraryGrowth": "Crecimiento de la biblioteca",
+    "libraryGrowthSub": "pistas añadidas por trimestre (por fecha de adición del archivo) · reproducciones en cuanto registres el historial",
+    "keyPalette": "Paleta de claves por zona de BPM",
+    "keyPaletteSub": "Cómo cambian tus elecciones armónicas según el tempo — la clave dominante queda en lo alto de cada barra.",
+    "keyByBpmTooltip": "{{range}} BPM · {{key}}: {{count}} pistas",
+    "addedSeries": "añadidas",
+    "playedSeries": "pinchadas",
+    "topGenres": "Géneros principales",
+    "topArtists": "Artistas principales",
+    "topLabels": "Sellos principales",
+    "keySpread": "Reparto de claves"
+  },
+  "share": {
+    "copied": "Copiada",
+    "copyAsImage": "Copiar como imagen",
+    "downloadPng": "Descargar PNG",
+    "copiedToast": "Tarjeta copiada al portapapeles",
+    "copyError": "No se pudo copiar: {{error}}",
+    "downloadedToast": "Tarjeta descargada",
+    "downloadError": "No se pudo descargar: {{error}}",
+    "errorUnknown": "desconocido",
+    "card": {
+      "eyebrow": "SETSENSE · TU SONIDO",
+      "totalTracks": "{{count}} pistas",
+      "inYourLibrary": "en tu biblioteca",
+      "topBpmZone": "ZONA DE BPM PRINCIPAL",
+      "topKey": "CLAVE PRINCIPAL",
+      "peakEnergy": "ENERGÍA MÁXIMA",
+      "definingSound": "SONIDO QUE TE DEFINE",
+      "genreShare": "{{count}} pistas · {{pct}}% de la biblioteca",
+      "topArtistsHeading": "ARTISTAS PRINCIPALES",
+      "energyProfileHeading": "PERFIL DE ENERGÍA",
+      "madeWith": "hecho con"
+    }
+  },
+  "rediscover": {
+    "title": "Redescubrir",
+    "subtitle": "Pistas que solías pinchar, criando polvo. Vuelve a meter una en rotación.",
+    "noLibraryTitle": "Las joyas olvidadas afloran a medida que pinchas",
+    "noLibraryBody": "Importa tu biblioteca y SetRecord empezará a resurgir pistas que solías adorar pero que no tocas desde hace tiempo.",
+    "digging": "Rebuscando entre tus cajones…",
+    "empty": "Aún no hay joyas olvidadas — el historial de reproducción las irá haciendo crecer con el tiempo."
+  },
+  "tags": {
+    "allTags": "Todas las etiquetas",
+    "trackCount": "{{count}} pistas",
+    "noTracks": "Aún no hay pistas con esta etiqueta.",
+    "showingFirst": "Mostrando las primeras {{max}} de {{total}}."
+  },
+  "uncover": {
+    "title": "Descubrir",
+    "subtitle": "Desliza por las pistas que tu biblioteca olvidó. Derecha para probar en tu próximo bolo, izquierda para pasar.",
+    "stats": {
+      "saved": "{{count}} guardadas",
+      "skipped": "{{count}} descartadas",
+      "left": "{{count}} restantes"
+    },
+    "digging": "Desenterrando pistas olvidadas…",
+    "emptyNothing": "Nada enterrado ahora mismo — cada temazo, joya y pista sin probar ha aflorado. Importa más o vuelve a mirar a medida que crece tu historial.",
+    "emptySummary": "Eso es toda la pila. Guardaste <0>{{saved}}</0> y descartaste <1>{{skipped}}</1>.",
+    "freshDig": "Empezar una nueva búsqueda",
+    "undoTitle": "Deshacer (Z)",
+    "undoAria": "Deshacer el último deslizamiento",
+    "skipTitle": "Pasar (←)",
+    "skipAria": "Pasar",
+    "addToSetTitle": "Añadir al set actual (↑)",
+    "addToSetAria": "Añadir al set actual",
+    "testTitle": "Probar en el próximo bolo (→)",
+    "testAria": "Probar en el próximo bolo",
+    "hint": "<0>←</0> pasar · <1>↑</1> añadir al set · <2>→</2> probar en el bolo · <3>espacio</3> reproducir/pausar · <4>Z</4> deshacer",
+    "dir": {
+      "keep": "Probar en el bolo",
+      "dismiss": "Pasar",
+      "set": "Añadir al set"
+    },
+    "source": {
+      "heater": "Temazo olvidado",
+      "gem": "Joya olvidada",
+      "untested": "Nunca probada en directo",
+      "audition": "Vale la pena escuchar"
+    },
+    "card": {
+      "pause": "Pausar",
+      "play": "Reproducir",
+      "key": "Clave",
+      "bpm": "BPM",
+      "energy": "Energía",
+      "energyValue": "{{value}}/10",
+      "length": "Duración"
+    }
+  },
+  "graph": {
+    "title": "Constelación",
+    "lensLabel": "Lente temporal",
+    "loading": "Mapeando tu biblioteca…",
+    "error": "No se pudo crear el mapa.",
+    "centeredOn": "Centrado en",
+    "trackCount": "{{count}} tracks",
+    "mode": {
+      "past": "Pasado",
+      "future": "Futuro",
+      "diff": "Diferencia",
+      "present": "Presente"
+    },
+    "tagline": {
+      "past": "Cada track que has mezclado, en un mapa",
+      "future": "Cada mezcla que podrías hacer",
+      "diff": "Compatibles, pero nunca lo has probado",
+      "present": "El set que estás creando, ahora mismo"
+    },
+    "empty": {
+      "past": {
+        "title": "Aún no hay mezclas mapeadas",
+        "body": "Registra o crea un set y tus tracks empezarán a conectarse en una constelación de las transiciones que realmente has pinchado."
+      },
+      "future": {
+        "title": "Sin vecinos compatibles",
+        "body": "No apareció nada compatible en armonía o ritmo alrededor de este track. Prueba con otro punto de partida."
+      },
+      "diff": {
+        "title": "Ya los has mezclado todos",
+        "body": "Cada track compatible cercano ya está en tu historial: aquí no hay parejas por descubrir. Prueba con otro track."
+      },
+      "present": {
+        "title": "Ningún set en curso",
+        "body": "Abre un set en Build (o ponte en vivo) y se ilumina aquí como un camino brillante: cada track en orden de reproducción."
+      }
+    },
+    "lock": {
+      "future": {
+        "title": "Descubre adónde puede ir cada track",
+        "body": "Futuro mapea las mezclas compatibles en armonía y BPM ocultas en tu biblioteca. Desbloquéalo con Pro."
+      },
+      "diff": {
+        "title": "Encuentra mezclas que nunca has probado",
+        "body": "Diferencia revela parejas compatibles que nunca has pinchado: tu próxima transición insignia. Desbloquéalo con Pro."
+      }
+    },
+    "legend": {
+      "mixed": "Ya mezclados",
+      "gig": "Pinchado en un bolo",
+      "path": "Tu set, en orden",
+      "compatible": "Podrías mezclar",
+      "novel": "Nunca probado"
+    },
+    "scrub": {
+      "title": "Mezclado en",
+      "all": "Todo"
+    },
+    "scopeLabel": "Alcance",
+    "scope": {
+      "neighborhood": "Cercanos",
+      "library": "Galaxia",
+      "context": "Este set"
+    },
+    "path": {
+      "toggle": "Crear set",
+      "title": "Ruta",
+      "hint": "Haz clic en tracks para encadenarlos en un set, en orden.",
+      "route": "Auto-ruta",
+      "add": "Añadir al set",
+      "save": "Guardar como set",
+      "remove": "Quitar",
+      "clear": "Limpiar",
+      "exit": "Salir del modo ruta",
+      "setName": "Ruta de constelación"
+    },
+    "search": {
+      "placeholder": "Buscar un track…"
+    },
+    "genreCount": "{{count}} géneros"
+  }
+}

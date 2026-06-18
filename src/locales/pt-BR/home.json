@@ -1,0 +1,181 @@
+{
+  "placeholders": {
+    "talk": "Pergunte qualquer coisa sobre sua biblioteca — ou só converse",
+    "build": "Encontre algo, crie algo ou pergunte o que vem a seguir",
+    "tonight": "O que vamos montar hoje à noite?"
+  },
+  "greeting": {
+    "lateOne": "Que horas.",
+    "morning": "Bom dia.",
+    "afternoon": "Boa tarde.",
+    "evening": "Boa noite.",
+    "sub": "O que você quer fazer com sua biblioteca?"
+  },
+  "examples": {
+    "forgotten": "Encontre 10 músicas que não toco há séculos",
+    "warmup": "Monte um aquecimento de 90 minutos em torno de 124 bpm",
+    "after": "O que eu toco depois de {{title}}",
+    "duplicates": "Limpe minhas duplicatas"
+  },
+  "topBar": {
+    "history": "Histórico"
+  },
+  "history": {
+    "title": "Histórico",
+    "closeAria": "Fechar histórico",
+    "newConversation": "Nova conversa",
+    "upsell": "As conversas gratuitas são apagadas ao fechar o SetRecord. <0>Guarde seu histórico com o Pro.</0>",
+    "empty": "Nenhuma conversa ainda.",
+    "deleteAria": "Excluir conversa"
+  },
+  "edgeBar": {
+    "proPitch": "Assine o Pro para <0>salvar esta conversa</0>, montar sets a partir destes resultados e exportá-los para seus CDJs."
+  },
+  "voice": {
+    "settingUp": "Configurando a voz · uma única vez · {{pct}}%",
+    "starting": "Iniciando a voz…",
+    "unavailable": "A entrada de voz ainda não está disponível nesta máquina."
+  },
+  "composer": {
+    "askAria": "Pergunte à sua biblioteca",
+    "stop": "Parar",
+    "speak": "Falar",
+    "stopAria": "Parar de ouvir",
+    "send": "Enviar",
+    "listening": "Ouvindo — continue",
+    "tapToStop": "toque para parar",
+    "privacyHint": "Nada sai do seu Mac",
+    "sendHint": "<0>↵</0>para enviar · <1>⇧↵</1>nova linha"
+  },
+  "turn": {
+    "warming": "Preparando — isso acontece uma vez, depois é instantâneo.",
+    "reading": "Lendo sua biblioteca…",
+    "answerAria": "Resposta",
+    "resultsReady": "Resultados prontos: {{summary}}",
+    "resultsReadyBare": "Resultados prontos"
+  },
+  "interpret": {
+    "lead": "Entendi assim",
+    "refine": "ajustar",
+    "modelNote": "Para esta usei toda a minha compreensão. Tente reformular se não estiver bem certo.",
+    "footNote": "Mude qualquer coisa que parecer errada — os resultados atualizam na hora.",
+    "update": "Atualizar",
+    "fields": {
+      "notPlayedIn": "Sem tocar há",
+      "neverPlayedLive": "Nunca tocada ao vivo",
+      "howMany": "Quantas",
+      "buildsToward": "Sobe até",
+      "length": "Duração",
+      "shape": "Curva",
+      "mixingOutOf": "Mixando a partir de",
+      "keepInKey": "Manter no tom",
+      "energy": "Energia",
+      "matchOn": "Comparar por",
+      "keep": "Manter",
+      "orderBy": "Ordenar por"
+    },
+    "window": {
+      "3 months": "3 meses",
+      "6 months": "6 meses",
+      "12 months": "12 meses"
+    },
+    "toggle": {
+      "on": "sim",
+      "off": "não"
+    },
+    "lengthValue": "{{count}} min",
+    "harmonicOnly": "somente harmônico",
+    "shape": {
+      "slowBurn": "Subida lenta",
+      "steady": "Constante"
+    },
+    "energyPreset": {
+      "hold": "Manter",
+      "lift": "Elevar"
+    },
+    "match": {
+      "audio": "Áudio",
+      "tags": "Tags"
+    },
+    "keepOption": {
+      "highestQuality": "Melhor qualidade",
+      "newest": "Mais recente"
+    },
+    "energyLevel": {
+      "any": "Qualquer",
+      "chill": "Tranquila",
+      "groovy": "Com groove",
+      "peak": "Pico"
+    },
+    "sort": {
+      "mostPlayed": "Mais tocadas",
+      "newest": "Mais recentes",
+      "topRated": "Mais bem avaliadas",
+      "surprise": "Surpreenda-me"
+    }
+  },
+  "stepper": {
+    "fewerAria": "Menos",
+    "moreAria": "Mais"
+  },
+  "shared": {
+    "addToCurrentSet": "Adicionar ao set atual"
+  },
+  "after": {
+    "notFound": "Não encontrei essa faixa na sua biblioteca.",
+    "titleOne": "Uma saída de {{title}}",
+    "titleOther": "{{count}} saídas de {{title}}",
+    "harmonicFrom": "harmônico a partir de ",
+    "fromSets": "dos seus sets · ",
+    "bestMatch": "Melhor correspondência",
+    "chips": {
+      "sameKey": "Mesmo tom",
+      "bpmDelta": "{{delta}} bpm",
+      "lifts": "Sobe a energia",
+      "eases": "Baixa a energia",
+      "holds": "Mantém a energia",
+      "doneThis": "Você já fez isso {{count}}×"
+    }
+  },
+  "duplicates": {
+    "allClear": "Tudo limpo — essas duplicatas se foram.",
+    "title": "{{count}} duplicatas que vale a pena limpar",
+    "meta": "mantendo a melhor cópia de cada",
+    "keep": "manter",
+    "drop": "descartar",
+    "kbps": "{{count}} kbps",
+    "removeLower": "Remover as cópias inferiores",
+    "moreGrouped": "{{count}} mais agrupadas do mesmo jeito.",
+    "thatsAll": "É isso.",
+    "clearAll": "Limpar todas as {{count}}",
+    "clearGroupError": "Não foi possível limpar esse grupo.",
+    "clearAllError": "Não foi possível limpar todas as duplicatas.",
+    "clearedToast": "{{count}} grupos de duplicatas limpos"
+  },
+  "forgotten": {
+    "title": "{{count}} faixas que você deixou descansar",
+    "meta": "mais antigas primeiro",
+    "moreInList": "+ {{count}} mais na lista completa"
+  },
+  "generic": {
+    "libraryPicks": "Seleção da biblioteca",
+    "tracksTitle": "{{count}} faixas",
+    "saveAsSet": "Salvar como set",
+    "addToCurrentSet": "Adicionar ao set atual",
+    "countTitle_one": "{{count}} faixa",
+    "countTitle_other": "{{count}} faixas"
+  },
+  "warmup": {
+    "title": "Um aquecimento de {{minutes}} minutos, em rascunho",
+    "slowBurn": "subida lenta",
+    "steady": "constante",
+    "tracks": "faixas",
+    "pulledFrom": "tiradas da sua biblioteca",
+    "min": "min",
+    "runtime": "duração",
+    "bpmRamp": "rampa de bpm",
+    "moreShaped": "…{{count}} mais, ajustadas à curva",
+    "notCommitted": "Nada foi confirmado ainda — abra para mixar e reordenar.",
+    "openInBuild": "Abrir no Build"
+  }
+}

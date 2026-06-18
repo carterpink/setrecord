@@ -1,0 +1,318 @@
+{
+  "title": "Réglages",
+  "closeAria": "Fermer les réglages",
+  "save": "Enregistrer les réglages",
+  "saving": "Enregistrement…",
+  "saveError": "Impossible d’enregistrer les réglages. Réessaie ou redémarre l’application.",
+  "sections": {
+    "plan": "Formule",
+    "librarySource": "Source de la bibliothèque",
+    "privacy": "Confidentialité",
+    "backup": "Sauvegarde et migration",
+    "dangerZone": "Zone sensible"
+  },
+  "language": {
+    "label": "Langue",
+    "system": "Réglage du système",
+    "caption": "Définit la langue des menus, boutons et libellés dans toute l’application. Les réponses de l’IA restent dans la langue que tu écris.",
+    "followingSystem": "Suit la langue de ton système : {{language}}."
+  },
+  "license": {
+    "proPlan": "{{app}} Pro",
+    "freePlan": "Formule gratuite",
+    "lifetime": "Licence à vie",
+    "subscription": "Abonnement Pro",
+    "renews": "Renouvellement / expiration {{date}}",
+    "activated": "Activée le {{date}}",
+    "freeBlurb": "Importe, parcours et construis des sets manuellement. Débloque les suggestions, Set Architect, Recall et l’export avec Pro.",
+    "boundToDevice": "Liée à cet appareil.",
+    "deactivate": "Désactiver sur cet appareil",
+    "removing": "Suppression…",
+    "upgrade": "Passer à Pro",
+    "removed": "Licence retirée de cet appareil.",
+    "deactivateError": "Impossible de désactiver la licence.",
+    "status": {
+      "deviceMismatch": "Cette licence est activée sur un autre appareil. Désactive-la là-bas ou contacte le support pour la déplacer — ta clé reste valide par ailleurs.",
+      "revoked": "Cette licence a été annulée ou remboursée. Si c’est inattendu, contacte le support et nous t’aiderons.",
+      "expired": "Ton abonnement a expiré. Renouvelle-le pour restaurer Pro — tes réglages et ta bibliothèque restent intacts.",
+      "invalid": "Cette clé enregistrée n’a pas pu être vérifiée. Recolle-la ou contacte le support.",
+      "clockWarning": "L’horloge de ton système semble avoir reculé. Pro fonctionne toujours ; vérifie simplement la date et l’heure pour que les dates d’abonnement restent exactes."
+    },
+    "enterKey": "Saisir une clé de licence",
+    "keyPlaceholder": "SES1.…",
+    "activate": "Activer",
+    "activating": "Activation…",
+    "activateSuccess": "Pro débloqué — merci !",
+    "refresh": "Actualiser le statut",
+    "refreshing": "Vérification…",
+    "refreshDone": "Le statut de la licence est à jour.",
+    "activationError": {
+      "malformed": "Cette clé ne semble pas correcte. Vérifiez les fautes et réessayez.",
+      "badSignature": "Cette clé n’a pas pu être vérifiée. Recopiez-la depuis votre reçu ou contactez le support.",
+      "expired": "Cette licence a expiré. Renouvelez pour restaurer Pro.",
+      "deviceMismatch": "Cette clé est active sur un autre appareil. Désactivez-la là-bas d’abord ou contactez le support.",
+      "revoked": "Cette licence a été annulée ou remboursée. Contactez le support si c’est inattendu.",
+      "unknown": "Impossible d’activer cette clé. Vérifiez votre connexion et réessayez."
+    }
+  },
+  "learnMode": {
+    "label": "Mode Apprentissage",
+    "caption": "Ajoute des explications et des schémas en ligne à chaque recommandation. Idéal pour apprendre le mixage harmonique, les transitions de BPM et les courbes d’énergie.",
+    "toggleAria": "Activer le mode Apprentissage",
+    "replayTips": "Revoir les premiers conseils"
+  },
+  "plainSearch": {
+    "label": "Recherche en langage naturel",
+    "caption": "Comprend des formulations plus souples et approximatives en plus de la recherche intégrée — ainsi « quelque chose de posé autour de 120 » fonctionne tout simplement. S’exécute entièrement sur ton Mac, hors ligne et en privé. Désactive-la pour libérer de la mémoire.",
+    "toggleAria": "Activer la recherche en langage naturel"
+  },
+  "keyNotation": {
+    "label": "Notation des tonalités",
+    "camelot": "Camelot (9A)",
+    "openKey": "Open Key (Am)",
+    "caption": "Définit l’affichage des tonalités sur les lignes de morceaux et les puces de tonalité dans toute l’application."
+  },
+  "targetHardware": {
+    "label": "Matériel cible par défaut",
+    "detail": "Définit le modèle de CDJ Pioneer utilisé lors de la validation d’export — contrôle les formats de fichier autorisés, le débit maximal, le nombre de hot cues et l’organisation des dossiers. Choisis le modèle de ta cabine.",
+    "iconLabel": "Qu’est-ce que le matériel cible ?"
+  },
+  "bpmRange": {
+    "label": "Plage de BPM par défaut",
+    "detail": "La fenêtre de tempo dans laquelle restent Set Architect et les Suggestions. Plus étroite = flux plus cohérent ; plus large = plus de morceaux candidats. 8 à 10 BPM est une plage de club typique.",
+    "iconLabel": "Qu’est-ce que la plage de BPM ?",
+    "value": "{{low}}–{{high}} BPM"
+  },
+  "harmonicMixing": {
+    "label": "Mixage harmonique",
+    "detail": "Quand il est activé, Set Architect privilégie les tonalités Camelot adjacentes ou de même lettre, en gardant une couleur harmonique cohérente et en évitant les conflits de tonalité. Désactive-le si tu veux volontairement des changements de tonalité abrupts.",
+    "iconLabel": "Qu’est-ce que le mixage harmonique ?",
+    "caption": "Activé par défaut dans Set Architect"
+  },
+  "librarySource": {
+    "label": "D’où {{app}} lit ta bibliothèque",
+    "fromDb": "Lue directement depuis la base de données Rekordbox",
+    "fromXml": "Importée depuis un export XML Rekordbox",
+    "lastImported": "dernière importation {{date}}",
+    "none": "Aucune bibliothèque importée pour l’instant.",
+    "resyncNow": "Synchroniser maintenant",
+    "resync": "Synchroniser la bibliothèque",
+    "staleHint": "Source mise à jour — synchronisation recommandée."
+  },
+  "autoDetect": {
+    "label": "Détecter Rekordbox automatiquement",
+    "caption": "Au lancement, recherche Rekordbox sur ce Mac pour que l’import se fasse en un clic.",
+    "toggleAria": "Activer la détection automatique de Rekordbox"
+  },
+  "crashReporting": {
+    "label": "Rapports de plantage",
+    "caption": "Accepte d’envoyer des rapports de plantage anonymes lorsque l’application se ferme de façon inattendue. Les rapports n’incluent que le type d’erreur, une trace d’appel expurgée (noms de fichiers, sans chemins), ta version du système d’exploitation et la version de l’application.",
+    "privacyNote": "Ta bibliothèque, les titres des morceaux, les chemins de fichiers, le nom de ton appareil et tes données personnelles ne sont jamais inclus. Désactivé par défaut. Le désactiver arrête les rapports immédiatement ; l’activer prend effet après le redémarrage de {{app}}.",
+    "toggleAria": "Activer les rapports de plantage"
+  },
+  "sentry": {
+    "label": "Suivi des erreurs",
+    "caption": "Accepte d’envoyer des données anonymes sur les erreurs et performances quand {{app}} rencontre des problèmes. Cela nous aide à corriger les bugs plus vite et à tout maintenir stable.",
+    "privacyNote": "Les rapports sont expurgés : pas de contenu de bibliothèque, titres de morceaux, chemins de fichiers ni données personnelles. Désactivé par défaut. Les modifications prennent effet immédiatement.",
+    "toggleAria": "Activer le suivi des erreurs"
+  },
+  "flightRecorder": {
+    "label": "Enregistreur de set",
+    "caption": "Enregistre une référence audio lo-fi de ton set via le micro de la salle pendant que tu joues, pour la réécouter plus tard. La tracklist est toujours enregistrée — ceci ajoute l'audio.",
+    "privacyNote": "Désactivé par défaut. L'enregistrement reste sur cet appareil et n'est jamais envoyé. Tu choisis de conserver ou de supprimer chaque set à la fin, et un indicateur s'affiche quand le micro capte.",
+    "toggleAria": "Activer l'enregistreur de set",
+    "reactionLabel": "Analyse de la réaction du public",
+    "experimental": "(expérimental)",
+    "reactionCaption": "Après un set, mesure la réaction du public à chaque morceau à partir de l'enregistrement. Préliminaire et approximatif — affiché comme estimations avec un niveau de confiance jusqu'à validation en conditions réelles.",
+    "reactionToggleAria": "Activer l'analyse de la réaction du public"
+  },
+  "backup": {
+    "exportTitle": "Exporter une sauvegarde",
+    "exportCaption": "Enregistre tes tags, sets, historique de lecture, cycle de vie et crates intelligents dans un seul fichier <0>.setrecord</0>. Conserve-le précieusement ou importe-le sur un autre Mac pour emporter ton travail. Tes fichiers audio et ta licence restent en place — rien n’est envoyé.",
+    "passphrasePlaceholder": "Mot de passe (recommandé)",
+    "passphraseAria": "Mot de passe de la sauvegarde",
+    "exportButton": "Exporter la sauvegarde",
+    "exporting": "Exportation…",
+    "encryptedNote": "Chiffrée avec ton mot de passe — il te faudra pour l’importer. Aucune récupération possible en cas de perte.",
+    "unencryptedNote": "Les sauvegardes sont chiffrées par défaut. Laisse ce champ vide et nous te demanderons de confirmer avant d’enregistrer un fichier non chiffré que n’importe qui pourrait lire.",
+    "exportSuccess": "Sauvegarde enregistrée — {{tracks}} morceaux, {{sets}} sets, {{sessions}} dates.",
+    "importTitle": "Importer une sauvegarde",
+    "importCaption": "Importe un fichier <0>.setrecord</0> depuis un autre Mac. Importe d’abord ta bibliothèque Rekordbox/Serato — une sauvegarde contient ton travail, pas l’audio, et se reconnecte aux morceaux déjà présents sur cette machine.",
+    "chooseButton": "Choisir une sauvegarde…",
+    "enterPassphrase": "Saisir le mot de passe de la sauvegarde",
+    "unlock": "Déverrouiller",
+    "wrongPassphrase": "Mot de passe incorrect — réessaie.",
+    "readError": "Impossible de lire cette sauvegarde.",
+    "fromMachine": "De <0>{{machine}}</0> · {{tracks}} morceaux · {{sets}} sets · {{sessions}} dates",
+    "anotherMac": "un autre Mac",
+    "restoreHint": "Cette bibliothèque est vide — importe d’abord ta bibliothèque Rekordbox/Serato, puis relance pour de meilleurs résultats.",
+    "mergeHint": "Fusionnera avec ta bibliothèque actuelle — tes cues, notes et tags locaux ne sont jamais écrasés.",
+    "importButton": "Importer la sauvegarde",
+    "importing": "Importation…",
+    "importSuccess": "Sauvegarde importée — ta bibliothèque a été mise à jour.",
+    "importError": "Échec de l’importation.",
+    "complete": "Importation terminée",
+    "relinkSummary": "{{matched}} morceaux reconnectés · {{sets}} sets · {{sessions}} dates · {{tags}} tags",
+    "notFound": "{{count}} introuvable(s) sur ce Mac",
+    "ambiguous": ", {{count}} ambigu(s)",
+    "notFoundHint": ". Importe l’audio manquant et relance pour les reconnecter.",
+    "partialSets_one": "{{count}} set importé avec des morceaux manquants.",
+    "partialSets_other": "{{count}} sets importés avec des morceaux manquants."
+  },
+  "dangerZone": {
+    "label": "Réinitialiser {{app}}",
+    "caption": "Efface ta bibliothèque, tes réglages et ton historique de lecture et ramène {{app}} à son aspect du tout premier lancement. Tes fichiers de musique et ta licence Pro restent en place.",
+    "eraseButton": "Tout effacer…",
+    "cantUndo": "Cette action est irréversible.",
+    "confirmDetail": "Supprime définitivement ta bibliothèque, tes réglages et ton historique de lecture, et redémarre {{app}} comme au premier lancement. Tes fichiers audio et ta licence Pro ne sont pas touchés.",
+    "eraseConfirm": "Tout effacer et redémarrer"
+  },
+  "tabs": {
+    "general": {
+      "label": "Général",
+      "title": "Général",
+      "desc": "Langue et affichage des tonalités dans l'app."
+    },
+    "plan": {
+      "label": "Formule",
+      "title": "Formule",
+      "desc": "Votre licence et ce qu'elle débloque."
+    },
+    "memory": {
+      "label": "Mémoire",
+      "title": "Mémoire",
+      "desc": "Comment SetRecord comprend vos demandes et apprend au fil du temps."
+    },
+    "mixing": {
+      "label": "Mix",
+      "title": "Réglages de mix",
+      "desc": "Les valeurs par défaut utilisées par Set Architect et les suggestions."
+    },
+    "library": {
+      "label": "Bibliothèque",
+      "title": "Source de la bibliothèque",
+      "desc": "D'où SetRecord lit vos morceaux."
+    },
+    "data": {
+      "label": "Confidentialité et sauvegarde",
+      "title": "Confidentialité et sauvegarde",
+      "desc": "Ce qui quitte votre Mac et le transfert de votre travail."
+    },
+    "reset": {
+      "label": "Réinitialiser",
+      "title": "Réinitialiser",
+      "desc": "Remet SetRecord à son premier lancement."
+    },
+    "playback": {
+      "label": "Lecture",
+      "title": "Lecture",
+      "desc": "Comportement de l’aperçu, périphériques audio et détail des formes d’onde."
+    }
+  },
+  "density": {
+    "label": "Densité de la bibliothèque",
+    "standard": "Standard",
+    "compact": "Compacte",
+    "caption": "À quel point les lignes de pistes sont serrées dans la bibliothèque."
+  },
+  "launch": {
+    "label": "Ouvrir sur",
+    "last": "Dernier utilisé",
+    "home": "Accueil",
+    "library": "Bibliothèque",
+    "build": "Créer",
+    "caption": "Quel espace SetRecord ouvre au démarrage."
+  },
+  "reducedMotion": {
+    "label": "Réduire les animations",
+    "caption": "Fige le fond animé et minimise les transitions. Le réglage de votre système est aussi respecté.",
+    "toggleAria": "Basculer les animations réduites"
+  },
+  "beginnerMode": {
+    "label": "Mode débutant",
+    "caption": "Conservez les explications en langage clair du jargon DJ, même après la fin d’un essai.",
+    "toggleAria": "Basculer le mode débutant"
+  },
+  "voiceInput": {
+    "label": "Saisie vocale",
+    "caption": "Maintenez pour parler à la boîte d’accueil — transcrit en privé sur votre Mac. Désactivez pour masquer le micro.",
+    "toggleAria": "Basculer la saisie vocale"
+  },
+  "exportFormat": {
+    "label": "Format d’export par défaut",
+    "ask": "Toujours demander",
+    "engine": "Engine DJ",
+    "beatport": "Beatport",
+    "caption": "Quel export la fenêtre d’export présélectionne."
+  },
+  "playback": {
+    "lengthLabel": "Durée de l’aperçu",
+    "len30": "30s",
+    "len1m": "1m",
+    "len2m": "2m",
+    "len5m": "5m",
+    "lenFull": "Complète",
+    "lengthCaption": "Combien de temps un aperçu joue avant de s’arrêter seul.",
+    "volumeLabel": "Volume d’aperçu par défaut",
+    "fadeLabel": "Fondu d’entrée des aperçus",
+    "fadeCaption": "Démarre les aperçus par un court fondu plutôt qu’un départ brusque.",
+    "outputLabel": "Périphérique de sortie",
+    "outputCaption": "Où l’audio d’aperçu est joué. Par défaut, la sortie système.",
+    "inputLabel": "Entrée SetRecord Live",
+    "inputCaption": "L’entrée audio que SetRecord Live écoute.",
+    "systemDefault": "Par défaut du système",
+    "unnamedDevice": "Périphérique sans nom",
+    "waveformLabel": "Détail des formes d’onde",
+    "wfLow": "Faible",
+    "wfStandard": "Standard",
+    "wfHigh": "Élevé",
+    "waveformCaption": "Plus de détail dessine des formes d’onde plus nettes mais décode un peu plus lentement."
+  },
+  "autoTagging": {
+    "label": "Étiquetage automatique",
+    "caption": "Laissez SetRecord générer des tags en langage clair à partir du son de chaque piste."
+  },
+  "tagRoute": {
+    "label": "Export des tags vers Rekordbox",
+    "xml": "XML uniquement",
+    "native": "Autoriser l’écriture BD",
+    "caption": "XML uniquement garde les tags hors de la base de données Rekordbox active — l’option sûre. Autoriser l’écriture BD propose aussi l’option directe MyTag."
+  },
+  "rbConsent": {
+    "label": "Accès à la base de données Rekordbox",
+    "caption": "Vous avez autorisé SetRecord à lire votre base de données Rekordbox (en lecture seule). Vous pouvez le révoquer ici ; on vous redemandera la prochaine fois.",
+    "button": "Révoquer l’accès à la base de données",
+    "revoked": "Accès à la base de données Rekordbox révoqué."
+  },
+  "updates": {
+    "label": "Rechercher des mises à jour",
+    "caption": "Recherche les nouvelles versions et vous prévient — n’installe jamais automatiquement.",
+    "frequency": "Fréquence de mise à jour",
+    "daily": "Quotidienne",
+    "weekly": "Hebdomadaire",
+    "preReleaseLabel": "Inclure les préversions",
+    "preReleaseCaption": "Proposer aussi les versions bêta lors de la vérification.",
+    "checkNow": "Vérifier maintenant",
+    "checking": "Vérification…",
+    "resultUpdated": "Une mise à jour est disponible.",
+    "resultCurrent": "Vous avez la dernière version.",
+    "resultOffline": "Impossible de joindre le serveur de mises à jour.",
+    "resultUnavailable": "Les mises à jour ne sont pas disponibles dans cette version."
+  },
+  "offline": {
+    "label": "Mode hors ligne",
+    "caption": "Bloque tout accès réseau — vérifications de mises à jour et téléchargements de modèles."
+  },
+  "artworkCache": {
+    "label": "Cache des pochettes",
+    "caption": "Les pochettes en cache utilisent actuellement {{size}}. Le vider libère de l’espace ; les pochettes se ré-extraient à la navigation.",
+    "clear": "Vider le cache des pochettes",
+    "clearing": "Vidage…",
+    "cleared": "{{count}} pochettes en cache vidées."
+  },
+  "replayOnboarding": {
+    "label": "Revoir la visite de bienvenue",
+    "caption": "Affiche à nouveau l’intégration initiale depuis le début.",
+    "button": "Revoir l’introduction"
+  }
+}

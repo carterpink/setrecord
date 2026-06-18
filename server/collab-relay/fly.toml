@@ -1,0 +1,29 @@
+# Fly.io config for the SetRecord collab relay.
+# Deploy:  fly launch --no-deploy   (then edit app name)  ->  fly deploy
+# Fly terminates TLS at the edge, so clients connect to wss://<app>.fly.dev.
+
+app = "setrecord-collab-relay"
+primary_region = "syd"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8787"
+
+[http_service]
+  internal_port = 8787
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "3s"
+    method = "GET"
+    path = "/healthz"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

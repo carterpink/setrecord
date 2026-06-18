@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SetRecord Live</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'"
+    />
+    <!-- Fonts are self-hosted via @fontsource (imported in src/overlay-entry.tsx). -->
+    <style>
+      /* The window is transparent — let Rekordbox (or anything) show through.
+         Only the glass chrome inside paints. */
+      html,
+      body,
+      #overlay-root {
+        margin: 0;
+        height: 100%;
+        background: transparent !important;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="overlay-root"></div>
+    <script type="module" src="/src/overlay-entry.tsx"></script>
+  </body>
+</html>

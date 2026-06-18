@@ -1,0 +1,75 @@
+{
+  "saveStatus": {
+    "saving": "Salvando…",
+    "unsaved": "Alterações não salvas",
+    "retryAria": "Tentar salvar novamente",
+    "failed": "Falha ao salvar"
+  },
+  "header": {
+    "namePlaceholder": "Nome do set",
+    "noSetLoaded": "Nenhum set carregado",
+    "trackCount_one": "{{count}} faixa",
+    "trackCount_other": "{{count}} faixas",
+    "bpmStats": "média {{avg}} BPM ({{min}}–{{max}})",
+    "bpmSingle": "{{bpm}} BPM",
+    "markPerformedTitle": "Registrar este set como tocado em um gig",
+    "markPerformed": "Marcar como tocado",
+    "logging": "Registrando…",
+    "curveHelpAria": "O que este gráfico mostra?"
+  },
+  "performed": {
+    "logged": "“{{name}}” registrado como tocado.",
+    "markError": "Não foi possível marcar este set como tocado.",
+    "markFailed": "Algo deu errado ao marcar o set como tocado.",
+    "alreadyToday": "“{{name}}” já foi registrado como tocado hoje.",
+    "logAgain": "Registrar de novo"
+  },
+  "empty": {
+    "readyTitle": "“{{name}}” — pronto quando você quiser.",
+    "blankTitle": "Um set novinho e vazio.",
+    "subtitle": "Arraste faixas, deslize para descobrir ou peça para eu montar.",
+    "browse": "Explorar biblioteca",
+    "discover": "Deslize para descobrir",
+    "buildForMe": "Monte para mim"
+  },
+  "curve": {
+    "trackLabel": "Faixa {{position}}",
+    "seriesEnergy": "Energia",
+    "seriesBpm": "BPM",
+    "seriesTarget": "Alvo"
+  },
+  "card": {
+    "phantomAria": "Faixa fantasma — ainda não está na sua biblioteca",
+    "fileNotFoundAria": "Arquivo não encontrado",
+    "pauseAria": "Pausar {{title}}",
+    "previewAria": "Pré-visualizar {{title}}",
+    "phantomBuyTitle": "Compre ou baixe esta faixa para habilitar a pré-visualização",
+    "fileNotFoundTitle": "Arquivo não encontrado: {{path}}",
+    "fileNotFound": "Arquivo não encontrado",
+    "scoreTitle": "Pontuação {{score}}/100 · {{reasons}} — verde = mixagem limpa, âmbar = bagunçada, vermelho = desastre",
+    "explainTransitionAria": "Explicar transição: {{label}}",
+    "unlockAria": "Desbloquear {{title}}",
+    "lockAria": "Travar {{title}} no lugar",
+    "lockedTitle": "Travada no lugar — o Set Architect vai preservar esta posição",
+    "unlockedTitle": "Travar no lugar — o Set Architect não vai substituir esta faixa",
+    "removeAria": "Remover {{title}}",
+    "moreActionsAria": "Mais ações",
+    "moreActionsTitle": "Mais ações"
+  },
+  "menu": {
+    "playHistory": "Histórico de reprodução",
+    "editCues": "Editar pontos de cue"
+  },
+  "combos": {
+    "dialogAria": "Faixas tocadas depois de {{title}}",
+    "after": "Depois de",
+    "closeAria": "Fechar",
+    "loading": "Carregando…",
+    "empty": "Ainda não há histórico de reprodução. Importe seus dados de performance do Rekordbox para ver isto.",
+    "count": "{{plays}}×"
+  },
+  "ghost": {
+    "bestSuggestion": "Melhor sugestão",
+    "addAria": "Adicionar {{title}} ao set"
+  }
+}

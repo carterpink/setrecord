@@ -1,0 +1,68 @@
+{
+  "generatedAt": "2026-06-03T14:27:31.445Z",
+  "commit": null,
+  "summary": {
+    "total": 3,
+    "failed": 0,
+    "warned": 0
+  },
+  "results": [
+    {
+      "id": "build",
+      "label": "20-track Set Architect build @10k",
+      "metric": 86.28674999999998,
+      "unit": "ms",
+      "budget": 500,
+      "warnAt": 400,
+      "pass": true,
+      "warn": false,
+      "utilisation": 0.17257349999999996,
+      "detail": {
+        "p50": 79.29200000000014,
+        "p95": 86.28674999999998,
+        "p99": 86.55170799999996,
+        "min": 77.07449999999994,
+        "max": 86.55170799999996,
+        "n": 25
+      }
+    },
+    {
+      "id": "importParse",
+      "label": "10k-track XML parse + map (canary)",
+      "metric": 168.99020899999994,
+      "unit": "ms",
+      "budget": 4000,
+      "warnAt": 3200,
+      "pass": true,
+      "warn": false,
+      "utilisation": 0.04224755224999999,
+      "detail": {
+        "p50": 165.270333,
+        "p95": 168.99020899999994,
+        "p99": 168.99020899999994,
+        "min": 161.08354200000008,
+        "max": 168.99020899999994,
+        "n": 3
+      }
+    },
+    {
+      "id": "suggestions",
+      "label": "Live suggestions @10k",
+      "metric": 5.0909580000000005,
+      "unit": "ms",
+      "budget": 100,
+      "warnAt": 80,
+      "pass": true,
+      "warn": false,
+      "utilisation": 0.05090958,
+      "detail": {
+        "p50": 4.430208999999991,
+        "p95": 5.0909580000000005,
+        "p99": 8.815750000000037,
+        "min": 4.070374999999956,
+        "max": 8.815750000000037,
+        "n": 60
+      }
+    }
+  ]
+}
